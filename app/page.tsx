@@ -111,7 +111,7 @@ function HomeContent() {
           <div className="mb-8 mt-4">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
-                <span className="text-xl">🔥</span> Trending Now
+                <span className="text-xl"></span> Trending Now
               </h2>
               <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
             </div>
