@@ -139,7 +139,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       name: 'Stripe', 
       desc: 'Visa, Mastercard, Apple Pay',
       logo: 'https://z-cdn-media.chatglm.cn/files/358c145a-fb8b-48f2-95d5-b49a648a8c44.png?auth_key=1886044937-1c4f7f5aa4e44fe0800391a8a31fbcb7-0-12366c60569641acdfcc752fca0a7810',
-      enabled: false // معطل حالياً كما ذكرت
+      enabled: true // معطل حالياً كما ذكرت
     },
     { 
       id: 'paysera', 
