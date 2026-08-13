@@ -46,15 +46,20 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
   if (!isOpen) return null;
 
-  // دالة موحدة لبوابات الدفع التلقائية (Stripe, Paysera, Crypto)
+  // ✨ دالة موحدة لبوابات الدفع التلقائية (Stripe, Paysera, Crypto)
   const handlePayment = async (method: string) => {
     setLoadingGateway(method);
     setError('');
     
     try {
+      // ✨ جلب التوكن لإرساله مع الطلب
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(`https://neo-store-backend.onrender.com/api/payment/${method}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ items: cartItems, totalAmount })
       });
       const data = await res.json();
@@ -71,7 +76,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     }
   };
 
-  // دالة الدفع اليدوي (BaridiMob)
+  // ✨ دالة الدفع اليدوي (BaridiMob)
   const handleBaridiMobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,13 +88,12 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     setLoadingGateway('baridimob');
     setError('');
 
-    // تجهيز بيانات العنوان كـ JSON لإرسالها للـ Backend
     const shippingData = {
       line1: customerAddress,
       city: customerCity,
       state: customerState,
       postal_code: customerZip,
-      country: 'DZ' // الجزائر
+      country: 'DZ'
     };
 
     try {
@@ -98,21 +102,26 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       formData.append('totalAmount', String(totalAmount));
       formData.append('items', JSON.stringify(cartItems));
       
-      // إضافة معلومات العميل
       formData.append('customerName', customerName);
       formData.append('customerPhone', customerPhone);
       formData.append('customerEmail', customerEmail);
-      formData.append('customerAddress', JSON.stringify(shippingData)); // إرسال العنوان كـ JSON string
+      formData.append('customerAddress', JSON.stringify(shippingData));
+
+      // ✨ جلب التوكن وإرساله حتى في الدفع اليدوي
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const headers: HeadersInit = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch('https://neo-store-backend.onrender.com/api/payment/manual', {
         method: 'POST',
+        headers, // لا نضع Content-Type هنا لأنه FormData
         body: formData
       });
       
       const data = await res.json();
       if (res.ok && data.success) {
         setReceiptUploaded(true);
-        clearCart(); // ✅ تفريغ السلة بعد نجاح الطلب
+        clearCart();
       } else {
         setError(data.error || 'Failed to submit order.');
       }
@@ -130,7 +139,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       name: 'Stripe', 
       desc: 'Visa, Mastercard, Apple Pay',
       logo: 'https://z-cdn-media.chatglm.cn/files/358c145a-fb8b-48f2-95d5-b49a648a8c44.png?auth_key=1886044937-1c4f7f5aa4e44fe0800391a8a31fbcb7-0-12366c60569641acdfcc752fca0a7810',
-      enabled: true
+      enabled: false // معطل حالياً كما ذكرت
     },
     { 
       id: 'paysera', 
@@ -151,7 +160,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       name: 'BaridiMob / CCP', 
       desc: 'Algeria Only',
       logo: 'https://z-cdn-media.chatglm.cn/files/3e22e910-6040-4fdc-8395-89205324f443.png?auth_key=1886044937-8d9c5237137f42778451e6c9a7d0896d-0-747c3859e4e50dbe496c05f8d2343c2b',
-      enabled: false  
+      enabled: true  
     },
   ];
 
