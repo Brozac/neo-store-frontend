@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import StarRating from '../../components/StarRating';
 import adminApi from '../../utils/adminApi';
@@ -46,7 +46,7 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
   return flat;
 }
 
-export default function ManageProducts() {
+function ManageProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -466,5 +466,14 @@ export default function ManageProducts() {
         </div>
       )}
     </main>
+  );
+}
+
+// ✨ المكوّن الرئيسي الذي يقوم بتصدير الصفحة ملفوفاً بـ Suspense
+export default function ManageProducts() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-temu-offwhite"><div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div></div>}>
+      <ManageProductsContent />
+    </Suspense>
   );
 }
