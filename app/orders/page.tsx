@@ -38,16 +38,22 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        const profileRes = await fetch('https://neo-store-backend.onrender.com/api/user/profile', {
+        // ✨ نستعملو مسار /api/orders/my-orders (مربوط بالحساب عبر user_id)
+        // بدل /api/orders/track/:email اللي كان يخيب إذا الزبون دخل إيميل
+        // مختلف فـ Stripe Checkout عن إيميل حسابو، أو إذا الطلب مازال pending.
+        const ordersRes = await fetch('https://neo-store-backend.onrender.com/api/orders/my-orders', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!profileRes.ok) {
-          router.push('/auth');
+
+        if (!ordersRes.ok) {
+          if (ordersRes.status === 401 || ordersRes.status === 403) {
+            router.push('/auth');
+            return;
+          }
+          setOrders([]);
           return;
         }
-        const profile = await profileRes.json();
 
-        const ordersRes = await fetch(`https://neo-store-backend.onrender.com/api/orders/track/${profile.email}`);
         const data = await ordersRes.json();
         if (Array.isArray(data)) {
           setOrders(data);

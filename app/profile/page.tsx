@@ -66,23 +66,29 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     setUploadingImage(true);
     const formData = new FormData();
     formData.append('images', file);
 
     try {
-      // 1. رفع الصورة لمجلد uploads
-      const res = await fetch('https://neo-store-backend.onrender.com/api/admin/upload', {
+      // 1. رفع الصورة عبر المسار الخاص بالمستخدمين (ماشي /api/admin/upload
+      //    اللي محمي بـ requireAdmin ويرفض أي طلب من زبون عادي)
+      const res = await fetch('https://neo-store-backend.onrender.com/api/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
       const data = await res.json();
-      
+
       if (res.ok && data.urls && data.urls.length > 0) {
         const newImageUrl = data.urls[0];
         
         // 2. تحديث قاعدة البيانات بالصورة الجديدة
-        const token = localStorage.getItem('token');
         const updateRes = await fetch('https://neo-store-backend.onrender.com/api/user/profile', {
           method: 'PUT',
           headers: {
@@ -96,6 +102,8 @@ export default function ProfilePage() {
         if (updateRes.ok) {
           setUser(updatedUser); // تحديث الواجهة بالصورة الجديدة فوراً
         }
+      } else {
+        console.error('Upload failed:', data);
       }
     } catch (err) {
       console.error('Upload failed:', err);
