@@ -33,42 +33,36 @@
    ========================================== */
 @layer base {
   html {
-    -webkit-tap-highlight-color: transparent; /* إلغاء الإطار الأزرق عند الضغط */
+    -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
   }
 
   body {
     background-color: #F9F8FC;
-    touch-action: manipulation; /* إلغاء تأخر النقر 300ms على الهواتف */
-    -webkit-user-select: none; /* منع تحديد النصوص بالخطأ أثناء التصفح */
+    touch-action: manipulation;
+    -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    overscroll-behavior: none; /* منع السحب الزائد للصفحة (Rubber band) */
+    overscroll-behavior: none;
   }
 
-  /* السماح بتحديد النص فقط في الحقول المهمة */
   input, textarea, [contenteditable="true"] {
     user-select: text;
     -webkit-user-select: text;
   }
 
-  /* منع سحب الصور وحفظها بالضغط المطول على الهاتف */
   img {
     -webkit-user-drag: none;
     user-drag: none;
     pointer-events: none; 
   }
   
-  /* استثناء: إرجاع الأحداث للصور داخل الروابط أو الأزرار لتعمل */
   a img, button img {
     pointer-events: auto;
   }
 }
 
-/* ==========================================
-   ✨ أدوات مساعدة (Utilities)
-   ========================================== */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -82,18 +76,6 @@
 /* ==========================================
    ✨ تأثيرات بطاقات المنتجات المتحركة (Pop-out Effect)
    ========================================== */
-.product-card-animated {
-  filter: grayscale(100%) sepia(5%);
-  mix-blend-mode: multiply;
-  opacity: 0.85;
-  transition: all 0.3s ease;
-  transform: scale(0.95) rotate(-2deg);
-  box-shadow: 0 0 15px 0 rgba(139, 120, 198, 0.1);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.product-card-animated:hover,
-/* ✨ تأثيرات بطاقات المنتجات المتحركة (Pop-out Effect) */
 .product-card-animated {
   filter: grayscale(100%) sepia(5%);
   mix-blend-mode: multiply;
@@ -153,9 +135,11 @@
 .t-card-2 { height: 200px; width: 200px; top: 305px; left: 0; border-radius: 0 0 0 16px; }
 .t-card-3 { height: 280px; width: calc(100% - 207px); right: 0; bottom: 0; border-radius: 0 0 16px 0; }
 
+/* ✨ إضافة is-touched ليعمل على الهواتف */
 .t-card:hover,
 .t-card:focus-within,
-.t-card:active {
+.t-card:active,
+.t-card.is-touched {
   height: 100% !important;
   width: 100% !important;
   top: 0 !important;
@@ -196,7 +180,8 @@
 
 .t-card:hover .t-card-desc,
 .t-card:focus-within .t-card-desc,
-.t-card:active .t-card-desc {
+.t-card:active .t-card-desc,
+.t-card.is-touched .t-card-desc {
   opacity: 1;
   max-height: 200px;
 }
@@ -212,9 +197,9 @@
   overflow: hidden;
   transform: skew(5deg);
   max-width: 100%;
-  height: 60vh; /* متجاوب مع ارتفاع الشاشة */
+  height: 60vh;
   max-height: 500px;
-  min-height: 300px; /* لمنع التصغير المفرط على الهواتف */
+  min-height: 300px;
 }
 
 .t-accordion-card {
@@ -224,8 +209,8 @@
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  min-width: 60px; /* يمنع اختفاء البطاقات في الهواتف الصغيرة */
-  touch-action: manipulation; /* يمنع التكبير العرضي باللمس */
+  min-width: 60px;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   outline: none;
 }
@@ -240,18 +225,21 @@
   object-fit: cover;
   transition: all 1s ease-in-out;
   filter: grayscale(100%);
-  pointer-events: none; /* تسريع استجابة اللمس */
+  pointer-events: none;
 }
 
+/* ✨ إضافة is-touched ليعمل على الهواتف */
 .t-accordion-card:hover,
 .t-accordion-card:focus-within,
-.t-accordion-card:active {
+.t-accordion-card:active,
+.t-accordion-card.is-touched {
   flex-grow: 10;
 }
 
 .t-accordion-card:hover img,
 .t-accordion-card:focus-within img,
-.t-accordion-card:active img {
+.t-accordion-card:active img,
+.t-accordion-card.is-touched img {
   filter: grayscale(0);
 }
 
@@ -274,7 +262,8 @@
 
 .t-accordion-card:hover .t-accordion-head,
 .t-accordion-card:focus-within .t-accordion-head,
-.t-accordion-card:active .t-accordion-head {
+.t-accordion-card:active .t-accordion-head,
+.t-accordion-card.is-touched .t-accordion-head {
   text-align: center;
   top: calc(100% - 5em);
   color: white;

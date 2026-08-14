@@ -15,7 +15,7 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
   const [visibleCount, setVisibleCount] = useState(20);
-  
+  const [activeTrendingId, setActiveTrendingId] = useState<string | number | null>(null);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
   
   const { cart } = useCart();
@@ -106,39 +106,49 @@ function HomeContent() {
         </div>
 
         {/* Trending Now Section */}
-        {activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
-          <div className="mb-8 mt-4">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
-                <span className="text-xl"></span> Trending Now
-              </h2>
-              <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
-            </div>
-            
-            <div className="t-accordion-container">
-              {trendingProducts.map((product) => {
-                const safePrice = Number(product.price) || 0;
-                const img = product.image || product.image_url || '/placeholder.jpg';
-                const truncatedTitle = product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title;
-                
-                return (
-                  <div 
-                    key={product.id} 
-                    className="t-accordion-card"
-                    onClick={() => router.push(`/products/${product.id}`)}
-                    tabIndex={0}
-                  >
-                    <img src={img} alt={product.title} />
-                    <div className="t-accordion-head">
-                      {truncatedTitle}
-                      <span className="acc-price">${safePrice.toFixed(2)}</span>
-                    </div>
-                  </div>
-                );
-              })}
+{activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
+  <div className="mb-8 mt-4">
+    <div className="flex justify-between items-center mb-3">
+      <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
+        <span className="text-xl"></span> Trending Now
+      </h2>
+      <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
+    </div>
+    
+    <div className="t-accordion-container">
+      {trendingProducts.map((product) => {
+        const safePrice = Number(product.price) || 0;
+        const img = product.image || product.image_url || '/placeholder.jpg';
+        const truncatedTitle = product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title;
+        
+        return (
+          <div 
+            key={product.id} 
+            // ✨ إضافة كلاس is-touched عند اللمس
+            className={`t-accordion-card ${activeTrendingId === product.id ? 'is-touched' : ''}`}
+            // ✨ النقر الأول يفتح البطاقة، النقر الثاني ينتقل للصفحة
+            onClick={() => {
+              if (activeTrendingId === product.id) {
+                router.push(`/products/${product.id}`);
+              } else {
+                setActiveTrendingId(product.id);
+              }
+            }}
+            // إذا خرج الإصبع خارج البطاقة، تعود لحالتها الطبيعية
+            onMouseLeave={() => setActiveTrendingId(null)}
+            tabIndex={0}
+          >
+            <img src={img} alt={product.title} />
+            <div className="t-accordion-head">
+              {truncatedTitle}
+              <span className="acc-price">${safePrice.toFixed(2)}</span>
             </div>
           </div>
-        )}
+        );
+      })}
+    </div>
+  </div>
+)}
 
         {/* Products Grid */}
         <div className="mb-4">
