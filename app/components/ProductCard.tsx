@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { useCart } from '../context/CartContext';
 
 interface Product {
@@ -18,23 +17,22 @@ interface Product {
   discount?: string;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
+// ✨ استقبال حالة isTouched من الصفحة الرئيسية
+interface ProductCardProps {
+  product: Product;
+  isTouched: boolean;
+}
+
+export default function ProductCard({ product, isTouched }: ProductCardProps) {
   const router = useRouter();
   const { addToCart } = useCart();
 
-  // ✨ حالة تفعيل التأثير باللمس
-  const [isTouched, setIsTouched] = useState(false);
-
-  // ✨ النقر على البطاقة: أول نقرة تفعل التأثير، ثانية نقرة تفتح المنتج
+  // ✨ النقر على البطاقة يفتح المنتج مباشرة
   const handleCardClick = () => {
-    if (isTouched) {
-      router.push(`/products/${product.id}`);
-    } else {
-      setIsTouched(true);
-    }
+    router.push(`/products/${product.id}`);
   };
 
-  // ✨ زر الإضافة للسلة يعمل مباشرة ولا ينتظر التأثير
+  // ✨ زر الإضافة للسلة يعمل مباشرة
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -71,13 +69,14 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <div 
-      // ✨ إضافة is-active عند تفعيل اللمس أو المرور بالماوس
-      className={`product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-transform duration-300 active:scale-95 ${
+      // ✨ إضافة data-product-id لتتبع الإصبع + كلاس product-card-wrapper
+      data-product-id={String(product.id)}
+      className={`product-card-wrapper product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-transform duration-300 active:scale-95 ${
         isTouched ? 'is-active' : ''
       }`}
       onClick={handleCardClick}
-      onMouseEnter={() => setIsTouched(true)}
-      onMouseLeave={() => setIsTouched(false)}
+      onMouseEnter={() => {/* الماوس للكمبيوتر */}}
+      onMouseLeave={() => {/* الماوس للكمبيوتر */}}
     >
       <div>
         <div className="relative aspect-square bg-temu-offwhite overflow-hidden">

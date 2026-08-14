@@ -18,6 +18,9 @@ function HomeContent() {
   const [activeTrendingId, setActiveTrendingId] = useState<string | number | null>(null);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
   
+  // ✨ حالة تتبع الإصبع على البطاقات
+  const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
+  
   const { cart } = useCart();
 
   useEffect(() => {
@@ -42,11 +45,8 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    if (categoryQuery) {
-      setActiveCategory(categoryQuery);
-    } else {
-      setActiveCategory('All');
-    }
+    if (categoryQuery) setActiveCategory(categoryQuery);
+    else setActiveCategory('All');
   }, [categoryQuery]);
 
   useEffect(() => {
@@ -84,7 +84,7 @@ function HomeContent() {
       
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* ✨ Categories Pills - أضيف scrollbar-hide و touch-pan-x للسحب السلس */}
+        {/* Categories Pills */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
           {categoryStructure.map((cat) => {
             const isActive = activeCategory === cat.name;
@@ -106,49 +106,46 @@ function HomeContent() {
         </div>
 
         {/* Trending Now Section */}
-{activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
-  <div className="mb-8 mt-4">
-    <div className="flex justify-between items-center mb-3">
-      <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
-        <span className="text-xl"></span> Trending Now
-      </h2>
-      <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
-    </div>
-    
-    <div className="t-accordion-container">
-      {trendingProducts.map((product) => {
-        const safePrice = Number(product.price) || 0;
-        const img = product.image || product.image_url || '/placeholder.jpg';
-        const truncatedTitle = product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title;
-        
-        return (
-          <div 
-            key={product.id} 
-            // ✨ إضافة كلاس is-touched عند اللمس
-            className={`t-accordion-card ${activeTrendingId === product.id ? 'is-touched' : ''}`}
-            // ✨ النقر الأول يفتح البطاقة، النقر الثاني ينتقل للصفحة
-            onClick={() => {
-              if (activeTrendingId === product.id) {
-                router.push(`/products/${product.id}`);
-              } else {
-                setActiveTrendingId(product.id);
-              }
-            }}
-            // إذا خرج الإصبع خارج البطاقة، تعود لحالتها الطبيعية
-            onMouseLeave={() => setActiveTrendingId(null)}
-            tabIndex={0}
-          >
-            <img src={img} alt={product.title} />
-            <div className="t-accordion-head">
-              {truncatedTitle}
-              <span className="acc-price">${safePrice.toFixed(2)}</span>
+        {activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
+          <div className="mb-8 mt-4">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
+                <span className="text-xl"></span> Trending Now
+              </h2>
+              <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
+            </div>
+            
+            <div className="t-accordion-container">
+              {trendingProducts.map((product) => {
+                const safePrice = Number(product.price) || 0;
+                const img = product.image || product.image_url || '/placeholder.jpg';
+                const truncatedTitle = product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title;
+                
+                return (
+                  <div 
+                    key={product.id} 
+                    className={`t-accordion-card ${activeTrendingId === product.id ? 'is-touched' : ''}`}
+                    onClick={() => {
+                      if (activeTrendingId === product.id) {
+                        router.push(`/products/${product.id}`);
+                      } else {
+                        setActiveTrendingId(product.id);
+                      }
+                    }}
+                    onMouseLeave={() => setActiveTrendingId(null)}
+                    tabIndex={0}
+                  >
+                    <img src={img} alt={product.title} />
+                    <div className="t-accordion-head">
+                      {truncatedTitle}
+                      <span className="acc-price">${safePrice.toFixed(2)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+        )}
 
         {/* Products Grid */}
         <div className="mb-4">
@@ -158,9 +155,30 @@ function HomeContent() {
           {loading ? (
             <div className="flex justify-center py-10"><p className="text-temu-orange font-bold animate-pulse">Loading...</p></div>
           ) : displayProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            // ✨ تتبع حركة الإصبع على الشبكة
+            <div 
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              onTouchMove={(e) => {
+                const touch = e.touches[0];
+                if (touch) {
+                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                  const card = el?.closest('.product-card-wrapper');
+                  if (card) {
+                    const id = card.getAttribute('data-product-id');
+                    setTouchedProductId(id);
+                  } else {
+                    setTouchedProductId(null);
+                  }
+                }
+              }}
+              onTouchEnd={() => setTouchedProductId(null)}
+            >
               {displayProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  isTouched={touchedProductId === String(product.id)} 
+                />
               ))}
             </div>
           ) : (
@@ -186,7 +204,7 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* ✨ Floating Bottom Navigation - تم تعديل المقاسات للهواتف الصغيرة */}
+      {/* Floating Bottom Navigation */}
       <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full px-6 py-3 sm:px-8 sm:py-4 shadow-md flex items-center gap-6 sm:gap-10 z-40 border border-temu-gray-border-light">
          <button onClick={() => router.push('/profile')} className="text-temu-gray-light hover:text-temu-orange transition-colors cursor-pointer active:scale-90">
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>

@@ -56,7 +56,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* ✨ بانر ترويجي بألوان المتجر (كحلي وبنفسجي) */}
-        <div className="relative bg-gradient-to-br from-temu-black to-temu-orange rounded-3xl p-8 mb-12 overflow-hidden shadow-lg">
+        <div className="relative bg-linear-to-br from-temu-black to-temu-orange rounded-3xl p-8 mb-12 overflow-hidden shadow-lg">
           <div className="relative z-10">
             <p className="text-temu-error text-xs font-bold uppercase tracking-widest mb-1">New Collection</p>
             <h2 className="text-white text-3xl font-extrabold leading-tight mb-4">NEO FALL<br/>STAY FASHION</h2>

@@ -4,16 +4,19 @@ import { Providers } from './providers';
 import Script from 'next/script';
 import Footer from './components/Footer';
 
-export const metadata = {
+import type { Metadata, Viewport } from 'next';
+
+export const metadata: Metadata = {
   title: 'NEO Store - Smart Shopping',
   description: 'Discover the best trending products at NEO Store.',
-  // ✨ إضافة viewport لمنع الزوم العرضي على الهواتف (يحسن تجربة التطبيق)
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+// ✨ إخراج viewport ككائن مستقل
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

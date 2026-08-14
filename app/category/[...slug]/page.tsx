@@ -19,13 +19,15 @@ export default function CategoryPage() {
   const params = useParams();
   const router = useRouter();
   
-  // params.slug الآن مصفوفة تحتوي على جميع أجزاء المسار
   const slugArray = params.slug as string[];
-  const slugPath = slugArray.join('/'); // دمجها لتصبح مساراً واحداً (مثال: women/clothes)
-  const slug = slugArray[slugArray.length - 1]; // أخذ آخر قسم لعرضه كعنوان
+  const slugPath = slugArray.join('/'); 
+  const slug = slugArray[slugArray.length - 1]; 
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // ✨ إضافة حالة تتبع الإصبع للمنتجات في صفحة الفئات
+  const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
@@ -37,13 +39,8 @@ export default function CategoryPage() {
 
         const filtered = data.filter(product => {
           const pCat = (product.category || '').toLowerCase();
-
-          // 1. النظام الجديد (المسارات المفصولة بـ /)
           if (pCat === slugLower || pCat.startsWith(slugLower + '/')) return true;
-
-          // 2. النظام القديم (توافق القسم الواحد الأخير للنسخ الاحتياطي)
           if (pCat === slug.toLowerCase()) return true;
-
           return false;
         });
 
@@ -67,7 +64,6 @@ export default function CategoryPage() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
       <div className="max-w-7xl mx-auto">
-        {/* ✨ زر الرجوع بأيقونة وتأثير الضغط */}
         <button 
           onClick={() => router.push('/categories')} 
           className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
@@ -82,7 +78,6 @@ export default function CategoryPage() {
 
         {products.length === 0 ? (
           <div className="bg-white p-10 rounded-temu-sm shadow-sm text-center border border-temu-gray-border-light">
-            {/* ✨ إضافة أيقونة لتحسين المظهر البصري للقسم الفارغ */}
             <svg className="mx-auto mb-4 h-16 w-16 text-temu-gray-border" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -90,7 +85,6 @@ export default function CategoryPage() {
             </svg>
             <p className="text-temu-black font-semibold mb-2">No products found in this category yet.</p>
             <p className="text-temu-gray-light text-sm mb-6">We are adding new items daily. Check back soon!</p>
-            {/* ✨ زر Continue Shopping مع تأثير الضغط */}
             <Link 
               href="/" 
               className="inline-block bg-temu-orange text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
@@ -99,9 +93,30 @@ export default function CategoryPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          // ✨ إضافة onTouchMove و onTouchEnd لتتبع حركة الإصبع على شبكة الفئات
+          <div 
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            onTouchMove={(e) => {
+              const touch = e.touches[0];
+              if (touch) {
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                const card = el?.closest('.product-card-wrapper');
+                if (card) {
+                  const id = card.getAttribute('data-product-id');
+                  setTouchedProductId(id);
+                } else {
+                  setTouchedProductId(null);
+                }
+              }
+            }}
+            onTouchEnd={() => setTouchedProductId(null)}
+          >
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                isTouched={touchedProductId === String(product.id)} 
+              />
             ))}
           </div>
         )}
