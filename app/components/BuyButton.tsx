@@ -31,7 +31,7 @@ export default function BuyButton({ product }: BuyButtonProps) {
         // ✨ توحيد الألوان، الحواف، وإضافة تأثير اللمس
         className="w-full bg-temu-error text-white font-extrabold py-4 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition-all shadow-md flex justify-center items-center gap-2 cursor-pointer active:scale-95 touch-manipulation text-lg"
       >
-        Buy Now 🚀
+        Buy Now 
       </button>
 
       <PaymentModal 
