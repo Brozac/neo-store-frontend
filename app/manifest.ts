@@ -9,12 +9,18 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#F9F8FC',
     theme_color: '#8B78C6',
-    // ✨ Next.js سيقرأ الأيقونة من ملف icon.tsx تلقائياً
     icons: [
       {
-        src: '/icon',
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable', // ✨ تم التصحيح هنا
+      },
+      {
+        src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'maskable', // ✨ تم التصحيح هنا
       }
     ],
   };
