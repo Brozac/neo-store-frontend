@@ -15,10 +15,10 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
   const [visibleCount, setVisibleCount] = useState(20);
-  const [activeTrendingId, setActiveTrendingId] = useState<string | number | null>(null);
+  const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
   
-  // ✨ حالة تتبع الإصبع على البطاقات
+  // ✨ حالة تتبع الإصبع على شبكة المنتجات
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
   
   const { cart } = useCart();
@@ -115,7 +115,24 @@ function HomeContent() {
               <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
             </div>
             
-            <div className="t-accordion-container">
+            {/* ✨ إضافة onTouchMove لتتبع الإصبع في قسم Trending */}
+            <div 
+              className="t-accordion-container"
+              onTouchMove={(e) => {
+                const touch = e.touches[0];
+                if (touch) {
+                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                  const card = el?.closest('.t-accordion-card');
+                  if (card) {
+                    const id = card.getAttribute('data-product-id');
+                    setActiveTrendingId(id);
+                  } else {
+                    setActiveTrendingId(null);
+                  }
+                }
+              }}
+              onTouchEnd={() => setActiveTrendingId(null)}
+            >
               {trendingProducts.map((product) => {
                 const safePrice = Number(product.price) || 0;
                 const img = product.image || product.image_url || '/placeholder.jpg';
@@ -124,15 +141,9 @@ function HomeContent() {
                 return (
                   <div 
                     key={product.id} 
-                    className={`t-accordion-card ${activeTrendingId === product.id ? 'is-touched' : ''}`}
-                    onClick={() => {
-                      if (activeTrendingId === product.id) {
-                        router.push(`/products/${product.id}`);
-                      } else {
-                        setActiveTrendingId(product.id);
-                      }
-                    }}
-                    onMouseLeave={() => setActiveTrendingId(null)}
+                    data-product-id={String(product.id)}
+                    className={`t-accordion-card ${activeTrendingId === String(product.id) ? 'is-touched' : ''}`}
+                    onClick={() => router.push(`/products/${product.id}`)}
                     tabIndex={0}
                   >
                     <img src={img} alt={product.title} />
