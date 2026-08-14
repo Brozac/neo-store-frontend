@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import { useCart } from './context/CartContext';
 
-
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,8 +84,8 @@ function HomeContent() {
       
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* Categories Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+        {/* ✨ Categories Pills - أضيف scrollbar-hide و touch-pan-x للسحب السلس */}
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
           {categoryStructure.map((cat) => {
             const isActive = activeCategory === cat.name;
             return (
@@ -127,7 +126,7 @@ function HomeContent() {
                     key={product.id} 
                     className="t-accordion-card"
                     onClick={() => router.push(`/products/${product.id}`)}
-                    tabIndex={0} // ✨ ضروري لكي يتفاعل مع اللمس على الهاتف
+                    tabIndex={0}
                   >
                     <img src={img} alt={product.title} />
                     <div className="t-accordion-head">
@@ -177,9 +176,8 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* Floating Bottom Navigation */}
-      {/* ✨ تعديل responsive: padding و gap يتصغرو فالهواتف الصغيرة باش ما يخرجوش برة الشاشة + تأثير اللمس */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full px-8 py-4 shadow-md flex items-center gap-10 z-40 border border-temu-gray-border-light">
+      {/* ✨ Floating Bottom Navigation - تم تعديل المقاسات للهواتف الصغيرة */}
+      <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full px-6 py-3 sm:px-8 sm:py-4 shadow-md flex items-center gap-6 sm:gap-10 z-40 border border-temu-gray-border-light">
          <button onClick={() => router.push('/profile')} className="text-temu-gray-light hover:text-temu-orange transition-colors cursor-pointer active:scale-90">
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
          </button>
@@ -193,8 +191,6 @@ function HomeContent() {
     </main>
   );
 }
-
-
 
 export default function Home() {
   return (

@@ -67,7 +67,11 @@ export default function AuthPage() {
     return (
       <main className="min-h-screen bg-temu-offwhite py-10">
         <div className="max-w-3xl mx-auto px-4">
-          <button onClick={() => setMode('login')} className="mb-6 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer flex items-center gap-2">
+          {/* ✨ زر الرجوع مع تأثير الضغط */}
+          <button 
+            onClick={() => setMode('login')} 
+            className="mb-6 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer flex items-center gap-2 active:scale-95 w-fit"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             Back to Login
           </button>
@@ -86,20 +90,40 @@ export default function AuthPage() {
           <p className="text-temu-gray-text text-sm text-center mb-8">Enter your email to receive a reset link.</p>
 
           {error && <div className="bg-red-50 text-temu-error p-4 rounded-temu-sm mb-6 text-sm font-medium text-center">{error}</div>}
-          {infoMessage && <div className="bg-green-50 text-temu-green p-4 rounded-temu-sm mb-6 text-sm font-medium text-center">{infoMessage}</div>}
+          {/* ✨ توحيد لون رسالة النجاح */}
+          {infoMessage && <div className="bg-temu-green-light/10 text-temu-green p-4 rounded-temu-sm mb-6 text-sm font-medium text-center">{infoMessage}</div>}
 
           <form onSubmit={handleForgotPassword} className="space-y-5">
             <div>
               <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Email Address</label>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="user@example.com" className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition" />
+              <input 
+                type="email" 
+                name="email" 
+                value={formData.email} 
+                onChange={handleChange} 
+                required 
+                placeholder="user@example.com" 
+                className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+              />
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer">
+            {/* ✨ زر الإرسال مع تأثير الضغط */}
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
+            >
               {loading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Send Reset Link'}
             </button>
           </form>
 
           <div className="mt-8 text-center text-sm">
-            <button onClick={() => { setMode('login'); setInfoMessage(''); }} className="text-temu-orange font-bold hover:underline cursor-pointer">Back to Login</button>
+            {/* ✨ زر العودة مع تأثير الضغط */}
+            <button 
+              onClick={() => { setMode('login'); setInfoMessage(''); }} 
+              className="text-temu-orange font-bold hover:underline cursor-pointer active:scale-95 transition"
+            >
+              Back to Login
+            </button>
           </div>
         </div>
       </main>
@@ -118,26 +142,59 @@ export default function AuthPage() {
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Email Address</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="user@example.com" className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition" />
+            <input 
+              type="email" 
+              name="email" 
+              value={formData.email} 
+              onChange={handleChange} 
+              required 
+              placeholder="user@example.com" 
+              className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+            />
           </div>
           <div>
             <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Password</label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition" />
+            <input 
+              type="password" 
+              name="password" 
+              value={formData.password} 
+              onChange={handleChange} 
+              required 
+              placeholder="••••••••" 
+              className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+            />
           </div>
 
-          {/* ✨ زر نسيت كلمة المرور */}
           <div className="text-right -mt-3">
-            <button type="button" onClick={() => { setMode('forgot'); setError(''); }} className="text-xs text-temu-gray-text hover:text-temu-orange font-medium cursor-pointer">Forgot password?</button>
+            {/* ✨ زر نسيت كلمة المرور مع تأثير الضغط */}
+            <button 
+              type="button" 
+              onClick={() => { setMode('forgot'); setError(''); }} 
+              className="text-xs text-temu-gray-text hover:text-temu-orange font-medium cursor-pointer active:scale-95 transition"
+            >
+              Forgot password?
+            </button>
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer">
+          {/* ✨ زر تسجيل الدخول مع تأثير الضغط */}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
+          >
             {loading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-8 text-center text-sm">
           <span className="text-temu-gray-text">Don't have an account? </span>
-          <button onClick={() => setMode('register')} className="text-temu-orange font-bold hover:underline cursor-pointer">Sign up now</button>
+          {/* ✨ زر إنشاء حساب مع تأثير الضغط */}
+          <button 
+            onClick={() => setMode('register')} 
+            className="text-temu-orange font-bold hover:underline cursor-pointer active:scale-95 transition"
+          >
+            Sign up now
+          </button>
         </div>
       </div>
     </main>

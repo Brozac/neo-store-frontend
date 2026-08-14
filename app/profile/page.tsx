@@ -74,8 +74,6 @@ export default function ProfilePage() {
     formData.append('images', file);
 
     try {
-      // 1. رفع الصورة عبر المسار الخاص بالمستخدمين (ماشي /api/admin/upload
-      //    اللي محمي بـ requireAdmin ويرفض أي طلب من زبون عادي)
       const res = await fetch('https://neo-store-backend.onrender.com/api/upload', {
         method: 'POST',
         headers: {
@@ -88,7 +86,6 @@ export default function ProfilePage() {
       if (res.ok && data.urls && data.urls.length > 0) {
         const newImageUrl = data.urls[0];
         
-        // 2. تحديث قاعدة البيانات بالصورة الجديدة
         const updateRes = await fetch('https://neo-store-backend.onrender.com/api/user/profile', {
           method: 'PUT',
           headers: {
@@ -100,7 +97,7 @@ export default function ProfilePage() {
 
         const updatedUser = await updateRes.json();
         if (updateRes.ok) {
-          setUser(updatedUser); // تحديث الواجهة بالصورة الجديدة فوراً
+          setUser(updatedUser);
         }
       } else {
         console.error('Upload failed:', data);
@@ -154,9 +151,10 @@ export default function ProfilePage() {
         {/* بطاقة معلومات المستخدم */}
         <div className="bg-white p-8 rounded-temu-sm shadow-sm mb-6 border border-temu-gray-border-light flex flex-col items-center">
           
-          {/* ✨ الصورة الدائرية مع الإطار المتدرج وزر الإضافة (+) */}
+          {/* الصورة الدائرية مع الإطار المتدرج وزر الإضافة (+) */}
           <div className="relative p-1 rounded-full bg-linear-to-r from-temu-error to-temu-orange mb-4">
-            <div className="block p-1 transition transform bg-white rounded-full hover:-rotate-6">
+            {/* ✨ إضافة active:scale-95 للصورة */}
+            <div className="block p-1 transition transform bg-white rounded-full hover:-rotate-6 active:scale-95">
               {user?.profile_picture ? (
                 <img src={user.profile_picture} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
               ) : (
@@ -165,8 +163,11 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            <label className="absolute bottom-0 right-1 flex items-center justify-center w-8 h-8 font-mono text-xl font-semibold text-white bg-temu-orange border-4 border-white rounded-full hover:bg-temu-orange-bright cursor-pointer transition">
-              {uploadingImage ? '...' : '+'}
+            {/* ✨ زر الرفع مع تأثير الضغط */}
+            <label className="absolute bottom-0 right-1 flex items-center justify-center w-8 h-8 font-mono text-xl font-semibold text-white bg-temu-orange border-4 border-white rounded-full hover:bg-temu-orange-bright cursor-pointer transition active:scale-90">
+              {uploadingImage ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : '+'}
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
             </label>
           </div>
@@ -174,11 +175,11 @@ export default function ProfilePage() {
           <h2 className="text-xl font-bold text-temu-black">{user ? user.name : 'Guest User'}</h2>
           <p className="text-temu-gray-text text-sm mb-4">{user ? user.email : 'Not logged in'}</p>
           
-          {/* ✨ زر تعديل المعلومات الشخصية */}
+          {/* زر تعديل المعلومات الشخصية */}
           {user && (
             <button 
               onClick={() => { setEditName(user.name); setIsEditOpen(true); }} 
-              className="flex items-center gap-2 text-temu-orange font-bold text-sm hover:underline cursor-pointer mt-2"
+              className="flex items-center gap-2 text-temu-orange font-bold text-sm hover:underline cursor-pointer mt-2 active:scale-95 transition w-fit"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -192,10 +193,10 @@ export default function ProfilePage() {
         <div className="bg-white rounded-temu-sm shadow-sm p-2 border border-temu-gray-border-light">
           {user ? (
             <>
-              {/* ✨ زر المفضلة (Favorites) */}
+              {/* زر المفضلة (Favorites) */}
               <button 
                 onClick={() => router.push('/favorites')}
-                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite rounded-temu-sm transition cursor-pointer"
+                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite active:bg-temu-offwhite rounded-temu-sm transition cursor-pointer active:scale-95"
               >
                 <span className="font-semibold text-temu-black flex items-center gap-2">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-error">
@@ -210,7 +211,7 @@ export default function ProfilePage() {
               {/* زر الطلبات (Orders) */}
               <button 
                 onClick={() => router.push('/orders')}
-                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite rounded-temu-sm transition cursor-pointer"
+                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite active:bg-temu-offwhite rounded-temu-sm transition cursor-pointer active:scale-95"
               >
                 <span className="font-semibold text-temu-black">My Orders</span>
                 <span className="text-temu-gray-light">➔</span>
@@ -220,7 +221,7 @@ export default function ProfilePage() {
               {/* زر الخروج (Logout) */}
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center justify-between p-4 hover:bg-red-50 rounded-temu-sm transition text-temu-error cursor-pointer"
+                className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 rounded-temu-sm transition text-temu-error cursor-pointer active:scale-95"
               >
                 <span className="font-semibold">Log Out</span>
                 <span>➔</span>
@@ -229,7 +230,7 @@ export default function ProfilePage() {
           ) : (
             <button 
               onClick={() => router.push('/auth')}
-              className="w-full bg-temu-orange text-white font-bold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer"
+              className="w-full bg-temu-orange text-white font-bold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer active:scale-95 shadow-md"
             >
               Sign In / Register
             </button>
@@ -237,13 +238,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ✨ نافذة تعديل المعلومات الشخصية (الاسم فقط) */}
+      {/* نافذة تعديل المعلومات الشخصية (الاسم فقط) */}
       {isEditOpen && user && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setIsEditOpen(false)}>
           <div className="bg-white rounded-temu-sm max-w-md w-full p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-temu-black">Edit Personal Info</h2>
-              <button onClick={() => setIsEditOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer">
+              <button onClick={() => setIsEditOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer active:scale-90 transition">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -273,7 +274,7 @@ export default function ProfilePage() {
               <button 
                 onClick={handleSaveProfile} 
                 disabled={updating} 
-                className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-3 mt-2 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer"
+                className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-3 mt-2 hover:bg-temu-orange-bright transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md"
               >
                 {updating ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Changes'}
               </button>

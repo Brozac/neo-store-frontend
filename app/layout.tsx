@@ -7,6 +7,13 @@ import Footer from './components/Footer';
 export const metadata = {
   title: 'NEO Store - Smart Shopping',
   description: 'Discover the best trending products at NEO Store.',
+  // ✨ إضافة viewport لمنع الزوم العرضي على الهواتف (يحسن تجربة التطبيق)
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
@@ -16,7 +23,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-[#F4F3F8]" suppressHydrationWarning>
+      {/* ✨ استخدام bg-temu-offwhite بدل الكود اللوني الثابت */}
+      <body className="bg-temu-offwhite" suppressHydrationWarning>
         <Providers>{children}</Providers>
 
         {/* Meta Pixel (Facebook) */}

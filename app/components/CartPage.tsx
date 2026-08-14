@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import PaymentModal from './PaymentModal';
 
-// ✅ تعريف واجهة لعنصر السلة (يفضل وضعها في ملف منفصل مثل types/cart.ts)
 export interface CartItem {
   id: string | number;
   name: string;
@@ -12,7 +11,6 @@ export interface CartItem {
   image?: string;
 }
 
-// ✅ تعريف واجهة لخصائص المكوّن
 interface CartPageProps {
   cartItems: CartItem[];
 }
@@ -20,27 +18,26 @@ interface CartPageProps {
 export default function CartPage({ cartItems }: CartPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✅ الآن TypeScript يعرف أن acc من نوع number و item من نوع CartItem تلقائياً
   const totalAmount = cartItems.reduce(
     (acc: number, item: CartItem) => acc + item.price * item.quantity,
     0
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-6">
-        <h1 className="text-3xl font-bold text-[#1D1E3C] mb-6">سلة التسوق</h1>
+    <div className="min-h-screen bg-temu-offwhite p-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-temu-sm shadow-sm p-6 border border-temu-gray-border-light">
+        <h1 className="text-3xl font-bold text-temu-black mb-6">سلة التسوق</h1>
 
         {/* هنا تعرض عناصر السلة (Cart Items) */}
         {/* ... */}
 
-        <div className="mt-8 border-t pt-6 flex justify-between items-center">
-          <span className="text-xl font-bold text-[#1D1E3C]">
+        <div className="mt-8 border-t border-temu-gray-border-light pt-6 flex justify-between items-center">
+          <span className="text-xl font-bold text-temu-black">
             المجموع: ${totalAmount.toFixed(2)}
           </span>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#FF6B9D] text-white px-10 py-4 rounded-xl font-bold text-lg hover:bg-[#8B78C6] transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="bg-temu-error text-white px-10 py-4 rounded-temu-sm font-bold text-lg hover:bg-temu-orange-bright transition-all shadow-md transform hover:-translate-y-0.5 active:scale-95 touch-manipulation cursor-pointer"
           >
             إتمام الشراء
           </button>

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react'; // ✨ تمت إضافة useState
 import { useCart } from '../context/CartContext';
 
 interface Product {
@@ -20,9 +21,13 @@ interface Product {
 export default function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const { addToCart } = useCart();
+  
+  // ✨ حالة لتفعيل التأثير عند اللمس على الهاتف
+  const [isTouched, setIsTouched] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault(); // لمنع الانتقال لصفحة المنتج عند الضغط على الزر
     addToCart({
       id: product.id,
       name: product.title,
@@ -56,8 +61,17 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <div 
-      className="product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-transform duration-300 active:scale-95"
+      // ✨ إضافة is-active عند تفعيل اللمس أو الماوس
+      className={`product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-transform duration-300 active:scale-95 ${
+        isTouched ? 'is-active' : ''
+      }`}
       onClick={() => router.push(`/products/${product.id}`)}
+      // ✨ أحداث الماوس
+      onMouseEnter={() => setIsTouched(true)}
+      onMouseLeave={() => setIsTouched(false)}
+      // ✨ أحداث اللمس للهواتف
+      onTouchStart={() => setIsTouched(true)}
+      onTouchEnd={() => setTimeout(() => setIsTouched(false), 300)} // يبقى التأثير ظاهراً 300ms بعد رفع الإصبع
     >
       <div>
         <div className="relative aspect-square bg-temu-offwhite overflow-hidden">

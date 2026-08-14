@@ -75,28 +75,20 @@ export default function ProductDetailPage() {
     setFavoriteIds(favs);
   }, [id]);
   
-  // ✨ حالة دليل الشراء الحي (Live Social Proof)
   const [purchaseCount, setPurchaseCount] = useState(0);
 
   useEffect(() => {
     if (!product) return;
-
-    // تعيين رقم مبدئي عشوائي عند فتح الصفحة
     setPurchaseCount(getSeedNumber(product.id, 50, 10));
-
-    // تحديث الرقم كل 5 ثوانٍ (يزيد أو ينقص بشكل عشوائي)
     const interval = setInterval(() => {
       setPurchaseCount((prev) => {
-        const change = Math.floor(Math.random() * 7) - 2; // زيادة حتى 4 أو نقصان حتى 2
+        const change = Math.floor(Math.random() * 7) - 2;
         let newCount = prev + change;
-        // الحفاظ على الرقم ضمن نطاق معقول (بين 5 و 150)
         if (newCount < 5) newCount = 5;
         if (newCount > 150) newCount = 150;
         return newCount;
       });
-    }, 5000); // 5000 مللي ثانية = 5 ثوانٍ
-
-    // تنظيف الـ interval عند مغادرة الصفحة (مهم جداً لتفادي تسرب الذاكرة)
+    }, 5000);
     return () => clearInterval(interval);
   }, [product]);
 
@@ -127,28 +119,36 @@ export default function ProductDetailPage() {
   };
 
   useEffect(() => {
-    fetch(`https://neo-store-backend.onrender.com/api/products`)
-      .then((res) => res.json())
-      .then((data: Product[]) => {
-        setAllProducts(data);
-        const found = data.find((p) => String(p.id) === String(id));
-        if (found) {
-          setProduct(found);
-          setSelectedImage(found.image || found.image_url || '');
-          if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
-          if (found.sizes && found.sizes.length > 0) setSelectedSize(found.sizes[0]);
+    setLoading(true);
+    // 1. جلب تفاصيل المنتج بالكامل من المسار الجديد
+    fetch(`https://neo-store-backend.onrender.com/api/products/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Product not found');
+        return res.json();
+      })
+      .then((found: Product) => {
+        setProduct(found);
+        setSelectedImage(found.image || found.image_url || '');
+        if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
+        if (found.sizes && found.sizes.length > 0) setSelectedSize(found.sizes[0]);
 
-          fetch(`https://neo-store-backend.onrender.com/api/reviews/${found.id}`)
-            .then((res) => res.json())
-            .then((revData) => setReviews(revData))
-            .catch(() => {});
-        }
-        setLoading(false);
+        // 2. جلب التقييمات
+        fetch(`https://neo-store-backend.onrender.com/api/reviews/${found.id}`)
+          .then((res) => res.json())
+          .then((revData) => setReviews(revData))
+          .catch(() => {});
       })
       .catch((err) => {
         console.error('Error fetching product:', err);
-        setLoading(false);
-      });
+        setProduct(null);
+      })
+      .finally(() => setLoading(false));
+
+    // 3. جلب كل المنتجات لقسم "You May Also Like" (يتم بشكل منفصل)
+    fetch(`https://neo-store-backend.onrender.com/api/products`)
+      .then((res) => res.json())
+      .then((data: Product[]) => setAllProducts(data))
+      .catch((err) => console.error('Error fetching related products:', err));
   }, [id]);
 
   const getSeedNumber = (str: string | number, max: number, min: number) => {
@@ -221,7 +221,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center p-6">
         <h1 className="text-2xl font-bold text-temu-black mb-4">Product not found</h1>
-        <button onClick={() => router.push('/')} className="bg-temu-orange text-white px-6 py-3 rounded-temu-sm font-bold cursor-pointer">
+        <button onClick={() => router.push('/')} className="bg-temu-orange text-white px-6 py-3 rounded-temu-sm font-bold cursor-pointer active:scale-95">
           Back to Home
         </button>
       </div>
@@ -282,7 +282,7 @@ export default function ProductDetailPage() {
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
         
-        {/* ✨ مسار التنقل (Breadcrumbs) */}
+        {/* Breadcrumbs */}
         <div className="flex flex-col gap-2 mb-6">
           <button
             onClick={() => router.back()}
@@ -309,7 +309,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
           {/* Gallery */}
           <div className="flex flex-col gap-4 h-full">
-            {/* الصورة الكبيرة / الفيديو */}
+            {/* Main Image / Video */}
             <div className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group">
               {showVideo && product.video_url ? (
                 <video 
@@ -372,52 +372,48 @@ export default function ProductDetailPage() {
                 </button>
               )}
             </div>
+{/* ✨ الصور المصغرة وزر الفيديو - نعرض كل الصور بدون حد أقصى */}
+<div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x sm:overflow-visible">
+  
+  {product.video_url && (
+    <div
+      onClick={() => setShowVideo(true)}
+      className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black active:scale-95 ${
+        showVideo ? 'border-temu-orange' : 'border-transparent opacity-80 hover:opacity-100'
+      }`}
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white" className="opacity-80">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+    </div>
+  )}
 
-            {/* الصور المصغرة وزر الفيديو */}
-            <div className="flex gap-2 w-full overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden sm:overflow-visible">
-              
-              {product.video_url && (
-                <div
-                  onClick={() => setShowVideo(true)}
-                  className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black active:scale-95 ${
-                    showVideo ? 'border-temu-orange' : 'border-transparent opacity-80 hover:opacity-100'
-                  }`}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white" className="opacity-80">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                </div>
-              )}
-
-              {galleryImages.slice(0, product.video_url ? 4 : 5).map((img, idx) => {
-                const imgSrc = img || defaultImage;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      setSelectedImage(imgSrc);
-                      setShowVideo(false);
-                    }}
-                    className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white active:scale-95 ${
-                      !showVideo && selectedImage === imgSrc ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <Image 
-                      src={imgSrc} 
-                      alt="Thumbnail" 
-                      fill 
-                      sizes="100px" 
-                      className="object-contain p-1" 
-                      unoptimized={imgSrc.includes('localhost') || imgSrc.includes('127.0.0.1')} 
-                    />
-                  </div>
-                );
-              })}
-
-              {Array.from({ length: Math.max(0, 5 - (product.video_url ? 1 : 0) - galleryImages.slice(0, product.video_url ? 4 : 5).length) }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="hidden sm:block relative aspect-square sm:flex-1 rounded-temu-sm border-2 border-dashed border-temu-gray-border-light bg-temu-offwhite/50"></div>
-              ))}
-            </div>
+  {/* ✨ تم إزالة .slice() لعرض جميع الصور */}
+  {galleryImages.map((img, idx) => {
+    const imgSrc = img || defaultImage;
+    return (
+      <div
+        key={idx}
+        onClick={() => {
+          setSelectedImage(imgSrc);
+          setShowVideo(false);
+        }}
+        className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white active:scale-95 ${
+          !showVideo && selectedImage === imgSrc ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'
+        }`}
+      >
+        <Image 
+          src={imgSrc} 
+          alt="Thumbnail" 
+          fill 
+          sizes="100px" 
+          className="object-contain p-1" 
+          unoptimized={imgSrc.includes('localhost') || imgSrc.includes('127.0.0.1')} 
+        />
+      </div>
+    );
+  })}
+</div>
           </div>
 
           {/* Purchase info */}
@@ -452,7 +448,7 @@ export default function ProductDetailPage() {
                   <label className="block text-sm font-bold text-temu-black mb-3">
                     Color: <span className="font-normal text-temu-gray-text">{selectedColor}</span>
                   </label>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     {colorsList.map((col, idx) => (
                       <button
                         key={idx}
@@ -524,7 +520,7 @@ export default function ProductDetailPage() {
 
               <CountdownTimer />
 
-              {/* ✨ اختيار الكمية (Quantity) */}
+              {/* Quantity */}
               <div className="flex items-center gap-4 mb-4 mt-4">
                 <span className="text-sm font-bold text-temu-black">Quantity:</span>
                 <div className="flex items-center border border-temu-gray-border rounded-temu-sm overflow-hidden">
@@ -571,7 +567,7 @@ export default function ProductDetailPage() {
                 <BuyButton product={productForBuyNow} />
               </div>
 
-              {/* ✨ دليل الشراء (Social Proof) - حي ويتغير */}
+              {/* Social Proof */}
               <div className="flex items-center gap-3 mb-6 bg-temu-offwhite p-3 rounded-temu-sm border border-temu-gray-border-light">
                 <div className="flex -space-x-3">
                   <img src="https://i.pravatar.cc/150?img=12" className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
@@ -586,7 +582,7 @@ export default function ProductDetailPage() {
                 </p>
               </div>
 
-              {/* شارات الثقة وصورة الدفع الآمن */}
+              {/* Trust Badges */}
               <div className="pt-6 mt-2 border-t border-temu-gray-border-light">
                 <div className="grid grid-cols-3 gap-2 text-center mb-6">
                   <div className="flex flex-col items-center gap-1 text-[11px] text-temu-gray-text font-medium">
@@ -635,9 +631,9 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - أضيف scrollbar-hide و touch-pan-x */}
         <div className="border-t border-temu-gray-border-light pt-10">
-          <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-hide touch-pan-x">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -792,7 +788,7 @@ export default function ProductDetailPage() {
           <div className="border-t border-temu-gray-border-light pt-10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-temu-black">You May Also Like</h2>
-              <Link href="/" className="text-sm font-semibold text-temu-gray-text hover:text-temu-orange transition flex items-center gap-1">
+              <Link href="/" className="text-sm font-semibold text-temu-gray-text hover:text-temu-orange transition flex items-center gap-1 active:scale-95">
                 View All
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6"></polyline>
@@ -807,7 +803,7 @@ export default function ProductDetailPage() {
                 
                 return (
                   <TiltCard key={p.id}>
-                    <Link href={`/products/${p.id}`} className="group cursor-pointer flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden">
+                    <Link href={`/products/${p.id}`} className="group cursor-pointer flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition-transform duration-150">
                       <div className="relative aspect-4/5 overflow-hidden bg-temu-offwhite mb-3">
                         <Image 
                           src={relImg} 

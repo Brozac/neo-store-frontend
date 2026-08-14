@@ -50,10 +50,14 @@ export default function TiltCard({ children }: { children: ReactNode }) {
     setGlow('radial-gradient(circle 400px at 50% -20%, rgba(255,255,255,0.3), rgba(0,0,0,0))');
   };
 
-  // ✨ إضافة دعم اللمس للهواتف المحمولة
-  const handleTouchStart = () => {
+  // دعم اللمس للهواتف المحمولة
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (cardRef.current) {
       setBounds(cardRef.current.getBoundingClientRect());
+      // تطبيق التأثير فور لمس البطاقة بناءً على موقع الإصبع
+      if (e.touches[0]) {
+        handleTouchMove(e);
+      }
     }
   };
 
@@ -100,9 +104,9 @@ export default function TiltCard({ children }: { children: ReactNode }) {
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart} // ✨ تفعيل اللمس
-      onTouchMove={handleTouchMove}   // ✨ تفعيل اللمس
-      onTouchEnd={handleTouchEnd}     // ✨ تفعيل اللمس
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{
         transform: transform,
         transition: 'transform 150ms ease-out, box-shadow 150ms ease-out',
@@ -110,6 +114,8 @@ export default function TiltCard({ children }: { children: ReactNode }) {
         boxShadow: bounds ? '0 10px 30px 10px rgba(139, 120, 198, 0.4)' : '0 1px 5px rgba(0,0,0,0.1)',
         position: 'relative',
         willChange: 'transform',
+        // ✨ السطر السحري: يسمح بتمرير الصفحة للأسفل/الأعلى دون أن تعيق البطاقة ذلك
+        touchAction: 'pan-x pan-y',
       }}
       className="rounded-temu-sm overflow-hidden"
     >

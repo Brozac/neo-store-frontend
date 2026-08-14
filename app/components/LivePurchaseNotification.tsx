@@ -32,23 +32,23 @@ export default function LivePurchaseNotification({ productName }: { productName:
 
   return (
     <div 
-      className={`fixed bottom-5 left-5 bg-white p-3 rounded-2xl shadow-2xl border border-gray-100 flex items-center gap-3 z-40 max-w-75 transition-all duration-500 ${
+      // ✨ رفع الإشعار لـ bottom-20 على الهواتف لكي لا يتداخل مع زر الواتساب
+      className={`fixed bottom-20 sm:bottom-5 left-5 bg-white p-3 rounded-temu-sm shadow-2xl border border-temu-gray-border-light flex items-center gap-3 z-40 max-w-75 transition-all duration-500 touch-manipulation ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
       }`}
     >
-      <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-xl shrink-0">
+      <div className="w-10 h-10 bg-temu-green-light/10 rounded-full flex items-center justify-center text-xl shrink-0">
         ✅
       </div>
-      {/* ✨ أضفنا min-w-0 هنا لكي تسمح للنص بالتقلص */}
+      
       <div className="min-w-0">
-        <p className="text-xs font-bold text-[#1D1E3C] truncate">
+        <p className="text-xs font-bold text-temu-black truncate">
           {info.name} from {info.city}
         </p>
-        {/* ✨ أضفنا break-words و line-clamp-2 لجعل الاسم الطويل ينتقل لسطر جديد */}
-        <p className="text-[10px] text-gray-500 wrap-break-word line-clamp-2">
-          just bought <span className="font-bold text-[#8B78C6]">{productName}</span>
+        <p className="text-[10px] text-temu-gray-text wrap-break-word line-clamp-2">
+          just bought <span className="font-bold text-temu-orange">{productName}</span>
         </p>
-        <p className="text-[10px] text-gray-400 mt-1">{info.time} minutes ago • Verified ✓</p>
+        <p className="text-[10px] text-temu-gray-light mt-1">{info.time} minutes ago • Verified ✓</p>
       </div>
     </div>
   );

@@ -79,7 +79,11 @@ export default function MultiStepRegister() {
             <div className="text-temu-gray-text mb-8 text-center">
               Thank you. We have sent you an email to <span className="font-bold text-temu-black">{formData.email}</span>. Please click the link to activate your account.
             </div>
-            <button onClick={() => { setStep(1); setIsComplete(false); setFormData({ name: '', email: '', password: '', gender: 'Male', profession: '' }); }} className="w-40 block mx-auto focus:outline-none py-2 px-5 rounded-temu-sm shadow-sm text-center text-temu-black bg-white hover:bg-temu-offwhite font-bold border border-temu-gray-border-light cursor-pointer">
+            {/* ✨ زر العودة مع تأثير الضغط */}
+            <button 
+              onClick={() => { setStep(1); setIsComplete(false); setFormData({ name: '', email: '', password: '', gender: 'Male', profession: '' }); }} 
+              className="w-40 block mx-auto focus:outline-none py-2 px-5 rounded-temu-sm shadow-sm text-center text-temu-black bg-white hover:bg-temu-offwhite font-bold border border-temu-gray-border-light cursor-pointer active:scale-95 transition touch-manipulation"
+            >
               Back to home
             </button>
           </div>
@@ -114,7 +118,11 @@ export default function MultiStepRegister() {
                   <div className="mx-auto w-32 h-32 border rounded-full relative bg-temu-offwhite mb-4 shadow-inset overflow-hidden">
                     <img id="image" className="object-cover w-full h-32 rounded-full" src={image} alt="Profile" />
                   </div>
-                  <label htmlFor="fileInput" className="cursor-pointer inline-flex justify-between items-center focus:outline-none border border-temu-gray-border-light py-2 px-4 rounded-temu-sm shadow-sm text-left text-temu-black bg-white hover:bg-temu-offwhite font-bold">
+                  {/* ✨ زر رفع الصورة مع تأثير الضغط */}
+                  <label 
+                    htmlFor="fileInput" 
+                    className="cursor-pointer inline-flex justify-between items-center focus:outline-none border border-temu-gray-border-light py-2 px-4 rounded-temu-sm shadow-sm text-left text-temu-black bg-white hover:bg-temu-offwhite font-bold active:scale-95 transition touch-manipulation"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" className="inline-flex shrink-0 w-6 h-6 -mt-1 mr-1 text-temu-orange" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="0" y="0" width="24" height="24" stroke="none"></rect><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><circle cx="12" cy="13" r="3" /></svg>
                     Browse Photo
                   </label>
@@ -122,11 +130,11 @@ export default function MultiStepRegister() {
                 </div>
                 <div className="mb-5">
                   <label className="font-bold mb-1 text-temu-black block">Firstname</label>
-                  <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium" placeholder="Enter your firstname..." />
+                  <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium touch-manipulation" placeholder="Enter your firstname..." />
                 </div>
                 <div className="mb-5">
                   <label className="font-bold mb-1 text-temu-black block">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium" placeholder="Enter your email address..." />
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium touch-manipulation" placeholder="Enter your email address..." />
                 </div>
               </div>
             )}
@@ -136,8 +144,8 @@ export default function MultiStepRegister() {
                 <label className="font-bold mb-1 text-temu-black block">Set up password</label>
                 <div className="text-temu-gray-text mt-2 mb-4">Please create a secure password including the following criteria below.</div>
                 <div className="relative">
-                  <input type={togglePassword ? 'text' : 'password'} value={formData.password} onChange={(e) => checkPasswordStrength(e.target.value)} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium" placeholder="Your strong password..." />
-                  <div className="absolute right-0 bottom-0 top-0 px-3 py-3 cursor-pointer" onClick={() => setTogglePassword(!togglePassword)}>
+                  <input type={togglePassword ? 'text' : 'password'} value={formData.password} onChange={(e) => checkPasswordStrength(e.target.value)} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium touch-manipulation" placeholder="Your strong password..." />
+                  <div className="absolute right-0 bottom-0 top-0 px-3 py-3 cursor-pointer active:scale-90" onClick={() => setTogglePassword(!togglePassword)}>
                     {togglePassword ? '🙈' : '👁️'}
                   </div>
                 </div>
@@ -157,11 +165,11 @@ export default function MultiStepRegister() {
                 <div className="mb-5">
                   <label className="font-bold mb-1 text-temu-black block">Gender</label>
                   <div className="flex">
-                    <label className={`flex justify-start items-center text-truncate rounded-temu-sm pl-4 pr-6 py-3 shadow-sm mr-4 cursor-pointer ${formData.gender === 'Male' ? 'border-2 border-temu-orange bg-temu-offwhite' : 'bg-white border border-temu-gray-border-light'}`}>
+                    <label className={`flex justify-start items-center text-truncate rounded-temu-sm pl-4 pr-6 py-3 shadow-sm mr-4 cursor-pointer active:scale-95 transition ${formData.gender === 'Male' ? 'border-2 border-temu-orange bg-temu-offwhite' : 'bg-white border border-temu-gray-border-light'}`}>
                       <input type="radio" name="gender" value="Male" checked={formData.gender === 'Male'} onChange={handleChange} className="text-temu-orange focus:outline-none mr-3" />
                       <div className="select-none text-temu-black font-bold">Male</div>
                     </label>
-                    <label className={`flex justify-start items-center text-truncate rounded-temu-sm pl-4 pr-6 py-3 shadow-sm cursor-pointer ${formData.gender === 'Female' ? 'border-2 border-temu-error bg-temu-yellow-soft' : 'bg-white border border-temu-gray-border-light'}`}>
+                    <label className={`flex justify-start items-center text-truncate rounded-temu-sm pl-4 pr-6 py-3 shadow-sm cursor-pointer active:scale-95 transition ${formData.gender === 'Female' ? 'border-2 border-temu-error bg-temu-yellow-soft' : 'bg-white border border-temu-gray-border-light'}`}>
                       <input type="radio" name="gender" value="Female" checked={formData.gender === 'Female'} onChange={handleChange} className="text-temu-error focus:outline-none mr-3" />
                       <div className="select-none text-temu-black font-bold">Female</div>
                     </label>
@@ -169,7 +177,7 @@ export default function MultiStepRegister() {
                 </div>
                 <div className="mb-5">
                   <label className="font-bold mb-1 text-temu-black block">Profession</label>
-                  <input type="text" name="profession" value={formData.profession} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium" placeholder="eg. Web Developer" />
+                  <input type="text" name="profession" value={formData.profession} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange text-temu-black font-medium touch-manipulation" placeholder="eg. Web Developer" />
                 </div>
               </div>
             )}
@@ -178,19 +186,23 @@ export default function MultiStepRegister() {
       )}
 
       {!isComplete && (
-        <div className="fixed bottom-0 left-0 right-0 py-5 bg-white shadow-md border-t border-temu-gray-border-light">
+        <div className="fixed bottom-0 left-0 right-0 py-5 bg-white shadow-md border-t border-temu-gray-border-light z-40">
           <div className="max-w-3xl mx-auto px-4">
             <div className="flex justify-between">
               <div className="w-1/2">
                 {step > 1 && (
-                  <button onClick={() => setStep((prev) => prev - 1)} className="w-32 focus:outline-none py-2 px-5 rounded-temu-sm shadow-sm text-center text-temu-black bg-white hover:bg-temu-offwhite font-bold border border-temu-gray-border-light cursor-pointer">Previous</button>
+                  <button onClick={() => setStep((prev) => prev - 1)} className="w-32 focus:outline-none py-3 px-5 rounded-temu-sm shadow-sm text-center text-temu-black bg-white hover:bg-temu-offwhite font-bold border border-temu-gray-border-light cursor-pointer active:scale-95 transition touch-manipulation">Previous</button>
                 )}
               </div>
               <div className="w-1/2 text-right">
                 {step < 3 ? (
-                  <button onClick={() => setStep((prev) => prev + 1)} className="w-32 focus:outline-none border border-transparent py-2 px-5 rounded-temu-sm shadow-sm text-center text-white bg-temu-orange hover:bg-temu-orange-bright font-bold cursor-pointer">Next</button>
+                  <button onClick={() => setStep((prev) => prev + 1)} className="w-32 focus:outline-none border border-transparent py-3 px-5 rounded-temu-sm shadow-sm text-center text-white bg-temu-orange hover:bg-temu-orange-bright font-bold cursor-pointer active:scale-95 transition touch-manipulation">Next</button>
                 ) : (
-                  <button onClick={handleComplete} disabled={loading} className="w-32 focus:outline-none border border-transparent py-2 px-5 rounded-temu-sm shadow-sm text-center text-white bg-temu-orange hover:bg-temu-orange-bright font-bold cursor-pointer disabled:opacity-50">{loading ? 'Loading...' : 'Complete'}</button>
+                  <button onClick={handleComplete} disabled={loading} className="w-32 focus:outline-none border border-transparent py-3 px-5 rounded-temu-sm shadow-sm text-center text-white bg-temu-orange hover:bg-temu-orange-bright font-bold cursor-pointer disabled:opacity-50 active:scale-95 transition touch-manipulation flex justify-center items-center gap-2">
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : 'Complete'}
+                  </button>
                 )}
               </div>
             </div>

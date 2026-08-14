@@ -38,9 +38,6 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        // ✨ نستعملو مسار /api/orders/my-orders (مربوط بالحساب عبر user_id)
-        // بدل /api/orders/track/:email اللي كان يخيب إذا الزبون دخل إيميل
-        // مختلف فـ Stripe Checkout عن إيميل حسابو، أو إذا الطلب مازال pending.
         const ordersRes = await fetch('https://neo-store-backend.onrender.com/api/orders/my-orders', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -72,18 +69,18 @@ export default function OrdersPage() {
     switch (status.toLowerCase()) {
       case 'fulfilled':
       case 'paid':
-        return 'bg-temu-green-light text-temu-green'; 
+        return 'bg-temu-green-light/20 text-temu-green'; 
       case 'pending':
         return 'bg-temu-yellow-soft text-temu-gold';
       case 'manual':
       case 'cancelled':
+      case 'expired':
         return 'bg-red-50 text-temu-error';
       default:
         return 'bg-gray-100 text-gray-600';
     }
   };
 
-  // دالة جلب تفاصيل الطلب
   const handleViewDetails = async (order: Order) => {
     setModalOrder(order);
     setIsModalOpen(true);
@@ -102,7 +99,6 @@ export default function OrdersPage() {
         setOrderItems(data);
       }
     } catch (err) {
-      // ✨ بدلاً من إظهار خطأ، سنضع مصفوفة فيها رسالة خطأ لنعرضها في الـ Modal
       setOrderItems([{ 
         title: 'Could not load items. Please make sure the backend is running and restarted.', 
         image_url: '', 
@@ -125,9 +121,10 @@ export default function OrdersPage() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
       <div className="max-w-3xl mx-auto">
+        {/* ✨ زر الرجوع مع تأثير الضغط */}
         <button 
           onClick={() => router.push('/profile')} 
-          className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer mb-6"
+          className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer mb-6 active:scale-95 w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -143,7 +140,8 @@ export default function OrdersPage() {
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
             <p className="text-temu-gray-text font-medium">You have no orders yet.</p>
-            <button onClick={() => router.push('/')} className="mt-6 bg-temu-orange text-white font-bold py-2 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer">
+            {/* ✨ زر Start Shopping مع تأثير الضغط */}
+            <button onClick={() => router.push('/')} className="mt-6 bg-temu-orange text-white font-bold py-2 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-md">
               Start Shopping
             </button>
           </div>
@@ -182,9 +180,10 @@ export default function OrdersPage() {
                     <p className="text-xl font-extrabold text-temu-error">${Number(order.total_amount).toFixed(2)}</p>
                   </div>
                   <div className="flex gap-2">
+                    {/* ✨ زر Track مع تأثير الضغط */}
                     <button 
                       onClick={() => router.push('/track-order')} 
-                      className="px-4 py-2 bg-temu-offwhite border border-temu-gray-border text-temu-black rounded-temu-sm text-xs font-bold hover:bg-temu-gray-border-light transition cursor-pointer flex items-center gap-1"
+                      className="px-4 py-2 bg-temu-offwhite border border-temu-gray-border text-temu-black rounded-temu-sm text-xs font-bold hover:bg-temu-gray-border-light transition cursor-pointer flex items-center gap-1 active:scale-95"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -192,10 +191,10 @@ export default function OrdersPage() {
                       </svg>
                       Track
                     </button>
-                    {/* ✨ زر View Details مربوط بالدالة */}
+                    {/* ✨ زر View Details مع تأثير الضغط */}
                     <button 
                       onClick={() => handleViewDetails(order)} 
-                      className="px-4 py-2 bg-temu-orange text-white rounded-temu-sm text-xs font-bold hover:bg-temu-orange-bright transition cursor-pointer"
+                      className="px-4 py-2 bg-temu-orange text-white rounded-temu-sm text-xs font-bold hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-sm"
                     >
                       View Details
                     </button>
@@ -207,13 +206,14 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* ✨ نافذة تفاصيل الطلب (Modal) */}
+      {/* نافذة تفاصيل الطلب (Modal) */}
       {isModalOpen && modalOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white rounded-temu-sm max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-temu-black">Order #{modalOrder.id}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer">
+              {/* ✨ زر الإغلاق مع تأثير الضغط */}
+              <button onClick={() => setIsModalOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer active:scale-90 transition">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -223,7 +223,8 @@ export default function OrdersPage() {
                 <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+              // ✨ إضافة scrollbar-hide و touch-pan-y للسحب السلس باللمس داخل المودال
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto scrollbar-hide touch-pan-y">
                 {orderItems.length > 0 ? (
                   orderItems.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-4 p-3 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">

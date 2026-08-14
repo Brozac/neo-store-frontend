@@ -78,19 +78,19 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
   };
 
   if (loadingUser) {
-    return <p className="text-center text-gray-500 py-4">Loading...</p>;
+    return <p className="text-center text-temu-gray-light py-4 animate-pulse">Loading...</p>;
   }
 
   // إذا لم يكن العميل مسجلاً
   if (!user) {
     return (
-      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
-        <p className="text-gray-700 font-semibold mb-3">Please log in to write a review.</p>
+      <div className="bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light text-center mt-8">
+        <p className="text-temu-black font-semibold mb-4">Please log in to write a review.</p>
         <button 
-          onClick={() => router.push('/auth/login')}
-          className="bg-temu-orange text-white font-bold py-2 px-6 rounded-full hover:bg-temu-orange-bright transition cursor-pointer"
+          onClick={() => router.push('/auth')}
+          className="bg-temu-orange text-white font-bold py-3 px-8 rounded-full hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-md"
         >
-          Log In
+          Log In / Register
         </button>
       </div>
     );
@@ -98,60 +98,62 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
 
   // إذا كان العميل مسجلاً، اعرض النموذج باسمه تلقائياً
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <h3 className="text-lg font-extrabold text-gray-800 mb-4">Write a Review</h3>
+    <div className="bg-white p-6 rounded-temu-sm border border-temu-gray-border-light shadow-sm mt-8">
+      <h3 className="text-lg font-extrabold text-temu-black mb-4">Write a Review</h3>
       
       {message && (
-        <div className={`p-3 rounded-lg mb-4 text-sm font-medium ${message.includes('✅') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+        <div className={`p-3 rounded-temu-sm mb-4 text-sm font-medium ${message.includes('✅') ? 'bg-temu-green-light/10 text-temu-green' : 'bg-red-50 text-temu-error'}`}>
           {message}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Rating</label>
+          <label className="block text-sm font-bold text-temu-black mb-2">Rating</label>
           <StarRating onChange={(val) => setRating(val)} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
+            <label className="block text-sm font-bold text-temu-black mb-2">Name</label>
             <input 
               type="text" 
               value={user.name} 
               readOnly 
-              className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 text-gray-600 cursor-not-allowed"
+              className="w-full bg-gray-100 border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-temu-gray-text cursor-not-allowed"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Country</label>
+            <label className="block text-sm font-bold text-temu-black mb-2">Country</label>
             <input 
               type="text" 
               value={country} 
               onChange={(e) => setCountry(e.target.value)} 
-              className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-temu-orange"
+              className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Review Content *</label>
+          <label className="block text-sm font-bold text-temu-black mb-2">Review Content *</label>
           <textarea 
             value={content} 
             onChange={(e) => setContent(e.target.value)} 
             required 
             rows={4} 
             placeholder="Share your thoughts on this product..." 
-            className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-temu-orange resize-none"
+            className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition resize-none"
           />
         </div>
 
         <button 
           type="submit" 
           disabled={submitting} 
-          className="w-full bg-[#8B78C6] text-white font-bold py-3 px-6 rounded-full hover:bg-[#7a68af] transition disabled:opacity-50 cursor-pointer mt-4"
+          className="w-full bg-temu-orange text-white font-extrabold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition disabled:opacity-50 cursor-pointer mt-2 active:scale-95 flex justify-center items-center gap-2"
         >
-          {submitting ? 'Submitting...' : 'Submit Review'}
+          {submitting ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : 'Submit Review'}
         </button>
       </form>
     </div>

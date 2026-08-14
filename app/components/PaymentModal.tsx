@@ -27,32 +27,28 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
   const [loadingGateway, setLoadingGateway] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  // حالات الدفع اليدوي (BaridiMob)
   const [manualPayment, setManualPayment] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
 
-  // حالات معلومات العميل (الخاصة بـ BaridiMob)
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerCity, setCustomerCity] = useState('');
-  const [customerState, setCustomerState] = useState(''); // الولاية
-  const [customerZip, setCustomerZip] = useState(''); // الرمز البريدي
+  const [customerState, setCustomerState] = useState(''); 
+  const [customerZip, setCustomerZip] = useState(''); 
 
-  const EXCHANGE_RATE = 255; // سعر الصرف الموازي
+  const EXCHANGE_RATE = 255; 
   const totalAmountDZD = Math.round(totalAmount * EXCHANGE_RATE);
 
   if (!isOpen) return null;
 
-  // ✨ دالة موحدة لبوابات الدفع التلقائية (Stripe, Paysera, Crypto)
   const handlePayment = async (method: string) => {
     setLoadingGateway(method);
     setError('');
     
     try {
-      // ✨ جلب التوكن لإرساله مع الطلب
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -76,7 +72,6 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     }
   };
 
-  // ✨ دالة الدفع اليدوي (BaridiMob)
   const handleBaridiMobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -107,14 +102,13 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       formData.append('customerEmail', customerEmail);
       formData.append('customerAddress', JSON.stringify(shippingData));
 
-      // ✨ جلب التوكن وإرساله حتى في الدفع اليدوي
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: HeadersInit = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch('https://neo-store-backend.onrender.com/api/payment/manual', {
         method: 'POST',
-        headers, // لا نضع Content-Type هنا لأنه FormData
+        headers, 
         body: formData
       });
       
@@ -132,14 +126,13 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     }
   };
 
-  // قائمة بوابات الدفع مع الشعارات
   const paymentMethods = [
     { 
       id: 'stripe', 
       name: 'Stripe', 
       desc: 'Visa, Mastercard, Apple Pay',
       logo: 'https://z-cdn-media.chatglm.cn/files/358c145a-fb8b-48f2-95d5-b49a648a8c44.png?auth_key=1886044937-1c4f7f5aa4e44fe0800391a8a31fbcb7-0-12366c60569641acdfcc752fca0a7810',
-      enabled: true // معطل حالياً كما ذكرت
+      enabled: true 
     },
     { 
       id: 'paysera', 
@@ -166,13 +159,18 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-white rounded-temu-sm max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {/* ✨ إضافة scrollbar-hide touch-pan-y للسحب السلس باللمس داخل المودال */}
+      <div className="bg-white rounded-temu-sm max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide touch-pan-y" onClick={(e) => e.stopPropagation()}>
         
         {!manualPayment ? (
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-temu-black">Select Payment Method</h2>
-              <button onClick={onClose} className="text-temu-gray-light hover:text-temu-black cursor-pointer">
+              {/* ✨ زر الإغلاق مع تأثير الضغط */}
+              <button 
+                onClick={onClose} 
+                className="text-temu-gray-light hover:text-temu-black cursor-pointer active:scale-90 transition touch-manipulation"
+              >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -189,7 +187,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     else handlePayment(method.id);
                   }} 
                   disabled={loadingGateway !== null} 
-                  className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer disabled:opacity-50"
+                  className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer disabled:opacity-50 active:scale-95 touch-manipulation"
                 >
                   <div className="flex items-center gap-3">
                     <img src={method.logo} alt={method.name} className="h-8 w-8 object-contain rounded-full" />
@@ -206,9 +204,12 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
             </div>
           </>
         ) : (
-          /* واجهة الدفع اليدوي (BaridiMob) */
           <div>
-            <button onClick={() => { setManualPayment(false); setError(''); }} className="text-temu-orange font-bold text-sm mb-4 flex items-center gap-1 cursor-pointer">
+            {/* ✨ زر الرجوع مع تأثير الضغط */}
+            <button 
+              onClick={() => { setManualPayment(false); setError(''); }} 
+              className="text-temu-orange font-bold text-sm mb-4 flex items-center gap-1 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               Back to Payment Methods
             </button>
@@ -220,7 +221,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                   <h2 className="text-xl font-extrabold text-temu-black">BaridiMob / CCP</h2>
                 </div>
                 
-                {/* حقول معلومات الشحن المفصلة */}
+                {/* ✨ توحيد خلفيات وحدود حقول الإدخال + إضافة touch-manipulation */}
                 <div className="space-y-3 mb-4">
                   <input 
                     type="text" 
@@ -228,7 +229,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     required
-                    className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                   />
                   <input 
                     type="tel" 
@@ -236,7 +237,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     required
-                    className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                   />
                   <input 
                     type="email" 
@@ -244,7 +245,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     required
-                    className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                   />
                   <input 
                     type="text" 
@@ -252,7 +253,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
                     required
-                    className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                   />
                   <div className="flex gap-3">
                     <input 
@@ -261,7 +262,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                       value={customerCity}
                       onChange={(e) => setCustomerCity(e.target.value)}
                       required
-                      className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                      className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                     />
                     <input 
                       type="text" 
@@ -269,7 +270,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                       value={customerState}
                       onChange={(e) => setCustomerState(e.target.value)}
                       required
-                      className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                      className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                     />
                   </div>
                   <input 
@@ -278,7 +279,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     value={customerZip}
                     onChange={(e) => setCustomerZip(e.target.value)}
                     required
-                    className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange"
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" 
                   />
                 </div>
 
@@ -297,13 +298,20 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                   type="file" 
                   accept="image/*"
                   onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-temu-black mb-4 file:mr-4 file:py-2 file:px-4 file:rounded-temu-sm file:border-0 file:text-sm file:bg-temu-orange file:text-white hover:file:bg-temu-orange-bright transition cursor-pointer"
+                  className="w-full text-sm text-temu-black mb-4 file:mr-4 file:py-2 file:px-4 file:rounded-temu-sm file:border-0 file:text-sm file:bg-temu-orange file:text-white hover:file:bg-temu-orange-bright transition cursor-pointer touch-manipulation"
                 />
                 
                 {error && <div className="bg-red-50 text-temu-error p-3 rounded-temu-sm mb-4 text-sm font-medium text-center">{error}</div>}
                 
-                <button type="submit" disabled={loadingGateway !== null} className="w-full bg-temu-orange text-white font-bold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer disabled:opacity-50">
-                  {loadingGateway === 'baridimob' ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Confirm Payment Sent'}
+                {/* ✨ زر التأكيد مع تأثير الضغط ومؤشر التحميل */}
+                <button 
+                  type="submit" 
+                  disabled={loadingGateway !== null} 
+                  className="w-full bg-temu-orange text-white font-bold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer disabled:opacity-50 active:scale-95 touch-manipulation shadow-md gap-2"
+                >
+                  {loadingGateway === 'baridimob' ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : 'Confirm Payment Sent'}
                 </button>
               </form>
             ) : (
@@ -311,7 +319,11 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                 <svg className="mx-auto mb-4 h-16 w-16 text-temu-green" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                 <h2 className="text-xl font-bold text-temu-black mb-2">Order Submitted!</h2>
                 <p className="text-temu-gray-text text-sm mb-6">Thank you! Your order is pending verification. We will process it shortly.</p>
-                <button onClick={() => { onClose(); router.push('/'); }} className="bg-temu-black text-white font-bold py-2 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer">
+                {/* ✨ زر العودة مع تأثير الضغط */}
+                <button 
+                  onClick={() => { onClose(); router.push('/'); }} 
+                  className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
+                >
                   Back to Home
                 </button>
               </div>

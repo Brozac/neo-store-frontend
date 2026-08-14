@@ -38,17 +38,18 @@ export default function CountdownTimer() {
   const pad = (num: number) => num.toString().padStart(2, '0');
 
   return (
-    <div className="flex items-center justify-between bg-purple-50 border border-purple-100 p-3 rounded-xl my-4">
+    // ✨ توحيد الألوان: خلفية وردية فاتحة، نص بنفسجي، ومربعات كحلية
+    <div className="flex items-center justify-between bg-temu-yellow-soft border border-temu-gold p-3 rounded-temu-sm my-4">
       <div className="flex items-center gap-2">
         <span className="text-lg">⚡</span>
-        <span className="text-xs font-extrabold text-[#8B78C6] uppercase tracking-wide">Flash Sale Ends in</span>
+        <span className="text-xs font-extrabold text-temu-error uppercase tracking-wide">Flash Sale Ends in</span>
       </div>
       <div className="flex gap-1 items-center">
-        <span className="bg-[#1D1E3C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.hours)}</span>
-        <span className="text-[#1D1E3C] font-bold">:</span>
-        <span className="bg-[#1D1E3C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.minutes)}</span>
-        <span className="text-[#1D1E3C] font-bold">:</span>
-        <span className="bg-[#1D1E3C] text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.seconds)}</span>
+        <span className="bg-temu-black text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.hours)}</span>
+        <span className="text-temu-black font-bold">:</span>
+        <span className="bg-temu-black text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.minutes)}</span>
+        <span className="text-temu-black font-bold">:</span>
+        <span className="bg-temu-black text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm">{pad(timeLeft.seconds)}</span>
       </div>
     </div>
   );

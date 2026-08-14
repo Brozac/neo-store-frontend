@@ -24,7 +24,7 @@ export default function TrackOrderPage() {
 
     setLoading(true);
     setError('');
-    setOrders([]); // مسح النتائج القديمة قبل البحث الجديد
+    setOrders([]);
 
     try {
       const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/track/${query}`);
@@ -46,28 +46,37 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F4F3F8] p-6 max-w-md mx-auto pb-24 font-sans">
-      <h1 className="text-2xl font-extrabold text-[#1D1E3C] mb-2 text-center">Track Your Order</h1>
-      <p className="text-xs text-[#9A9AB0] mb-6 text-center">Enter your Order ID or Email address below</p>
+    <main className="min-h-screen bg-temu-offwhite p-6 max-w-md mx-auto pb-24 font-sans">
+      <h1 className="text-2xl font-extrabold text-temu-black mb-2 text-center flex items-center justify-center gap-2">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-temu-orange">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        Track Your Order
+      </h1>
+      <p className="text-xs text-temu-gray-light mb-6 text-center">Enter your Order ID or Email address below</p>
 
-      <form onSubmit={handleTrack} className="flex gap-2 mb-8">
+      {/* ✨ تعديل الاستجابة: تتراص عمودياً على الهواتف الصغيرة جداً */}
+      <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-2 mb-8">
         <input 
           type="text" 
           placeholder="Order ID or Email"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 p-3.5 bg-white rounded-2xl shadow-sm text-sm outline-none text-[#1D1E3C] focus:ring-1 focus:ring-[#8B78C6]"
+          className="flex-1 p-3.5 bg-white rounded-temu-sm shadow-sm text-sm outline-none text-temu-black focus:ring-1 focus:ring-temu-orange border border-temu-gray-border-light transition touch-manipulation"
         />
         <button 
           type="submit" 
           disabled={loading}
-          className="bg-[#8B78C6] text-white px-6 rounded-2xl font-bold text-sm shadow-md hover:bg-[#7a67b5] transition-all disabled:opacity-70"
+          className="bg-temu-orange text-white px-6 py-3.5 rounded-temu-sm font-bold text-sm shadow-md hover:bg-temu-orange-bright transition-all disabled:opacity-70 active:scale-95 touch-manipulation cursor-pointer flex justify-center items-center gap-2"
         >
-          {loading ? '...' : 'Track'}
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : 'Track'}
         </button>
       </form>
 
-      {error && <p className="text-red-500 text-xs text-center font-bold mb-4 bg-red-50 p-3 rounded-xl">{error}</p>}
+      {error && <p className="text-temu-error text-xs text-center font-bold mb-4 bg-red-50 p-3 rounded-temu-sm">{error}</p>}
 
       <div className="space-y-4">
         {orders.map((order) => {
@@ -75,18 +84,18 @@ export default function TrackOrderPage() {
           const formattedDate = order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A';
           
           return (
-            <div key={order.id} className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-gray-100">
+            <div key={order.id} className="bg-white p-5 rounded-temu-sm shadow-sm border border-temu-gray-border-light">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold text-gray-400">Order #{order.id}</span>
+                <span className="text-xs font-bold text-temu-gray-light">Order #{order.id}</span>
                 <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${
-                  order.status === 'paid' || order.status === 'fulfilled' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                  order.status === 'paid' || order.status === 'fulfilled' ? 'bg-temu-green-light/20 text-temu-green' : 'bg-temu-yellow-soft text-temu-gold'
                 }`}>
                   {order.status ? order.status.toUpperCase() : 'PROCESSING'}
                 </span>
               </div>
-              <p className="text-lg font-extrabold text-[#1D1E3C] mb-2">Total: ${safeTotal.toFixed(2)}</p>
-              <p className="text-xs text-gray-500">Shipping To: <span className="font-semibold text-[#1D1E3C]">{order.shipping_address || 'N/A'}</span></p>
-              <p className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-100">Date: {formattedDate}</p>
+              <p className="text-lg font-extrabold text-temu-black mb-2">Total: ${safeTotal.toFixed(2)}</p>
+              <p className="text-xs text-temu-gray-text">Shipping To: <span className="font-semibold text-temu-black">{order.shipping_address || 'N/A'}</span></p>
+              <p className="text-[10px] text-temu-gray-light mt-2 pt-2 border-t border-temu-gray-border-light">Date: {formattedDate}</p>
             </div>
           );
         })}

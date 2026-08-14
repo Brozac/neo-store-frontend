@@ -217,7 +217,7 @@ export default function AdminAddProduct() {
             ← Back to Store
           </button>
           
-          <form onSubmit={handleAdminSearch} className="relative flex-1 min-w-[200px]">
+          <form onSubmit={handleAdminSearch} className="relative flex-1 min-w-50">
             <input 
               type="text" 
               value={adminSearch}

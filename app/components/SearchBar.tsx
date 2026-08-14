@@ -31,7 +31,7 @@ export default function SearchBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // جلب نتائج البحث مع تأخير بسيط (Debounce) لتقليل الطلبات
+  // جلب نتائج البحث مع تأخير بسيط (Debounce)
   useEffect(() => {
     if (query.trim().length < 1) {
       setResults([]);
@@ -44,7 +44,6 @@ export default function SearchBar() {
       try {
         const res = await fetch(`https://neo-store-backend.onrender.com/api/search?q=${encodeURIComponent(query)}`);
         
-        // ✨ التأكد من أن الرد هو JSON وليس صفحة HTML
         if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
           console.error('Search response is not JSON');
           setResults([]);
@@ -76,37 +75,41 @@ export default function SearchBar() {
   return (
     <div ref={searchRef} className="relative w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
+        {/* ✨ إضافة touch-manipulation لتسريع الكتابة والاستجابة */}
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setIsDropdownOpen(true)}
           placeholder="Search for products, brands, and more..."
-          className="w-full bg-white border-2 border-temu-gray-border-light rounded-full py-3 pl-12 pr-28 text-sm text-temu-black focus:outline-none focus:border-temu-orange transition shadow-sm"
+          className="w-full bg-white border-2 border-temu-gray-border-light rounded-full py-3 pl-12 pr-28 text-sm text-temu-black focus:outline-none focus:border-temu-orange transition shadow-sm touch-manipulation"
         />
         
-        {/* أيقونة البحث */}
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-temu-gray-light">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-temu-gray-light pointer-events-none">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
         </div>
 
-        {/* زر البحث */}
+        {/* ✨ زر البحث مع تأثير الضغط */}
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 bg-temu-orange hover:bg-temu-orange-bright text-white text-sm font-bold px-6 py-2 rounded-full transition cursor-pointer"
+          className="absolute right-1 top-1/2 -translate-y-1/2 bg-temu-orange hover:bg-temu-orange-bright text-white text-sm font-bold px-6 py-2 rounded-full transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
         >
           Search
         </button>
       </form>
 
-      {/* القائمة المنسدلة للنتائج (Autocomplete) */}
+      {/* القائمة المنسدلة للنتائج */}
       {isDropdownOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white rounded-temu-sm shadow-2xl border border-temu-gray-border-light overflow-hidden max-h-[70vh] overflow-y-auto">
+        // ✨ إضافة scrollbar-hide و touch-pan-y للسحب السلس باللمس
+        <div className="absolute z-50 w-full mt-2 bg-white rounded-temu-sm shadow-2xl border border-temu-gray-border-light overflow-hidden max-h-[70vh] overflow-y-auto scrollbar-hide touch-pan-y">
           {isLoading ? (
-            <div className="p-4 text-center text-temu-gray-light text-sm animate-pulse">Searching...</div>
+            <div className="p-4 text-center text-temu-gray-light text-sm animate-pulse flex justify-center items-center gap-2">
+              <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+              Searching...
+            </div>
           ) : results.length > 0 ? (
             <div className="py-2">
               {results.map((product) => {
@@ -114,6 +117,7 @@ export default function SearchBar() {
                 const safePrice = Number(product.price) || 0;
                 
                 return (
+                  // ✨ عناصر النتائج مع تأثير الضغط وتغيير الخلفية
                   <div
                     key={product.id}
                     onClick={() => {
@@ -121,7 +125,7 @@ export default function SearchBar() {
                       setIsDropdownOpen(false);
                       setQuery('');
                     }}
-                    className="flex items-center gap-3 p-2 hover:bg-temu-offwhite cursor-pointer transition"
+                    className="flex items-center gap-3 p-2 hover:bg-temu-offwhite active:bg-temu-offwhite cursor-pointer transition active:scale-95 touch-manipulation"
                   >
                     <div className="relative w-12 h-12 shrink-0 bg-temu-offwhite rounded-md overflow-hidden">
                       <Image
@@ -141,11 +145,11 @@ export default function SearchBar() {
                 );
               })}
               
-              {/* زر عرض كل النتائج */}
+              {/* ✨ زر عرض كل النتائج مع تأثير الضغط */}
               <div className="p-2 mt-1 border-t border-temu-gray-border-light">
                 <button 
                   onClick={handleSubmit}
-                  className="w-full text-center text-sm font-bold text-temu-orange hover:text-temu-orange-bright py-2 cursor-pointer"
+                  className="w-full text-center text-sm font-bold text-temu-orange hover:text-temu-orange-bright py-2 cursor-pointer active:scale-95 transition touch-manipulation"
                 >
                   View all results for "{query}"
                 </button>

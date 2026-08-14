@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import adminApi from '../../utils/adminApi'; // ✨ استيراد adminApi
+import adminApi from '../../utils/adminApi';
 
 export default function AdvancedDashboard() {
   const router = useRouter();
@@ -20,7 +20,6 @@ export default function AdvancedDashboard() {
   const fetchCogs = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // ✨ استخدام adminApi
       const res = await adminApi.post('/admin/cogs', { orderCodes: [orderCode] });
       if (res.data?.data) setCogsData(res.data.data[0]);
     } catch (err) { 
@@ -30,7 +29,6 @@ export default function AdvancedDashboard() {
 
   const fetchMergeList = async () => {
     try {
-      // ✨ استخدام adminApi
       const res = await adminApi.post('/admin/merge/match');
       const data = res.data;
       
@@ -49,7 +47,6 @@ export default function AdvancedDashboard() {
 
   const fetchMakeup = async () => {
     try {
-      // ✨ استخدام adminApi
       const res = await adminApi.get('/admin/makeup/list');
       if (res.data?.data?.pageData?.content) setMakeupList(res.data.data.pageData.content);
     } catch (err) { 
@@ -60,28 +57,64 @@ export default function AdvancedDashboard() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
       <div className="max-w-4xl mx-auto">
-        <button onClick={() => router.push('/admin')} className="text-temu-orange font-bold mb-6">← Back to Admin</button>
+        {/* ✨ زر الرجوع بأيقونة وتأثير الضغط */}
+        <button 
+          onClick={() => router.push('/admin')} 
+          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Admin
+        </button>
         
-        <div className="bg-white rounded-temu-sm p-8 border border-temu-gray-border-light">
+        <div className="bg-white rounded-temu-sm p-8 border border-temu-gray-border-light shadow-sm">
           <h1 className="text-2xl font-extrabold text-temu-black mb-6">Advanced Dashboard</h1>
           
-          {/* Tabs */}
+          {/* ✨ Tabs مع تأثير الضغط وتسريع اللمس */}
           <div className="flex gap-4 mb-8 border-b border-temu-gray-border-light">
-            <button onClick={() => setActiveTab('cogs')} className={`pb-2 font-bold text-sm ${activeTab === 'cogs' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}>COGS Analysis</button>
-            <button onClick={() => { setActiveTab('merge'); fetchMergeList(); }} className={`pb-2 font-bold text-sm ${activeTab === 'merge' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}>Merge Orders</button>
-            <button onClick={() => { setActiveTab('makeup'); fetchMakeup(); }} className={`pb-2 font-bold text-sm ${activeTab === 'makeup' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}>Makeup Payments</button>
+            <button 
+              onClick={() => setActiveTab('cogs')} 
+              className={`pb-2 font-bold text-sm transition cursor-pointer active:scale-95 touch-manipulation ${activeTab === 'cogs' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}
+            >
+              COGS Analysis
+            </button>
+            <button 
+              onClick={() => { setActiveTab('merge'); fetchMergeList(); }} 
+              className={`pb-2 font-bold text-sm transition cursor-pointer active:scale-95 touch-manipulation ${activeTab === 'merge' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}
+            >
+              Merge Orders
+            </button>
+            <button 
+              onClick={() => { setActiveTab('makeup'); fetchMakeup(); }} 
+              className={`pb-2 font-bold text-sm transition cursor-pointer active:scale-95 touch-manipulation ${activeTab === 'makeup' ? 'text-temu-orange border-b-2 border-temu-orange' : 'text-temu-gray-light'}`}
+            >
+              Makeup Payments
+            </button>
           </div>
 
           {/* COGS Tab */}
           {activeTab === 'cogs' && (
             <div>
-              <form onSubmit={fetchCogs} className="flex gap-2 mb-4">
-                <input type="text" value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="Enter CJ Order Code (e.g. DP...)" className="flex-1 bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-2" required />
-                <button type="submit" className="bg-temu-orange text-white font-bold px-4 rounded-temu-sm">Analyze</button>
+              <form onSubmit={fetchCogs} className="flex flex-col sm:flex-row gap-2 mb-4">
+                <input 
+                  type="text" 
+                  value={orderCode} 
+                  onChange={(e) => setOrderCode(e.target.value)} 
+                  placeholder="Enter CJ Order Code (e.g. DP...)" 
+                  className="flex-1 bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-2 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+                  required 
+                />
+                <button 
+                  type="submit" 
+                  className="bg-temu-orange text-white font-bold px-6 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+                >
+                  Analyze
+                </button>
               </form>
               {cogsData && (
                 <div className="bg-temu-offwhite p-4 rounded-temu-sm border border-temu-gray-border-light">
-                  <pre className="text-xs overflow-auto">{JSON.stringify(cogsData, null, 2)}</pre>
+                  <pre className="text-xs overflow-auto scrollbar-hide touch-pan-y">{JSON.stringify(cogsData, null, 2)}</pre>
                 </div>
               )}
             </div>
@@ -90,7 +123,12 @@ export default function AdvancedDashboard() {
           {/* Merge Tab */}
           {activeTab === 'merge' && (
             <div>
-              <button onClick={fetchMergeList} className="bg-temu-black text-white font-bold px-4 py-2 rounded-temu-sm mb-4">Refresh Matchable Orders</button>
+              <button 
+                onClick={fetchMergeList} 
+                className="bg-temu-black text-white font-bold px-4 py-2.5 rounded-temu-sm mb-4 hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+              >
+                Refresh Matchable Orders
+              </button>
               {Array.isArray(mergeList) && mergeList.length > 0 ? (
                 mergeList.map((group: any, idx: number) => (
                   <div key={idx} className="bg-temu-offwhite p-4 rounded-temu-sm mb-4 border border-temu-gray-border-light">
@@ -111,7 +149,12 @@ export default function AdvancedDashboard() {
           {/* Makeup Tab */}
           {activeTab === 'makeup' && (
             <div>
-              <button onClick={fetchMakeup} className="bg-temu-black text-white font-bold px-4 py-2 rounded-temu-sm mb-4">Refresh Makeup Bills</button>
+              <button 
+                onClick={fetchMakeup} 
+                className="bg-temu-black text-white font-bold px-4 py-2.5 rounded-temu-sm mb-4 hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+              >
+                Refresh Makeup Bills
+              </button>
               {makeupList.map((bill: any) => (
                 <div key={bill.orderCode} className="bg-temu-offwhite p-4 rounded-temu-sm mb-4 border border-temu-gray-border-light">
                   <p className="font-bold text-temu-black">Bill: {bill.orderCode}</p>

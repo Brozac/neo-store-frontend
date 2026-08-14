@@ -51,7 +51,7 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-temu-offwhite p-6">
-        <div className="bg-white p-8 rounded-temu-sm border border-temu-gray-border-light text-center">
+        <div className="bg-white p-8 rounded-temu-sm border border-temu-gray-border-light text-center shadow-sm">
           <h1 className="text-2xl font-bold text-temu-error mb-4">Invalid Link</h1>
           <p className="text-temu-gray-text">No reset token found. Please request a new reset link.</p>
         </div>
@@ -78,13 +78,34 @@ function ResetPasswordForm() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-temu-black text-sm font-bold mb-2 ml-1">New Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition" />
+                {/* ✨ إضافة touch-manipulation */}
+                <input 
+                  type="password" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                  required 
+                  placeholder="••••••••" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+                />
               </div>
               <div>
                 <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Confirm Password</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition" />
+                {/* ✨ إضافة touch-manipulation */}
+                <input 
+                  type="password" 
+                  value={confirmPassword} 
+                  onChange={(e) => setConfirmPassword(e.target.value)} 
+                  required 
+                  placeholder="••••••••" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
+                />
               </div>
-              <button type="submit" disabled={loading} className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer">
+              {/* ✨ إضافة active:scale-95 و touch-manipulation و shadow-md */}
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
+              >
                 {loading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Reset Password'}
               </button>
             </form>

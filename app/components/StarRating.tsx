@@ -20,7 +20,12 @@ export default function StarRating({ onChange }: { onChange: (rating: number) =>
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex relative pb-2" onMouseLeave={() => setHover(0)}>
+      {/* ✨ إضافة touch-action: manipulation لمنع تكبير الشاشة بالضغط المزدوج على الهاتف */}
+      <div 
+        className="flex relative pb-2" 
+        onMouseLeave={() => setHover(0)}
+        style={{ touchAction: 'manipulation' }}
+      >
         {ratings.map((r) => {
           const isFilled = (hover || rating) >= r.id;
           return (
@@ -29,27 +34,27 @@ export default function StarRating({ onChange }: { onChange: (rating: number) =>
               type="button"
               onClick={() => handleClick(r.id)}
               onMouseEnter={() => setHover(r.id)}
-              className="p-1 cursor-pointer focus:outline-none transition-transform hover:scale-110"
+              // ✨ تكبير مساحة الضغط (p-2) وإضافة تأثير اللمس (active:scale-110)
+              className="p-2 cursor-pointer focus:outline-none transition-transform hover:scale-110 active:scale-110"
               aria-label={`${r.id} stars—${r.name}`}
             >
               <svg 
-  width="32" 
-  height="32" 
-  viewBox="0 0 32 32" 
-  aria-hidden="true"
-  // هذا السطر هو المسؤول عن جلب اللون #FF6B9D
-  className={isFilled ? 'text-temu-error' : 'text-temu-gray-border-light'}
->
-  <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <g transform="translate(16,16) rotate(180)">
-      <polygon
-        points="0,15 4.41,6.07 14.27,4.64 7.13,-2.32 8.82,-12.14 0,-7.5 -8.82,-12.14 -7.13,-2.32 -14.27,4.64 -4.41,6.07"
-        fill="currentColor"
-        className="transition-all duration-300"
-      />
-    </g>
-  </g>
-</svg>
+                width="32" 
+                height="32" 
+                viewBox="0 0 32 32" 
+                aria-hidden="true"
+                className={isFilled ? 'text-temu-error' : 'text-temu-gray-border-light'}
+              >
+                <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <g transform="translate(16,16) rotate(180)">
+                    <polygon
+                      points="0,15 4.41,6.07 14.27,4.64 7.13,-2.32 8.82,-12.14 0,-7.5 -8.82,-12.14 -7.13,-2.32 -14.27,4.64 -4.41,6.07"
+                      fill="currentColor"
+                      className="transition-all duration-300"
+                    />
+                  </g>
+                </g>
+              </svg>
             </button>
           );
         })}

@@ -39,8 +39,15 @@ export default function CategoriesPage() {
     <main className="min-h-screen bg-temu-offwhite pb-24 font-sans">
       <div className="max-w-7xl mx-auto p-6">
         
-        <Link href="/" className="text-temu-orange font-bold mb-6 inline-block cursor-pointer z-10 relative">
-          ← Back to Home
+        {/* ✨ زر الرجوع مع تأثير الضغط */}
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Home
         </Link>
 
         <div className="text-center mb-10 mt-4">
@@ -48,12 +55,16 @@ export default function CategoriesPage() {
           <p className="text-temu-gray-light text-sm">Find exactly what you're looking for</p>
         </div>
 
-        {/* بانر ترويجي */}
-        <div className="relative bg-gradient-to-br from-temu-green to-temu-purple rounded-3xl p-8 mb-12 overflow-hidden shadow-lg">
+        {/* ✨ بانر ترويجي بألوان المتجر (كحلي وبنفسجي) */}
+        <div className="relative bg-gradient-to-br from-temu-black to-temu-orange rounded-3xl p-8 mb-12 overflow-hidden shadow-lg">
           <div className="relative z-10">
-            <p className="text-temu-yellow text-xs font-bold uppercase tracking-widest mb-1">New Collection</p>
+            <p className="text-temu-error text-xs font-bold uppercase tracking-widest mb-1">New Collection</p>
             <h2 className="text-white text-3xl font-extrabold leading-tight mb-4">NEO FALL<br/>STAY FASHION</h2>
-            <Link href="/" className="bg-white text-temu-black text-xs font-extrabold py-3 px-6 rounded-full hover:bg-temu-offwhite transition shadow-md cursor-pointer inline-block">
+            {/* ✨ زر Shop Now مع تأثير الضغط */}
+            <Link 
+              href="/" 
+              className="bg-white text-temu-black text-xs font-extrabold py-3 px-6 rounded-full hover:bg-temu-offwhite transition shadow-md cursor-pointer inline-block active:scale-95 touch-manipulation"
+            >
               Shop Now
             </Link>
           </div>
@@ -64,11 +75,11 @@ export default function CategoriesPage() {
         {/* عرض الشجرة الديناميكي */}
         <div className="space-y-8">
           {tree.map((mainCat) => (
-            <div key={mainCat.id} className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light">
-              {/* عنوان القسم الرئيسي */}
+            <div key={mainCat.id} className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
+              {/* ✨ عنوان القسم الرئيسي مع تأثير الضغط */}
               <Link 
                 href={`/category/${mainCat.slug}`}
-                className="text-2xl font-extrabold text-temu-black mb-4 inline-block hover:text-temu-orange transition cursor-pointer"
+                className="text-2xl font-extrabold text-temu-black mb-4 inline-block hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation"
               >
                 {mainCat.name}
               </Link>
@@ -78,9 +89,10 @@ export default function CategoriesPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-4">
                   {mainCat.children.map((subCat) => (
                     <div key={subCat.id} className="flex flex-col">
+                      {/* ✨ روابط الفروع مع تأثير الضغط */}
                       <Link 
                         href={`/category/${mainCat.slug}/${subCat.slug}`}
-                        className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2"
+                        className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
                       >
                         {subCat.name}
                       </Link>
@@ -88,11 +100,11 @@ export default function CategoriesPage() {
                       {/* عرض الفروع التحتية (المستوى الثالث) */}
                       {subCat.children && subCat.children.length > 0 && (
                         <div className="space-y-1">
-                          {subCat.children.slice(0, 5).map((leaf) => ( // نعرض أول 5 فروع لتفادي الازدحام
+                          {subCat.children.slice(0, 5).map((leaf) => ( 
                             <Link 
                               key={leaf.id} 
                               href={`/category/${mainCat.slug}/${subCat.slug}/${leaf.slug}`}
-                              className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block"
+                              className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
                             >
                               {leaf.name}
                             </Link>
