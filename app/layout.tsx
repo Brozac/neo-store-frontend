@@ -9,6 +9,7 @@ import type { Metadata, Viewport } from 'next';
 export const metadata: Metadata = {
   title: 'NEO Store - Smart Shopping',
   description: 'Discover the best trending products at NEO Store.',
+  manifest: '/manifest.webmanifest', // ✨ ربط ملف المانيفيست
 };
 
 // ✨ إخراج viewport ككائن مستقل
@@ -17,6 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#8B78C6', // ✨ لون شريط الحالة في الهاتف
 };
 
 export default function RootLayout({
@@ -26,7 +28,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* ✨ استخدام bg-temu-offwhite بدل الكود اللوني الثابت */}
       <body className="bg-temu-offwhite" suppressHydrationWarning>
         <Providers>{children}</Providers>
 
