@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import adminApi from '../../../utils/adminApi';
+import adminApi from '../../utils/adminApi';
 
 interface Order {
   id: number;
