@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.laclarc.app",
+        "sha256_cert_fingerprints": ["3D:2B:92:A3:4A:50:40:FC:ED:11:A1:D1:17:62:A6:81:CA:3C:40:13:BB:09:65:DE:D9:A8:DB:77:BC:87:5A:DE"]
+      }
+    }]
