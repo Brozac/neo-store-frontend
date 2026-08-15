@@ -907,17 +907,20 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {reviews.length > 0 ? (
-            <div className="space-y-4">
+                   {reviews.length > 0 ? (
+            <div className="reviews-carousel">
               {reviews.map((rev) => (
-                <div key={rev.id} className="p-4 bg-white rounded-temu-sm border border-temu-gray-border-light">
-                  <div className="flex justify-between text-xs text-temu-gray-light mb-1">
+                <div key={rev.id} className="review-card">
+                  <div className="flex justify-between text-xs text-temu-gray-light mb-2">
                     <span className="font-bold text-temu-black">
-                      {rev.author} in 🇺🇸 on {new Date(rev.created_at).toLocaleDateString()}
+                      {rev.author} in 🇺🇸
                     </span>
                     <span className="text-temu-orange">{'★'.repeat(rev.rating)}</span>
                   </div>
-                  <p className="text-sm text-temu-dark font-medium">{rev.content}</p>
+                  <p className="text-xs text-temu-gray-light mb-3">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm text-temu-dark font-medium leading-relaxed">{rev.content}</p>
                 </div>
               ))}
             </div>
