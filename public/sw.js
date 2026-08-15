@@ -16,13 +16,22 @@ self.addEventListener('activate', event => {
 
 // استراتيجية Cache-First: البحث في الكاش أولاً، ثم الإنترنت
 self.addEventListener('fetch', event => {
-  event.respondWith(async () => {
+  // ✨ التصحيح هنا: إضافة () في نهاية الدالة لاستدعائها فوراً
+  event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(event.request);
-    if (cachedResponse !== undefined) {
-      return cachedResponse;
-    } else {
-      return fetch(event.request);
+    
+    if (cachedResponse) {
+      return cachedResponse; // إرجاع النسخة المحفوظة إذا وجدت
     }
-  })();
+    
+    try {
+      // إذا لم توجد في الكاش، جلبها من الإنترنت
+      const networkResponse = await fetch(event.request);
+      return networkResponse;
+    } catch (error) {
+      // إذا فشل الإنترنت ولم تكن الصفحة محفوظة، نرجع للصفحة الرئيسية
+      return caches.match('/');
+    }
+  })());
 });
