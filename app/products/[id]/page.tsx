@@ -70,6 +70,9 @@ export default function ProductDetailPage() {
   
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
+  // ✨ حالة تتبع الإصبع للسحب (Swipe)
+  const touchStartX = useRef(0);
+
   useEffect(() => {
     const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
     setFavoriteIds(favs);
@@ -120,7 +123,6 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     setLoading(true);
-    // 1. جلب تفاصيل المنتج بالكامل من المسار الجديد
     fetch(`https://neo-store-backend.onrender.com/api/products/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error('Product not found');
@@ -132,7 +134,6 @@ export default function ProductDetailPage() {
         if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
         if (found.sizes && found.sizes.length > 0) setSelectedSize(found.sizes[0]);
 
-        // 2. جلب التقييمات
         fetch(`https://neo-store-backend.onrender.com/api/reviews/${found.id}`)
           .then((res) => res.json())
           .then((revData) => setReviews(revData))
@@ -144,7 +145,6 @@ export default function ProductDetailPage() {
       })
       .finally(() => setLoading(false));
 
-    // 3. جلب كل المنتجات لقسم "You May Also Like" (يتم بشكل منفصل)
     fetch(`https://neo-store-backend.onrender.com/api/products`)
       .then((res) => res.json())
       .then((data: Product[]) => setAllProducts(data))
@@ -207,6 +207,39 @@ export default function ProductDetailPage() {
       Pink: '#FFC0CB', Blue: '#0000FF', Red: '#FF0000', Gray: '#808080',
     };
     return colorMap[colorName] || '#CCCCCC';
+  };
+
+  // ✨ دوال السحب (Swipe) للصور
+  const handlePrevImage = () => {
+    if (galleryImages.length <= 1 || showVideo) return;
+    const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
+    const prevIndex = currentIndex === 0 ? galleryImages.length - 1 : currentIndex - 1;
+    setSelectedImage(galleryImages[prevIndex] || defaultImage);
+  };
+
+  const handleNextImage = () => {
+    if (galleryImages.length <= 1 || showVideo) return;
+    const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
+    const nextIndex = currentIndex === galleryImages.length - 1 ? 0 : currentIndex + 1;
+    setSelectedImage(galleryImages[nextIndex] || defaultImage);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (showVideo) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diffX) > 40) { // إذا كان السحب أكثر من 40 بكسل
+      if (diffX > 0) {
+        handleNextImage(); // سحب لليسار -> الصورة التالية
+      } else {
+        handlePrevImage(); // سحب لليمين -> الصورة السابقة
+      }
+    }
   };
 
   if (loading) {
@@ -309,8 +342,12 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
           {/* Gallery */}
           <div className="flex flex-col gap-4 h-full">
-            {/* Main Image / Video */}
-            <div className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group">
+            {/* ✨ Main Image / Video مع إضافة onTouchStart و onTouchEnd للسحب */}
+            <div 
+              className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               {showVideo && product.video_url ? (
                 <video 
                   src={product.video_url} 
@@ -333,11 +370,7 @@ export default function ProductDetailPage() {
               {galleryImages.length > 1 && !showVideo && (
                 <>
                   <button
-                    onClick={() => {
-                      const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
-                      const prevIndex = currentIndex === 0 ? galleryImages.length - 1 : currentIndex - 1;
-                      setSelectedImage(galleryImages[prevIndex] || defaultImage);
-                    }}
+                    onClick={handlePrevImage}
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer z-10 active:scale-90"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -345,11 +378,7 @@ export default function ProductDetailPage() {
                     </svg>
                   </button>
                   <button
-                    onClick={() => {
-                      const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
-                      const nextIndex = currentIndex === galleryImages.length - 1 ? 0 : currentIndex + 1;
-                      setSelectedImage(galleryImages[nextIndex] || defaultImage);
-                    }}
+                    onClick={handleNextImage}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer z-10 active:scale-90"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -372,48 +401,48 @@ export default function ProductDetailPage() {
                 </button>
               )}
             </div>
-{/* ✨ الصور المصغرة وزر الفيديو - نعرض كل الصور بدون حد أقصى */}
-<div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x sm:overflow-visible">
-  
-  {product.video_url && (
-    <div
-      onClick={() => setShowVideo(true)}
-      className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black active:scale-95 ${
-        showVideo ? 'border-temu-orange' : 'border-transparent opacity-80 hover:opacity-100'
-      }`}
-    >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="white" className="opacity-80">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-    </div>
-  )}
 
-  {/* ✨ تم إزالة .slice() لعرض جميع الصور */}
-  {galleryImages.map((img, idx) => {
-    const imgSrc = img || defaultImage;
-    return (
-      <div
-        key={idx}
-        onClick={() => {
-          setSelectedImage(imgSrc);
-          setShowVideo(false);
-        }}
-        className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white active:scale-95 ${
-          !showVideo && selectedImage === imgSrc ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'
-        }`}
-      >
-        <Image 
-          src={imgSrc} 
-          alt="Thumbnail" 
-          fill 
-          sizes="100px" 
-          className="object-contain p-1" 
-          unoptimized={imgSrc.includes('localhost') || imgSrc.includes('127.0.0.1')} 
-        />
-      </div>
-    );
-  })}
-</div>
+            {/* ✨ الصور المصغرة وزر الفيديو */}
+            <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x sm:overflow-visible">
+  
+              {product.video_url && (
+                <div
+                  onClick={() => setShowVideo(true)}
+                  className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black active:scale-95 ${
+                    showVideo ? 'border-temu-orange' : 'border-transparent opacity-80 hover:opacity-100'
+                  }`}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white" className="opacity-80">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                </div>
+              )}
+
+              {galleryImages.map((img, idx) => {
+                const imgSrc = img || defaultImage;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setSelectedImage(imgSrc);
+                      setShowVideo(false);
+                    }}
+                    className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white active:scale-95 ${
+                      !showVideo && selectedImage === imgSrc ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <Image 
+                      src={imgSrc} 
+                      alt="Thumbnail" 
+                      fill 
+                      sizes="100px" 
+                      className="object-contain p-1" 
+                      unoptimized={imgSrc.includes('localhost') || imgSrc.includes('127.0.0.1')} 
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Purchase info */}
@@ -631,7 +660,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Tabs - أضيف scrollbar-hide و touch-pan-x */}
+        {/* Tabs */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-hide touch-pan-x">
             {TABS.map((tab) => (

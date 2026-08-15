@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 export default function StarRating({ onChange }: { onChange: (rating: number) => void }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const ratings = [
     { id: 1, name: 'Terrible' },
@@ -18,12 +19,36 @@ export default function StarRating({ onChange }: { onChange: (rating: number) =>
     onChange(value);
   };
 
+  // ✨ تتبع حركة الإصبع لتعمية النجوم على الهواتف
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (touch && containerRef.current) {
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const star = el?.closest('[data-star-value]');
+      if (star) {
+        const value = parseInt(star.getAttribute('data-star-value') || '0', 10);
+        if (value > 0) {
+          setHover(value);
+        }
+      }
+    }
+  };
+
+  // ✨ عند رفع الإصبع، يتم تثبيت التقييم
+  const handleTouchEnd = () => {
+    if (hover > 0) {
+      handleClick(hover);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
-      {/* ✨ إضافة touch-action: manipulation لمنع تكبير الشاشة بالضغط المزدوج على الهاتف */}
       <div 
+        ref={containerRef}
         className="flex relative pb-2" 
         onMouseLeave={() => setHover(0)}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'manipulation' }}
       >
         {ratings.map((r) => {
@@ -32,10 +57,10 @@ export default function StarRating({ onChange }: { onChange: (rating: number) =>
             <button
               key={r.id}
               type="button"
+              data-star-value={r.id} // ✨ ضروري لتتبع الإصبع
               onClick={() => handleClick(r.id)}
               onMouseEnter={() => setHover(r.id)}
-              // ✨ تكبير مساحة الضغط (p-2) وإضافة تأثير اللمس (active:scale-110)
-              className="p-2 cursor-pointer focus:outline-none transition-transform hover:scale-110 active:scale-110"
+              className="p-2 cursor-pointer focus:outline-none transition-transform hover:scale-110 active:scale-110 touch-manipulation"
               aria-label={`${r.id} stars—${r.name}`}
             >
               <svg 
