@@ -38,7 +38,6 @@ export default function AdminAddProduct() {
 
   const [availableCategories, setAvailableCategories] = useState<{ value: string, label: string }[]>([]);
 
-  // ✨ حالات جديدة للمزامنة
   const [syncingCats, setSyncingCats] = useState(false);
   const [backfillingCats, setBackfillingCats] = useState(false);
 
@@ -67,7 +66,6 @@ export default function AdminAddProduct() {
     if (!confirm('This will update categories for ALL existing products. It may take several minutes depending on the number of products. Continue?')) return;
     setBackfillingCats(true);
     try {
-      // ✨ تمرير timeout: 0 لتعطيل مهلة الانتظار لهذا الطلب الطويل فقط
       const res = await adminApi.post('/admin/backfill-categories', {}, { timeout: 0 });
       alert(`✅ ${res.data.message}`);
     } catch (err: any) {
@@ -213,8 +211,11 @@ export default function AdminAddProduct() {
       <div className="max-w-2xl mx-auto">
         
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <button onClick={() => router.push('/')} className="text-temu-orange font-bold">
-            ← Back to Store
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-temu-orange font-bold active:scale-95 transition touch-manipulation w-fit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Store
           </button>
           
           <form onSubmit={handleAdminSearch} className="relative flex-1 min-w-50">
@@ -223,9 +224,9 @@ export default function AdminAddProduct() {
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
               placeholder="🔍 Quick search products..." 
-              className="w-full bg-white border-2 border-temu-gray-border-light rounded-temu-sm py-2 pl-4 pr-10 text-sm focus:outline-none focus:border-temu-orange transition"
+              className="w-full bg-white border-2 border-temu-gray-border-light rounded-temu-sm py-2 pl-4 pr-10 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation"
             />
-            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-orange cursor-pointer p-1">
+            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-orange cursor-pointer p-1 active:scale-90">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -234,34 +235,37 @@ export default function AdminAddProduct() {
           </form>
         </div>
 
+        {/* ✨ شريط التنقل بين أقسام الأدمن */}
         <div className="flex gap-2 flex-wrap mb-6">
-          <button onClick={() => router.push('/admin/manage')} className="bg-temu-black text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer">Manage Products</button>
-          <button onClick={() => router.push('/admin/baridimob')} className="bg-[#8B78C6] text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-[#7a68af] transition cursor-pointer">BaridiMob Orders</button>
-          <button onClick={() => router.push('/admin/disputes')} className="bg-temu-error text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-red-600 transition cursor-pointer">Disputes</button>
-          <button onClick={() => router.push('/admin/advanced')} className="bg-temu-black text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer">Advanced Tools</button>
+          <button onClick={() => router.push('/admin/manage')} className="bg-temu-black text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation">Manage Products</button>
+          <button onClick={() => router.push('/admin/baridimob')} className="bg-temu-orange text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation">BaridiMob Orders</button>
+          {/* ✨ الزر الجديد للطلبات المتعثرة */}
+          <button onClick={() => router.push('/admin/failed-orders')} className="bg-temu-error text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-error/90 transition cursor-pointer active:scale-95 touch-manipulation">Manual & Pending</button>
+          <button onClick={() => router.push('/admin/disputes')} className="bg-temu-black text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation">Disputes</button>
+          <button onClick={() => router.push('/admin/advanced')} className="bg-temu-black text-white text-sm font-bold py-2 px-4 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation">Advanced Tools</button>
         </div>
         
-        <div className="bg-white rounded-temu-sm p-8 border border-temu-gray-border-light">
+        <div className="bg-white rounded-temu-sm p-8 border border-temu-gray-border-light shadow-sm">
           <h1 className="text-2xl font-extrabold text-temu-black mb-6">Add New Product</h1>
           
           {message && (
-            <div className={`p-4 rounded-temu-sm mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-temu-green-light text-temu-green' : 'bg-red-50 text-temu-error'}`}>
+            <div className={`p-4 rounded-temu-sm mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-temu-green-light/10 text-temu-green' : 'bg-red-50 text-temu-error'}`}>
               {message}
             </div>
           )}
 
           <div className="mb-8 p-4 bg-temu-yellow-soft rounded-temu-sm border border-temu-gold">
             <label className="block text-sm font-bold text-temu-black mb-2">Auto-Fill from URL</label>
-            <div className="flex gap-2">
-              <input type="url" value={scrapeUrl} onChange={(e) => setScrapeUrl(e.target.value)} placeholder="Paste product link here..." className="flex-1 bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange" />
-              <button onClick={handleScrape} disabled={scraping} className="bg-temu-black text-white font-bold px-6 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap">{scraping ? 'Fetching...' : 'Fetch Data'}</button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input type="url" value={scrapeUrl} onChange={(e) => setScrapeUrl(e.target.value)} placeholder="Paste product link here..." className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" />
+              <button onClick={handleScrape} disabled={scraping} className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap active:scale-95 touch-manipulation">{scraping ? 'Fetching...' : 'Fetch Data'}</button>
             </div>
           </div>
 
-          <div className="mb-8 p-4 bg-white rounded-temu-sm border border-temu-gray-border-light">
+          <div className="mb-8 p-4 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
             <label className="block text-sm font-bold text-temu-black mb-2">Sync Products from CJ by Category</label>
-            <div className="flex gap-2">
-              <select value={syncCategory} onChange={(e) => setSyncCategory(e.target.value)} className="flex-1 bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange cursor-pointer">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select value={syncCategory} onChange={(e) => setSyncCategory(e.target.value)} className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange cursor-pointer touch-manipulation">
                 <option value="">🛍️ منتجات شاملة (General / Trending)</option>
                 <option value="clipper">🪒 آلات الحلاقة (Shavers)</option>
                 <option value="smartphone">📱 الهواتف الذكية (Smartphones)</option>
@@ -282,19 +286,19 @@ export default function AdminAddProduct() {
                 <option value="garden">🌳 الحديقة (Garden)</option>
                 <option value="pet">🐾 حيوانات أليفة (Pet)</option>
               </select>
-              <button onClick={handleSyncCJ} disabled={syncing} className="bg-temu-black text-white font-bold px-6 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap">{syncing ? 'Syncing...' : 'Sync Now'}</button>
+              <button onClick={handleSyncCJ} disabled={syncing} className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap active:scale-95 touch-manipulation">{syncing ? 'Syncing...' : 'Sync Now'}</button>
             </div>
             {syncMessage && (<p className={`mt-3 text-sm font-medium ${syncMessage.includes('✅') ? 'text-temu-green' : 'text-temu-error'}`}>{syncMessage}</p>)}
           </div>
 
-          {/* ✨ أزرار شجرة الفئات الرسمية */}
+          {/* أزرار شجرة الفئات الرسمية */}
           <div className="mb-8 p-4 bg-white rounded-temu-sm border border-temu-gray-border-light">
             <label className="block text-sm font-bold text-temu-black mb-2">Official CJ Categories Tree</label>
             <div className="flex gap-2 flex-wrap">
               <button 
                 onClick={handleSyncCategories}
                 disabled={syncingCats}
-                className="bg-temu-green text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                className="bg-temu-green text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-green/90 transition disabled:opacity-50 cursor-pointer flex items-center gap-2 active:scale-95 touch-manipulation"
               >
                 {syncingCats ? (
                   <>
@@ -309,7 +313,7 @@ export default function AdminAddProduct() {
               <button 
                 onClick={handleBackfillCategories}
                 disabled={backfillingCats}
-                className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2 active:scale-95 touch-manipulation"
               >
                 {backfillingCats ? (
                   <>
@@ -344,34 +348,34 @@ export default function AdminAddProduct() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Product Title *</label>
-              <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+              <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Price ($) *</label>
-                <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Original Price ($)</label>
-                <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Main Image URL *</label>
-              <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required placeholder="https://..." className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+              <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required placeholder="https://..." className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Additional Images (comma separated)</label>
-              <input type="text" name="images" value={formData.images} onChange={handleChange} placeholder="url1, url2, url3" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+              <input type="text" name="images" value={formData.images} onChange={handleChange} placeholder="url1, url2, url3" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               <p className="text-xs text-temu-gray-text mt-1">سيتم ملء هذا الحقل تلقائياً عند رفع الصور من الكمبيوتر</p>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange">
+              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation">
                 {availableCategories.map(cat => (
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
@@ -381,25 +385,25 @@ export default function AdminAddProduct() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Colors (hex codes)</label>
-                <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000000, #FFFFFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000000, #FFFFFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Sizes</label>
-                <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Material</label>
-              <input type="text" name="material" value={formData.material} onChange={handleChange} placeholder="Cotton, Plastic, etc." className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+              <input type="text" name="material" value={formData.material} onChange={handleChange} placeholder="Cotton, Plastic, etc." className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-temu-black mb-2">Description</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none"></textarea>
+              <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none transition touch-manipulation"></textarea>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold py-4 rounded-temu-sm transition disabled:opacity-50 flex justify-center items-center cursor-pointer">
+            <button type="submit" disabled={loading} className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold py-4 rounded-temu-sm transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md">
               {loading ? 'Adding...' : 'Add Product'}
             </button>
           </form>
@@ -421,22 +425,22 @@ export default function AdminAddProduct() {
             }} className="space-y-5 bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Coupon Code *</label>
-                <input type="text" name="code" required placeholder="e.g., NEO10" className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="code" required placeholder="e.g., NEO10" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-temu-black mb-2">Discount Type</label>
-                  <select name="discount_type" className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange">
+                  <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation">
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount ($)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-temu-black mb-2">Value *</label>
-                  <input type="number" step="0.01" name="discount_value" required placeholder="e.g., 10" className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                  <input type="number" step="0.01" name="discount_value" required placeholder="e.g., 10" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
                 </div>
               </div>
-              <button type="submit" className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer">Create Coupon</button>
+              <button type="submit" className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation w-full">Create Coupon</button>
             </form>
           </div>
 
@@ -458,21 +462,21 @@ export default function AdminAddProduct() {
             }} className="space-y-5 bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Product Name *</label>
-                <input type="text" name="productName" required placeholder="e.g., Smart Watch Pro" className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="productName" required placeholder="e.g., Smart Watch Pro" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Image URL *</label>
-                <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Product URL (Link to the product)</label>
-                <input type="url" name="productUrl" placeholder="https://aliexpress.com/..." className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="url" name="productUrl" placeholder="https://aliexpress.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Target Price ($)</label>
-                <input type="number" step="0.01" name="price" placeholder="e.g., 15.00" className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="number" step="0.01" name="price" placeholder="e.g., 15.00" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition touch-manipulation" />
               </div>
-              <button type="submit" className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer">Send Sourcing Request to CJ</button>
+              <button type="submit" className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation w-full">Send Sourcing Request to CJ</button>
             </form>
           </div>
 
