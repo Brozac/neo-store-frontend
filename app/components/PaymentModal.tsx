@@ -38,7 +38,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
   const [customerCity, setCustomerCity] = useState('');
   const [customerState, setCustomerState] = useState(''); 
   const [customerZip, setCustomerZip] = useState(''); 
-
+  const [copied, setCopied] = useState(false);
   const EXCHANGE_RATE = 255; 
   const totalAmountDZD = Math.round(totalAmount * EXCHANGE_RATE);
 
@@ -283,14 +283,33 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                   />
                 </div>
 
-                <div className="bg-temu-offwhite p-4 rounded-temu-sm mb-4 border border-temu-gray-border-light">
-                  <p className="text-sm text-temu-gray-text mb-2">
-                    يرجى تحويل مبلغ <span className="font-extrabold text-temu-error text-lg">{totalAmountDZD} DZD</span> 
-                    <span className="block text-xs text-temu-gray-light">(ما يعادل ${totalAmount.toFixed(2)})</span>
-                    إلى الحساب التالي:
-                  </p>
-                  <p className="font-bold text-temu-black">RIP: 00799999 00012345678 90</p>
-                </div>
+                {/* ✨ صندوق رقم الـ RIP مع زر النسخ (RTL للنص العربي) */}
+<div dir="rtl" className="bg-temu-offwhite p-4 rounded-temu-sm mb-4 border border-temu-gray-border-light">
+  <p className="text-sm text-temu-gray-text mb-3">
+    يرجى تحويل مبلغ <span className="font-extrabold text-temu-error text-lg">{totalAmountDZD} DZD</span> 
+    <span className="block text-xs text-temu-gray-light">(ما يعادل ${totalAmount.toFixed(2)})</span>
+    إلى الحساب التالي:
+  </p>
+  
+  <div className="flex items-center justify-between bg-white p-3 rounded-temu-sm border border-temu-gray-border-light">
+    {/* dir="ltr" لجعل الأرقام والرموز تبدأ من اليسار */}
+    <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all">RIP : 00799999 00012345678 90</p>
+    <button 
+      type="button"
+      onClick={() => {
+        navigator.clipboard.writeText('007999990001234567890');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className={`text-xs font-bold px-3 py-1.5 rounded-temu-sm transition active:scale-95 touch-manipulation cursor-pointer shrink-0 ${
+        copied ? 'bg-temu-green text-white' : 'bg-temu-orange text-white'
+      }`}
+    >
+      {/* ✨ تغيير النص إلى الإنجليزية */}
+      {copied ? '✔ Copied' : 'Copy'}
+    </button>
+  </div>
+</div>
                 
                 <p className="text-sm text-temu-gray-text mb-3">Upload the receipt image below:</p>
 
