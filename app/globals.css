@@ -54,7 +54,6 @@
 
   img {
     -webkit-user-drag: none;
-    user-drag: none;
     pointer-events: none; 
   }
   
@@ -201,7 +200,15 @@
   max-height: 500px;
   min-height: 300px;
 }
-
+/* ==========================================
+   ✨ إخفاء البطاقات الإضافية في الهواتف لتفعيل التفاعل
+   ========================================== */
+@media (max-width: 768px) {
+  /* في الهواتف، نخفي البطاقة الرابعة والخامسة وما بعدها */
+  .t-accordion-card:nth-child(n+4) {
+    display: none;
+  }
+}
 .t-accordion-card {
   flex: 1;
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
