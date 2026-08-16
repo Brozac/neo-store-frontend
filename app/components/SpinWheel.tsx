@@ -20,13 +20,13 @@ export default function SpinWheel() {
   }, []);
 
   const segments = [
-    { text: '10% OFF', value: 10, color: '#FFA500', icon: '🎉' },
+    { text: '2% OFF', value: 2, color: '#FFA500', icon: '🎉' },
     { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
     { text: '15% OFF', value: 15, color: '#FF6B9D', icon: '🎁' },
     { text: '5% OFF', value: 5, color: '#8B78C6', icon: '⭐' },
-    { text: '20% OFF', value: 20, color: '#357A8B', icon: '🔥' },
+    { text: '7% OFF', value: 7, color: '#357A8B', icon: '🔥' },
     { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
-    { text: '10% OFF', value: 10, color: '#FF6B9D', icon: '🎉' },
+    { text: '2% OFF', value: 2, color: '#FF6B9D', icon: '🎉' },
     { text: 'Free Ship', value: 100, color: '#8B78C6', icon: '🚚' },
   ];
 
@@ -58,12 +58,12 @@ export default function SpinWheel() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-100 p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
         {/* ✨ زر الإغلاق مع تأثير اللمس */}
         <button 
           onClick={() => setIsOpen(false)} 
-          className="absolute top-4 right-4 text-temu-gray-light hover:text-temu-black transition cursor-pointer z-10 active:scale-90"
+          className="absolute top-4 right-4 text-temu-gray-light hover:text-temu-black transition cursor-pointer z-10 active:scale-90 touch-manipulation"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -76,7 +76,7 @@ export default function SpinWheel() {
             <div className="relative w-72 h-72 mx-auto mb-6">
               {/* ✨ تصحيح مدة الانتقال إلى duration-[4000ms] */}
               <div 
-                className="absolute inset-0 rounded-full shadow-xl transition-transform duration-4000 ease-out"
+                className="absolute inset-0 rounded-full shadow-xl transition-transform duration-[4000ms] ease-out"
                 style={{ 
                   transform: `rotate(${rotation}deg)`,
                   background: `conic-gradient(
@@ -128,7 +128,7 @@ export default function SpinWheel() {
                 placeholder="Enter your email address"
                 required
                 disabled={isSpinning}
-                className="w-full bg-temu-offwhite border-2 border-temu-gray-border-light rounded-full px-6 py-3 text-sm focus:outline-none focus:border-temu-orange mb-2 transition"
+                className="w-full bg-temu-offwhite border-2 border-temu-gray-border-light rounded-full px-6 py-3 text-sm focus:outline-none focus:border-temu-orange mb-2 transition touch-manipulation"
               />
               <p className="text-xs text-temu-gray-light">By playing, you agree to receive marketing emails.</p>
             </form>
@@ -150,7 +150,7 @@ export default function SpinWheel() {
             {/* ✨ زر المتابعة مع تأثير اللمس */}
             <button 
               onClick={() => setIsOpen(false)}
-              className="bg-temu-black text-white font-bold py-3 px-8 rounded-full hover:bg-temu-dark transition cursor-pointer active:scale-95 shadow-md"
+              className="bg-temu-black text-white font-bold py-3 px-8 rounded-full hover:bg-temu-dark transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
             >
               Continue Shopping
             </button>
