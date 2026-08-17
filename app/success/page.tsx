@@ -1,20 +1,23 @@
 'use client';
 
-import { useEffect, Suspense } from 'react'; // ✨ أضفنا Suspense
+import { useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useCart } from '../context/CartContext'; // ✨ تأكدي من المسار الصحيح للـ CartContext
 
-// ✨ نقلنا المنطق البرمجي إلى كومبوننت داخلي
+// كومبوننت المحتوى الذي يقرأ الـ Query Parameters
 function SuccessContent() {
   const searchParams = useSearchParams();
   const amount = parseFloat(searchParams.get('amount') || '0') || 0;
+  
+  // ✨ جلب دالة clearCart من الـ Context
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    // 1. مسح السلة بمجرد الوصول لصفحة النجاح
-    localStorage.removeItem('cart');
-    window.dispatchEvent(new Event('cartUpdated')); // لإخبار الـ Navbar بتحديث العداد إلى 0
+    // 1. تفريغ السلة من الـ State و localStorage في نفس اللحظة
+    clearCart();
 
-    // 2. ✨ تتبع عملية الشراء لفيسبوك (Meta Pixel) بالمبلغ الحقيقي
+    // 2. تتبع عملية الشراء لفيسبوك (Meta Pixel) بالمبلغ الحقيقي
     if (typeof window !== 'undefined' && (window as any).fbq) {
       (window as any).fbq('track', 'Purchase', {
         value: amount,
@@ -22,14 +25,14 @@ function SuccessContent() {
       });
     }
 
-    // 3. ✨ تتبع عملية الشراء لتيك توك (TikTok Pixel) بالمبلغ الحقيقي
+    // 3. تتبع عملية الشراء لتيك توك (TikTok Pixel) بالمبلغ الحقيقي
     if (typeof window !== 'undefined' && (window as any).ttq) {
       (window as any).ttq.track('CompletePayment', {
         value: amount,
         currency: 'USD'
       });
     }
-  }, [amount]);
+  }, [amount, clearCart]); // إعادة التشغيل إذا تغير المبلغ
 
   return (
     <main className="min-h-screen bg-[#F4F3F8] flex items-center justify-center p-6 font-sans">
@@ -60,7 +63,7 @@ function SuccessContent() {
   );
 }
 
-// ✨ الصفحة الرئيسية التي تغلف المحتوى داخل Suspense
+// الصفحة الرئيسية التي تغلف المحتوى داخل Suspense (مطلوب في Next.js 16 لـ useSearchParams)
 export default function SuccessPage() {
   return (
     <Suspense fallback={
