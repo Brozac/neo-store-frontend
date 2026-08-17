@@ -937,30 +937,27 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Store info */}
-        <div className="border-t border-temu-gray-border-light pt-10 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-temu-orange text-white rounded-full flex items-center justify-center font-extrabold text-xl">
-              {(product.store_name || 'S').charAt(0)}
-            </div>
-            <div>
-              <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
-              <p className="text-xs text-temu-gray-light">
-                Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button className="bg-white text-temu-black font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-offwhite border border-temu-gray-border transition text-sm cursor-pointer active:scale-95">
-              Follow
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="bg-temu-orange text-white font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition text-sm cursor-pointer active:scale-95"
-            >
-              Visit Store
-            </button>
-          </div>
-        </div>
+<div className="border-t border-temu-gray-border-light pt-10 flex items-center justify-between flex-wrap gap-4">
+  <div className="flex items-center gap-4">
+    {/* ✨ استبدال الصورة الرمزية باللوجو الحقيقي */}
+    <img src="/icon-512.png" alt="Laclarc Store" className="w-16 h-16 rounded-full object-cover border border-temu-gray-border-light" />
+    <div>
+      <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
+      <p className="text-xs text-temu-gray-light">
+        Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★
+      </p>
+    </div>
+  </div>
+  <div className="flex gap-3">
+    {/* ✨ تم حذف زر Follow */}
+    <button
+      onClick={() => router.push('/')}
+      className="bg-temu-orange text-white font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition text-sm cursor-pointer active:scale-95"
+    >
+      Visit Store
+    </button>
+  </div>
+</div>
       </div>
 
       <LivePurchaseNotification productName={product.title} />
