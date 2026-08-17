@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
           <p>We use cookies to enhance your shopping experience, remember your cart, and analyze website traffic.</p>
 
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">5. Contact Us</h2>
-          <p>If you have any questions about our Privacy Policy, please contact us at support@neostore.com.</p>
+          <p>If you have any questions about our Privacy Policy, please contact us at support@laclarc.com.</p>
         </div>
       </div>
     </main>
