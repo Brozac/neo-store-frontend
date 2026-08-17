@@ -291,9 +291,16 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     إلى الحساب التالي:
   </p>
   
-  <div className="flex items-center justify-between bg-white p-3 rounded-temu-sm border border-temu-gray-border-light">
-    {/* dir="ltr" لجعل الأرقام والرموز تبدأ من اليسار */}
-    <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all">RIP : 00799999 00012345678 90</p>
+  <div className="flex items-center justify-between gap-2 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light">
+    {/* 
+      dir="ltr" لجعل الأرقام تبدأ من اليسار
+      break-all لتكسير الأرقام بشكل مرتب إذا ما كفاتش المساحة
+      flex-1 باش تأخذ المساحة المتبقية
+      tracking-wider باش تفصل شوية بين الأرقام باش تولي مقروئة
+    */}
+    <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all break-all flex-1 tracking-wider text-left">
+      007999990001234567890
+    </p>
     <button 
       type="button"
       onClick={() => {
@@ -301,11 +308,10 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className={`text-xs font-bold px-3 py-1.5 rounded-temu-sm transition active:scale-95 touch-manipulation cursor-pointer shrink-0 ${
+      className={`text-xs font-bold px-3 py-1.5 rounded-temu-sm transition active:scale-95 touch-manipulation cursor-pointer shrink-0 shadow-sm ${
         copied ? 'bg-temu-green text-white' : 'bg-temu-orange text-white'
       }`}
     >
-      {/* ✨ تغيير النص إلى الإنجليزية */}
       {copied ? '✔ Copied' : 'Copy'}
     </button>
   </div>
