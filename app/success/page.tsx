@@ -1,15 +1,35 @@
-'use client'; // أضفنا هذا السطر لتفعيل الـ useEffect
+'use client';
 
-import { useEffect } from 'react'; // أضفنا useEffect
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation'; // ✨ استدعاء useSearchParams
 
 export default function SuccessPage() {
-  
-  // مسح السلة بمجرد الوصول لصفحة النجاح
+  // ✨ قراءة المبلغ من الرابط (Query Parameter)
+  const searchParams = useSearchParams();
+  const amount = parseFloat(searchParams.get('amount') || '0') || 0;
+
   useEffect(() => {
+    // 1. مسح السلة بمجرد الوصول لصفحة النجاح
     localStorage.removeItem('cart');
     window.dispatchEvent(new Event('cartUpdated')); // لإخبار الـ Navbar بتحديث العداد إلى 0
-  }, []);
+
+    // 2. ✨ تتبع عملية الشراء لفيسبوك (Meta Pixel) بالمبلغ الحقيقي
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Purchase', {
+        value: amount,
+        currency: 'USD'
+      });
+    }
+
+    // 3. ✨ تتبع عملية الشراء لتيك توك (TikTok Pixel) بالمبلغ الحقيقي
+    if (typeof window !== 'undefined' && (window as any).ttq) {
+      (window as any).ttq.track('CompletePayment', {
+        value: amount,
+        currency: 'USD'
+      });
+    }
+  }, [amount]); // ✨ re-run إذا تغير المبلغ
 
   return (
     <main className="min-h-screen bg-[#F4F3F8] flex items-center justify-center p-6 font-sans">

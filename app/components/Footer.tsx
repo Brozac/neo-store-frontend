@@ -33,7 +33,7 @@ export default function Footer() {
           
           {/* عمود المتجر */}
           <div>
-            <h3 className="text-xl font-extrabold text-temu-black mb-4">NEO Store</h3>
+            <h3 className="text-xl font-extrabold text-temu-black mb-4">Laclarc</h3>
             <p className="text-sm text-temu-gray-text leading-relaxed">
               Your trusted destination for quality products. We provide worldwide shipping and secure payment methods.
             </p>
@@ -98,7 +98,7 @@ export default function Footer() {
 
         <div className="border-t border-temu-gray-border-light pt-6 text-center">
           <p className="text-xs text-temu-gray-light">
-            © {new Date().getFullYear()} NEO Store. All rights reserved. Powered by Stripe Secure Payments.
+            © {new Date().getFullYear()} Laclarc. All rights reserved. Powered by Stripe Secure Payments.
           </p>
         </div>
       </div>

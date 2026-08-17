@@ -5,7 +5,7 @@ export default function RefundPolicy() {
         <h1 className="text-3xl font-extrabold text-temu-black mb-6">Refund & Return Policy</h1>
         
         <div className="space-y-4 text-temu-gray-text leading-relaxed text-sm">
-          <p>At NEO Store, we strive to ensure you are completely satisfied with your purchase. If you are not entirely satisfied, we offer a 30-day return policy from the date of delivery.</p>
+          <p>At Laclarc, we strive to ensure you are completely satisfied with your purchase. If you are not entirely satisfied, we offer a 30-day return policy from the date of delivery.</p>
           
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">1. Return Eligibility</h2>
           <p>To be eligible for a return, your item must be unused, in the same condition that you received it, and in its original packaging. Proof of purchase (Order ID) is required.</p>

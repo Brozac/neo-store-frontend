@@ -943,7 +943,7 @@ export default function ProductDetailPage() {
               {(product.store_name || 'S').charAt(0)}
             </div>
             <div>
-              <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'NEO Store'}</h3>
+              <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
               <p className="text-xs text-temu-gray-light">
                 Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★
               </p>

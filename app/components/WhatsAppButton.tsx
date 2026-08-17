@@ -2,7 +2,7 @@
 
 export default function WhatsAppButton() {
   const phoneNumber = "213XXXXXXXXX"; 
-  const message = "Hello NEO Store, I have a question about a product.";
+  const message = "Hello Laclarc, I have a question about a product.";
 
   return (
     <a

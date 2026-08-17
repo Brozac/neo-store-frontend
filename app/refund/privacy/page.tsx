@@ -5,7 +5,7 @@ export default function PrivacyPolicy() {
         <h1 className="text-3xl font-extrabold text-temu-black mb-6">Privacy Policy</h1>
         
         <div className="space-y-4 text-temu-gray-text leading-relaxed text-sm">
-          <p>NEO Store ("we", "us", or "our") respects your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you visit our website.</p>
+          <p>Laclarc ("we", "us", or "our") respects your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you visit our website.</p>
           
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">1. Information We Collect</h2>
           <p>We collect personal information that you voluntarily provide to us when making a purchase, including your name, email address, shipping address, and phone number.</p>

@@ -7,8 +7,8 @@ import Footer from './components/Footer';
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'NEO Store - Smart Shopping',
-  description: 'Discover the best trending products at NEO Store.',
+  title: 'Laclarc - Premium Dropshipping Store',
+  description: 'Discover the best trending products at Laclarc.',
   manifest: '/manifest.webmanifest', // ✨ ربط ملف المانيفيست
 };
 
@@ -32,7 +32,7 @@ export default function RootLayout({
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="NEO Store" />
+    <meta name="apple-mobile-web-app-title" content="Laclarc" />
   </head>
   <body className="bg-temu-offwhite" suppressHydrationWarning>
     {/* ... باقي الكود ... */}

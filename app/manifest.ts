@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'NEO Store - Smart Shopping',
-    short_name: 'NEO Store', // يجب أن يكون 3 أحرف على الأقل
-    description: 'Discover the best trending products at NEO Store.',
+    name: 'Laclarc - Premium Dropshipping Store',
+    short_name: 'Laclarc', // يجب أن يكون 3 أحرف على الأقل
+    description: 'Discover the best trending products at Laclarc Store.',
     start_url: '/',
     display: 'standalone',
     background_color: '#F9F8FC',
