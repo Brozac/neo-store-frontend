@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, Suspense } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCart } from '../context/CartContext'; // ✨ تأكدي من المسار الصحيح للـ CartContext
+import { useCart } from '../context/CartContext'; // ✨ تأكدي من مسار الـ CartContext
 
 // كومبوننت المحتوى الذي يقرأ الـ Query Parameters
 function SuccessContent() {
@@ -51,13 +50,13 @@ function SuccessContent() {
           Thank you for your purchase. We have successfully processed your transaction and are getting your order ready.
         </p>
 
-        {/* زر العودة للمتجر بلون الـ Brand الأساسي */}
-        <Link 
-          href="/"
-          className="w-full block bg-[#8B78C6] text-white py-4 rounded-2xl font-bold text-xs tracking-wide shadow-xl hover:bg-[#7a67b5] transition-all cursor-pointer text-center active:scale-95"
+        {/* ✨ زر العودة للمتجر بلون الـ Brand الأساسي (تم إصلاح التوجيه) */}
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="w-full bg-[#8B78C6] text-white py-4 rounded-2xl font-bold text-xs tracking-wide shadow-xl hover:bg-[#7a67b5] transition-all cursor-pointer text-center active:scale-95"
         >
           Return to Store
-        </Link>
+        </button>
       </div>
     </main>
   );
