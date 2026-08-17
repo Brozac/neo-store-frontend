@@ -20,7 +20,7 @@ export default function Navbar() {
             href="/" 
             className="text-2xl font-extrabold tracking-wide text-white whitespace-nowrap drop-shadow-md active:scale-95 transition touch-manipulation cursor-pointer"
           >
-            NEO
+            LacLarc
           </Link>
 
           {/* البحث للشاشات الكبيرة */}

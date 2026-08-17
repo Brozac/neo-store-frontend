@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react'; // ✨ أضفنا Suspense
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation'; // ✨ استدعاء useSearchParams
+import { useSearchParams } from 'next/navigation';
 
-export default function SuccessPage() {
-  // ✨ قراءة المبلغ من الرابط (Query Parameter)
+// ✨ نقلنا المنطق البرمجي إلى كومبوننت داخلي
+function SuccessContent() {
   const searchParams = useSearchParams();
   const amount = parseFloat(searchParams.get('amount') || '0') || 0;
 
@@ -29,7 +29,7 @@ export default function SuccessPage() {
         currency: 'USD'
       });
     }
-  }, [amount]); // ✨ re-run إذا تغير المبلغ
+  }, [amount]);
 
   return (
     <main className="min-h-screen bg-[#F4F3F8] flex items-center justify-center p-6 font-sans">
@@ -57,5 +57,18 @@ export default function SuccessPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+// ✨ الصفحة الرئيسية التي تغلف المحتوى داخل Suspense
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F3F8]">
+        <div className="w-8 h-8 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }
