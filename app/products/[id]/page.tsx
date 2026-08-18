@@ -70,7 +70,6 @@ export default function ProductDetailPage() {
   
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
-  // ✨ حالة تتبع الإصبع للسحب (Swipe)
   const touchStartX = useRef(0);
 
   useEffect(() => {
@@ -209,7 +208,6 @@ export default function ProductDetailPage() {
     return colorMap[colorName] || '#CCCCCC';
   };
 
-  // ✨ دوال السحب (Swipe) للصور
   const handlePrevImage = () => {
     if (galleryImages.length <= 1 || showVideo) return;
     const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
@@ -233,11 +231,11 @@ export default function ProductDetailPage() {
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchStartX.current - touchEndX;
     
-    if (Math.abs(diffX) > 40) { // إذا كان السحب أكثر من 40 بكسل
+    if (Math.abs(diffX) > 40) {
       if (diffX > 0) {
-        handleNextImage(); // سحب لليسار -> الصورة التالية
+        handleNextImage();
       } else {
-        handlePrevImage(); // سحب لليمين -> الصورة السابقة
+        handlePrevImage();
       }
     }
   };
@@ -295,19 +293,15 @@ export default function ProductDetailPage() {
 
   const finalRelatedProducts = sameCategory.slice(0, 4);
 
+  // ✨ تعديل قائمة التفاصيل: إضافة المادة والأصل، وحذف النصوص الافتراضية
   const detailBullets: string[] = [];
+  if (product.material && product.material !== 'Premium Quality') detailBullets.push(`Material: ${product.material}`);
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.chest_pad) detailBullets.push(`Chest pad: ${product.chest_pad}`);
   if (product.wires) detailBullets.push(`Wires: ${product.wires}`);
   if (product.support) detailBullets.push(`Support: ${product.support}`);
-  if (detailBullets.length === 0) {
-    detailBullets.push(
-      'Made from premium materials for lasting comfort',
-      'Finished to a high standard, inside and out',
-      'Designed to move with you through everyday wear'
-    );
-  }
+  if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
 
   const isCurrentProductFavorited = favoriteIds.includes(String(product.id));
 
@@ -342,7 +336,6 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
           {/* Gallery */}
           <div className="flex flex-col gap-4 h-full">
-            {/* ✨ Main Image / Video مع إضافة onTouchStart و onTouchEnd للسحب */}
             <div 
               className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
               onTouchStart={handleTouchStart}
@@ -402,7 +395,6 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* ✨ الصور المصغرة وزر الفيديو */}
             <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x sm:overflow-visible">
   
               {product.video_url && (
@@ -687,16 +679,19 @@ export default function ProductDetailPage() {
                           product.store_name ? ` at ${product.store_name}` : ''
                         }.`}
                   </p>
-                  <ul className="space-y-3">
-                    {detailBullets.map((bullet, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-sm text-temu-gray-text">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-temu-green">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
+                  {/* ✨ لا تعرض القائمة إلا إذا كان هناك تفاصيل حقيقية */}
+                  {detailBullets.length > 0 && (
+                    <ul className="space-y-3">
+                      {detailBullets.map((bullet, idx) => (
+                        <li key={idx} className="flex items-start gap-3 text-sm text-temu-gray-text">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-temu-green">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          {bullet}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </>
               )}
 
@@ -907,7 +902,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-                   {reviews.length > 0 ? (
+          {reviews.length > 0 ? (
             <div className="reviews-carousel">
               {reviews.map((rev) => (
                 <div key={rev.id} className="review-card">
@@ -937,27 +932,25 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Store info */}
-<div className="border-t border-temu-gray-border-light pt-10 flex items-center justify-between flex-wrap gap-4">
-  <div className="flex items-center gap-4">
-    {/* ✨ استبدال الصورة الرمزية باللوجو الحقيقي */}
-    <img src="/icon-512.png" alt="Laclarc Store" className="w-16 h-16 rounded-full object-cover border border-temu-gray-border-light" />
-    <div>
-      <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
-      <p className="text-xs text-temu-gray-light">
-        Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★
-      </p>
-    </div>
-  </div>
-  <div className="flex gap-3">
-    {/* ✨ تم حذف زر Follow */}
-    <button
-      onClick={() => router.push('/')}
-      className="bg-temu-orange text-white font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition text-sm cursor-pointer active:scale-95"
-    >
-      Visit Store
-    </button>
-  </div>
-</div>
+        <div className="border-t border-temu-gray-border-light pt-10 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <img src="/icon-512.png" alt="Laclarc Store" className="w-16 h-16 rounded-full object-cover border border-temu-gray-border-light" />
+            <div>
+              <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
+              <p className="text-xs text-temu-gray-light">
+                Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/')}
+              className="bg-temu-orange text-white font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition text-sm cursor-pointer active:scale-95"
+            >
+              Visit Store
+            </button>
+          </div>
+        </div>
       </div>
 
       <LivePurchaseNotification productName={product.title} />

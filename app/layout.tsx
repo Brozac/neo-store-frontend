@@ -6,19 +6,19 @@ import Footer from './components/Footer';
 
 import type { Metadata, Viewport } from 'next';
 
+// ✨ تم تحديث العنوان والوصف هنا
 export const metadata: Metadata = {
-  title: 'Laclarc - Premium Dropshipping Store',
-  description: 'Discover the best trending products at Laclarc.',
-  manifest: '/manifest.webmanifest', // ✨ ربط ملف المانيفيست
+  title: 'Laclarc | Explore the Latest Clothing, Beauty, Home, Jewelry & More',
+  description: 'Discover the best trending products at Laclarc. Explore the Latest Clothing, Beauty, Home, Jewelry & More.',
+  manifest: '/manifest.webmanifest',
 };
 
-// ✨ إخراج viewport ككائن مستقل
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#8B78C6', // ✨ لون شريط الحالة في الهاتف
+  themeColor: '#8B78C6',
 };
 
 export default function RootLayout({
@@ -28,14 +28,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-  <head>
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Laclarc" />
-  </head>
-  <body className="bg-temu-offwhite" suppressHydrationWarning>
-    {/* ... باقي الكود ... */}
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Laclarc" />
+      </head>
+      <body className="bg-temu-offwhite" suppressHydrationWarning>
         <Providers>{children}</Providers>
 
         {/* Meta Pixel (Facebook) */}

@@ -293,7 +293,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
   
   <div className="flex items-center justify-between bg-white p-3 rounded-temu-sm border border-temu-gray-border-light gap-2">
   {/* ✨ إضافة whitespace-nowrap و truncate لضمان بقاء الأرقام في سطر واحد */}
-  <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all whitespace-nowrap overflow-hidden text-ellipsis">RIP: 00799999 00012345678 90</p>
+  <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all whitespace-nowrap overflow-hidden text-ellipsis">RIP : 00799999 00012345678 90</p>
   
   <button 
     type="button"

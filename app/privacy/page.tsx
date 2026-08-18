@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
 
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">2. How We Use Your Information</h2>
           <ul className="list-disc ml-5 space-y-1">
-            <li>To process and fulfill your orders (we share your name and shipping address with our fulfillment partners like CJ Dropshipping).</li>
+            <li>To process and fulfill your orders (we share your name and shipping address with our fulfillment partners).</li>
             <li>To process payments securely via Stripe.</li>
             <li>To send you order confirmations and shipping updates.</li>
             <li>To provide customer support.</li>

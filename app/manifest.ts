@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Laclarc - Premium Dropshipping Store',
+    name: 'Laclarc | Explore the Latest Clothing, Beauty, Home, Jewelry & More',
     short_name: 'Laclarc', // يجب أن يكون 3 أحرف على الأقل
-    description: 'Discover the best trending products at Laclarc Store.',
+    description: 'Discover the best trending products at Laclarc. Explore the Latest Clothing, Beauty, Home, Jewelry & More.',
     start_url: '/',
     display: 'standalone',
     background_color: '#F9F8FC',
