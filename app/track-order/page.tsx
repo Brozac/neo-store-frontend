@@ -13,27 +13,32 @@ interface TrackedOrder {
 }
 
 export default function TrackOrderPage() {
-  const [query, setQuery] = useState('');
+  const [orderId, setOrderId] = useState('');
+  const [email, setEmail] = useState('');
   const [orders, setOrders] = useState<TrackedOrder[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!orderId.trim() || !email.trim()) {
+      setError('Please enter both Order ID and Email.');
+      return;
+    }
 
     setLoading(true);
     setError('');
     setOrders([]);
 
     try {
-      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/track/${query}`);
+      // ✨ إرسال الإيميل كـ Query Parameter للسيرفر للحماية من IDOR
+      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/track/${orderId}?email=${encodeURIComponent(email)}`);
       const data = await res.json();
       
       if (res.ok) {
         setOrders(Array.isArray(data) ? data : []);
         if (data.length === 0) {
-          setError('No orders found for this search.');
+          setError('No orders found matching these details.');
         }
       } else {
         setError(data.error || 'Order not found');
@@ -54,15 +59,21 @@ export default function TrackOrderPage() {
         </svg>
         Track Your Order
       </h1>
-      <p className="text-xs text-temu-gray-light mb-6 text-center">Enter your Order ID or Email address below</p>
+      <p className="text-xs text-temu-gray-light mb-6 text-center">Enter your Order ID and Email address below</p>
 
-      {/* ✨ تعديل الاستجابة: تتراص عمودياً على الهواتف الصغيرة جداً */}
       <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-2 mb-8">
         <input 
           type="text" 
-          placeholder="Order ID or Email"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Order ID"
+          value={orderId}
+          onChange={(e) => setOrderId(e.target.value)}
+          className="flex-1 p-3.5 bg-white rounded-temu-sm shadow-sm text-sm outline-none text-temu-black focus:ring-1 focus:ring-temu-orange border border-temu-gray-border-light transition touch-manipulation mb-2 sm:mb-0"
+        />
+        <input 
+          type="email" 
+          placeholder="Email Address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="flex-1 p-3.5 bg-white rounded-temu-sm shadow-sm text-sm outline-none text-temu-black focus:ring-1 focus:ring-temu-orange border border-temu-gray-border-light transition touch-manipulation"
         />
         <button 

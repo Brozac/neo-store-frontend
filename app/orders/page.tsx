@@ -99,7 +99,12 @@ export default function OrdersPage() {
     setOrderItems([]);
 
     try {
-      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/${order.id}/items`);
+      // ✨ إرسال التوكن في الـ Headers لتجاوز فحص الأمان الجديد
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/${order.id}/items`, { headers });
       
       if (!res.ok) {
         throw new Error('Failed to load details');
