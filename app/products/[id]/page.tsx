@@ -70,6 +70,10 @@ export default function ProductDetailPage() {
   
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
+  // ✨ حالات النافذة المنبثقة (Lightbox)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   const touchStartX = useRef(0);
 
   useEffect(() => {
@@ -239,7 +243,7 @@ export default function ProductDetailPage() {
       }
     }
   };
-  // ✨ دوال السحب (Swipe) للصورة الموسعة في قسم التبويبات
+
   const handleDetailTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -248,13 +252,29 @@ export default function ProductDetailPage() {
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchStartX.current - touchEndX;
     
-    if (Math.abs(diffX) > 40) { // إذا كان السحب أكثر من 40 بكسل
+    if (Math.abs(diffX) > 40) {
       if (diffX > 0) {
-        // سحب لليسار -> الصورة التالية
         setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
       } else {
-        // سحب لليمين -> الصورة السابقة
         setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+      }
+    }
+  };
+
+  // ✨ دوال السحب (Swipe) للنافذة المنبثقة (Lightbox)
+  const handleLightboxTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleLightboxTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diffX) > 40) {
+      if (diffX > 0) {
+        setLightboxIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+      } else {
+        setLightboxIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
       }
     }
   };
@@ -312,7 +332,6 @@ export default function ProductDetailPage() {
 
   const finalRelatedProducts = sameCategory.slice(0, 4);
 
-  // ✨ تعديل قائمة التفاصيل: إضافة المادة والأصل، وحذف النصوص الافتراضية
   const detailBullets: string[] = [];
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
@@ -354,8 +373,9 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
           {/* Gallery */}
           <div className="flex flex-col gap-4 h-full">
+            {/* ✨ تغيير الخلفية إلى bg-temu-offwhite */}
             <div 
-              className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
+              className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-temu-offwhite border border-temu-gray-border-light group touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
@@ -401,7 +421,11 @@ export default function ProductDetailPage() {
 
               {!showVideo && (
                 <button
-                  onClick={() => window.open(mainImageSrc, '_blank')}
+                  onClick={() => {
+                    const currentIndex = galleryImages.findIndex((img) => img === selectedImage);
+                    setLightboxIndex(currentIndex !== -1 ? currentIndex : 0);
+                    setIsLightboxOpen(true);
+                  }}
                   title="View full size"
                   className="absolute bottom-4 right-4 bg-white rounded-full p-2.5 shadow-md hover:scale-105 transition cursor-pointer z-10 active:scale-90"
                 >
@@ -437,7 +461,7 @@ export default function ProductDetailPage() {
                       setSelectedImage(imgSrc);
                       setShowVideo(false);
                     }}
-                    className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white active:scale-95 ${
+                    className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-temu-offwhite active:scale-95 ${
                       !showVideo && selectedImage === imgSrc ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -670,7 +694,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-                {/* Tabs */}
+        {/* Tabs */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-hide touch-pan-x">
             {TABS.map((tab) => (
@@ -690,7 +714,6 @@ export default function ProductDetailPage() {
             <div>
               {activeTab === 'details' && (
                 <>
-                  {/* ✨ إضافة عنوان واضح للوصف */}
                   <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Information</h3>
                   <p className="text-sm text-temu-gray-text leading-relaxed mb-6">
                     {product.description
@@ -793,14 +816,17 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-                        {/* ✨ إضافة عنوان واضح للصورة (في نفس مستوى Product Information) */}
             <div>
               <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Image</h3>
-              {/* ✨ إضافة touch-pan-y و onTouchStart و onTouchEnd للسماح بالسحب باللمس */}
+              {/* ✨ تغيير الخلفية إلى bg-temu-offwhite وإضافة cursor-pointer و onClick لفتح النافذة المنبثقة */}
               <div 
-                className="relative aspect-square rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light touch-pan-y"
+                className="relative aspect-square rounded-temu-sm overflow-hidden bg-temu-offwhite border border-temu-gray-border-light touch-pan-y cursor-pointer"
                 onTouchStart={handleDetailTouchStart}
                 onTouchEnd={handleDetailTouchEnd}
+                onClick={() => {
+                  setLightboxIndex(detailImageIndex);
+                  setIsLightboxOpen(true);
+                }}
               >
                 <Image
                   src={galleryImages[detailImageIndex] || mainImageSrc}
@@ -813,16 +839,22 @@ export default function ProductDetailPage() {
                 {galleryImages.length > 1 && (
                   <>
                     <button
-                      onClick={() => setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
+                      onClick={(e) => {
+                        e.stopPropagation(); // منع فتح النافذة عند الضغط على السهم
+                        setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+                      }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90 z-10"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6"></polyline>
                       </svg>
                     </button>
                     <button
-                      onClick={() => setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
+                      onClick={(e) => {
+                        e.stopPropagation(); // منع فتح النافذة عند الضغط على السهم
+                        setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90 z-10"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -980,6 +1012,64 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ✨ نافذة الصور المكبرة (Lightbox) */}
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white text-4xl z-10 cursor-pointer active:scale-90 transition"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            ✕
+          </button>
+
+          <div 
+            className="relative w-full max-w-4xl h-[80vh] touch-pan-y"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleLightboxTouchStart}
+            onTouchEnd={handleLightboxTouchEnd}
+          >
+            <Image
+              src={galleryImages[lightboxIndex] || mainImageSrc}
+              alt={`${product.title} - Image ${lightboxIndex + 1}`}
+              fill
+              unoptimized={(galleryImages[lightboxIndex] || mainImageSrc).includes('localhost') || (galleryImages[lightboxIndex] || mainImageSrc).includes('127.0.0.1')}
+              sizes="100vw"
+              className="object-contain"
+            />
+            
+            {galleryImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition cursor-pointer active:scale-90"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition cursor-pointer active:scale-90"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <LivePurchaseNotification productName={product.title} />
     </main>
