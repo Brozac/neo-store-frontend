@@ -239,6 +239,25 @@ export default function ProductDetailPage() {
       }
     }
   };
+  // ✨ دوال السحب (Swipe) للصورة الموسعة في قسم التبويبات
+  const handleDetailTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleDetailTouchEnd = (e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diffX) > 40) { // إذا كان السحب أكثر من 40 بكسل
+      if (diffX > 0) {
+        // سحب لليسار -> الصورة التالية
+        setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+      } else {
+        // سحب لليمين -> الصورة السابقة
+        setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -774,10 +793,15 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* ✨ إضافة عنوان واضح للصورة (في نفس مستوى Product Information) */}
+                        {/* ✨ إضافة عنوان واضح للصورة (في نفس مستوى Product Information) */}
             <div>
               <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Image</h3>
-              <div className="relative aspect-square rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light">
+              {/* ✨ إضافة touch-pan-y و onTouchStart و onTouchEnd للسماح بالسحب باللمس */}
+              <div 
+                className="relative aspect-square rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light touch-pan-y"
+                onTouchStart={handleDetailTouchStart}
+                onTouchEnd={handleDetailTouchEnd}
+              >
                 <Image
                   src={galleryImages[detailImageIndex] || mainImageSrc}
                   alt={product.title}
