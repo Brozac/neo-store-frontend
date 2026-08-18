@@ -8,7 +8,7 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 220,
+          fontSize: 90, // ✨ تم تصغير حجم الخط ليتسع الاسم كاملاً
           background: '#1D1E3C', // الكحلي
           width: '100%',
           height: '100%',
@@ -16,14 +16,18 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: '115px',
-          letterSpacing: '-10px',
+          letterSpacing: '-2px', // ✨ تقليل المسافة بين الحروف
           fontFamily: 'sans-serif',
           boxShadow: '0 0 50px rgba(139, 120, 198, 0.5)',
         }}
       >
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>N</span>
-        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>E</span>
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>O</span>
+        <span style={{ color: '#8B78C6', fontWeight: 900 }}>L</span>
+        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>a</span>
+        <span style={{ color: '#8B78C6', fontWeight: 900 }}>c</span>
+        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>l</span>
+        <span style={{ color: '#8B78C6', fontWeight: 900 }}>a</span>
+        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>r</span>
+        <span style={{ color: '#8B78C6', fontWeight: 900 }}>c</span>
       </div>
     ),
     { ...size }

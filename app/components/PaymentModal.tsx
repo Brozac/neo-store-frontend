@@ -291,30 +291,39 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     إلى الحساب التالي:
   </p>
   
-  <div className="flex items-center justify-between gap-2 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light">
-    {/* 
-      dir="ltr" لجعل الأرقام تبدأ من اليسار
-      break-all لتكسير الأرقام بشكل مرتب إذا ما كفاتش المساحة
-      flex-1 باش تأخذ المساحة المتبقية
-      tracking-wider باش تفصل شوية بين الأرقام باش تولي مقروئة
-    */}
-    <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all break-all flex-1 tracking-wider text-left">
-      007999990001234567890
-    </p>
-    <button 
-      type="button"
-      onClick={() => {
-        navigator.clipboard.writeText('007999990001234567890');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      className={`text-xs font-bold px-3 py-1.5 rounded-temu-sm transition active:scale-95 touch-manipulation cursor-pointer shrink-0 shadow-sm ${
-        copied ? 'bg-temu-green text-white' : 'bg-temu-orange text-white'
-      }`}
-    >
-      {copied ? '✔ Copied' : 'Copy'}
-    </button>
-  </div>
+  <div className="flex items-center justify-between bg-white p-3 rounded-temu-sm border border-temu-gray-border-light gap-2">
+  {/* ✨ إضافة whitespace-nowrap و truncate لضمان بقاء الأرقام في سطر واحد */}
+  <p dir="ltr" className="font-bold text-temu-black text-sm sm:text-base select-all whitespace-nowrap overflow-hidden text-ellipsis">RIP: 00799999 00012345678 90</p>
+  
+  <button 
+    type="button"
+    onClick={() => {
+      navigator.clipboard.writeText('007999990001234567890');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }}
+    // ✨ تعديل الحشوة (padding) لتناسب الأيقونة
+    className={`p-2 rounded-temu-sm transition active:scale-95 touch-manipulation cursor-pointer shrink-0 flex items-center justify-center text-white ${
+      copied ? 'bg-temu-green' : 'bg-temu-orange'
+    }`}
+    aria-label="Copy RIP"
+  >
+    {copied ? (
+      // أيقونة علامة الصح عند نجاح النسخ
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    ) : (
+      // أيقونة النسخ التي أرسلتِها (تم تعديل اللون ليكون أبيض ليتناسب مع الزر)
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <g>
+          <path d="M6.59961 11.3974C6.59961 8.67119 6.59961 7.3081 7.44314 6.46118C8.28667 5.61426 9.64432 5.61426 12.3596 5.61426H15.2396C17.9549 5.61426 19.3125 5.61426 20.1561 6.46118C20.9996 7.3081 20.9996 8.6712 20.9996 11.3974V16.2167C20.9996 18.9429 20.9996 20.306 20.1561 21.1529C19.3125 21.9998 17.9549 21.9998 15.2396 21.9998H12.3596C9.64432 21.9998 8.28667 21.9998 7.44314 21.1529C6.59961 20.306 6.59961 18.9429 6.59961 16.2167V11.3974Z"/>
+          <path d="M4.17157 3.17157C3 4.34315 3 6.22876 3 10V12C3 15.7712 3 17.6569 4.17157 18.8284C4.78913 19.446 5.6051 19.738 6.79105 19.8761C6.59961 19.0353 6.59961 17.8796 6.59961 16.2167V11.3974C6.59961 8.6712 6.59961 7.3081 7.44314 6.46118C8.28667 5.61426 9.64432 5.61426 12.3596 5.61426H15.2396C16.8915 5.61426 18.0409 5.61426 18.8777 5.80494C18.7403 4.61146 18.4484 3.79154 17.8284 3.17157C16.6569 2 14.7712 2 11 2C7.22876 2 5.34315 2 4.17157 3.17157Z" opacity=".5"/>
+        </g>
+      </svg>
+    )}
+  </button>
+</div>
 </div>
                 
                 <p className="text-sm text-temu-gray-text mb-3">Upload the receipt image below:</p>
