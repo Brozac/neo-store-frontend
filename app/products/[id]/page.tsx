@@ -295,7 +295,6 @@ export default function ProductDetailPage() {
 
   // ✨ تعديل قائمة التفاصيل: إضافة المادة والأصل، وحذف النصوص الافتراضية
   const detailBullets: string[] = [];
-  if (product.material && product.material !== 'Premium Quality') detailBullets.push(`Material: ${product.material}`);
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.chest_pad) detailBullets.push(`Chest pad: ${product.chest_pad}`);
@@ -652,7 +651,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+                {/* Tabs */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-hide touch-pan-x">
             {TABS.map((tab) => (
@@ -672,6 +671,8 @@ export default function ProductDetailPage() {
             <div>
               {activeTab === 'details' && (
                 <>
+                  {/* ✨ إضافة عنوان واضح للوصف */}
+                  <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Information</h3>
                   <p className="text-sm text-temu-gray-text leading-relaxed mb-6">
                     {product.description
                       ? stripHtml(product.description)
@@ -679,7 +680,6 @@ export default function ProductDetailPage() {
                           product.store_name ? ` at ${product.store_name}` : ''
                         }.`}
                   </p>
-                  {/* ✨ لا تعرض القائمة إلا إذا كان هناك تفاصيل حقيقية */}
                   {detailBullets.length > 0 && (
                     <ul className="space-y-3">
                       {detailBullets.map((bullet, idx) => (
@@ -774,35 +774,39 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-             <div className="relative aspect-square rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light">
-              <Image
-                src={galleryImages[detailImageIndex] || mainImageSrc}
-                alt={product.title}
-                fill
-                unoptimized={(galleryImages[detailImageIndex] || mainImageSrc).includes('localhost') || (galleryImages[detailImageIndex] || mainImageSrc).includes('127.0.0.1')}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-contain"
-              />
-              {galleryImages.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </button>
-                </>
-              )}
+            {/* ✨ إضافة عنوان واضح للصورة (في نفس مستوى Product Information) */}
+            <div>
+              <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Image</h3>
+              <div className="relative aspect-square rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light">
+                <Image
+                  src={galleryImages[detailImageIndex] || mainImageSrc}
+                  alt={product.title}
+                  fill
+                  unoptimized={(galleryImages[detailImageIndex] || mainImageSrc).includes('localhost') || (galleryImages[detailImageIndex] || mainImageSrc).includes('127.0.0.1')}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-contain"
+                />
+                {galleryImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setDetailImageIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setDetailImageIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
