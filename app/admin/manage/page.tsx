@@ -13,7 +13,7 @@ interface Product {
   image: string;
   image_url?: string;
   variants?: any[];
-  category?: string; // الآن سيخزن المسار الكامل (مثال: women/clothes)
+  category?: string;
   images?: string[];
   description?: string;
   material?: string;
@@ -33,7 +33,6 @@ function pickImages(images: string[] | undefined, fallbackSingle: string): strin
   return fallbackSingle ? [fallbackSingle] : [];
 }
 
-// ✨ دالة لتحويل شجرة الأقسام إلى قائمة مسطحة للقائمة المنسدلة
 function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: string, label: string }[] {
   let flat: { value: string, label: string }[] = [];
   for (const node of nodes) {
@@ -67,10 +66,8 @@ function ManageProductsContent() {
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   
-  // ✨ حالة جديدة لتخزين شجرة الأقسام القادمة من الـ Backend
   const [availableCategories, setAvailableCategories] = useState<{ value: string, label: string }[]>([]);
 
-  // ✨ جلب الأقسام من الـ Backend عند تحميل الصفحة
   useEffect(() => {
     adminApi.get('/categories')
       .then(res => {
@@ -89,8 +86,9 @@ function ManageProductsContent() {
       }
       const res = await adminApi.get(url);
       setProducts(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching products:', err);
+      alert(`Error loading products: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -108,8 +106,8 @@ function ManageProductsContent() {
       const res = await adminApi.post('/admin/auto-categorize');
       alert(`✅ ${res.data.message}`);
       fetchProducts(); 
-    } catch (err) {
-      alert('❌ Failed to categorize products.');
+    } catch (err: any) {
+      alert(`❌ Failed: ${err.response?.data?.error || err.response?.data?.message || err.message}`);
     } finally {
       setIsCategorizing(false);
     }
@@ -121,8 +119,8 @@ function ManageProductsContent() {
     try {
       await adminApi.delete(`/admin/delete-product/${id}`);
       setProducts(products.filter(p => p.id !== id));
-    } catch (err) { 
-      alert('Failed to delete product.'); 
+    } catch (err: any) { 
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to delete product.'}`); 
     } finally { 
       setDeletingId(null); 
     }
@@ -139,7 +137,7 @@ function ManageProductsContent() {
       });
       alert('✅ Sourcing request sent to CJ successfully!');
     } catch (err: any) {
-      alert(`❌ Failed: ${err.response?.data?.error || 'Server error'}`);
+      alert(`❌ Failed: ${err.response?.data?.error || err.response?.data?.message || 'Server error'}`);
     } finally {
       setSourcingId(null);
     }
@@ -150,8 +148,8 @@ function ManageProductsContent() {
     try {
       await adminApi.put(`/admin/update-category/${id}`, { category: newCategory });
       setProducts(prev => prev.map(p => p.id === id ? { ...p, category: newCategory } : p));
-    } catch (err) { 
-      alert('Error updating category.'); 
+    } catch (err: any) { 
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to update category.'}`); 
     } finally { 
       setUpdatingCategoryId(null); 
     }
@@ -188,11 +186,11 @@ function ManageProductsContent() {
       };
 
       await adminApi.put(`/admin/update-product/${editProduct.id}`, payload);
-      alert('Product updated successfully!');
+      alert('✅ Product updated successfully!');
       setIsEditModalOpen(false);
       fetchProducts();
-    } catch (err) {
-      alert('Failed to update product.');
+    } catch (err: any) {
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to update product.'}`);
     } finally {
       setSavingEdit(false);
     }
@@ -216,8 +214,8 @@ function ManageProductsContent() {
       setReviewMessage('✅ Review added successfully!');
       form.reset();
       setTimeout(() => { setIsReviewModalOpen(false); setReviewProduct(null); }, 1500);
-    } catch (err) { 
-      setReviewMessage('❌ Failed to add review.'); 
+    } catch (err: any) { 
+      setReviewMessage(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to add review.'}`); 
     }
   };
 
@@ -315,7 +313,6 @@ function ManageProductsContent() {
                         disabled={updatingCategoryId === product.id}
                         className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-2 py-2 text-xs font-bold text-temu-dark focus:outline-none focus:border-temu-orange disabled:opacity-50 cursor-pointer"
                       >
-                        {/* ✨ عرض الأقسام الديناميكية القادمة من CJ */}
                         {availableCategories.map(cat => (
                           <option key={cat.value} value={cat.value}>{cat.label}</option>
                         ))}
@@ -469,7 +466,6 @@ function ManageProductsContent() {
   );
 }
 
-// ✨ المكوّن الرئيسي الذي يقوم بتصدير الصفحة ملفوفاً بـ Suspense
 export default function ManageProducts() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-temu-offwhite"><div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div></div>}>

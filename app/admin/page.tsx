@@ -56,7 +56,8 @@ export default function AdminAddProduct() {
       const res = await adminApi.post('/admin/sync-categories');
       alert(`✅ ${res.data.message}`);
     } catch (err: any) {
-      alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`);
+      // ✨ إضافة err.response?.data?.message لعرض الخطأ الحقيقي
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Network Error (CORS or Server Down)'}`);
     } finally {
       setSyncingCats(false);
     }
