@@ -26,13 +26,13 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // ✨ إضافة حالة تتبع الإصبع للمنتجات في صفحة الفئات
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   useEffect(() => {
-    fetch(`https://neo-store-backend.onrender.com/api/products`)
+    // ✨ إضافة { cache: 'no-store' } لمنع الكاش وجلب أحدث المنتجات دائماً
+    fetch(`https://neo-store-backend.onrender.com/api/products`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data: Product[]) => {
         const slugLower = slugPath.toLowerCase();
@@ -93,7 +93,6 @@ export default function CategoryPage() {
             </Link>
           </div>
         ) : (
-          // ✨ إضافة onTouchMove و onTouchEnd لتتبع حركة الإصبع على شبكة الفئات
           <div 
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             onTouchMove={(e) => {

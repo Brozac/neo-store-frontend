@@ -35,7 +35,7 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    fetch('https://neo-store-backend.onrender.com/api/categories')
+    fetch('https://neo-store-backend.onrender.com/api/categories', { cache: 'no-store' }) // ✨ منع الكاش
       .then(res => res.json())
       .then(data => {
         const mainCategories = data.map((cat: any) => ({ name: cat.name, slug: cat.slug }));
