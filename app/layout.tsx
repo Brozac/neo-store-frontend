@@ -6,11 +6,15 @@ import Footer from './components/Footer';
 
 import type { Metadata, Viewport } from 'next';
 
-// ✨ تم تحديث العنوان والوصف هنا
 export const metadata: Metadata = {
   title: 'Laclarc | Explore the Latest Clothing, Beauty, Home, Jewelry & More',
   description: 'Discover the best trending products at Laclarc. Explore the Latest Clothing, Beauty, Home, Jewelry & More.',
   manifest: '/manifest.webmanifest',
+  // ✨ إضافة الأيقونة هنا لتظهر في تبويب المتصفح
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/icon-192.png',
+  },
 };
 
 export const viewport: Viewport = {
