@@ -17,10 +17,11 @@ export default function FailedOrdersAdmin() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  // ✨ حالة لمعرفة أي زر يتم تحميله الآن (لمنع الـ Double Click)
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const fetchOrders = async () => {
     try {
-      // ✨ استخدام المسار الجديد
       const res = await adminApi.get('/admin/failed-orders');
       setOrders(res.data);
     } catch (error) {
@@ -36,25 +37,31 @@ export default function FailedOrdersAdmin() {
 
   const handleApprove = async (id: number) => {
     if (!confirm('Retry sending this order to CJ?')) return;
+    setActionLoading(id); // ✨ قفل الزر
     try {
       await adminApi.put(`/admin/manual-orders/approve/${id}`);
-      alert('Order sent to CJ successfully!');
+      alert('Order retry initiated! It will be sent to CJ in the background.');
       fetchOrders(); 
     } catch (error) {
       console.error('Error approving order:', error);
       alert('Failed to approve order.');
+    } finally {
+      setActionLoading(null); // ✨ فك قفل الزر
     }
   };
 
   const handleReject = async (id: number) => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
+    setActionLoading(id); // ✨ قفل الزر
     try {
       await adminApi.put(`/admin/manual-orders/reject/${id}`);
-      alert('Order cancelled.');
+      alert('Order cancelled successfully.');
       fetchOrders(); 
     } catch (error) {
       console.error('Error rejecting order:', error);
       alert('Failed to reject order.');
+    } finally {
+      setActionLoading(null); // ✨ فك قفل الزر
     }
   };
 
@@ -108,13 +115,22 @@ export default function FailedOrdersAdmin() {
                 <div className="flex items-center gap-3 flex-wrap">
                   <button 
                     onClick={() => handleApprove(order.id)}
-                    className="bg-temu-green text-white px-4 py-2.5 rounded-temu-sm font-bold hover:bg-temu-green/90 transition cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+                    disabled={actionLoading === order.id}
+                    className="bg-temu-green text-white px-4 py-2.5 rounded-temu-sm font-bold hover:bg-temu-green/90 transition cursor-pointer active:scale-95 touch-manipulation shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Retry & Send to CJ
+                    {actionLoading === order.id ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      'Retry & Send to CJ'
+                    )}
                   </button>
                   <button 
                     onClick={() => handleReject(order.id)}
-                    className="bg-temu-error text-white px-4 py-2.5 rounded-temu-sm font-bold hover:bg-temu-error/90 transition cursor-pointer active:scale-95 touch-manipulation shadow-sm"
+                    disabled={actionLoading === order.id}
+                    className="bg-temu-error text-white px-4 py-2.5 rounded-temu-sm font-bold hover:bg-temu-error/90 transition cursor-pointer active:scale-95 touch-manipulation shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
