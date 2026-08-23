@@ -62,6 +62,7 @@ function ManageProductsContent() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewRating, setReviewRating] = useState(5); // ✨ حالة التقييم الصحيحة
   const [sourcingId, setSourcingId] = useState<string | number | null>(null);
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -200,6 +201,7 @@ function ManageProductsContent() {
     setReviewProduct(product);
     setIsReviewModalOpen(true);
     setReviewMessage('');
+    setReviewRating(5); // ✨ إعادة تعيين التقييم لـ 5
   };
 
   const handleAddReview = async (e: React.FormEvent) => {
@@ -210,7 +212,8 @@ function ManageProductsContent() {
     const payload = Object.fromEntries(formData.entries());
 
     try {
-      await adminApi.post('/admin/add-review', { ...payload, product_id: reviewProduct.id, rating: Number(payload.rating) });
+      // ✨ إضافة التقييم من الـ State وليس من DOM
+      await adminApi.post('/admin/add-review', { ...payload, product_id: reviewProduct.id, rating: reviewRating });
       setReviewMessage('✅ Review added successfully!');
       form.reset();
       setTimeout(() => { setIsReviewModalOpen(false); setReviewProduct(null); }, 1500);
@@ -222,7 +225,7 @@ function ManageProductsContent() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
       <div className="max-w-4xl mx-auto">
-        <button onClick={() => router.push('/admin')} className="text-temu-orange font-bold mb-6">
+        <button onClick={() => router.push('/admin')} className="text-temu-orange font-bold mb-6 active:scale-95 transition touch-manipulation">
           ← Back to Add Product
         </button>
         
@@ -233,7 +236,7 @@ function ManageProductsContent() {
             <button 
               onClick={handleAutoCategorize}
               disabled={isCategorizing}
-              className="bg-temu-green text-white text-sm font-bold py-2.5 px-5 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap"
+              className="bg-temu-green text-white text-sm font-bold py-2.5 px-5 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95 touch-manipulation"
             >
               {isCategorizing ? (
                 <>
@@ -270,7 +273,7 @@ function ManageProductsContent() {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-error transition cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-error transition cursor-pointer active:scale-90"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
@@ -325,7 +328,7 @@ function ManageProductsContent() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => openEditModal(product)}
-                        className="bg-blue-50 text-blue-500 p-3 rounded-temu-sm hover:bg-blue-100 transition cursor-pointer"
+                        className="bg-blue-50 text-blue-500 p-3 rounded-temu-sm hover:bg-blue-100 transition cursor-pointer active:scale-95"
                         title="Edit Product"
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -335,7 +338,7 @@ function ManageProductsContent() {
 
                       <button
                         onClick={() => openReviewModal(product)}
-                        className="bg-temu-yellow-soft text-temu-orange p-3 rounded-temu-sm hover:bg-temu-yellow transition cursor-pointer"
+                        className="bg-temu-yellow-soft text-temu-orange p-3 rounded-temu-sm hover:bg-temu-yellow transition cursor-pointer active:scale-95"
                         title="Add Review"
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -346,7 +349,7 @@ function ManageProductsContent() {
                       <button
                         onClick={() => handleSendToSourcing(product)}
                         disabled={sourcingId === product.id}
-                        className="bg-green-50 text-temu-green p-3 rounded-temu-sm hover:bg-green-100 transition disabled:opacity-50 cursor-pointer"
+                        className="bg-green-50 text-temu-green p-3 rounded-temu-sm hover:bg-green-100 transition disabled:opacity-50 cursor-pointer active:scale-95"
                         title="Send to CJ Sourcing"
                       >
                         {sourcingId === product.id ? (
@@ -362,7 +365,7 @@ function ManageProductsContent() {
                       <button
                         onClick={() => handleDelete(product.id)}
                         disabled={deletingId === product.id}
-                        className="bg-red-50 text-temu-error p-3 rounded-temu-sm hover:bg-red-100 transition disabled:opacity-50 cursor-pointer"
+                        className="bg-red-50 text-temu-error p-3 rounded-temu-sm hover:bg-red-100 transition disabled:opacity-50 cursor-pointer active:scale-95"
                         title="Delete Product"
                       >
                         {deletingId === product.id ? (
@@ -388,7 +391,7 @@ function ManageProductsContent() {
           <div className="bg-white rounded-temu-sm p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-temu-black">Edit Product</h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-temu-gray-light hover:text-temu-black">
+              <button onClick={() => setIsEditModalOpen(false)} className="text-temu-gray-light hover:text-temu-black active:scale-90 transition">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -396,29 +399,39 @@ function ManageProductsContent() {
             <form onSubmit={handleSaveEdit} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Title</label>
-                <input type="text" name="title" value={editProduct.title || ''} onChange={handleEditChange} required className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="title" value={editProduct.title || ''} onChange={handleEditChange} required className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
               </div>
+              
+              {/* ✨ إضافة حقل الصورة الأساسية */}
+              <div>
+                <label className="block text-sm font-bold text-temu-black mb-2">Main Image URL</label>
+                <input type="url" name="image_url" value={editProduct.image_url || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-temu-black mb-2">Price ($)</label>
-                  <input type="number" step="0.01" name="price" value={editProduct.price || ''} onChange={handleEditChange} required className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                  <input type="number" step="0.01" name="price" value={editProduct.price || ''} onChange={handleEditChange} required className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-temu-black mb-2">Original Price ($)</label>
-                  <input type="number" step="0.01" name="original_price" value={editProduct.original_price || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                  <input type="number" step="0.01" name="original_price" value={editProduct.original_price || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
                 </div>
               </div>
+              
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Category</label>
-                <select name="category" value={editProduct.category || 'other'} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange">
+                <select name="category" value={editProduct.category || 'other'} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition cursor-pointer">
                   {availableCategories.map(cat => (<option key={cat.value} value={cat.value}>{cat.label}</option>))}
                 </select>
               </div>
+              
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Description</label>
-                <textarea name="description" rows={3} value={editProduct.description || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none"></textarea>
+                <textarea name="description" rows={3} value={editProduct.description || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none transition"></textarea>
               </div>
-              <button type="submit" disabled={savingEdit} className="w-full bg-temu-orange text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer disabled:opacity-50">
+              
+              <button type="submit" disabled={savingEdit} className="w-full bg-temu-orange text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer disabled:opacity-50 active:scale-95 touch-manipulation">
                 {savingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </form>
@@ -432,7 +445,7 @@ function ManageProductsContent() {
           <div className="bg-white rounded-temu-sm p-8 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-temu-black">Add Review</h2>
-              <button onClick={() => setIsReviewModalOpen(false)} className="text-temu-gray-light hover:text-temu-black">
+              <button onClick={() => setIsReviewModalOpen(false)} className="text-temu-gray-light hover:text-temu-black active:scale-90 transition">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
@@ -443,21 +456,18 @@ function ManageProductsContent() {
             <form onSubmit={handleAddReview} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Author Name *</label>
-                <input type="text" name="author" required placeholder="e.g., John D." className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange" />
+                <input type="text" name="author" required placeholder="e.g., John D." className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Rating</label>
-                <StarRating onChange={(val) => {
-                  const hiddenInput = document.getElementById('hidden-rating') as HTMLInputElement;
-                  if (hiddenInput) hiddenInput.value = val.toString();
-                }} />
-                <input type="hidden" id="hidden-rating" name="rating" defaultValue="5" />
+                {/* ✨ استخدام State بدلاً من DOM Manipulation */}
+                <StarRating onChange={(val) => setReviewRating(val)} />
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Review Content *</label>
-                <textarea name="content" required rows={3} placeholder="Great product, fast delivery!" className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none"></textarea>
+                <textarea name="content" required rows={3} placeholder="Great product, fast delivery!" className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none transition"></textarea>
               </div>
-              <button type="submit" className="w-full bg-temu-orange text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer">Submit Review</button>
+              <button type="submit" className="w-full bg-temu-orange text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation">Submit Review</button>
             </form>
           </div>
         </div>
