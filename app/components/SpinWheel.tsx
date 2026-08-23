@@ -22,7 +22,7 @@ export default function SpinWheel() {
   const segments = [
     { text: '2% OFF', value: 2, color: '#FFA500', icon: '🎉' },
     { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
-    { text: '15% OFF', value: 15, color: '#FF6B9D', icon: '🎁' },
+    { text: '1% OFF', value: 1, color: '#FF6B9D', icon: '🎁' },
     { text: '5% OFF', value: 5, color: '#8B78C6', icon: '⭐' },
     { text: '7% OFF', value: 7, color: '#357A8B', icon: '🔥' },
     { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
