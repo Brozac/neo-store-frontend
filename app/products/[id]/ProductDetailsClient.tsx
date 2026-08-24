@@ -74,7 +74,7 @@ export default function ProductDetailsClient({
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [purchaseCount, setPurchaseCount] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  
+  const [avatars, setAvatars] = useState<string[]>([]);
   const touchStartX = useRef(0);
   const defaultImage = '/placeholder.jpg';
   const galleryImages = product.images && product.images.length > 0 ? product.images : [product.image || product.image_url || defaultImage];
@@ -85,8 +85,17 @@ export default function ProductDetailsClient({
     const controller = new AbortController();
     const signal = controller.signal;
 
-    setPurchaseCount(getSeedNumber(product.id, 50, 10));
+    // ✨ توليد رقم عشوائي تماماً عند فتح الصفحة (بين 15 و 55)
+    setPurchaseCount(Math.floor(Math.random() * 40) + 15);
+
+    // ✨ دالة لتوليد 3 صور عشوائية
+    const generateRandomAvatars = () => {
+      return Array.from({ length: 3 }, () => `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70) + 1}`);
+    };
+    setAvatars(generateRandomAvatars());
+
     const interval = setInterval(() => {
+      // تغيير الرقم
       setPurchaseCount((prev) => {
         const change = Math.floor(Math.random() * 7) - 2;
         let newCount = prev + change;
@@ -94,6 +103,8 @@ export default function ProductDetailsClient({
         if (newCount > 150) newCount = 150;
         return newCount;
       });
+      // تغيير الصور كل 5 ثواني أيضاً
+      setAvatars(generateRandomAvatars());
     }, 5000);
 
     const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -322,12 +333,12 @@ export default function ProductDetailsClient({
               </div>
 
               <div className="flex items-center gap-3 mb-6 bg-temu-offwhite p-3 rounded-temu-sm border border-temu-gray-border-light">
-                <div className="flex -space-x-3">
-                  <img src="https://i.pravatar.cc/150?img=12" className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
-                  <img src="https://i.pravatar.cc/150?img=32" className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
-                  <img src="https://i.pravatar.cc/150?img=45" className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
-                  <div className="w-8 h-8 rounded-full border-2 border-white bg-temu-orange text-white text-[10px] flex items-center justify-center font-bold">+{Math.max(0, purchaseCount - 3)}</div>
-                </div>
+              <div className="flex -space-x-3">
+                {avatars.map((av, idx) => (
+                  <img key={idx} src={av} className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="buyer" />
+                ))}
+                <div className="w-8 h-8 rounded-full border-2 border-white bg-temu-orange text-white text-[10px] flex items-center justify-center font-bold">+{Math.max(0, purchaseCount - avatars.length)}</div>
+              </div>
                 <p className="text-xs text-temu-gray-text font-medium"><span className="font-bold text-temu-black">{purchaseCount}</span> other people purchased it today</p>
               </div>
 
