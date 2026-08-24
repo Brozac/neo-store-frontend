@@ -10,6 +10,8 @@ export default function LivePurchaseNotification({ productName }: { productName:
   const [info, setInfo] = useState({ name: '', city: '', time: '' });
 
   useEffect(() => {
+    let hideTimeout: NodeJS.Timeout;
+
     const showNotification = () => {
       const randomName = names[Math.floor(Math.random() * names.length)];
       const randomCity = cities[Math.floor(Math.random() * cities.length)];
@@ -18,7 +20,8 @@ export default function LivePurchaseNotification({ productName }: { productName:
       setInfo({ name: randomName, city: randomCity, time: randomTime.toString() });
       setVisible(true);
 
-      setTimeout(() => setVisible(false), 5000);
+      // ✨ تخزين الـ Timeout في متغير ليتم تنظيفه لاحقاً
+      hideTimeout = setTimeout(() => setVisible(false), 5000);
     };
 
     const initialTimer = setTimeout(showNotification, 4000);
@@ -27,13 +30,14 @@ export default function LivePurchaseNotification({ productName }: { productName:
     return () => {
       clearTimeout(initialTimer);
       clearInterval(interval);
+      // ✨ تنظيف مؤقت الإخفاء لمنع تسرب الذاكرة عند الخروج من الصفحة
+      clearTimeout(hideTimeout); 
     };
   }, [productName]);
 
   return (
     <div 
-      // ✨ رفع الإشعار لـ bottom-20 على الهواتف لكي لا يتداخل مع زر الواتساب
-      className={`fixed bottom-20 sm:bottom-5 left-5 bg-white p-3 rounded-temu-sm shadow-2xl border border-temu-gray-border-light flex items-center gap-3 z-40 max-w-75 transition-all duration-500 touch-manipulation ${
+      className={`fixed bottom-20 sm:bottom-5 left-5 bg-white p-3 rounded-temu-sm shadow-2xl border border-temu-gray-border-light flex items-center gap-3 z-40 max-w-[280px] sm:max-w-xs transition-all duration-500 touch-manipulation ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
       }`}
     >

@@ -564,6 +564,8 @@ export default function ProductDetailsClient({
           </div>
         </div>
       )}
+      {/* ✨ إشعار الشراء المباشر (Social Proof Pop-up) */}
+      <LivePurchaseNotification productName={product.title} />
     </main>
   );
 }

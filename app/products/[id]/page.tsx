@@ -1,16 +1,19 @@
 import { notFound } from 'next/navigation';
 import ProductDetailsClient from './ProductDetailsClient';
 
+// ✨ استخدام متغير البيئة بدلاً من الرابط المباشر
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 // ✨ جلب المنتج من السيرفر مباشرة
 async function getProduct(id: string) {
-  const res = await fetch(`https://neo-store-backend.onrender.com/api/products/${id}`, { cache: 'no-store' });
+  const res = await fetch(`${API_URL}/api/products/${id}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
 }
 
 // ✨ جلب 4 منتجات مشابهة فقط من السيرفر (يحل مشكلة الأداء)
 async function getRelatedProducts(id: string) {
-  const res = await fetch(`https://neo-store-backend.onrender.com/api/products/${id}/related`, { cache: 'no-store' });
+  const res = await fetch(`${API_URL}/api/products/${id}/related`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
@@ -47,7 +50,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   }
 
   // جلب التقييمات الأولية
-  const reviewsRes = await fetch(`https://neo-store-backend.onrender.com/api/reviews/${id}`);
+  const reviewsRes = await fetch(`${API_URL}/api/reviews/${id}`);
   const initialReviews = reviewsRes.ok ? await reviewsRes.json() : [];
 
   return (
