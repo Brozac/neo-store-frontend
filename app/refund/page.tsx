@@ -11,7 +11,7 @@ export default function RefundPolicy() {
           <p>To be eligible for a return, your item must be unused, in the same condition that you received it, and in its original packaging. Proof of purchase (Order ID) is required.</p>
 
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">2. Damaged or Defective Items</h2>
-          <p>If you received a damaged, defective, or incorrect item, please contact us at support@neostore.com within 7 days of receiving your order. We will arrange a free replacement or a full refund.</p>
+          <p>If you received a damaged, defective, or incorrect item, please contact us at support@laclarc.com within 7 days of receiving your order. We will arrange a free replacement or a full refund.</p>
 
           <h2 className="text-xl font-bold text-temu-black mt-6 mb-2">3. Return Process (Dropshipping)</h2>
           <p>As we source our products from global suppliers, returns must be sent to our supplier's warehouse. Please contact us to receive the exact return address before shipping any items back.</p>
