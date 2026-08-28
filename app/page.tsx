@@ -4,14 +4,19 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import { useCart } from './context/CartContext';
+import LightningDeals from './components/LightningDeals'; // ✨ استيراد مكون العروض الكهربائية
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const categoryQuery = searchParams.get('category') || '';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
   
   const [products, setProducts] = useState<any[]>([]);
+  // ✨ حالة لجلب منتجات الـ Lightning Deals
+  const [dealsProducts, setDealsProducts] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -23,8 +28,9 @@ function HomeContent() {
   
   const { cart } = useCart();
 
+  // ✨ جلب المنتجات العادية
   useEffect(() => {
-    fetch('https://neo-store-backend.onrender.com/api/products') 
+    fetch(`${API_URL}/api/products`) 
       .then((res) => res.json())
       .then((data) => {
         const shuffledData = [...data].sort(() => Math.random() - 0.5);
@@ -34,8 +40,16 @@ function HomeContent() {
       .catch(() => setLoading(false));
   }, []);
 
+  // ✨ جلب منتجات الـ Lightning Deals
   useEffect(() => {
-    fetch('https://neo-store-backend.onrender.com/api/categories', { cache: 'no-store' }) // ✨ منع الكاش
+    fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }) 
+      .then(res => res.json())
+      .then(data => setDealsProducts(data))
+      .catch(err => console.error('Error fetching deals:', err));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/categories`, { cache: 'no-store' }) 
       .then(res => res.json())
       .then(data => {
         const mainCategories = data.map((cat: any) => ({ name: cat.name, slug: cat.slug }));
@@ -53,12 +67,17 @@ function HomeContent() {
     setVisibleCount(20);
   }, [activeCategory, searchQuery]);
 
-  const trendingProducts = products.filter(p => 
+  // ✨ تعديل Trending Now: يعرض آلات حلاقة، وإذا لم يجد يعرض أول 5 منتجات لكي لا يختفي القسم
+  let trendingProducts = products.filter(p => 
     p.category?.startsWith('shavers') || 
     p.title?.toLowerCase().includes('shaver') || 
     p.title?.toLowerCase().includes('clipper') ||
     p.title?.toLowerCase().includes('trimmer')
   ).slice(0, 5);
+  
+  if (trendingProducts.length === 0) {
+    trendingProducts = products.slice(0, 5);
+  }
   
   const filteredProducts = products.filter((product) => {
     const matchesSearch = searchQuery === '' || 
@@ -105,9 +124,16 @@ function HomeContent() {
           })}
         </div>
 
+        {/* ✨ قسم العروض الكهربائية (Lightning Deals) */}
+        {activeCategory === 'All' && searchQuery === '' && (
+          <div className="mb-8 mt-4">
+            <LightningDeals products={dealsProducts} />
+          </div>
+        )}
+
         {/* Trending Now Section */}
         {activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
-          <div className="mb-8 mt-4">
+          <div className="mb-8 mt-8">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
                 <span className="text-xl"></span> Trending Now
