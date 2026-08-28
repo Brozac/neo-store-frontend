@@ -316,3 +316,155 @@
   padding: 1.5rem;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
+/* ==========================================
+   ✨ تأثير الحدود الكهربائية (Lightning Deals)
+   ========================================== */
+:root {
+  --electric-border-color: #8B78C6; /* البنفسجي */
+  --electric-light-color: #FF6B9D;  /* الوردي */
+  --gradient-color: rgba(139, 120, 198, 0.4);
+  --color-neutral-900: #1D1E3C;     /* الكحلي */
+}
+
+.lightning-main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.lightning-svg-container { position: absolute; }
+
+.lightning-card-container {
+  padding: 2px;
+  border-radius: 24px;
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  background: linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)), linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
+}
+
+.lightning-inner-container { position: relative; }
+
+.lightning-border-outer {
+  border: 2px solid rgba(139, 120, 198, 0.5);
+  border-radius: 24px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+}
+
+.lightning-main-card {
+  width: 100%;
+  min-height: 400px;
+  border-radius: 24px;
+  border: 2px solid var(--electric-border-color);
+  margin-top: -4px;
+  margin-left: -4px;
+  filter: url(#turbulent-displace);
+  background: #1D1E3C;
+}
+
+.lightning-glow-layer-1 {
+  border: 2px solid rgba(255, 107, 157, 0.6);
+  border-radius: 24px;
+  width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  filter: blur(1px);
+}
+
+.lightning-glow-layer-2 {
+  border: 2px solid var(--electric-light-color);
+  border-radius: 24px;
+  width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  filter: blur(4px);
+}
+
+.lightning-overlay-1, .lightning-overlay-2 {
+  position: absolute; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 24px;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg, white, transparent 30%, transparent 70%, white);
+}
+.lightning-overlay-1 { opacity: 1; }
+.lightning-overlay-2 { opacity: 0.5; }
+
+.lightning-background-glow {
+  position: absolute; width: 100%; height: 100%; top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 24px;
+  filter: blur(32px);
+  transform: scale(1.1);
+  opacity: 0.3;
+  z-index: -1;
+  background: linear-gradient(-30deg, var(--electric-light-color), transparent, var(--electric-border-color));
+}
+
+.lightning-content-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  padding: 32px;
+}
+
+.lightning-content-top {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+  text-align: center;
+}
+
+.lightning-glass-badge {
+  background: radial-gradient(47.2% 50% at 50.39% 88.37%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.04);
+  position: relative;
+  border-radius: 14px;
+  width: fit-content;
+  margin: 0 auto 16px;
+  padding: 8px 16px;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lightning-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: white;
+  margin-top: auto;
+  text-shadow: 0 0 10px rgba(139, 120, 198, 0.8);
+}
+
+.lightning-divider {
+  width: 100%;
+  margin: 20px 0;
+  border: none;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  mask-image: linear-gradient(to right, transparent, black, transparent);
+}
+
+.lightning-timer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  color: white;
+  font-weight: bold;
+  margin-top: -10px;
+  margin-bottom: 24px;
+}
+
+.lightning-timer span {
+  background: var(--electric-light-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  min-width: 40px;
+  text-align: center;
+}

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import { useCart } from './context/CartContext';
+import LightningDeals from './components/LightningDeals';
 
 function HomeContent() {
   const router = useRouter();
@@ -12,19 +13,23 @@ function HomeContent() {
   const categoryQuery = searchParams.get('category') || '';
   
   const [products, setProducts] = useState<any[]>([]);
+  // ✨ حالة لجلب منتجات الـ Lightning Deals
+  const [dealsProducts, setDealsProducts] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
   const [visibleCount, setVisibleCount] = useState(20);
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
   
-  // ✨ حالة تتبع الإصبع على شبكة المنتجات
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
   
   const { cart } = useCart();
 
+  // ✨ جلب المنتجات العادية
   useEffect(() => {
-    fetch('https://neo-store-backend.onrender.com/api/products') 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+    fetch(`${API_URL}/api/products`) 
       .then((res) => res.json())
       .then((data) => {
         const shuffledData = [...data].sort(() => Math.random() - 0.5);
@@ -34,8 +39,18 @@ function HomeContent() {
       .catch(() => setLoading(false));
   }, []);
 
+  // ✨ جلب منتجات الـ Lightning Deals
   useEffect(() => {
-    fetch('https://neo-store-backend.onrender.com/api/categories', { cache: 'no-store' }) // ✨ منع الكاش
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+    fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }) 
+      .then(res => res.json())
+      .then(data => setDealsProducts(data))
+      .catch(err => console.error('Error fetching deals:', err));
+  }, []);
+
+  useEffect(() => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+    fetch(`${API_URL}/api/categories`, { cache: 'no-store' }) 
       .then(res => res.json())
       .then(data => {
         const mainCategories = data.map((cat: any) => ({ name: cat.name, slug: cat.slug }));
@@ -105,9 +120,16 @@ function HomeContent() {
           })}
         </div>
 
+        {/* ✨ قسم العروض الكهربائية (Lightning Deals) */}
+        {activeCategory === 'All' && searchQuery === '' && (
+          <div className="mb-8 mt-4">
+            <LightningDeals products={dealsProducts} />
+          </div>
+        )}
+
         {/* Trending Now Section */}
         {activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (
-          <div className="mb-8 mt-4">
+          <div className="mb-8 mt-8">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-extrabold text-temu-black flex items-center gap-2">
                 <span className="text-xl"></span> Trending Now
@@ -115,7 +137,6 @@ function HomeContent() {
               <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">See All</span>
             </div>
             
-            {/* ✨ إضافة onTouchMove لتتبع الإصبع في قسم Trending */}
             <div 
               className="t-accordion-container"
               onTouchMove={(e) => {
@@ -166,7 +187,6 @@ function HomeContent() {
           {loading ? (
             <div className="flex justify-center py-10"><p className="text-temu-orange font-bold animate-pulse">Loading...</p></div>
           ) : displayProducts.length > 0 ? (
-            // ✨ تتبع حركة الإصبع على الشبكة
             <div 
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               onTouchMove={(e) => {
@@ -198,7 +218,6 @@ function HomeContent() {
             </div>
           )}
 
-          {/* زر See More */}
           {!loading && displayProducts.length > 0 && filteredProducts.length > visibleCount && (
             <div className="flex justify-center mt-10">
               <button 
