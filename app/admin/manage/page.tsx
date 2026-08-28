@@ -19,7 +19,6 @@ interface Product {
   material?: string;
   colors?: string[];
   sizes?: string[];
-  is_sourced?: boolean; // ✨ تم إضافة الحالة
 }
 
 interface CategoryNode {
@@ -63,9 +62,8 @@ function ManageProductsContent() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [reviewMessage, setReviewMessage] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewRating, setReviewRating] = useState(5); // ✨ حالة التقييم الصحيحة
   const [sourcingId, setSourcingId] = useState<string | number | null>(null);
-  const [togglingDealId, setTogglingDealId] = useState<string | number | null>(null); // ✨ حالة زر البرق
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   
@@ -91,6 +89,7 @@ function ManageProductsContent() {
       setProducts(res.data);
     } catch (err: any) {
       console.error('Error fetching products:', err);
+      alert(`Error loading products: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -109,7 +108,7 @@ function ManageProductsContent() {
       alert(`✅ ${res.data.message}`);
       fetchProducts(); 
     } catch (err: any) {
-      alert(`❌ Failed: ${err.response?.data?.error || err.message}`);
+      alert(`❌ Failed: ${err.response?.data?.error || err.response?.data?.message || err.message}`);
     } finally {
       setIsCategorizing(false);
     }
@@ -122,22 +121,9 @@ function ManageProductsContent() {
       await adminApi.delete(`/admin/delete-product/${id}`);
       setProducts(products.filter(p => p.id !== id));
     } catch (err: any) { 
-      alert(`❌ Error: ${err.response?.data?.error || 'Failed to delete product.'}`); 
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to delete product.'}`); 
     } finally { 
       setDeletingId(null); 
-    }
-  };
-
-  // ✨ دالة تفعيل/إلغاء البرق
-  const handleToggleDeal = async (id: string | number) => {
-    setTogglingDealId(id);
-    try {
-      const res = await adminApi.put(`/admin/toggle-deal/${id}`);
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, is_sourced: res.data.is_sourced } : p));
-    } catch (err: any) {
-      alert(`❌ Failed: ${err.response?.data?.error || 'Server error'}`);
-    } finally {
-      setTogglingDealId(null);
     }
   };
 
@@ -152,7 +138,7 @@ function ManageProductsContent() {
       });
       alert('✅ Sourcing request sent to CJ successfully!');
     } catch (err: any) {
-      alert(`❌ Failed: ${err.response?.data?.error || 'Server error'}`);
+      alert(`❌ Failed: ${err.response?.data?.error || err.response?.data?.message || 'Server error'}`);
     } finally {
       setSourcingId(null);
     }
@@ -164,7 +150,7 @@ function ManageProductsContent() {
       await adminApi.put(`/admin/update-category/${id}`, { category: newCategory });
       setProducts(prev => prev.map(p => p.id === id ? { ...p, category: newCategory } : p));
     } catch (err: any) { 
-      alert(`❌ Error: ${err.response?.data?.error || 'Failed to update category.'}`); 
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to update category.'}`); 
     } finally { 
       setUpdatingCategoryId(null); 
     }
@@ -184,6 +170,7 @@ function ManageProductsContent() {
     e.preventDefault();
     if (!editProduct) return;
     setSavingEdit(true);
+
     try {
       const resolvedImageUrl = editProduct.image_url || editProduct.image;
       const payload = {
@@ -198,12 +185,13 @@ function ManageProductsContent() {
         sizes: editProduct.sizes,
         category: editProduct.category || 'other'
       };
+
       await adminApi.put(`/admin/update-product/${editProduct.id}`, payload);
       alert('✅ Product updated successfully!');
       setIsEditModalOpen(false);
       fetchProducts();
     } catch (err: any) {
-      alert(`❌ Error: ${err.response?.data?.error || 'Failed to update product.'}`);
+      alert(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to update product.'}`);
     } finally {
       setSavingEdit(false);
     }
@@ -213,7 +201,7 @@ function ManageProductsContent() {
     setReviewProduct(product);
     setIsReviewModalOpen(true);
     setReviewMessage('');
-    setReviewRating(5);
+    setReviewRating(5); // ✨ إعادة تعيين التقييم لـ 5
   };
 
   const handleAddReview = async (e: React.FormEvent) => {
@@ -222,13 +210,15 @@ function ManageProductsContent() {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
+
     try {
+      // ✨ إضافة التقييم من الـ State وليس من DOM
       await adminApi.post('/admin/add-review', { ...payload, product_id: reviewProduct.id, rating: reviewRating });
       setReviewMessage('✅ Review added successfully!');
       form.reset();
       setTimeout(() => { setIsReviewModalOpen(false); setReviewProduct(null); }, 1500);
     } catch (err: any) { 
-      setReviewMessage(`❌ Error: ${err.response?.data?.error || 'Failed to add review.'}`); 
+      setReviewMessage(`❌ Error: ${err.response?.data?.error || err.response?.data?.message || 'Failed to add review.'}`); 
     }
   };
 
@@ -249,9 +239,19 @@ function ManageProductsContent() {
               className="bg-temu-green text-white text-sm font-bold py-2.5 px-5 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95 touch-manipulation"
             >
               {isCategorizing ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Categorizing...</>
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Categorizing...
+                </>
               ) : (
-                <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Auto-Categorize All</>
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  Auto-Categorize All
+                </>
               )}
             </button>
           </div>
@@ -265,10 +265,16 @@ function ManageProductsContent() {
               className="w-full bg-temu-offwhite border-2 border-temu-gray-border-light rounded-temu-sm py-3 pl-10 pr-10 text-sm focus:outline-none focus:border-temu-orange transition"
             />
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-temu-gray-light">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
             </div>
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-error transition cursor-pointer active:scale-90">
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-error transition cursor-pointer active:scale-90"
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             )}
@@ -277,87 +283,104 @@ function ManageProductsContent() {
           {loading ? (
             <div className="flex justify-center py-10"><p className="text-temu-orange font-bold animate-pulse">Loading...</p></div>
           ) : products.length === 0 ? (
-            <p className="text-center text-temu-gray-light py-10">{searchQuery ? `No products found for "${searchQuery}"` : 'No products found.'}</p>
+            <p className="text-center text-temu-gray-light py-10">
+              {searchQuery ? `No products found for "${searchQuery}"` : 'No products found.'}
+            </p>
           ) : (
-            <>
-              <div className="space-y-4">
-                {/* ✨ إضافة slice(0, 50) لمنع تجميد المتصفح */}
-                {products.slice(0, 50).map((product) => {
-                  const imgSrc = product.image || product.image_url || '/placeholder.jpg';
-                  const safePrice = Number(product.price) || 0;
-                  
-                  return (
-                    <div key={product.id} className="flex flex-col md:flex-row md:items-center gap-4 p-3 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="w-16 h-16 rounded-temu-sm overflow-hidden bg-gray-200 shrink-0">
-                          <img src={imgSrc} alt={product.title} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-sm text-temu-black truncate">{product.title}</h3>
-                          <p className="text-temu-error font-extrabold text-sm">${safePrice.toFixed(2)}</p>
-                          {product.variants && product.variants.length > 0 && (
-                            <p className="text-[10px] text-temu-gray-light mt-1 truncate">SKU: {product.variants[0].variantSku || product.variants[0].sku || 'N/A'}</p>
-                          )}
-                        </div>
+            <div className="space-y-4">
+              {products.map((product) => {
+                const imgSrc = product.image || product.image_url || '/placeholder.jpg';
+                const safePrice = Number(product.price) || 0;
+                
+                return (
+                  <div key={product.id} className="flex flex-col md:flex-row md:items-center gap-4 p-3 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-16 h-16 rounded-temu-sm overflow-hidden bg-gray-200 shrink-0">
+                        <img src={imgSrc} alt={product.title} className="w-full h-full object-cover" />
                       </div>
-
-                      <div className="flex items-center gap-2 md:w-64 shrink-0">
-                        <select
-                          value={product.category || 'other'}
-                          onChange={(e) => handleCategoryChange(product.id, e.target.value)}
-                          disabled={updatingCategoryId === product.id}
-                          className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-2 py-2 text-xs font-bold text-temu-dark focus:outline-none focus:border-temu-orange disabled:opacity-50 cursor-pointer"
-                        >
-                          {availableCategories.map(cat => (<option key={cat.value} value={cat.value}>{cat.label}</option>))}
-                        </select>
-                        {updatingCategoryId === product.id && (<div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin shrink-0"></div>)}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => openEditModal(product)} className="bg-blue-50 text-blue-500 p-3 rounded-temu-sm hover:bg-blue-100 transition cursor-pointer active:scale-95" title="Edit Product">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                        </button>
-
-                        <button onClick={() => openReviewModal(product)} className="bg-temu-yellow-soft text-temu-orange p-3 rounded-temu-sm hover:bg-temu-yellow transition cursor-pointer active:scale-95" title="Add Review">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        </button>
-
-                        {/* ✨ زر البرق (Lightning Deal) */}
-                        <button
-                          onClick={() => handleToggleDeal(product.id)}
-                          disabled={togglingDealId === product.id}
-                          className={`p-3 rounded-temu-sm transition cursor-pointer active:scale-95 disabled:opacity-50 ${
-                            product.is_sourced ? 'bg-temu-error text-white shadow-md' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
-                          }`}
-                          title="Toggle Lightning Deal"
-                        >
-                          {togglingDealId === product.id ? (
-                            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                          )}
-                        </button>
-
-                        <button onClick={() => handleSendToSourcing(product)} disabled={sourcingId === product.id} className="bg-green-50 text-temu-green p-3 rounded-temu-sm hover:bg-green-100 transition disabled:opacity-50 cursor-pointer active:scale-95" title="Send to CJ Sourcing">
-                          {sourcingId === product.id ? (<div className="w-5 h-5 border-2 border-temu-green border-t-transparent rounded-full animate-spin"></div>) : (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19c.946 0 1.81-.103 2.598-.281l-1.757-1.757C12.568 16.983 12.291 17 12 17c-5.351 0-7.424-3.846-7.926-5 .204-.47.674-1.381 1.508-2.297L4.184 8.305c-1.538 1.667-2.121 3.346-2.132 3.379-.069.205-.069.428 0 .633C2.073 12.383 4.367 19 12 19z"></path><path d="M12 5c-1.837 0-3.346.396-4.604.981L3.707 2.293 2.293 3.707l18 18 1.414-1.414-3.319-3.319c2.614-1.951 3.547-4.615 3.561-4.657.069-.205.069-.428 0-.633C21.927 11.617 19.633 5 12 5z"></path></svg>)}
-                        </button>
-
-                        <button onClick={() => handleDelete(product.id)} disabled={deletingId === product.id} className="bg-red-50 text-temu-error p-3 rounded-temu-sm hover:bg-red-100 transition disabled:opacity-50 cursor-pointer active:scale-95" title="Delete Product">
-                          {deletingId === product.id ? (<div className="w-5 h-5 border-2 border-temu-error border-t-transparent rounded-full animate-spin"></div>) : (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>)}
-                        </button>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm text-temu-black truncate">{product.title}</h3>
+                        <p className="text-temu-error font-extrabold text-sm">${safePrice.toFixed(2)}</p>
+                        {product.variants && product.variants.length > 0 && (
+                          <p className="text-[10px] text-temu-gray-light mt-1 truncate">
+                            SKU: {product.variants[0].variantSku || product.variants[0].sku || 'N/A'}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-              
-              {/* ✨ رسالة توضيحية لمنع الحيرة */}
-              {!searchQuery && products.length > 50 && (
-                <p className="text-center text-xs text-temu-gray-light mt-6">
-                  Displaying the latest 50 products. Use the search bar above to find older products.
-                </p>
-              )}
-            </>
+
+                    <div className="flex items-center gap-2 md:w-64 shrink-0">
+                      <select
+                        value={product.category || 'other'}
+                        onChange={(e) => handleCategoryChange(product.id, e.target.value)}
+                        disabled={updatingCategoryId === product.id}
+                        className="w-full bg-white border border-temu-gray-border rounded-temu-sm px-2 py-2 text-xs font-bold text-temu-dark focus:outline-none focus:border-temu-orange disabled:opacity-50 cursor-pointer"
+                      >
+                        {availableCategories.map(cat => (
+                          <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        ))}
+                      </select>
+                      {updatingCategoryId === product.id && (
+                        <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin shrink-0"></div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="bg-blue-50 text-blue-500 p-3 rounded-temu-sm hover:bg-blue-100 transition cursor-pointer active:scale-95"
+                        title="Edit Product"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                      </button>
+
+                      <button
+                        onClick={() => openReviewModal(product)}
+                        className="bg-temu-yellow-soft text-temu-orange p-3 rounded-temu-sm hover:bg-temu-yellow transition cursor-pointer active:scale-95"
+                        title="Add Review"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </button>
+
+                      <button
+                        onClick={() => handleSendToSourcing(product)}
+                        disabled={sourcingId === product.id}
+                        className="bg-green-50 text-temu-green p-3 rounded-temu-sm hover:bg-green-100 transition disabled:opacity-50 cursor-pointer active:scale-95"
+                        title="Send to CJ Sourcing"
+                      >
+                        {sourcingId === product.id ? (
+                          <div className="w-5 h-5 border-2 border-temu-green border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 19c.946 0 1.81-.103 2.598-.281l-1.757-1.757C12.568 16.983 12.291 17 12 17c-5.351 0-7.424-3.846-7.926-5 .204-.47.674-1.381 1.508-2.297L4.184 8.305c-1.538 1.667-2.121 3.346-2.132 3.379-.069.205-.069.428 0 .633C2.073 12.383 4.367 19 12 19z"></path>
+                            <path d="M12 5c-1.837 0-3.346.396-4.604.981L3.707 2.293 2.293 3.707l18 18 1.414-1.414-3.319-3.319c2.614-1.951 3.547-4.615 3.561-4.657.069-.205.069-.428 0-.633C21.927 11.617 19.633 5 12 5z"></path>
+                          </svg>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        disabled={deletingId === product.id}
+                        className="bg-red-50 text-temu-error p-3 rounded-temu-sm hover:bg-red-100 transition disabled:opacity-50 cursor-pointer active:scale-95"
+                        title="Delete Product"
+                      >
+                        {deletingId === product.id ? (
+                          <div className="w-5 h-5 border-2 border-temu-error border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -372,15 +395,19 @@ function ManageProductsContent() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
+
             <form onSubmit={handleSaveEdit} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Title</label>
                 <input type="text" name="title" value={editProduct.title || ''} onChange={handleEditChange} required className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
               </div>
+              
+              {/* ✨ إضافة حقل الصورة الأساسية */}
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Main Image URL</label>
                 <input type="url" name="image_url" value={editProduct.image_url || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-temu-black mb-2">Price ($)</label>
@@ -391,16 +418,19 @@ function ManageProductsContent() {
                   <input type="number" step="0.01" name="original_price" value={editProduct.original_price || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" />
                 </div>
               </div>
+              
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Category</label>
                 <select name="category" value={editProduct.category || 'other'} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition cursor-pointer">
                   {availableCategories.map(cat => (<option key={cat.value} value={cat.value}>{cat.label}</option>))}
                 </select>
               </div>
+              
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Description</label>
                 <textarea name="description" rows={3} value={editProduct.description || ''} onChange={handleEditChange} className="w-full bg-temu-offwhite border border-temu-gray-border rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none transition"></textarea>
               </div>
+              
               <button type="submit" disabled={savingEdit} className="w-full bg-temu-orange text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer disabled:opacity-50 active:scale-95 touch-manipulation">
                 {savingEdit ? 'Saving...' : 'Save Changes'}
               </button>
@@ -430,6 +460,7 @@ function ManageProductsContent() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-temu-black mb-2">Rating</label>
+                {/* ✨ استخدام State بدلاً من DOM Manipulation */}
                 <StarRating onChange={(val) => setReviewRating(val)} />
               </div>
               <div>
