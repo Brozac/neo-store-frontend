@@ -529,13 +529,13 @@ export default function ProductDetailsClient({
 
       </div>
 
-            {/* ✨ نافذة العرض السريع الاحترافية (Quick View Modal) */}
+      {/* ✨ نافذة العرض السريع الاحترافية (Quick View Modal) مع دعم الصور الطويلة والتكبير */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
           
           {/* زر الإغلاق */}
           <button 
-            className="absolute top-4 right-4 text-white text-3xl cursor-pointer z-10 active:scale-90 transition" 
+            className="absolute top-4 right-4 text-white text-3xl cursor-pointer z-10 active:scale-90 transition bg-black/40 w-10 h-10 rounded-full flex items-center justify-center" 
             onClick={() => setIsLightboxOpen(false)}
           >
             ✕
@@ -543,36 +543,39 @@ export default function ProductDetailsClient({
 
           {/* صندوق المحتوى (يمنع الإغلاق عند الضغط بداخله) */}
           <div 
-            className="relative w-full max-w-5xl bg-white rounded-xl overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[80vh]" 
+            className="relative w-full max-w-5xl bg-white rounded-xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[85vh]" 
             onClick={e => e.stopPropagation()}
           >
             
-            {/* قسم الصور (يسار/أعلى) */}
-            <div className="flex-1 flex flex-col bg-temu-offwhite p-4 relative">
-              <div 
-                className="relative w-full flex-1 min-h-[250px]"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                <Image 
-                  src={mainImageSrc} 
-                  alt={product.title} 
-                  fill 
-                  className="object-contain" 
-                />
+            {/* قسم الصور (يسار/أعلى) - يدعم التمرير للصور الطويلة */}
+            <div className="flex-1 flex flex-col bg-temu-offwhite p-4 relative overflow-hidden">
+              <div className="relative w-full flex-1 min-h-[250px] overflow-y-auto scrollbar-hide flex items-center justify-center">
+                <div 
+                  className="relative w-full h-full flex items-center justify-center active:scale-150 transition-transform duration-300 cursor-zoom-in"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <Image 
+                    src={mainImageSrc} 
+                    alt={product.title} 
+                    width={500}
+                    height={500}
+                    className="object-contain max-w-full max-h-full"
+                  />
+                </div>
                 
                 {/* أسهم التنقل بين الصور */}
                 {galleryImages.length > 1 && (
                   <>
                     <button 
                       onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} 
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer z-10"
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
                     <button 
                       onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} 
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer z-10"
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
@@ -581,7 +584,7 @@ export default function ProductDetailsClient({
               </div>
 
               {/* شريط الصور المصغرة (Thumbnails) */}
-              <div className="flex gap-2 w-full overflow-x-auto pb-2 scrollbar-hide justify-center mt-2">
+              <div className="flex gap-2 w-full overflow-x-auto pb-2 scrollbar-hide justify-center mt-2 shrink-0">
                 {galleryImages.map((img, idx) => (
                   <div 
                     key={idx} 
@@ -595,7 +598,7 @@ export default function ProductDetailsClient({
             </div>
 
             {/* قسم الشراء والتفاصيل (يمين/أسفل) */}
-            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between bg-white">
+            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between bg-white overflow-y-auto scrollbar-hide">
               <div>
                 <h2 className="text-lg font-extrabold text-temu-black line-clamp-3 mb-2">{product.title}</h2>
                 <div className="flex items-baseline gap-2 mb-4">
@@ -614,7 +617,7 @@ export default function ProductDetailsClient({
               </div>
 
               {/* أزرار الشراء */}
-              <div className="space-y-2">
+              <div className="space-y-2 mt-4">
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 

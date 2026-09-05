@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
-import { useCart } from './context/CartContext';
 import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
 
@@ -33,7 +32,9 @@ function HomeContent() {
       fetch(`${API_URL}/api/categories`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([productsData, dealsData, categoriesData]) => {
       if (Array.isArray(productsData)) {
-        setProducts(productsData);
+        // ✨ خلط المنتجات عشوائياً في كل مرة يفتح فيها الزبون الصفحة
+        const shuffledData = [...productsData].sort(() => Math.random() - 0.5);
+        setProducts(shuffledData);
       }
       if (Array.isArray(dealsData)) {
         setDealsProducts(dealsData);
@@ -56,16 +57,10 @@ function HomeContent() {
     setVisibleCount(20);
   }, [activeCategory, searchQuery]);
 
-  // ✨ اختيار منتجات الـ Trending مع Fallback ذكي
+  // ✨ اختيار 5 منتجات عشوائية تماماً من كامل المتجر لعرضها في الـ Hero والـ Trending
   const trendingProducts = useMemo(() => {
-    const shavers = products.filter(p => 
-      p.category?.startsWith('shavers') || 
-      p.title?.toLowerCase().includes('shaver') || 
-      p.title?.toLowerCase().includes('clipper') ||
-      p.title?.toLowerCase().includes('trimmer')
-    ).slice(0, 5);
-    
-    return shavers.length > 0 ? shavers : products.slice(0, 5);
+    if (products.length === 0) return [];
+    return [...products].sort(() => Math.random() - 0.5).slice(0, 5);
   }, [products]);
 
   // ✨ حل مشكلة الأقسام الفرعية (Prefix Matching)
@@ -84,7 +79,6 @@ function HomeContent() {
       
       if (activeCatObj && activeCatObj.slug) {
         const targetSlug = activeCatObj.slug.toLowerCase();
-        // مطابقة تامة أو مطابقة تصنيف فرعي (مثل shavers-men تحت shavers)
         return pCat === targetSlug || pCat.startsWith(targetSlug + '-') || pCat.startsWith(targetSlug + '/');
       }
       

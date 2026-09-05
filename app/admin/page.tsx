@@ -198,7 +198,6 @@ export default function AdminDashboard() {
     } finally { setUploading(false); e.target.value = ''; }
   };
 
-  // ✨ إصلاح ثغرة الـ Scraper: استخراج كافة صور المعرض بأمان
   const handleScrape = async () => {
     if (!scrapeUrl.trim()) return;
     setScraping(true);
@@ -262,31 +261,31 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#0E1020] text-gray-200 p-6 pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto">
         
         {/* Top Header & Fast Nav */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-white/10 pb-4">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
               L
             </div>
             <div>
-              <h1 className="text-xl font-black text-white tracking-wide">Laclarc Mission Control</h1>
-              <p className="text-[11px] text-gray-400">Enterprise Operations &bull; Global Dropshipping</p>
+              <h1 className="text-xl font-black text-temu-black tracking-wide">Laclarc Mission Control</h1>
+              <p className="text-[11px] text-gray-500">Enterprise Operations &bull; Global Dropshipping</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button 
               onClick={() => router.push('/')} 
-              className="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-300 transition flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5"
             >
               🌐 Storefront
             </button>
             <button 
               onClick={handleLogout} 
-              className="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-xs font-bold text-red-400 transition flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold text-red-500 transition flex items-center gap-1.5"
             >
               🔒 Logout
             </button>
@@ -295,57 +294,57 @@ export default function AdminDashboard() {
 
         {/* 🛰️ Live Infrastructure Pulse (Render & Neon & CJ Telemetry) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-[#181B34] border border-white/10 rounded-xl p-3.5 flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`}></span>
+          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
               Render Backend
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-white">
+              <span className="text-base font-black text-temu-black">
                 {telemetry.backendStatus === 'healthy' ? 'Operational' : 'Checking'}
               </span>
-              <span className="text-[11px] font-mono text-gray-400">{telemetry.backendPing}ms</span>
+              <span className="text-[11px] font-mono text-gray-500">{telemetry.backendPing}ms</span>
             </div>
           </div>
 
-          <div className="bg-[#181B34] border border-white/10 rounded-xl p-3.5 flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#8B78C6]"></span>
               Neon DB
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-white">Connected</span>
-              <span className="text-[11px] font-mono text-emerald-400">Pool Active</span>
+              <span className="text-base font-black text-temu-black">Connected</span>
+              <span className="text-[11px] font-mono text-emerald-500">Pool Active</span>
             </div>
           </div>
 
           <div 
             onClick={() => router.push('/admin/baridimob')}
-            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition hover:border-[#FF6B9D] ${
-              telemetry.pendingBaridiCount > 0 ? 'bg-gradient-to-br from-[#181B34] to-pink-950/30 border-[#FF6B9D]' : 'bg-[#181B34] border-white/10'
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
+              telemetry.pendingBaridiCount > 0 ? 'bg-gradient-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               🏦 BaridiMob Review
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-white">{telemetry.pendingBaridiCount}</span>
+              <span className="text-base font-black text-temu-black">{telemetry.pendingBaridiCount}</span>
               <span className="text-[11px] text-[#FF6B9D] font-bold">Action Needed &rarr;</span>
             </div>
           </div>
 
           <div 
             onClick={() => router.push('/admin/failed-orders')}
-            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition hover:border-red-400 ${
-              telemetry.failedOrdersCount > 0 ? 'bg-gradient-to-br from-[#181B34] to-red-950/40 border-red-500' : 'bg-[#181B34] border-white/10'
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
+              telemetry.failedOrdersCount > 0 ? 'bg-gradient-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
             }`}
           >
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               ⚠️ Failed in CJ
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-white">{telemetry.failedOrdersCount}</span>
-              <span className="text-[11px] text-red-400 font-bold">Resolve Queue &rarr;</span>
+              <span className="text-base font-black text-temu-black">{telemetry.failedOrdersCount}</span>
+              <span className="text-[11px] text-red-500 font-bold">Resolve Queue &rarr;</span>
             </div>
           </div>
         </div>
@@ -357,15 +356,15 @@ export default function AdminDashboard() {
             value={adminSearch} 
             onChange={(e) => setAdminSearch(e.target.value)} 
             placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..." 
-            className="w-full bg-[#181B34] border border-white/15 rounded-xl py-3.5 pl-4 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#8B78C6] transition" 
+            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#8B78C6] transition shadow-sm" 
           />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B78C6] p-1">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
 
         {/* Command Center Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide border-b border-white/10">
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide border-b border-temu-gray-border-light">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -373,7 +372,7 @@ export default function AdminDashboard() {
               className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white shadow-lg shadow-[#8B78C6]/20'
-                  : 'bg-[#181B34] text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white'
+                  : 'bg-white text-gray-500 border border-temu-gray-border-light hover:bg-temu-offwhite hover:text-temu-black'
               }`}
             >
               <span>{tab.icon}</span> {tab.label}
@@ -382,26 +381,26 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content Box */}
-        <div className="bg-[#181B34] rounded-2xl p-6 sm:p-8 border border-white/10 shadow-xl">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-sm">
           
           {/* 1. Overview Operations */}
           {activeTab === 'overview' && (
             <div>
               <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
                 <div>
-                  <h2 className="text-lg font-black text-white">Operations Center</h2>
-                  <p className="text-xs text-gray-400">Direct modules to manage inventory, payments, and disputes</p>
+                  <h2 className="text-lg font-black text-temu-black">Operations Center</h2>
+                  <p className="text-xs text-gray-500">Direct modules to manage inventory, payments, and disputes</p>
                 </div>
                 <button 
                   onClick={runDiagnostics} 
-                  className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-lg border border-white/10 transition flex items-center gap-1.5"
+                  className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5"
                 >
                   🔄 Refresh Status ({telemetry.lastChecked})
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {[
+                {[ 
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
@@ -411,13 +410,13 @@ export default function AdminDashboard() {
                   <button 
                     key={card.label} 
                     onClick={() => router.push(card.link)} 
-                    className="text-left p-5 rounded-xl bg-[#0E1020] border border-white/10 hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98]"
+                    className="text-left p-5 rounded-xl bg-temu-offwhite border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
                     </div>
-                    <h3 className="font-bold text-white text-sm group-hover:text-[#8B78C6] transition">{card.label}</h3>
-                    <p className="text-xs text-gray-400 mt-1 leading-relaxed">{card.desc}</p>
+                    <h3 className="font-bold text-temu-black text-sm group-hover:text-[#8B78C6] transition">{card.label}</h3>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{card.desc}</p>
                   </button>
                 ))}
               </div>
@@ -427,30 +426,30 @@ export default function AdminDashboard() {
           {/* 2. Add Product Tab */}
           {activeTab === 'add' && (
             <div>
-              <h2 className="text-lg font-black text-white mb-2">Publish New Product</h2>
-              <p className="text-xs text-gray-400 mb-6">Create manual items or auto-fill details via external link</p>
+              <h2 className="text-lg font-black text-temu-black mb-2">Publish New Product</h2>
+              <p className="text-xs text-gray-500 mb-6">Create manual items or auto-fill details via external link</p>
               
               {message && (
-                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-50 border border-emerald-200 text-emerald-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
                   {message}
                 </div>
               )}
 
               {/* Scraper Tool */}
-              <div className="mb-6 p-4 bg-[#0E1020] rounded-xl border border-amber-500/30">
-                <label className="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
+              <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input 
                     type="url" 
                     value={scrapeUrl} 
                     onChange={(e) => setScrapeUrl(e.target.value)} 
                     placeholder="Paste product page URL here..." 
-                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400 transition" 
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-amber-400 transition" 
                   />
                   <button 
                     onClick={handleScrape} 
                     disabled={scraping} 
-                    className="bg-amber-500 hover:bg-amber-600 text-black font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95"
                   >
                     {scraping ? 'Extracting Data...' : 'Scrape Data'}
                   </button>
@@ -458,20 +457,20 @@ export default function AdminDashboard() {
               </div>
 
               {/* Image Upload */}
-              <div className="mb-6 p-4 bg-[#0E1020] rounded-xl border border-white/10">
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Upload Product Images (Cloudinary)</label>
+              <div className="mb-6 p-4 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Upload Product Images (Cloudinary)</label>
                 <input 
                   type="file" 
                   accept="image/*" 
                   multiple 
                   onChange={handleFileUpload} 
                   disabled={uploading} 
-                  className="block w-full text-xs text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#8B78C6] file:text-white hover:file:brightness-110 cursor-pointer" 
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#8B78C6] file:text-white hover:file:brightness-110 cursor-pointer" 
                 />
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {imagePreviews.map((img, idx) => (
-                      <div key={idx} className="relative w-16 h-16 border border-white/20 rounded-xl overflow-hidden bg-black/40">
+                      <div key={idx} className="relative w-16 h-16 border border-temu-gray-border-light rounded-xl overflow-hidden bg-white">
                         <img src={img} alt={`preview ${idx}`} className="w-full h-full object-cover" />
                       </div>
                     ))}
@@ -481,48 +480,48 @@ export default function AdminDashboard() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Title *</label>
-                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Title *</label>
+                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Cost / Base Price ($) *</label>
-                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Cost / Base Price ($) *</label>
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Strikethrough Price ($)</label>
-                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Strikethrough Price ($)</label>
+                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Main Image URL *</label>
-                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Main Image URL *</label>
+                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Gallery Images (Comma Separated)</label>
-                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Gallery Images (Comma Separated)</label>
+                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Category</label>
-                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]">
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Category</label>
+                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]">
                     {availableCategories.map(cat => (
-                      <option key={cat.value} value={cat.value} className="bg-[#181B34]">{cat.label}</option>
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
                     ))}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Colors (Hex / Names)</label>
-                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Colors (Hex / Names)</label>
+                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Sizes</label>
-                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Sizes</label>
+                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] resize-none"></textarea>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Description</label>
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6] resize-none"></textarea>
                 </div>
                 <button 
                   type="submit" 
@@ -539,21 +538,21 @@ export default function AdminDashboard() {
           {activeTab === 'sync' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-black text-white mb-1">CJ Automated Synchronization</h2>
-                <p className="text-xs text-gray-400 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
+                <h2 className="text-lg font-black text-temu-black mb-1">CJ Automated Synchronization</h2>
+                <p className="text-xs text-gray-500 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
               </div>
 
               {/* Sync Single PID (1688 / Deals) */}
-              <div className="p-5 bg-[#0E1020] rounded-xl border border-[#8B78C6]/40">
+              <div className="p-5 bg-purple-50 rounded-xl border border-[#8B78C6]/30">
                 <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
-                <p className="text-xs text-gray-400 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
+                <p className="text-xs text-gray-500 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input 
                     type="text" 
                     value={singlePid} 
                     onChange={(e) => setSinglePid(e.target.value)} 
                     placeholder="Enter CJ Product PID (e.g. 172938192)..." 
-                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" 
                   />
                   <button 
                     onClick={handleSyncSingle} 
@@ -563,17 +562,17 @@ export default function AdminDashboard() {
                     {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
                   </button>
                 </div>
-                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-400' : 'text-red-400'}`}>{singleMessage}</p>}
+                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}>{singleMessage}</p>}
               </div>
 
               {/* Sync Category */}
-              <div className="p-5 bg-[#0E1020] rounded-xl border border-white/10">
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Sync Category Batch</label>
+              <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sync Category Batch</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <select 
                     value={syncCategory} 
                     onChange={(e) => setSyncCategory(e.target.value)} 
-                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]"
                   >
                     <option value="">🛍️ Trending / General Selection</option>
                     <option value="clipper">🪒 Shavers & Grooming</option>
@@ -587,32 +586,32 @@ export default function AdminDashboard() {
                   <button 
                     onClick={handleSyncCJ} 
                     disabled={syncing} 
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95"
+                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95"
                   >
                     {syncing ? 'Triggering...' : 'Run Category Sync'}
                   </button>
                 </div>
-                {syncMessage && <p className="mt-2 text-xs font-bold text-gray-300">{syncMessage}</p>}
+                {syncMessage && <p className="mt-2 text-xs font-bold text-gray-500">{syncMessage}</p>}
               </div>
 
               {/* Official Category Tree Maintenance */}
-              <div className="p-5 bg-[#0E1020] rounded-xl border border-white/10 flex items-center justify-between flex-wrap gap-4">
+              <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <h4 className="text-sm font-bold text-white">CJ Categories Tree Architecture</h4>
-                  <p className="text-xs text-gray-400">Keep store taxonomy aligned with official CJ product mappings</p>
+                  <h4 className="text-sm font-bold text-temu-black">CJ Categories Tree Architecture</h4>
+                  <p className="text-xs text-gray-500">Keep store taxonomy aligned with official CJ product mappings</p>
                 </div>
                 <div className="flex gap-2">
                   <button 
                     onClick={handleSyncCategories} 
                     disabled={syncingCats} 
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
                   >
                     {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
                   </button>
                   <button 
                     onClick={handleBackfillCategories} 
                     disabled={backfillingCats} 
-                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
                   >
                     {backfillingCats ? 'Updating Products...' : '2. Backfill Catalog'}
                   </button>
@@ -624,8 +623,8 @@ export default function AdminDashboard() {
           {/* 4. 1688 Sourcing Tab */}
           {activeTab === 'sourcing' && (
             <div>
-              <h2 className="text-lg font-black text-white mb-1">Direct 1688 Sourcing Submission</h2>
-              <p className="text-xs text-gray-400 mb-6">Request CJ Sourcing Agents to procure and verify a winning 1688 item</p>
+              <h2 className="text-lg font-black text-temu-black mb-1">Direct 1688 Sourcing Submission</h2>
+              <p className="text-xs text-gray-500 mb-6">Request CJ Sourcing Agents to procure and verify a winning 1688 item</p>
 
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -639,22 +638,22 @@ export default function AdminDashboard() {
                 } catch (err: any) {
                   alert(`❌ Sourcing Submission Failed: ${err.response?.data?.error || 'Server error.'}`);
                 }
-              }} className="space-y-4 bg-[#0E1020] p-6 rounded-xl border border-white/10">
+              }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Target Product Title *</label>
-                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Product Title *</label>
+                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">High-Res Product Image URL *</label>
-                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">High-Res Product Image URL *</label>
+                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">1688 Reference Product URL</label>
-                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">1688 Reference Product URL</label>
+                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Target Purchase Price ($ USD)</label>
-                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Purchase Price ($ USD)</label>
+                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
                 <button type="submit" className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20">
                   Transmit Sourcing Request to CJ Dropshipping
@@ -666,8 +665,8 @@ export default function AdminDashboard() {
           {/* 5. Coupons Tab */}
           {activeTab === 'coupons' && (
             <div>
-              <h2 className="text-lg font-black text-white mb-1">Create Promotional Coupon</h2>
-              <p className="text-xs text-gray-400 mb-6">Deploy discount codes verified automatically in Stripe Checkout and cart</p>
+              <h2 className="text-lg font-black text-temu-black mb-1">Create Promotional Coupon</h2>
+              <p className="text-xs text-gray-500 mb-6">Deploy discount codes verified automatically in Stripe Checkout and cart</p>
 
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -684,22 +683,22 @@ export default function AdminDashboard() {
                 } catch (err: any) {
                   alert(`❌ Error: ${err.response?.data?.error || 'Failed to create coupon.'}`);
                 }
-              }} className="space-y-4 bg-[#0E1020] p-6 rounded-xl border border-white/10 max-w-lg">
+              }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light max-w-lg">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Coupon Code *</label>
-                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] uppercase" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Coupon Code *</label>
+                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6] uppercase" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Discount Type</label>
-                    <select name="discount_type" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]">
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Discount Type</label>
+                    <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]">
                       <option value="percentage">Percentage (%)</option>
                       <option value="fixed">Fixed Cash ($)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Value *</label>
-                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Value *</label>
+                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                 </div>
                 <button type="submit" className="w-full bg-gradient-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20">
