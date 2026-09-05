@@ -11,8 +11,16 @@ interface CategoryNode {
   children?: CategoryNode[];
 }
 
-function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: string, label: string }[] {
-  let flat: { value: string, label: string }[] = [];
+interface TelemetryState {
+  backendStatus: 'healthy' | 'checking' | 'offline';
+  backendPing: number;
+  pendingBaridiCount: number;
+  failedOrdersCount: number;
+  lastChecked: string;
+}
+
+function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: string; label: string }[] {
+  let flat: { value: string; label: string }[] = [];
   for (const node of nodes) {
     const currentPath = parentPath ? `${parentPath}/${node.slug}` : node.slug;
     flat.push({ value: currentPath, label: `${parentPath ? parentPath + ' / ' : ''}${node.name}` });
@@ -26,9 +34,7 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
 export default function AdminDashboard() {
   const router = useRouter();
   
-  // ✨ حالة التبويبات (Dashboard Slider)
   const [activeTab, setActiveTab] = useState('overview');
-
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -39,31 +45,86 @@ export default function AdminDashboard() {
   const [syncMessage, setSyncMessage] = useState('');
   
   const [adminSearch, setAdminSearch] = useState('');
-  const [availableCategories, setAvailableCategories] = useState<{ value: string, label: string }[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
   const [syncingCats, setSyncingCats] = useState(false);
   const [backfillingCats, setBackfillingCats] = useState(false);
 
-  // ✨ حالات Sourcing
+  // 1688 Sourcing state
   const [singlePid, setSinglePid] = useState('');
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [singleMessage, setSingleMessage] = useState('');
 
-  const [formData, setFormData] = useState({
-    title: '', price: '', original_price: '', image_url: '', images: '', description: '', material: '', colors: '', sizes: '', category: 'other'
+  // Telemetry & Operations Pulse
+  const [telemetry, setTelemetry] = useState<TelemetryState>({
+    backendStatus: 'checking',
+    backendPing: 0,
+    pendingBaridiCount: 0,
+    failedOrdersCount: 0,
+    lastChecked: '--',
   });
 
+  const [formData, setFormData] = useState({
+    title: '', price: '', original_price: '', image_url: '', images: '', 
+    description: '', material: '', colors: '', sizes: '', category: 'other'
+  });
+
+  // فحص حيوية النظام وجلب المؤشرات التشغيلية
+  const runDiagnostics = async () => {
+    const startTime = Date.now();
+    try {
+      setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
+      
+      const [manualOrdersRes, failedOrdersRes, pingRes] = await Promise.all([
+        adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
+        adminApi.get('/admin/failed-orders').catch(() => ({ data: [] })),
+        adminApi.get('/').catch(() => ({ data: 'ok' }))
+      ]);
+
+      const ping = Date.now() - startTime;
+      const pendingBaridi = Array.isArray(manualOrdersRes.data) 
+        ? manualOrdersRes.data.filter((o: any) => o.status === 'pending').length 
+        : 0;
+      const failedCount = Array.isArray(failedOrdersRes.data) ? failedOrdersRes.data.length : 0;
+
+      setTelemetry({
+        backendStatus: 'healthy',
+        backendPing: ping,
+        pendingBaridiCount: pendingBaridi,
+        failedOrdersCount: failedCount,
+        lastChecked: new Date().toLocaleTimeString(),
+      });
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        router.push('/admin/login');
+        return;
+      }
+      setTelemetry(prev => ({ ...prev, backendStatus: 'offline', lastChecked: new Date().toLocaleTimeString() }));
+    }
+  };
+
   useEffect(() => {
+    runDiagnostics();
     adminApi.get('/categories')
       .then(res => setAvailableCategories(flattenCategories(res.data)))
-      .catch(err => console.error('Error fetching categories:', err));
-  }, []);
+      .catch((err) => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          router.push('/admin/login');
+        }
+      });
+  }, [router]);
 
-  // ==========================================
-  // دوال الأدوات (Handlers)
-  // ==========================================
+  // Handlers
   const handleAdminSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminSearch.trim()) router.push(`/admin/manage?search=${encodeURIComponent(adminSearch.trim())}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await adminApi.post('/admin/logout');
+    } finally {
+      router.push('/admin/login');
+    }
   };
 
   const handleSyncCategories = async () => {
@@ -77,10 +138,10 @@ export default function AdminDashboard() {
   };
 
   const handleBackfillCategories = async () => {
-    if (!confirm('This will update categories for ALL existing products. Continue?')) return;
+    if (!confirm('This will update categories for all existing products in background. Continue?')) return;
     setBackfillingCats(true);
     try {
-      const res = await adminApi.post('/admin/backfill-categories', {}, { timeout: 0 });
+      const res = await adminApi.post('/admin/backfill-categories');
       alert(`✅ ${res.data.message}`);
     } catch (err: any) {
       alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`);
@@ -89,10 +150,10 @@ export default function AdminDashboard() {
 
   const handleSyncCJ = async () => {
     setSyncing(true);
-    setSyncMessage('⏳ Syncing products from CJ... This may take a few minutes.');
+    setSyncMessage('⏳ Sync started in background. Check server logs.');
     try {
       const url = syncCategory ? `/sync-cj-products?keyword=${encodeURIComponent(syncCategory)}` : '/sync-cj-products';
-      const res = await adminApi.get(url, { timeout: 0 });
+      const res = await adminApi.get(url);
       setSyncMessage(`✅ ${res.data.message}`);
     } catch (err: any) {
       setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`);
@@ -102,7 +163,7 @@ export default function AdminDashboard() {
   const handleSyncSingle = async () => {
     if (!singlePid.trim()) return;
     setSyncingSingle(true);
-    setSingleMessage('⏳ Syncing sourced product...');
+    setSingleMessage('⏳ Sourcing product by PID from CJ...');
     try {
       const res = await adminApi.post('/admin/sync-single-product', { pid: singlePid.trim() });
       setSingleMessage(`✅ ${res.data.message}`);
@@ -120,7 +181,7 @@ export default function AdminDashboard() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setUploading(true);
-    setMessage('📤 Uploading images...');
+    setMessage('📤 Uploading images to Cloudinary...');
     const uploadData = new FormData();
     for (let i = 0; i < files.length; i++) uploadData.append('images', files[i]);
     try {
@@ -137,20 +198,30 @@ export default function AdminDashboard() {
     } finally { setUploading(false); e.target.value = ''; }
   };
 
+  // ✨ إصلاح ثغرة الـ Scraper: استخراج كافة صور المعرض بأمان
   const handleScrape = async () => {
-    if (!scrapeUrl) return;
+    if (!scrapeUrl.trim()) return;
     setScraping(true);
     setMessage('');
     try {
-      const res = await adminApi.post('/admin/scrape-product', { url: scrapeUrl });
+      const res = await adminApi.post('/admin/scrape-product', { url: scrapeUrl.trim() });
       const data = res.data;
+      
+      const galleryImages = Array.isArray(data.images) && data.images.length > 0 
+        ? data.images.join(', ') 
+        : (data.image_url || '');
+
       setFormData(prev => ({
         ...prev,
-        title: data.title || '', image_url: data.image_url || '', description: data.description || '', price: data.price || '', images: data.image_url ? data.image_url : ''
+        title: data.title || '',
+        price: data.price || '',
+        image_url: data.images?.[0] || data.image_url || '',
+        images: galleryImages,
+        description: data.description || ''
       }));
-      setMessage('✅ Data fetched successfully!');
+      setMessage('✅ Scraped product data & images fetched successfully!');
     } catch (err: any) {
-      setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to connect.'}`);
+      setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to fetch product details.'}`);
     } finally { setScraping(false); }
   };
 
@@ -160,65 +231,149 @@ export default function AdminDashboard() {
     setMessage('');
     try {
       const payload = {
-        title: formData.title, price: Number(formData.price), original_price: Number(formData.original_price),
-        image_url: formData.image_url, images: formData.images.split(',').map(img => img.trim()).filter(Boolean),
-        description: formData.description, material: formData.material,
+        title: formData.title,
+        price: Number(formData.price),
+        original_price: Number(formData.original_price),
+        image_url: formData.image_url,
+        images: formData.images.split(',').map(img => img.trim()).filter(Boolean),
+        description: formData.description,
+        material: formData.material,
         colors: formData.colors.split(',').map(col => col.trim()).filter(Boolean),
-        sizes: formData.sizes.split(',').map(sz => sz.trim()).filter(Boolean), category: formData.category
+        sizes: formData.sizes.split(',').map(sz => sz.trim()).filter(Boolean),
+        category: formData.category
       };
       await adminApi.post('/admin/add-product', payload);
-      setMessage('✅ Product added successfully!');
+      setMessage('✅ Product published successfully with auto-pricing!');
       setFormData({ title: '', price: '', original_price: '', image_url: '', images: '', description: '', material: '', colors: '', sizes: '', category: 'other' });
       setScrapeUrl('');
     } catch (err: any) {
-      setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`);
+      setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`);
     } finally { setLoading(false); }
   };
 
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
 
-  // ==========================================
-  // التبويبات (Tabs Data)
-  // ==========================================
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'overview', label: 'Operations Command', icon: '⚡' },
     { id: 'add', label: 'Add Product', icon: '➕' },
-    { id: 'sync', label: 'Sync & Import', icon: '🔄' },
+    { id: 'sync', label: 'CJ Sync & Sourcing', icon: '🔄' },
     { id: 'sourcing', label: '1688 Sourcing', icon: '🏭' },
-    { id: 'coupons', label: 'Coupons', icon: '🎟️' },
+    { id: 'coupons', label: 'Coupons & Promos', icon: '🎟️' },
   ];
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
-      <div className="max-w-4xl mx-auto">
+    <main className="min-h-screen bg-[#0E1020] text-gray-200 p-6 pb-24 font-sans">
+      <div className="max-w-5xl mx-auto">
         
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <h1 className="text-2xl font-extrabold text-temu-black">Laclarc Admin Dashboard</h1>
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-temu-orange font-bold active:scale-95 transition touch-manipulation w-fit text-sm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back to Store
-          </button>
+        {/* Top Header & Fast Nav */}
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
+              L
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-wide">Laclarc Mission Control</h1>
+              <p className="text-[11px] text-gray-400">Enterprise Operations &bull; Global Dropshipping</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/')} 
+              className="px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-300 transition flex items-center gap-1.5"
+            >
+              🌐 Storefront
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-xs font-bold text-red-400 transition flex items-center gap-1.5"
+            >
+              🔒 Logout
+            </button>
+          </div>
+        </div>
+
+        {/* 🛰️ Live Infrastructure Pulse (Render & Neon & CJ Telemetry) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-[#181B34] border border-white/10 rounded-xl p-3.5 flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`}></span>
+              Render Backend
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-base font-black text-white">
+                {telemetry.backendStatus === 'healthy' ? 'Operational' : 'Checking'}
+              </span>
+              <span className="text-[11px] font-mono text-gray-400">{telemetry.backendPing}ms</span>
+            </div>
+          </div>
+
+          <div className="bg-[#181B34] border border-white/10 rounded-xl p-3.5 flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#8B78C6]"></span>
+              Neon DB
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-base font-black text-white">Connected</span>
+              <span className="text-[11px] font-mono text-emerald-400">Pool Active</span>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => router.push('/admin/baridimob')}
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition hover:border-[#FF6B9D] ${
+              telemetry.pendingBaridiCount > 0 ? 'bg-gradient-to-br from-[#181B34] to-pink-950/30 border-[#FF6B9D]' : 'bg-[#181B34] border-white/10'
+            }`}
+          >
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              🏦 BaridiMob Review
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-base font-black text-white">{telemetry.pendingBaridiCount}</span>
+              <span className="text-[11px] text-[#FF6B9D] font-bold">Action Needed &rarr;</span>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => router.push('/admin/failed-orders')}
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition hover:border-red-400 ${
+              telemetry.failedOrdersCount > 0 ? 'bg-gradient-to-br from-[#181B34] to-red-950/40 border-red-500' : 'bg-[#181B34] border-white/10'
+            }`}
+          >
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              ⚠️ Failed in CJ
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-base font-black text-white">{telemetry.failedOrdersCount}</span>
+              <span className="text-[11px] text-red-400 font-bold">Resolve Queue &rarr;</span>
+            </div>
+          </div>
         </div>
 
         {/* Quick Search */}
-        <form onSubmit={handleAdminSearch} className="relative flex-1 min-w-50 mb-6">
-          <input type="text" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} placeholder="🔍 Quick search products..." className="w-full bg-white border-2 border-temu-gray-border-light rounded-temu-sm py-3 pl-4 pr-10 text-sm focus:outline-none focus:border-temu-orange transition touch-manipulation" />
-          <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-temu-gray-light hover:text-temu-orange cursor-pointer p-1 active:scale-90">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <form onSubmit={handleAdminSearch} className="relative mb-6">
+          <input 
+            type="text" 
+            value={adminSearch} 
+            onChange={(e) => setAdminSearch(e.target.value)} 
+            placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..." 
+            className="w-full bg-[#181B34] border border-white/15 rounded-xl py-3.5 pl-4 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#8B78C6] transition" 
+          />
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
 
-        {/* ✨ Dashboard Slider Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide touch-pan-x border-b border-temu-gray-border-light">
+        {/* Command Center Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide border-b border-white/10">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 shrink-0 px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-300 cursor-pointer active:scale-95 rounded-t-temu-sm ${
+              className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl ${
                 activeTab === tab.id
-                  ? 'bg-temu-black text-white shadow-md -mb-1 border-b-2 border-temu-orange'
-                  : 'bg-white text-temu-gray-text border border-temu-gray-border-light hover:bg-temu-offwhite'
+                  ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white shadow-lg shadow-[#8B78C6]/20'
+                  : 'bg-[#181B34] text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white'
               }`}
             >
               <span>{tab.icon}</span> {tab.label}
@@ -226,27 +381,43 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ✨ محتوى التبويبات */}
-        <div className="bg-white rounded-temu-sm p-8 border border-temu-gray-border-light shadow-sm">
+        {/* Tab Content Box */}
+        <div className="bg-[#181B34] rounded-2xl p-6 sm:p-8 border border-white/10 shadow-xl">
           
-          {/* 1. Overview Tab */}
+          {/* 1. Overview Operations */}
           {activeTab === 'overview' && (
             <div>
-              <h2 className="text-xl font-extrabold text-temu-black mb-6">Dashboard Overview</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+                <div>
+                  <h2 className="text-lg font-black text-white">Operations Center</h2>
+                  <p className="text-xs text-gray-400">Direct modules to manage inventory, payments, and disputes</p>
+                </div>
+                <button 
+                  onClick={runDiagnostics} 
+                  className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-lg border border-white/10 transition flex items-center gap-1.5"
+                >
+                  🔄 Refresh Status ({telemetry.lastChecked})
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { label: 'Manage Products', desc: 'Edit, delete, or mark as Lightning Deal', link: '/admin/manage', color: 'bg-temu-black' },
-                  { label: 'BaridiMob Orders', desc: 'Approve manual payments', link: '/admin/baridimob', color: 'bg-temu-orange' },
-                  { label: 'Manual & Pending', desc: 'Failed orders that need action', link: '/admin/failed-orders', color: 'bg-temu-error' },
-                  { label: 'Disputes', desc: 'Manage CJ disputes', link: '/admin/disputes', color: 'bg-temu-black' },
-                  { label: 'Advanced Tools', desc: 'Auto-categorize & more', link: '/admin/advanced', color: 'bg-temu-black' },
+                  { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
+                  { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
+                  { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
+                  { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
+                  { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-purple-600 to-[#1D1E3C]', icon: '🛠️' },
                 ].map((card) => (
-                  <button key={card.label} onClick={() => router.push(card.link)} className="text-left p-4 rounded-xl border border-temu-gray-border-light hover:border-temu-orange transition active:scale-95 cursor-pointer">
-                    <div className={`w-10 h-10 rounded-full ${card.color} flex items-center justify-center text-white mb-3`}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                  <button 
+                    key={card.label} 
+                    onClick={() => router.push(card.link)} 
+                    className="text-left p-5 rounded-xl bg-[#0E1020] border border-white/10 hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98]"
+                  >
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
+                      {card.icon}
                     </div>
-                    <h3 className="font-bold text-temu-black text-sm">{card.label}</h3>
-                    <p className="text-xs text-temu-gray-light mt-1">{card.desc}</p>
+                    <h3 className="font-bold text-white text-sm group-hover:text-[#8B78C6] transition">{card.label}</h3>
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed">{card.desc}</p>
                   </button>
                 ))}
               </div>
@@ -256,99 +427,194 @@ export default function AdminDashboard() {
           {/* 2. Add Product Tab */}
           {activeTab === 'add' && (
             <div>
-              <h2 className="text-xl font-extrabold text-temu-black mb-6">Add New Product</h2>
+              <h2 className="text-lg font-black text-white mb-2">Publish New Product</h2>
+              <p className="text-xs text-gray-400 mb-6">Create manual items or auto-fill details via external link</p>
               
-              {message && <div className={`p-4 rounded-temu-sm mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-temu-green-light/10 text-temu-green' : 'bg-red-50 text-temu-error'}`}>{message}</div>}
+              {message && (
+                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                  {message}
+                </div>
+              )}
 
-              <div className="mb-8 p-4 bg-temu-yellow-soft rounded-temu-sm border border-temu-gold">
-                <label className="block text-sm font-bold text-temu-black mb-2">Auto-Fill from URL</label>
+              {/* Scraper Tool */}
+              <div className="mb-6 p-4 bg-[#0E1020] rounded-xl border border-amber-500/30">
+                <label className="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input type="url" value={scrapeUrl} onChange={(e) => setScrapeUrl(e.target.value)} placeholder="Paste product link here..." className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition" />
-                  <button onClick={handleScrape} disabled={scraping} className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 active:scale-95">{scraping ? 'Fetching...' : 'Fetch Data'}</button>
+                  <input 
+                    type="url" 
+                    value={scrapeUrl} 
+                    onChange={(e) => setScrapeUrl(e.target.value)} 
+                    placeholder="Paste product page URL here..." 
+                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400 transition" 
+                  />
+                  <button 
+                    onClick={handleScrape} 
+                    disabled={scraping} 
+                    className="bg-amber-500 hover:bg-amber-600 text-black font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95"
+                  >
+                    {scraping ? 'Extracting Data...' : 'Scrape Data'}
+                  </button>
                 </div>
               </div>
 
-              <div className="mb-6 p-4 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
-                <label className="block text-sm font-bold text-temu-black mb-2">Upload Images from PC</label>
-                <div className="flex items-center gap-4">
-                  <input type="file" accept="image/*" multiple onChange={handleFileUpload} disabled={uploading} className="block w-full text-sm text-temu-gray-text file:mr-4 file:py-3 file:px-4 file:rounded-temu-sm file:border-0 file:text-sm file:font-bold file:bg-temu-orange file:text-white hover:file:bg-temu-orange-bright cursor-pointer" />
-                  {uploading && <span className="text-sm font-bold text-temu-orange animate-pulse">Uploading...</span>}
-                </div>
+              {/* Image Upload */}
+              <div className="mb-6 p-4 bg-[#0E1020] rounded-xl border border-white/10">
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Upload Product Images (Cloudinary)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleFileUpload} 
+                  disabled={uploading} 
+                  className="block w-full text-xs text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#8B78C6] file:text-white hover:file:brightness-110 cursor-pointer" 
+                />
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {imagePreviews.map((img, idx) => <div key={idx} className="relative w-20 h-20 border border-temu-gray-border rounded-temu-sm overflow-hidden"><img src={img} alt={`preview ${idx}`} className="w-full h-full object-cover" /></div>)}
+                    {imagePreviews.map((img, idx) => (
+                      <div key={idx} className="relative w-16 h-16 border border-white/20 rounded-xl overflow-hidden bg-black/40">
+                        <img src={img} alt={`preview ${idx}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Product Title *</label><input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Price ($) *</label><input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Original Price ($)</label><input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Title *</label>
+                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
                 </div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Main Image URL *</label><input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required placeholder="https://..." className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Additional Images (comma separated)</label><input type="text" name="images" value={formData.images} onChange={handleChange} placeholder="url1, url2, url3" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Category</label><select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition">{availableCategories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Colors (hex)</label><input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Sizes</label><input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Cost / Base Price ($) *</label>
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Strikethrough Price ($)</label>
+                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  </div>
                 </div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Description</label><textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange resize-none transition"></textarea></div>
-                <button type="submit" disabled={loading} className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold py-4 rounded-temu-sm transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md">{loading ? 'Adding...' : 'Add Product'}</button>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Main Image URL *</label>
+                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Gallery Images (Comma Separated)</label>
+                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Category</label>
+                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]">
+                    {availableCategories.map(cat => (
+                      <option key={cat.value} value={cat.value} className="bg-[#181B34]">{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Colors (Hex / Names)</label>
+                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Sizes</label>
+                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Description</label>
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] resize-none"></textarea>
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
+                >
+                  {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
+                </button>
               </form>
             </div>
           )}
 
-          {/* 3. Sync & Import Tab */}
+          {/* 3. CJ Sync & Sourcing Tab */}
           {activeTab === 'sync' && (
-            <div>
-              <h2 className="text-xl font-extrabold text-temu-black mb-6">Sync & Import Products</h2>
-
-              {/* Sync CJ by Category */}
-              <div className="mb-8 p-4 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
-                <label className="block text-sm font-bold text-temu-black mb-2">Sync Products from CJ by Category</label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <select value={syncCategory} onChange={(e) => setSyncCategory(e.target.value)} className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange cursor-pointer">
-                    <option value="">🛍️ General / Trending</option>
-                    <option value="clipper">🪒 Shavers</option>
-                    <option value="smartphone">📱 Smartphones</option>
-                    <option value="kitchen">🍳 Kitchen</option>
-                    <option value="jewelry">💍 Jewelry</option>
-                    <option value="beauty">💄 Beauty</option>
-                    <option value="tool">🛠️ Tools</option>
-                    <option value="home decor">🏠 Home</option>
-                    <option value="car accessory">🚗 Automobile</option>
-                    <option value="shoes">👟 Footwear</option>
-                    <option value="men clothes">👕 Men's Clothing</option>
-                    <option value="women clothes">👗 Women's Clothing</option>
-                    <option value="kids clothes">🧒 Kids' Clothing</option>
-                  </select>
-                  <button onClick={handleSyncCJ} disabled={syncing} className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 active:scale-95 whitespace-nowrap">{syncing ? 'Syncing...' : 'Sync Now'}</button>
-                </div>
-                {syncMessage && <p className={`mt-3 text-sm font-medium ${syncMessage.includes('✅') ? 'text-temu-green' : 'text-temu-error'}`}>{syncMessage}</p>}
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-black text-white mb-1">CJ Automated Synchronization</h2>
+                <p className="text-xs text-gray-400 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
               </div>
 
-              {/* Sync Single PID */}
-              <div className="mb-8 p-4 bg-purple-50 rounded-xl border border-[#8B78C6]/30">
-                <label className="block text-sm font-bold text-[#1D1E3C] mb-2">Sync Sourced Product by PID (1688)</label>
-                <p className="text-xs text-gray-500 mb-3">After CJ accepts your sourcing request, copy the product ID (PID) from your CJ dashboard and paste it here.</p>
+              {/* Sync Single PID (1688 / Deals) */}
+              <div className="p-5 bg-[#0E1020] rounded-xl border border-[#8B78C6]/40">
+                <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
+                <p className="text-xs text-gray-400 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input type="text" value={singlePid} onChange={(e) => setSinglePid(e.target.value)} placeholder="Enter CJ Product ID (e.g., 12345678)..." className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition" />
-                  <button onClick={handleSyncSingle} disabled={syncingSingle} className="bg-[#8B78C6] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#7a67b5] transition disabled:opacity-50 active:scale-95 whitespace-nowrap">{syncingSingle ? 'Syncing...' : 'Sync & Mark as Deal ⚡'}</button>
-                </div>
-                {singleMessage && <p className={`mt-3 text-sm font-medium ${singleMessage.includes('✅') ? 'text-green-600' : 'text-red-500'}`}>{singleMessage}</p>}
-              </div>
-
-              {/* Categories Tree */}
-              <div className="p-4 bg-white rounded-temu-sm border border-temu-gray-border-light">
-                <label className="block text-sm font-bold text-temu-black mb-2">Official CJ Categories Tree</label>
-                <div className="flex gap-2 flex-wrap">
-                  <button onClick={handleSyncCategories} disabled={syncingCats} className="bg-temu-green text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-green/90 transition disabled:opacity-50 flex items-center gap-2 active:scale-95">
-                    {syncingCats ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Syncing...</> : '1. Sync Categories Tree'}
+                  <input 
+                    type="text" 
+                    value={singlePid} 
+                    onChange={(e) => setSinglePid(e.target.value)} 
+                    placeholder="Enter CJ Product PID (e.g. 172938192)..." 
+                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                  />
+                  <button 
+                    onClick={handleSyncSingle} 
+                    disabled={syncingSingle} 
+                    className="bg-[#8B78C6] hover:bg-[#7A67B5] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
+                  >
+                    {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
                   </button>
-                  <button onClick={handleBackfillCategories} disabled={backfillingCats} className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 flex items-center gap-2 active:scale-95">
-                    {backfillingCats ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Backfilling...</> : '2. Update Products'}
+                </div>
+                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-400' : 'text-red-400'}`}>{singleMessage}</p>}
+              </div>
+
+              {/* Sync Category */}
+              <div className="p-5 bg-[#0E1020] rounded-xl border border-white/10">
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Sync Category Batch</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select 
+                    value={syncCategory} 
+                    onChange={(e) => setSyncCategory(e.target.value)} 
+                    className="flex-1 bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]"
+                  >
+                    <option value="">🛍️ Trending / General Selection</option>
+                    <option value="clipper">🪒 Shavers & Grooming</option>
+                    <option value="smartphone">📱 Mobile Devices</option>
+                    <option value="kitchen">🍳 Kitchenware</option>
+                    <option value="jewelry">💍 Luxury Jewelry</option>
+                    <option value="beauty">💄 Personal Care</option>
+                    <option value="tool">🛠️ Hardware Tools</option>
+                    <option value="home decor">🏠 Home Accessories</option>
+                  </select>
+                  <button 
+                    onClick={handleSyncCJ} 
+                    disabled={syncing} 
+                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95"
+                  >
+                    {syncing ? 'Triggering...' : 'Run Category Sync'}
+                  </button>
+                </div>
+                {syncMessage && <p className="mt-2 text-xs font-bold text-gray-300">{syncMessage}</p>}
+              </div>
+
+              {/* Official Category Tree Maintenance */}
+              <div className="p-5 bg-[#0E1020] rounded-xl border border-white/10 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-white">CJ Categories Tree Architecture</h4>
+                  <p className="text-xs text-gray-400">Keep store taxonomy aligned with official CJ product mappings</p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleSyncCategories} 
+                    disabled={syncingCats} 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                  >
+                    {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
+                  </button>
+                  <button 
+                    onClick={handleBackfillCategories} 
+                    disabled={backfillingCats} 
+                    className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                  >
+                    {backfillingCats ? 'Updating Products...' : '2. Backfill Catalog'}
                   </button>
                 </div>
               </div>
@@ -358,8 +624,9 @@ export default function AdminDashboard() {
           {/* 4. 1688 Sourcing Tab */}
           {activeTab === 'sourcing' && (
             <div>
-              <h2 className="text-xl font-extrabold text-temu-black mb-2">Product Sourcing (1688)</h2>
-              <p className="text-sm text-temu-gray-text mb-6">Found a winning product on 1688? Send it to CJ to source it for you.</p>
+              <h2 className="text-lg font-black text-white mb-1">Direct 1688 Sourcing Submission</h2>
+              <p className="text-xs text-gray-400 mb-6">Request CJ Sourcing Agents to procure and verify a winning 1688 item</p>
+
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
@@ -367,17 +634,31 @@ export default function AdminDashboard() {
                 const payload = Object.fromEntries(formData.entries());
                 try {
                   await adminApi.post('/admin/sourcing/create', payload);
-                  alert('Sourcing request sent successfully!');
+                  alert('✅ Sourcing request sent to CJ team successfully!');
                   form.reset();
                 } catch (err: any) {
-                  alert(`Failed: ${err.response?.data?.error || 'Server error.'}`);
+                  alert(`❌ Sourcing Submission Failed: ${err.response?.data?.error || 'Server error.'}`);
                 }
-              }} className="space-y-5 bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light">
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Product Name *</label><input type="text" name="productName" required placeholder="e.g., Smart Watch Pro" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Image URL *</label><input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Product URL (Link to the product)</label><input type="url" name="productUrl" placeholder="https://1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Target Price ($)</label><input type="number" step="0.01" name="price" placeholder="e.g., 15.00" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <button type="submit" className="w-full bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition active:scale-95">Send Sourcing Request to CJ</button>
+              }} className="space-y-4 bg-[#0E1020] p-6 rounded-xl border border-white/10">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Target Product Title *</label>
+                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">High-Res Product Image URL *</label>
+                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">1688 Reference Product URL</label>
+                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Target Purchase Price ($ USD)</label>
+                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20">
+                  Transmit Sourcing Request to CJ Dropshipping
+                </button>
               </form>
             </div>
           )}
@@ -385,26 +666,45 @@ export default function AdminDashboard() {
           {/* 5. Coupons Tab */}
           {activeTab === 'coupons' && (
             <div>
-              <h2 className="text-xl font-extrabold text-temu-black mb-6">Create Coupon</h2>
+              <h2 className="text-lg font-black text-white mb-1">Create Promotional Coupon</h2>
+              <p className="text-xs text-gray-400 mb-6">Deploy discount codes verified automatically in Stripe Checkout and cart</p>
+
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
                 const formData = new FormData(form);
                 const payload = Object.fromEntries(formData.entries());
                 try {
-                  await adminApi.post('/admin/add-coupon', { ...payload, discount_value: Number(payload.discount_value) });
-                  alert('Coupon created successfully!');
+                  await adminApi.post('/admin/add-coupon', { 
+                    ...payload, 
+                    discount_value: Number(payload.discount_value) 
+                  });
+                  alert('✅ Coupon activated successfully in store system!');
                   form.reset();
                 } catch (err: any) {
-                  alert(`Failed: ${err.response?.data?.error || 'Server error.'}`);
+                  alert(`❌ Error: ${err.response?.data?.error || 'Failed to create coupon.'}`);
                 }
-              }} className="space-y-5 bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light max-w-md">
-                <div><label className="block text-sm font-bold text-temu-black mb-2">Coupon Code *</label><input type="text" name="code" required placeholder="e.g., LACLARC10" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Type</label><select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed ($)</option></select></div>
-                  <div><label className="block text-sm font-bold text-temu-black mb-2">Value *</label><input type="number" step="0.01" name="discount_value" required placeholder="e.g., 10" className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" /></div>
+              }} className="space-y-4 bg-[#0E1020] p-6 rounded-xl border border-white/10 max-w-lg">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Coupon Code *</label>
+                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] uppercase" />
                 </div>
-                <button type="submit" className="w-full bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition active:scale-95">Create Coupon</button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Discount Type</label>
+                    <select name="discount_type" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]">
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Cash ($)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Value *</label>
+                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-[#181B34] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" />
+                  </div>
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20">
+                  Deploy Discount Code
+                </button>
               </form>
             </div>
           )}

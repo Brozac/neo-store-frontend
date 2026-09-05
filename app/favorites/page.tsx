@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../components/ProductCard';
@@ -9,75 +9,105 @@ export default function FavoritesPage() {
   const router = useRouter();
   const [favoriteProducts, setFavoriteProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // ✨ إضافة حالة تتبع الإصبع
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
-        if (favs.length === 0) {
-          setFavoriteProducts([]);
-          setLoading(false);
-          return;
-        }
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-        // جلب كل المنتجات ثم فلترة المفضلة
-        const res = await fetch('https://neo-store-backend.onrender.com/api/products');
-        const data = await res.json();
-        
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const favsRaw = localStorage.getItem('favorites');
+      const favs: string[] = favsRaw ? JSON.parse(favsRaw) : [];
+
+      if (!Array.isArray(favs) || favs.length === 0) {
+        setFavoriteProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/products`);
+      if (!res.ok) {
+        setFavoriteProducts([]);
+        return;
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data)) {
         const filtered = data.filter((product: any) => favs.includes(String(product.id)));
         setFavoriteProducts(filtered);
-      } catch (err) {
-        console.error('Error fetching favorites:', err);
-      } finally {
-        setLoading(false);
+      } else {
+        setFavoriteProducts([]);
+      }
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+      setFavoriteProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    fetchFavorites();
+
+    // ✨ الاستماع للتغييرات اللحظية في المفضلة عبر التبويبات أو عند النقر
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'favorites') {
+        fetchFavorites();
       }
     };
 
-    fetchFavorites();
-  }, []);
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [fetchFavorites]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center gap-3">
+        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold text-gray-400">Loading saved items...</p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
-      <div className="max-w-7xl mx-auto">
-        <button 
-          onClick={() => router.push('/profile')} 
-          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Back to Profile
-        </button>
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-32 font-sans">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        <h1 className="text-3xl font-extrabold text-temu-black mb-6">My Favorites</h1>
+        {/* Navigation & Header */}
+        <div className="flex justify-between items-center border-b border-gray-200 pb-4 flex-wrap gap-2">
+          <div>
+            <button 
+              onClick={() => router.push('/profile')} 
+              className="flex items-center gap-2 text-gray-500 hover:text-black font-bold text-xs uppercase tracking-wider transition cursor-pointer mb-2 active:scale-95 w-fit"
+            >
+              &larr; Back to Account
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Saved Wishlist</h1>
+          </div>
+
+          <span className="text-xs font-mono font-bold bg-white px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm text-gray-700">
+            {favoriteProducts.length} Saved {favoriteProducts.length === 1 ? 'Product' : 'Products'}
+          </span>
+        </div>
 
         {favoriteProducts.length === 0 ? (
-          <div className="bg-white p-10 rounded-temu-sm border border-temu-gray-border-light text-center shadow-sm">
-            <svg className="mx-auto mb-4 h-16 w-16 text-temu-gray-border" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-            <p className="text-temu-black font-semibold mb-2">Your favorites list is empty.</p>
-            <p className="text-temu-gray-light text-sm mb-6">Tap the heart icon on products to save them here.</p>
-            <Link 
-              href="/" 
-              className="inline-block bg-temu-orange text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
-            >
-              Discover Products
-            </Link>
+          <div className="bg-white p-12 sm:p-16 rounded-2xl border border-gray-200 text-center shadow-sm max-w-lg mx-auto space-y-4">
+            <div className="w-16 h-16 bg-pink-50 text-[#FF6B9D] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">
+              ❤️
+            </div>
+            <h2 className="text-lg font-black text-gray-900">Your Wishlist is Empty</h2>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+              Tap the heart icon on any product card or details page to save trending deals for later.
+            </p>
+            <div className="pt-2">
+              <Link 
+                href="/" 
+                className="inline-block bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 shadow-md"
+              >
+                Explore Trending Catalog &rarr;
+              </Link>
+            </div>
           </div>
         ) : (
-          // ✨ تطبيق تتبع الإصبع على شبكة المفضلة
           <div 
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             onTouchMove={(e) => {
@@ -86,8 +116,7 @@ export default function FavoritesPage() {
                 const el = document.elementFromPoint(touch.clientX, touch.clientY);
                 const card = el?.closest('.product-card-wrapper');
                 if (card) {
-                  const id = card.getAttribute('data-product-id');
-                  setTouchedProductId(id);
+                  setTouchedProductId(card.getAttribute('data-product-id'));
                 } else {
                   setTouchedProductId(null);
                 }

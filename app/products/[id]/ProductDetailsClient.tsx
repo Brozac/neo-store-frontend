@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ interface Product {
   price: number | string;
   original_price?: number | string;
   category?: string;
-  image: string;
+  image?: string;
   image_url?: string;
   description?: string;
   images?: string[];
@@ -51,6 +51,12 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
+const STATIC_AVATARS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+];
+
 export default function ProductDetailsClient({ 
   product, 
   initialReviews, 
@@ -58,106 +64,123 @@ export default function ProductDetailsClient({
 }: { 
   product: Product; 
   initialReviews: Review[]; 
-  relatedProducts: Product[] 
+  relatedProducts: Product[];
 }) {
   const router = useRouter();
   const { addToCart } = useCart();
   
-  // ✨ توحيد حالة الصور لحل مشكلة التزامن
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [activeTab, setActiveTab] = useState<TabKey>('details');
   const [reviews, setReviews] = useState(initialReviews);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [purchaseCount, setPurchaseCount] = useState(0);
+  const [purchaseCount, setPurchaseCount] = useState(38);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [avatars, setAvatars] = useState<string[]>([]);
   const touchStartX = useRef(0);
-  const defaultImage = '/placeholder.jpg';
-  const galleryImages = product.images && product.images.length > 0 ? product.images : [product.image || product.image_url || defaultImage];
-  const mainImageSrc = galleryImages[currentImageIndex] || product.image || product.image_url || defaultImage;
 
-  // ✨ استخدام AbortController لمنع Race Conditions
+  const defaultImage = '/placeholder.jpg';
+  const galleryImages = useMemo(() => {
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      return product.images.filter(img => img && typeof img === 'string');
+    }
+    return [product.image_url || product.image || defaultImage];
+  }, [product]);
+
+  const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
+  // ✨ مطابقة المتغير الدقيق (Matching selected variant vid)
+  const matchedVariant = useMemo(() => {
+    if (!product.variants) return null;
+    try {
+      const parsedVariants = typeof product.variants === 'string' 
+        ? JSON.parse(product.variants) 
+        : product.variants;
+
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) return null;
+
+      // 1. مطابقة اللون والمقاس معاً
+      const exactMatch = parsedVariants.find((v: any) => {
+        const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
+        const matchesColor = selectedColor ? name.includes(selectedColor.toLowerCase()) : true;
+        const matchesSize = selectedSize ? new RegExp(`\\b${selectedSize}\\b`, 'i').test(name) : true;
+        return matchesColor && matchesSize;
+      });
+      if (exactMatch) return exactMatch;
+
+      // 2. مطابقة المقاس فقط
+      const sizeMatch = parsedVariants.find((v: any) => {
+        const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
+        return selectedSize ? new RegExp(`\\b${selectedSize}\\b`, 'i').test(name) : false;
+      });
+      if (sizeMatch) return sizeMatch;
+
+      // 3. خيار احتياطي: أول متغير صالح
+      return parsedVariants[0];
+    } catch (e) {
+      return null;
+    }
+  }, [product.variants, selectedColor, selectedSize]);
+
   useEffect(() => {
     const controller = new AbortController();
-    const signal = controller.signal;
-
-    // ✨ توليد رقم عشوائي تماماً عند فتح الصفحة (بين 15 و 55)
-    setPurchaseCount(Math.floor(Math.random() * 40) + 15);
-
-    // ✨ دالة لتوليد 3 صور عشوائية
-    const generateRandomAvatars = () => {
-      return Array.from({ length: 3 }, () => `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70) + 1}`);
-    };
-    setAvatars(generateRandomAvatars());
+    setPurchaseCount(Math.floor(Math.random() * 35) + 18);
 
     const interval = setInterval(() => {
-      // تغيير الرقم
-      setPurchaseCount((prev) => {
-        const change = Math.floor(Math.random() * 7) - 2;
-        let newCount = prev + change;
-        if (newCount < 5) newCount = 5;
-        if (newCount > 150) newCount = 150;
-        return newCount;
-      });
-      // تغيير الصور كل 5 ثواني أيضاً
-      setAvatars(generateRandomAvatars());
-    }, 5000);
+      setPurchaseCount(prev => Math.min(120, Math.max(12, prev + (Math.floor(Math.random() * 5) - 2))));
+    }, 7000);
 
-    const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setFavoriteIds(favs);
+    try {
+      const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+      setFavoriteIds(favs);
+    } catch (e) {}
 
-    if (product.colors && product.colors.length > 0) setSelectedColor(product.colors[0]);
-    if (product.sizes && product.sizes.length > 0) setSelectedSize(product.sizes[0]);
-
-    fetch(`https://neo-store-backend.onrender.com/api/reviews/${product.id}`, { signal })
+    // جلب التقييمات عبر رابط البيئة الديناميكي
+    fetch(`${API_BASE_URL}/api/reviews/${product.id}`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setReviews(data); })
-      .catch(err => { if (err.name !== 'AbortError') console.error(err); });
+      .catch(() => {});
 
     return () => {
       clearInterval(interval);
       controller.abort();
     };
-  }, [product]);
+  }, [product.id, API_BASE_URL]);
 
-  const getSeedNumber = (str: string | number, max: number, min: number) => {
-    const idStr = String(str);
-    let seed = 0;
-    for (let i = 0; i < idStr.length; i++) seed += idStr.charCodeAt(i);
-    return (seed % (max - min + 1)) + min;
-  };
   const parsePrice = (price: any) => Number(price) || 0;
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-  const getColorHex = (c: string) => c.startsWith('#') ? c : '#CCCCCC';
+  const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
 
   const handleToggleFavorite = (productId: string | number) => {
+    const idStr = String(productId);
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    const newFavorites = favorites.includes(String(productId)) 
-      ? favorites.filter((f: string) => f !== String(productId)) 
-      : [...favorites, String(productId)];
+    const newFavorites = favorites.includes(idStr) 
+      ? favorites.filter((f: string) => f !== idStr) 
+      : [...favorites, idStr];
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
     setFavoriteIds(newFavorites);
   };
 
+  // ✨ إضافة للسلة مع المتغير الحقيقي المختار (vid المطابق)
   const handleAddToCart = () => {
-    let vid = '';
-    if (product.variants) {
-      try {
-        const v = typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants;
-        if (Array.isArray(v) && v[0]?.vid) vid = v[0].vid;
-      } catch (e) {}
-    }
+    const resolvedVid = matchedVariant?.vid || '';
+    
     addToCart({
-      id: product.id, name: product.title, price: parsePrice(product.price),
-      quantity, image: mainImageSrc, color: selectedColor, size: selectedSize, vid
-    });
+      id: product.id,
+      title: product.title,
+      price: parsePrice(product.price),
+      quantity,
+      image: mainImageSrc,
+      image_url: mainImageSrc,
+      color: selectedColor,
+      size: selectedSize,
+      vid: resolvedVid
+    }, quantity);
   };
 
-  // ✨ دوال السحب (Swipe) الموحدة لكل الصور
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touchEndX = e.changedTouches[0].clientX;
@@ -173,15 +196,16 @@ export default function ProductDetailsClient({
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
-  const discountPct = safeOriginalPrice > 0 ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) : 0;
+  const discountPct = safeOriginalPrice > safePrice 
+    ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
+    : 0;
+
   const isCurrentProductFavorited = favoriteIds.includes(String(product.id));
 
   const detailBullets: string[] = [];
+  if (product.material) detailBullets.push(`Material: ${product.material}`);
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
-  if (product.chest_pad) detailBullets.push(`Chest pad: ${product.chest_pad}`);
-  if (product.wires) detailBullets.push(`Wires: ${product.wires}`);
-  if (product.support) detailBullets.push(`Support: ${product.support}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
 
   return (
@@ -190,300 +214,279 @@ export default function ProductDetailsClient({
         
         {/* Breadcrumbs */}
         <div className="flex flex-col gap-2 mb-6">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer active:scale-95 w-fit">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer active:scale-95 w-fit"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
             Back
           </button>
           <div className="text-sm text-temu-gray-light flex items-center gap-2 flex-wrap">
-            <Link href="/" className="hover:text-temu-orange cursor-pointer">Home</Link><span>/</span>
-            <Link href={`/category/${product.category?.split('/')[0] || 'all'}`} className="hover:text-temu-orange cursor-pointer capitalize">{product.category?.split('/')[0] || 'Products'}</Link><span>/</span>
-            <span className="text-temu-black font-medium truncate max-w-50 sm:max-w-full">{product.title}</span>
+            <Link href="/" className="hover:text-temu-orange cursor-pointer">Home</Link>
+            <span>/</span>
+            <Link href={`/category/${product.category?.split('/')[0] || 'all'}`} className="hover:text-temu-orange cursor-pointer capitalize">
+              {product.category?.split('/')[0] || 'Catalog'}
+            </Link>
+            <span>/</span>
+            <span className="text-temu-black font-medium truncate max-w-[200px] sm:max-w-none">{product.title}</span>
           </div>
         </div>
 
-        {/* Product top section */}
+        {/* Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
-          {/* Gallery */}
+          
+          {/* Visual Gallery */}
           <div className="flex flex-col gap-4 h-full">
             <div 
-              className="relative flex-1 h-full min-h-70 sm:min-h-95 md:min-h-125 rounded-temu-sm overflow-hidden bg-temu-offwhite border border-temu-gray-border-light group touch-pan-y"
+              className="relative flex-1 min-h-[350px] sm:min-h-[450px] rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <Image src={mainImageSrc} alt={product.title} fill unoptimized={mainImageSrc.includes('localhost')} sizes="(max-width: 768px) 100vw, 50vw" className="object-contain transition-transform duration-500 group-hover:scale-105" priority />
+                <Image 
+                  src={mainImageSrc} 
+                  alt={product.title} 
+                  fill 
+                  sizes="(max-width: 768px) 100vw, 50vw" 
+                  className="object-contain p-2 transition-transform duration-500 group-hover:scale-105" 
+                  priority 
+                />
               )}
               {galleryImages.length > 1 && !showVideo && (
                 <>
-                  <button onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer z-10 active:scale-90">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <button 
+                    onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} 
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
-                  <button onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer z-10 active:scale-90">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  <button 
+                    onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                 </>
               )}
               {!showVideo && (
-                <button onClick={() => setIsLightboxOpen(true)} className="absolute bottom-4 right-4 bg-white rounded-full p-2.5 shadow-md hover:scale-105 transition cursor-pointer z-10 active:scale-90">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <button 
+                  onClick={() => setIsLightboxOpen(true)} 
+                  className="absolute bottom-4 right-4 bg-white/90 hover:bg-white rounded-full p-2.5 shadow-md hover:scale-105 transition cursor-pointer z-10 active:scale-90"
+                >
+                  🔍
                 </button>
               )}
             </div>
-            <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x sm:overflow-visible">
+
+            {/* Thumbnails */}
+            <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x">
               {product.video_url && (
-                <div onClick={() => setShowVideo(true)} className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black active:scale-95 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-80 hover:opacity-100'}`}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white" className="opacity-80"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <div 
+                  onClick={() => setShowVideo(true)} 
+                  className={`relative aspect-square w-16 shrink-0 rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
+                >
+                  <span className="text-white text-lg">▶</span>
                 </div>
               )}
               {galleryImages.map((img, idx) => (
-                <div key={idx} onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} className={`relative aspect-square w-16 shrink-0 sm:w-auto sm:flex-1 sm:shrink rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-temu-offwhite active:scale-95 ${!showVideo && currentImageIndex === idx ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'}`}>
-                  <Image src={img || defaultImage} alt="Thumbnail" fill sizes="100px" className="object-contain p-1" unoptimized={img.includes('localhost')} />
+                <div 
+                  key={idx} 
+                  onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
+                  className={`relative aspect-square w-16 shrink-0 rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white ${!showVideo && currentImageIndex === idx ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                >
+                  <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Purchase info */}
+          {/* Pricing & Customization Box */}
           <div className="flex flex-col justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-temu-black tracking-tight mb-3 leading-tight">{product.title}</h1>
-              <div className="flex items-center gap-2 mb-6">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">{product.title}</h1>
+              
+              <div className="flex items-center gap-2 mb-4">
                 <span className="text-temu-orange text-sm">★★★★★</span>
-                <span className="text-sm font-bold text-temu-black">{(4 + getSeedNumber(product.id, 9, 0) / 10).toFixed(1)}</span>
-                <span className="text-sm text-temu-gray-light">({reviews.length > 0 ? reviews.length : getSeedNumber(product.id, 250, 15)} reviews)</span>
+                <span className="text-sm font-bold text-temu-black">4.9</span>
+                <span className="text-xs text-temu-gray-light">({reviews.length} verified ratings)</span>
               </div>
+
               <div className="flex items-baseline gap-3 mb-6">
-                <span className="text-3xl font-bold text-temu-error">${safePrice.toFixed(2)}</span>
-                {safeOriginalPrice > 0 && (
+                <span className="text-3xl font-black text-temu-error">${safePrice.toFixed(2)}</span>
+                {safeOriginalPrice > safePrice && (
                   <>
                     <span className="text-lg text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
-                    <span className="bg-temu-black text-white text-xs font-bold px-2.5 py-1 rounded-temu-sm">{discountPct}% OFF</span>
+                    <span className="bg-temu-black text-white text-xs font-black px-2.5 py-1 rounded-temu-sm">{discountPct}% OFF</span>
                   </>
                 )}
               </div>
 
+              {/* Color Options */}
               {product.colors && product.colors.length > 0 && (
-                <div className="mb-7">
-                  <label className="block text-sm font-bold text-temu-black mb-3">Color: <span className="font-normal text-temu-gray-text">{selectedColor}</span></label>
-                  <div className="flex gap-3 flex-wrap">
+                <div className="mb-6">
+                  <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
+                    Color: <span className="text-temu-gray-text font-semibold">{selectedColor}</span>
+                  </label>
+                  <div className="flex gap-2.5 flex-wrap">
                     {product.colors.map((col, idx) => (
-                      <button key={idx} onClick={() => setSelectedColor(col)} className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColor === col ? 'border-temu-orange scale-110' : 'border-temu-gray-border'}`}>
-                        <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/5"></span>
+                      <button 
+                        key={idx} 
+                        onClick={() => setSelectedColor(col)} 
+                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColor === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
+                      >
+                        <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/10"></span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* Size Options */}
               {product.sizes && product.sizes.length > 0 && (
-                <div className="mb-8">
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="text-sm font-bold text-temu-black">Size</label>
-                    <button onClick={() => setActiveTab('size')} className="text-xs text-temu-gray-text font-semibold cursor-pointer hover:text-temu-orange hover:underline flex items-center gap-1 active:scale-95">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="10" rx="1"></rect><line x1="7" y1="7" x2="7" y2="10"></line><line x1="11" y1="7" x2="11" y2="10"></line><line x1="15" y1="7" x2="15" y2="10"></line></svg>
-                      Size guide
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
+                    <button onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
+                      Size Guide ↗
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {product.sizes.map((sz) => (
-                      <button key={sz} onClick={() => setSelectedSize(sz)} className={`w-14 h-14 rounded-temu-sm font-bold text-sm transition cursor-pointer border-2 active:scale-90 ${selectedSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-temu-gray-border text-temu-black hover:border-temu-gray-text'}`}>{sz}</button>
+                      <button 
+                        key={sz} 
+                        onClick={() => setSelectedSize(sz)} 
+                        className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${selectedSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
+                      >
+                        {sz}
+                      </button>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="mt-2">
-              <div className="bg-temu-yellow-soft border border-temu-gold p-3 rounded-temu-sm mb-4">
-                <p className="text-xs font-bold text-temu-error flex items-center justify-center gap-2 animate-pulse">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  {getSeedNumber(product.id, 45, 12)} people are viewing this right now
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex-1 bg-white rounded-full h-2 overflow-hidden"><div className="bg-temu-error h-full rounded-full" style={{ width: `${80 + getSeedNumber(product.id, 15, 0)}%` }}></div></div>
-                  <span className="text-[10px] font-bold text-temu-error whitespace-nowrap">Only {getSeedNumber(product.id, 10, 2)} left!</span>
-                </div>
-              </div>
-
+            {/* CTA Controls */}
+            <div className="space-y-4">
               <CountdownTimer />
 
-              <div className="flex items-center gap-4 mb-4 mt-4">
-                <span className="text-sm font-bold text-temu-black">Quantity:</span>
-                <div className="flex items-center border border-temu-gray-border rounded-temu-sm overflow-hidden">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-2 text-lg font-bold text-temu-gray-text hover:bg-temu-offwhite active:scale-90 transition cursor-pointer">-</button>
-                  <span className="px-6 py-2 font-bold text-temu-black border-x border-temu-gray-border bg-white">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-2 text-lg font-bold text-temu-gray-text hover:bg-temu-offwhite active:scale-90 transition cursor-pointer">+</button>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold uppercase text-temu-black">Quantity:</span>
+                <div className="flex items-center border border-temu-gray-border rounded-temu-sm overflow-hidden bg-white">
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">-</button>
+                  <span className="px-4 py-1.5 font-bold text-sm text-temu-black border-x border-temu-gray-border">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">+</button>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-3 mb-3">
-                <button onClick={handleAddToCart} className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                  Add to Cart
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleAddToCart} 
+                  className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg shadow-temu-orange/20"
+                >
+                  <span>🛒</span> Add to Cart
                 </button>
-                <button onClick={() => handleToggleFavorite(product.id)} className={`w-14 h-14 shrink-0 flex items-center justify-center border-2 rounded-temu-sm transition cursor-pointer active:scale-90 ${isCurrentProductFavorited ? 'border-temu-error bg-temu-error text-white shadow-sm' : 'border-temu-gray-border text-temu-gray-text hover:border-temu-error hover:text-temu-error'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                <button 
+                  onClick={() => handleToggleFavorite(product.id)} 
+                  className={`w-14 h-14 shrink-0 flex items-center justify-center border-2 rounded-temu-sm transition cursor-pointer active:scale-90 ${isCurrentProductFavorited ? 'border-temu-error bg-temu-error text-white' : 'border-temu-gray-border bg-white text-temu-gray-text hover:text-temu-error'}`}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
                 </button>
               </div>
 
-              <div className="mb-6">
-                <BuyButton product={{ id: product.id, title: product.title, price: safePrice, image: mainImageSrc }} />
-              </div>
+              {/* ✨ تمرير كامل المتغيرات إلى BuyButton */}
+              <BuyButton 
+                product={{ 
+                  id: product.id, 
+                  title: product.title, 
+                  price: safePrice, 
+                  image: mainImageSrc,
+                  color: selectedColor,
+                  size: selectedSize,
+                  quantity: quantity,
+                  vid: matchedVariant?.vid || ''
+                }} 
+              />
 
-              <div className="flex items-center gap-3 mb-6 bg-temu-offwhite p-3 rounded-temu-sm border border-temu-gray-border-light">
-              <div className="flex -space-x-3">
-                {avatars.map((av, idx) => (
-                  <img key={idx} src={av} className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="buyer" />
-                ))}
-                <div className="w-8 h-8 rounded-full border-2 border-white bg-temu-orange text-white text-[10px] flex items-center justify-center font-bold">+{Math.max(0, purchaseCount - avatars.length)}</div>
-              </div>
-                <p className="text-xs text-temu-gray-text font-medium"><span className="font-bold text-temu-black">{purchaseCount}</span> other people purchased it today</p>
-              </div>
-
-              <div className="pt-6 mt-2 border-t border-temu-gray-border-light">
-                <div className="grid grid-cols-3 gap-2 text-center mb-6">
-                  <div className="flex flex-col items-center gap-1 text-[11px] text-temu-gray-text font-medium">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-green"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-                    Worldwide shipping
-                  </div>
-                  <div className="flex flex-col items-center gap-1 text-[11px] text-temu-gray-text font-medium">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-green"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                    Easy Returns
-                  </div>
-                  <div className="flex flex-col items-center gap-1 text-[11px] text-temu-gray-text font-medium">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-green"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    Secure Payment
-                  </div>
+              {/* Dynamic Social Proof Indicator */}
+              <div className="flex items-center gap-3 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light shadow-sm">
+                <div className="flex -space-x-2.5">
+                  {STATIC_AVATARS.map((av, idx) => (
+                    <img key={idx} src={av} className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm" alt="Buyer avatar" />
+                  ))}
                 </div>
+                <p className="text-xs text-temu-gray-text font-medium">
+                  <span className="font-extrabold text-temu-black">{purchaseCount} shoppers</span> purchased this in the last 24 hours
+                </p>
+              </div>
 
-                <div className="flex flex-col items-center gap-4 bg-temu-offwhite p-4 rounded-temu-sm border border-temu-gray-border-light">
-                  <div className="flex items-center gap-2 text-temu-green">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
-                    <p className="text-sm font-bold text-temu-black">Pay confidently with our secure methods</p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
-                    <img src="/logos/stripe.png" alt="Stripe" className="h-6 w-auto object-contain opacity-70 hover:opacity-100 transition" />
-                    <img src="/logos/paysera.png" alt="Paysera" className="h-6 w-auto object-contain opacity-70 hover:opacity-100 transition" />
-                    <img src="/logos/usdt.png" alt="USDT" className="h-8 w-auto object-contain opacity-70 hover:opacity-100 transition" />
-                    <img src="/logos/usdc.png" alt="USDC" className="h-8 w-auto object-contain opacity-70 hover:opacity-100 transition" />
-                    <img src="/logos/nowpayments.png" alt="NowPayments" className="h-8 w-auto object-contain opacity-70 hover:opacity-100 transition" />
-                  </div>
-                </div>
+              <div className="grid grid-cols-3 gap-2 text-center pt-2 text-[11px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
+                <div>✈️ Free Shipping</div>
+                <div>🛡️ 30-Day Guarantee</div>
+                <div>🔒 Secure Checkout</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-t border-temu-gray-border-light pt-10">
-          <div className="flex gap-8 border-b border-temu-gray-border-light mb-8 overflow-x-auto scrollbar-hide touch-pan-x">
+        {/* Tabbed Specifications */}
+        <div className="border-t border-temu-gray-border-light pt-8">
+          <div className="flex gap-6 border-b border-temu-gray-border-light mb-6 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`pb-4 text-sm font-bold whitespace-nowrap transition cursor-pointer border-b-2 -mb-px active:scale-95 ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-gray-text'}`}>{tab.label}</button>
+              <button 
+                key={tab.key} 
+                onClick={() => setActiveTab(tab.key)} 
+                className={`pb-3 text-xs uppercase font-extrabold whitespace-nowrap transition border-b-2 -mb-px cursor-pointer ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-black'}`}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-start">
-            <div>
-              {activeTab === 'details' && (
-                <>
-                  <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Information</h3>
-                  <p className="text-sm text-temu-gray-text leading-relaxed mb-6">{stripHtml(product.description) || 'High-quality product crafted with attention to detail.'}</p>
-                  {detailBullets.length > 0 && (
-                    <ul className="space-y-3">
-                      {detailBullets.map((bullet, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-sm text-temu-gray-text">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-temu-green"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          {bullet}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-              {activeTab === 'materials' && (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6 text-sm">
-                  {product.material && (<div><span className="text-temu-gray-light block mb-1">Material</span><span className="font-bold text-temu-black">{product.material}</span></div>)}
-                  {product.composition && (<div><span className="text-temu-gray-light block mb-1">Composition</span><span className="font-bold text-temu-black">{product.composition}</span></div>)}
-                  <div><span className="text-temu-gray-light block mb-1">Origin</span><span className="font-bold text-temu-black">{product.origin || 'China'}</span></div>
-                  <div><span className="text-temu-gray-light block mb-1">Support</span><span className="font-bold text-temu-black">{product.support || '24/7'}</span></div>
-                </div>
-              )}
-              {activeTab === 'size' && (
-                <div className="text-sm text-temu-gray-text leading-relaxed space-y-4">
-                  <p>{product.sizes && product.sizes.length > 0 ? `Available in ${product.sizes.join(', ')}.` : 'This item is true to size.'}</p>
-                  {product.instruction && <p>{product.instruction}</p>}
-                </div>
-              )}
-              {activeTab === 'shipping' && (
-                <div className="text-sm text-temu-gray-text leading-relaxed space-y-4">
-                  <p>Worldwide shipping available. Orders are processed within 1–2 business days.</p>
-                  <div className="bg-temu-offwhite p-4 rounded-temu-sm border border-temu-gray-border-light">
-                    <h4 className="font-bold text-temu-black mb-3 text-center">Estimated Delivery Times</h4>
-                    <ul className="space-y-2 text-xs">
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">DHL Official</span><span>3-7 days</span></li>
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">CJPacket Fast Ordinary</span><span>4-9 days</span></li>
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">USPS</span><span>5-9 days</span></li>
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">CJPacket Ordinary</span><span>8-12 days</span></li>
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">YunExpress Sensitive</span><span>8-15 days</span></li>
-                      <li className="flex justify-between border-b border-gray-100 pb-1"><span className="font-bold">CJPacket Sensitive</span><span>10-15 days</span></li>
-                      <li className="flex justify-between"><span className="font-bold">CJPacket Liquid Line</span><span>20-60 days</span></li>
-                    </ul>
-                  </div>
-                  <p>Returns are accepted within 30 days of delivery.</p>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <h3 className="text-lg font-extrabold text-temu-black mb-4">Product Image</h3>
-              {/* ✨ تغيير الخلفية وإضافة cursor-pointer و onClick لفتح النافذة */}
-              <div 
-                className="relative aspect-square rounded-temu-sm overflow-hidden bg-temu-offwhite border border-temu-gray-border-light touch-pan-y cursor-pointer"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onClick={() => setIsLightboxOpen(true)}
-              >
-                <Image src={mainImageSrc} alt={product.title} fill unoptimized={mainImageSrc.includes('localhost')} sizes="(max-width: 768px) 100vw, 50vw" className="object-contain" />
-                {galleryImages.length > 1 && (
-                  <>
-                    <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); }} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90 z-10">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1); }} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-sm transition cursor-pointer active:scale-90 z-10">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  </>
+          <div className="text-sm text-temu-gray-text leading-relaxed">
+            {activeTab === 'details' && (
+              <div>
+                <p className="mb-4">{stripHtml(product.description) || 'High quality craft with strict manufacturing standards.'}</p>
+                {detailBullets.length > 0 && (
+                  <ul className="space-y-1.5 list-disc list-inside">
+                    {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
                 )}
               </div>
-            </div>
+            )}
+
+            {activeTab === 'materials' && (
+              <p>{product.material || 'Engineered with durable, high-grade hypoallergenic materials.'}</p>
+            )}
+
+            {activeTab === 'size' && (
+              <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
+            )}
+
+            {activeTab === 'shipping' && (
+              <div className="space-y-2">
+                <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
+                <p className="text-xs text-temu-gray-light">Typical transit time: 7–15 business days depending on destination country.</p>
+              </div>
+            )}
           </div>
         </div>
-        
-        {/* You May Also Like (تستخدم relatedProducts القادمة من السيرفر مباشرة) */}
+
+        {/* You May Also Like Section */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-temu-black">You May Also Like</h2>
-              <Link href="/" className="text-sm font-semibold text-temu-gray-text hover:text-temu-orange transition flex items-center gap-1 active:scale-95">
-                View All
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </Link>
-            </div>
+            <h2 className="text-lg font-black text-temu-black mb-6">Frequently Bought Together</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {relatedProducts.map((p) => (
                 <TiltCard key={p.id}>
-                  <Link href={`/products/${p.id}`} className="group cursor-pointer flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition-transform duration-150">
-                    <div className="relative aspect-4/5 overflow-hidden bg-temu-offwhite mb-3">
-                      <Image src={p.image || p.image_url || defaultImage} alt={p.title} fill sizes="200px" className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={p.image_url?.includes('localhost')} />
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleFavorite(p.id); }} className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-sm transition cursor-pointer z-10 active:scale-90">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill={favoriteIds.includes(String(p.id)) ? '#FF6B9D' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={favoriteIds.includes(String(p.id)) ? 'text-temu-error' : 'text-temu-gray-text hover:text-temu-error'}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
-                      </button>
+                  <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
+                    <div className="relative aspect-square overflow-hidden bg-gray-50">
+                      <Image src={p.image_url || p.image || defaultImage} alt={p.title} fill sizes="200px" className="object-contain p-2 transition group-hover:scale-105" />
                     </div>
-                    <div className="p-3 pt-0">
-                      <h3 className="text-sm font-bold text-temu-dark line-clamp-2 mb-1 group-hover:text-temu-orange transition">{p.title}</h3>
-                      <p className="text-temu-error font-bold text-sm">${parsePrice(p.price).toFixed(2)}</p>
+                    <div className="p-3 pt-2 flex flex-col justify-between flex-1">
+                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
+                      <p className="text-temu-error font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
                     </div>
                   </Link>
                 </TiltCard>
@@ -492,90 +495,50 @@ export default function ProductDetailsClient({
           </div>
         )}
 
-        {/* Reviews */}
+        {/* Verified Customer Reviews */}
         <div className="border-t border-temu-gray-border-light pt-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-temu-gray-border-light">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-temu-black">{reviews.length} reviews</h2>
-                <span className="text-base font-bold text-temu-orange">{reviews.length > 0 ? `${(reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1)} ★★★★★` : '★★★★★'}</span>
-              </div>
-              <p className="text-xs text-temu-green font-bold mt-1">✔ All reviews are from verified purchases</p>
-            </div>
-            <div className="w-full md:w-64 space-y-1 text-xs">
-              <div className="flex justify-between items-center text-temu-gray-text">
-                <span>Small</span>
-                <div className="w-32 bg-temu-gray-border-light h-2 rounded-full overflow-hidden"><div className="bg-temu-orange w-[17%] h-full"></div></div>
-                <span>17%</span>
-              </div>
-              <div className="flex justify-between items-center text-temu-gray-text">
-                <span>True to size</span>
-                <div className="w-32 bg-temu-gray-border-light h-2 rounded-full overflow-hidden"><div className="bg-temu-orange w-[83%] h-full"></div></div>
-                <span>83%</span>
-              </div>
-            </div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-black text-temu-black">Customer Reviews ({reviews.length})</h2>
+            <span className="text-xs font-bold text-temu-green">Verified Worldwide Purchases ✔</span>
           </div>
 
-          {reviews.length > 0 ? (
-            <div className="reviews-carousel">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="review-card">
-                  <div className="flex justify-between text-xs text-temu-gray-light mb-2">
-                    <span className="font-bold text-temu-black">{rev.author} in 🇺🇸</span>
-                    <span className="text-temu-orange">{'★'.repeat(rev.rating)}</span>
-                  </div>
-                  <p className="text-xs text-temu-gray-light mb-3">{new Date(rev.created_at).toLocaleDateString()}</p>
-                  <p className="text-sm text-temu-dark font-medium leading-relaxed">{rev.content}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {reviews.slice(0, 6).map((rev) => (
+              <div key={rev.id} className="p-4 bg-white rounded-temu-sm border border-temu-gray-border-light shadow-sm space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-xs text-temu-black">{rev.author} ({rev.country || 'Verified Buyer'})</span>
+                  <span className="text-temu-orange text-xs">{'★'.repeat(rev.rating)}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-temu-gray-light py-6">No reviews yet. Be the first to review!</p>
-          )}
-          
-          <ReviewForm productId={product.id} onReviewAdded={() => {
-            fetch(`https://neo-store-backend.onrender.com/api/reviews/${product.id}`)
-              .then((res) => res.json())
-              .then((revData) => setReviews(revData))
-              .catch(() => {});
-          }} />
+                <p className="text-xs text-temu-gray-text leading-relaxed">{rev.content}</p>
+                <span className="text-[10px] text-gray-400 block font-mono">{new Date(rev.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+
+          <ReviewForm 
+            productId={product.id} 
+            onReviewAdded={() => {
+              fetch(`${API_BASE_URL}/api/reviews/${product.id}`)
+                .then(r => r.json())
+                .then(setReviews)
+                .catch(() => {});
+            }} 
+          />
         </div>
 
-        {/* Store info */}
-        <div className="border-t border-temu-gray-border-light pt-10 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <img src="/icon-512.png" alt="Laclarc Store" className="w-16 h-16 rounded-full object-cover border border-temu-gray-border-light" />
-            <div>
-              <h3 className="font-bold text-temu-black text-lg">{product.store_name || 'Laclarc'}</h3>
-              <p className="text-xs text-temu-gray-light">Trusted Seller {product.store_sales ? `| ${product.store_sales} Sold` : ''} | 4.9 ★</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => router.push('/')} className="bg-temu-orange text-white font-bold px-4 py-2.5 rounded-temu-sm hover:bg-temu-orange-bright transition text-sm cursor-pointer active:scale-95">Visit Store</button>
-          </div>
-        </div>
       </div>
 
-      {/* ✨ نافذة الصور المكبرة (Lightbox) */}
+      {/* Lightbox Modal */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 bg-black/95 z-200 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
-          <button className="absolute top-6 right-6 text-white text-4xl z-10 cursor-pointer active:scale-90 transition" onClick={() => setIsLightboxOpen(false)}>✕</button>
-          <div className="relative w-full max-w-4xl h-[80vh] touch-pan-y" onClick={(e) => e.stopPropagation()} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <Image src={mainImageSrc} alt={`${product.title} - Image ${currentImageIndex + 1}`} fill unoptimized={mainImageSrc.includes('localhost')} sizes="100vw" className="object-contain" />
-            {galleryImages.length > 1 && (
-              <>
-                <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition cursor-pointer active:scale-90">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-sm transition cursor-pointer active:scale-90">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-              </>
-            )}
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
+          <button className="absolute top-6 right-6 text-white text-3xl cursor-pointer" onClick={() => setIsLightboxOpen(false)}>✕</button>
+          <div className="relative w-full max-w-3xl h-[70vh]" onClick={e => e.stopPropagation()}>
+            <Image src={mainImageSrc} alt={product.title} fill className="object-contain" />
           </div>
         </div>
       )}
-      {/* ✨ إشعار الشراء المباشر (Social Proof Pop-up) */}
+
+      {/* Live Social Proof Notification */}
       <LivePurchaseNotification productName={product.title} />
     </main>
   );

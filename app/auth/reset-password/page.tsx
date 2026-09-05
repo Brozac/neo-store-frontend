@@ -1,126 +1,131 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-function ResetPasswordForm() {
-  const searchParams = useSearchParams();
+function ResetPasswordContent() {
   const router = useRouter();
-  const token = searchParams.get('token');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+    if (!token) {
+      setError('Invalid or expired password reset link.');
       return;
     }
+
     if (newPassword.length < 6) {
       setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await fetch('https://neo-store-backend.onrender.com/api/reset-password', {
+      const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || 'Failed to reset password.');
-      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update password.');
+
       setSuccess(true);
-      setTimeout(() => router.push('/auth'), 3000); // توجيه لصفحة الدخول بعد 3 ثواني
+      setTimeout(() => router.push('/auth'), 2500);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Connection error.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-temu-offwhite p-6">
-        <div className="bg-white p-8 rounded-temu-sm border border-temu-gray-border-light text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-temu-error mb-4">Invalid Link</h1>
-          <p className="text-temu-gray-text">No reset token found. Please request a new reset link.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-white p-8 rounded-temu-sm shadow-sm border border-temu-gray-border-light">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
+        
+        <div className="w-14 h-14 bg-purple-100 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+          🔒
+        </div>
+        <h1 className="text-2xl font-black text-gray-900 mb-1">Set New Password</h1>
+        <p className="text-gray-500 text-xs mb-6">Enter and confirm your new secure master password.</p>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl mb-4 text-xs font-bold text-center">
+            ⚠️ {error}
+          </div>
+        )}
+
         {success ? (
-          <div className="text-center">
-            <svg className="mx-auto mb-4 h-16 w-16 text-temu-green" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-            <h1 className="text-2xl font-extrabold text-temu-black mb-2">Password Reset!</h1>
-            <p className="text-temu-gray-text">Redirecting you to login...</p>
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs font-bold space-y-2">
+            <p>✓ Password updated successfully!</p>
+            <p className="text-[11px] font-normal text-gray-500">Redirecting to sign in screen...</p>
           </div>
         ) : (
-          <>
-            <h1 className="text-3xl font-extrabold text-temu-black mb-2 text-center">Set New Password</h1>
-            <p className="text-temu-gray-text text-sm text-center mb-8">Enter your new password below.</p>
+          <form onSubmit={handleReset} className="space-y-4 text-left">
+            <div>
+              <label className="block text-gray-700 text-xs font-bold uppercase mb-1">New Password *</label>
+              <input 
+                type="password" 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                placeholder="Minimum 6 characters..."
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition"
+              />
+            </div>
 
-            {error && <div className="bg-red-50 text-temu-error p-4 rounded-temu-sm mb-6 text-sm font-medium text-center">{error}</div>}
+            <div>
+              <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Confirm Password *</label>
+              <input 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="Repeat password..."
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition"
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-temu-black text-sm font-bold mb-2 ml-1">New Password</label>
-                {/* ✨ إضافة touch-manipulation */}
-                <input 
-                  type="password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  required 
-                  placeholder="••••••••" 
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
-                />
-              </div>
-              <div>
-                <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Confirm Password</label>
-                {/* ✨ إضافة touch-manipulation */}
-                <input 
-                  type="password" 
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  required 
-                  placeholder="••••••••" 
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-4 focus:outline-none focus:border-temu-orange transition touch-manipulation" 
-                />
-              </div>
-              {/* ✨ إضافة active:scale-95 و touch-manipulation و shadow-md */}
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-4 mt-4 hover:bg-temu-orange-bright transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
-              >
-                {loading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Reset Password'}
-              </button>
-            </form>
-          </>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+            >
+              {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Update Password & Sign In'}
+            </button>
+          </form>
         )}
+
       </div>
     </main>
   );
 }
 
-// ضروري في Next.js عند استخدام useSearchParams
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-temu-offwhite"><div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div></div>}>
-      <ResetPasswordForm />
+    <Suspense fallback={
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <ResetPasswordContent />
     </Suspense>
   );
 }

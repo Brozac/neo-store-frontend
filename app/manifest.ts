@@ -1,17 +1,17 @@
+// app/manifest.ts - Laclarc Enterprise PWA Manifest
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Laclarc | Explore the Latest Clothing, Beauty, Home, Jewelry & More',
-    short_name: 'Laclarc', // يجب أن يكون 3 أحرف على الأقل
-    description: 'Discover the best trending products at Laclarc. Explore the Latest Clothing, Beauty, Home, Jewelry & More.',
-    start_url: '/',
+    name: 'Laclarc | Curated Lifestyle & Electric Grooming Innovations',
+    short_name: 'Laclarc',
+    description: 'Discover trending lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
+    start_url: '/?homescreen=1',
+    scope: '/',
     display: 'standalone',
     background_color: '#F9F8FC',
     theme_color: '#8B78C6',
-    // ✨ إضافة id ثابت لتفادي مشاكل تحديث التطبيق مستقبلاً
     id: '/?homescreen=1', 
-    // ✨ إضافة orientation لجعله يعمل بالوضع العمودي (مثل تطبيقات التسوق)
     orientation: 'portrait',
     categories: ['shopping', 'lifestyle'],
     icons: [
@@ -19,20 +19,37 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'any', // ✨ مطلوب من PWABuilder
+        purpose: 'any',
       },
       {
         src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any', // ✅ مطلوب للتغليف
+        purpose: 'any',
       },
       {
         src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'maskable', // ✅ لجعل الأيقونة تملأ الشاشة في أندرويد
+        purpose: 'maskable',
       }
     ],
+    // ✨ اختصارات شاشة الهاتف الرئيسية (Long-press app shortcuts)
+    shortcuts: [
+      {
+        name: 'Track Order',
+        short_name: 'Track',
+        description: 'Track your live parcel shipment',
+        url: '/track-order',
+        icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Lightning Deals',
+        short_name: 'Deals',
+        description: 'Explore limited-time flash drops',
+        url: '/#catalog',
+        icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+      }
+    ]
   };
 }

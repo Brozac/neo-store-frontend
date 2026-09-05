@@ -14,22 +14,26 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // حالات نافذة تعديل الاسم فقط
+  // Edit Name Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [editError, setEditError] = useState('');
   
-  // حالة رفع الصورة
+  // Image Upload State
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       setLoading(false);
       return;
     }
 
-    fetch('https://neo-store-backend.onrender.com/api/user/profile', {
+    fetch(`${API_BASE_URL}/api/user/profile`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -37,7 +41,9 @@ export default function ProfilePage() {
     })
       .then((res) => {
         if (!res.ok) {
-          if (res.status === 401 || res.status === 403) localStorage.removeItem('token');
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('token');
+          }
           return null;
         }
         return res.json();
@@ -45,15 +51,16 @@ export default function ProfilePage() {
       .then((data) => {
         if (data) {
           setUser(data);
-          setEditName(data.name);
+          setEditName(data.name || '');
         }
-        setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching profile:", err);
+        console.error("Profile fetch error:", err);
+      })
+      .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -61,20 +68,26 @@ export default function ProfilePage() {
     router.push('/auth');
   };
 
-  // دالة رفع الصورة وتحديثها مباشرة في قاعدة البيانات
+  // ✨ رفع الصورة بأمان إلى Cloudinary مع معالجة الأخطاء
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const token = localStorage.getItem('token');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Maximum allowed size is 5MB.');
+      return;
+    }
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
     setUploadingImage(true);
+    setUploadError('');
     const formData = new FormData();
     formData.append('images', file);
 
     try {
-      const res = await fetch('https://neo-store-backend.onrender.com/api/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -86,7 +99,8 @@ export default function ProfilePage() {
       if (res.ok && data.urls && data.urls.length > 0) {
         const newImageUrl = data.urls[0];
         
-        const updateRes = await fetch('https://neo-store-backend.onrender.com/api/user/profile', {
+        // تحديث صورة البروفايل في قاعدة البيانات
+        const updateRes = await fetch(`${API_BASE_URL}/api/user/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -98,38 +112,53 @@ export default function ProfilePage() {
         const updatedUser = await updateRes.json();
         if (updateRes.ok) {
           setUser(updatedUser);
+        } else {
+          setUploadError('Failed to save profile picture link.');
         }
       } else {
-        console.error('Upload failed:', data);
+        setUploadError(data.error || 'Failed to upload photo.');
       }
     } catch (err) {
-      console.error('Upload failed:', err);
+      setUploadError('Network error uploading image.');
     } finally {
       setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
-  // دالة حفظ التعديلات (الاسم فقط)
+  // ✨ حفظ التعديلات مع الفحص الصارم للاسم
   const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      setEditError('Name cannot be empty.');
+      return;
+    }
+
     setUpdating(true);
-    const token = localStorage.getItem('token');
+    setEditError('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
     try {
-      const res = await fetch('https://neo-store-backend.onrender.com/api/user/profile', {
+      const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name: editName, profilePicture: user?.profile_picture })
+        body: JSON.stringify({ 
+          name: editName.trim(), 
+          profilePicture: user?.profile_picture 
+        })
       });
 
       const data = await res.json();
       if (res.ok) {
         setUser(data);
         setIsEditOpen(false);
+      } else {
+        setEditError(data.message || 'Failed to update profile.');
       }
     } catch (err) {
-      console.error('Error updating profile:', err);
+      setEditError('Connection error updating name.');
     } finally {
       setUpdating(false);
     }
@@ -138,145 +167,196 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
-      <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-extrabold text-temu-black mb-6">My Profile</h1>
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
+      <div className="max-w-md mx-auto space-y-6">
         
-        {/* بطاقة معلومات المستخدم */}
-        <div className="bg-white p-8 rounded-temu-sm shadow-sm mb-6 border border-temu-gray-border-light flex flex-col items-center">
+        {/* Navigation */}
+        <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Account Dashboard</h1>
+          <button 
+            onClick={() => router.push('/')} 
+            className="text-xs font-bold text-gray-500 hover:text-black transition"
+          >
+            &larr; Storefront
+          </button>
+        </div>
+        
+        {/* User Card */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
           
-          {/* الصورة الدائرية مع الإطار المتدرج وزر الإضافة (+) */}
-          <div className="relative p-1 rounded-full bg-linear-to-r from-temu-error to-temu-orange mb-4">
-            {/* ✨ إضافة active:scale-95 للصورة */}
-            <div className="block p-1 transition transform bg-white rounded-full hover:-rotate-6 active:scale-95">
+          {/* Avatar with Gradient Frame */}
+          <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] mb-4 shadow-md">
+            <div className="p-1 bg-white rounded-full">
               {user?.profile_picture ? (
-                <img src={user.profile_picture} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
+                <img 
+                  src={user.profile_picture} 
+                  alt={user.name || 'User Avatar'} 
+                  className="w-24 h-24 rounded-full object-cover" 
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-temu-offwhite flex items-center justify-center text-3xl font-bold text-temu-orange">
+                <div className="w-24 h-24 rounded-full bg-purple-50 flex items-center justify-center text-3xl font-black text-[#8B78C6]">
                   {user ? user.name.charAt(0).toUpperCase() : '?'}
                 </div>
               )}
             </div>
-            {/* ✨ زر الرفع مع تأثير الضغط */}
-            <label className="absolute bottom-0 right-1 flex items-center justify-center w-8 h-8 font-mono text-xl font-semibold text-white bg-temu-orange border-4 border-white rounded-full hover:bg-temu-orange-bright cursor-pointer transition active:scale-90">
+
+            {/* Upload Button */}
+            <label 
+              className="absolute bottom-1 right-1 flex items-center justify-center w-8 h-8 text-white bg-[#8B78C6] hover:bg-[#7A67B5] border-2 border-white rounded-full cursor-pointer transition shadow-md active:scale-90"
+              title="Upload New Avatar"
+            >
               {uploadingImage ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : '+'}
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <span className="text-sm font-bold">+</span>
+              )}
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
             </label>
           </div>
 
-          <h2 className="text-xl font-bold text-temu-black">{user ? user.name : 'Guest User'}</h2>
-          <p className="text-temu-gray-text text-sm mb-4">{user ? user.email : 'Not logged in'}</p>
+          {uploadError && (
+            <p className="text-xs text-rose-600 font-bold mb-2">{uploadError}</p>
+          )}
+
+          <h2 className="text-xl font-black text-gray-900">{user ? user.name : 'Guest Shopper'}</h2>
+          <p className="text-xs text-gray-400 font-medium mb-3">{user ? user.email : 'Sign in to sync your cart and orders'}</p>
           
-          {/* زر تعديل المعلومات الشخصية */}
           {user && (
             <button 
-              onClick={() => { setEditName(user.name); setIsEditOpen(true); }} 
-              className="flex items-center gap-2 text-temu-orange font-bold text-sm hover:underline cursor-pointer mt-2 active:scale-95 transition w-fit"
+              onClick={() => { setEditName(user.name); setEditError(''); setIsEditOpen(true); }} 
+              className="inline-flex items-center gap-1.5 text-[#8B78C6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-              Edit Personal Info
+              <span>✏️</span> Edit Profile Details
             </button>
           )}
         </div>
 
-        {/* أزرار التحكم */}
-        <div className="bg-white rounded-temu-sm shadow-sm p-2 border border-temu-gray-border-light">
+        {/* Action Menu */}
+        <div className="bg-white rounded-2xl shadow-sm p-2 border border-gray-200 divide-y divide-gray-100">
           {user ? (
             <>
-              {/* زر المفضلة (Favorites) */}
+              {/* Favorites */}
               <button 
                 onClick={() => router.push('/favorites')}
-                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite active:bg-temu-offwhite rounded-temu-sm transition cursor-pointer active:scale-95"
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-semibold text-temu-black flex items-center gap-2">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-error">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                  My Favorites
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-[#FF6B9D]">❤️</span>
+                  My Saved Wishlist
                 </span>
-                <span className="text-temu-gray-light">➔</span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
               </button>
-              <div className="h-px bg-temu-gray-border-light mx-4"></div>
 
-              {/* زر الطلبات (Orders) */}
+              {/* Purchase History */}
               <button 
                 onClick={() => router.push('/orders')}
-                className="w-full flex items-center justify-between p-4 hover:bg-temu-offwhite active:bg-temu-offwhite rounded-temu-sm transition cursor-pointer active:scale-95"
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-semibold text-temu-black">My Orders</span>
-                <span className="text-temu-gray-light">➔</span>
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-[#8B78C6]">📦</span>
+                  Order History & Invoices
+                </span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
               </button>
-              <div className="h-px bg-temu-gray-border-light mx-4"></div>
 
-              {/* زر الخروج (Logout) */}
+              {/* Direct Parcel Tracking */}
+              <button 
+                onClick={() => router.push('/track-order')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+              >
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-emerald-600">🚚</span>
+                  Track Live Shipment
+                </span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
+              </button>
+
+              {/* Logout */}
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 rounded-temu-sm transition text-temu-error cursor-pointer active:scale-95"
+                className="w-full flex items-center justify-between p-4 hover:bg-rose-50 rounded-xl transition text-rose-600 cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-semibold">Log Out</span>
-                <span>➔</span>
+                <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-3">
+                  <span className="text-base">🔒</span>
+                  Sign Out of Laclarc
+                </span>
+                <span className="text-xs">&rarr;</span>
               </button>
             </>
           ) : (
             <button 
               onClick={() => router.push('/auth')}
-              className="w-full bg-temu-orange text-white font-bold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer active:scale-95 shadow-md"
+              className="w-full bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md active:scale-95"
             >
-              Sign In / Register
+              Sign In / Register &rarr;
             </button>
           )}
         </div>
       </div>
 
-      {/* نافذة تعديل المعلومات الشخصية (الاسم فقط) */}
+      {/* Edit Profile Modal */}
       {isEditOpen && user && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setIsEditOpen(false)}>
-          <div className="bg-white rounded-temu-sm max-w-md w-full p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-extrabold text-temu-black">Edit Personal Info</h2>
-              <button onClick={() => setIsEditOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer active:scale-90 transition">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <div 
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50" 
+          onClick={() => setIsEditOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-4" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h2 className="text-base font-black text-gray-900">Update Profile Information</h2>
+              <button 
+                onClick={() => setIsEditOpen(false)} 
+                className="text-gray-400 hover:text-black p-1 text-sm font-bold"
+              >
+                ✕
               </button>
             </div>
 
-            <div className="space-y-5">
+            {editError && (
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold">
+                ⚠️ {editError}
+              </div>
+            )}
+
+            <div className="space-y-4">
               <div>
-                <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Full Name</label>
+                <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Full Name *</label>
                 <input 
                   type="text" 
                   value={editName} 
                   onChange={(e) => setEditName(e.target.value)} 
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light text-temu-black rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition" 
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition" 
                 />
               </div>
 
               <div>
-                <label className="block text-temu-black text-sm font-bold mb-2 ml-1">Email Address</label>
+                <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Account Email Address</label>
                 <input 
                   type="email" 
                   value={user.email || ''} 
                   disabled 
-                  className="w-full bg-gray-100 border border-temu-gray-border-light text-temu-gray-light rounded-temu-sm px-4 py-3 cursor-not-allowed" 
+                  className="w-full bg-gray-100 border border-gray-200 text-gray-400 rounded-xl px-4 py-3 text-sm cursor-not-allowed font-mono" 
                 />
-                <p className="text-xs text-temu-gray-light mt-1 ml-1">Email cannot be changed.</p>
+                <p className="text-[10px] text-gray-400 mt-1">Verified email cannot be modified for security reasons.</p>
               </div>
 
               <button 
                 onClick={handleSaveProfile} 
                 disabled={updating} 
-                className="w-full bg-temu-orange text-white font-extrabold rounded-temu-sm px-4 py-3 mt-2 hover:bg-temu-orange-bright transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md"
+                className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
               >
-                {updating ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Changes'}
+                {updating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Profile Changes'}
               </button>
             </div>
           </div>

@@ -20,31 +20,43 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  // ✨ جلب بيانات العميل المسجل
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       setLoadingUser(false);
       return;
     }
 
-    fetch('https://neo-store-backend.onrender.com/api/user/profile', {
+    fetch(`${API_BASE_URL}/api/user/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.ok ? res.json() : null)
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('token');
+          return null;
+        }
+        return res.ok ? res.json() : null;
+      })
       .then(data => {
         if (data) setUser(data);
-        setLoadingUser(false);
       })
-      .catch(() => setLoadingUser(false));
-  }, []);
+      .catch(() => {})
+      .finally(() => setLoadingUser(false));
+  }, [API_BASE_URL]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     if (!token) {
-      setMessage('❌ Please log in to submit a review.');
+      setMessage('❌ Please sign in to submit your product review.');
+      return;
+    }
+
+    if (content.trim().length < 5) {
+      setMessage('❌ Review must be at least 5 characters long.');
       return;
     }
 
@@ -52,108 +64,112 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
     setMessage('');
 
     try {
-      const res = await fetch('https://neo-store-backend.onrender.com/api/reviews/add', {
+      const res = await fetch(`${API_BASE_URL}/api/reviews/add`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ product_id: productId, rating, content, country })
+        body: JSON.stringify({ 
+          product_id: productId, 
+          rating, 
+          content: content.trim(), 
+          country: country.trim() || 'United States' 
+        })
       });
 
       const data = await res.json();
       if (res.ok) {
-        setMessage('✅ Review added successfully!');
+        setMessage('✅ Review submitted successfully!');
         setContent('');
         setRating(5);
-        onReviewAdded(); // تحديث القائمة
+        onReviewAdded();
       } else {
-        setMessage(`❌ ${data.error || 'Failed to add review.'}`);
+        setMessage(`❌ ${data.error || 'Failed to submit review.'}`);
       }
     } catch (err) {
-      setMessage('❌ Server error.');
+      setMessage('❌ Network connection error.');
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loadingUser) {
-    return <p className="text-center text-temu-gray-light py-4 animate-pulse">Loading...</p>;
+    return <div className="py-6 text-center text-xs text-gray-400 animate-pulse font-bold">Verifying buyer credentials...</div>;
   }
 
   // إذا لم يكن العميل مسجلاً
   if (!user) {
     return (
-      <div className="bg-temu-offwhite p-6 rounded-temu-sm border border-temu-gray-border-light text-center mt-8">
-        <p className="text-temu-black font-semibold mb-4">Please log in to write a review.</p>
+      <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 text-center mt-6">
+        <p className="text-gray-900 font-bold text-sm mb-1">Purchased this product recently?</p>
+        <p className="text-xs text-gray-500 mb-4">Sign in to leave a verified review and earn reward points.</p>
         <button 
           onClick={() => router.push('/auth')}
-          className="bg-temu-orange text-white font-bold py-3 px-8 rounded-full hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-md"
+          className="bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-md"
         >
-          Log In / Register
+          Sign In to Review &rarr;
         </button>
       </div>
     );
   }
 
-  // إذا كان العميل مسجلاً، اعرض النموذج باسمه تلقائياً
   return (
-    <div className="bg-white p-6 rounded-temu-sm border border-temu-gray-border-light shadow-sm mt-8">
-      <h3 className="text-lg font-extrabold text-temu-black mb-4">Write a Review</h3>
+    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-8 space-y-4">
+      <div>
+        <h3 className="text-base font-black text-gray-900">Leave a Verified Review</h3>
+        <p className="text-xs text-gray-500">Posting publicly as <strong className="text-gray-900">{user.name}</strong></p>
+      </div>
       
       {message && (
-        <div className={`p-3 rounded-temu-sm mb-4 text-sm font-medium ${message.includes('✅') ? 'bg-temu-green-light/10 text-temu-green' : 'bg-red-50 text-temu-error'}`}>
+        <div className={`p-3 rounded-xl text-xs font-bold ${
+          message.includes('✅') 
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+            : 'bg-red-50 text-red-600 border border-red-200'
+        }`}>
           {message}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-bold text-temu-black mb-2">Rating</label>
+          <label className="block text-xs font-bold uppercase text-gray-700 mb-1.5">Rating</label>
           <StarRating onChange={(val) => setRating(val)} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-bold text-temu-black mb-2">Name</label>
-            <input 
-              type="text" 
-              value={user.name} 
-              readOnly 
-              className="w-full bg-gray-100 border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-temu-gray-text cursor-not-allowed"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-temu-black mb-2">Country</label>
-            <input 
-              type="text" 
-              value={country} 
-              onChange={(e) => setCountry(e.target.value)} 
-              className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition"
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-bold uppercase text-gray-700 mb-1.5">Country / Region</label>
+          <input 
+            type="text" 
+            value={country} 
+            onChange={(e) => setCountry(e.target.value)} 
+            placeholder="e.g. United States, France..."
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 focus:outline-none focus:border-[#8B78C6] transition"
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-temu-black mb-2">Review Content *</label>
+          <label className="block text-xs font-bold uppercase text-gray-700 mb-1.5">Your Feedback *</label>
           <textarea 
             value={content} 
             onChange={(e) => setContent(e.target.value)} 
             required 
-            rows={4} 
-            placeholder="Share your thoughts on this product..." 
-            className="w-full bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 focus:outline-none focus:border-temu-orange transition resize-none"
+            rows={3} 
+            placeholder="Share details regarding quality, sizing, or delivery experience..." 
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-900 focus:outline-none focus:border-[#8B78C6] transition resize-none"
           />
         </div>
 
         <button 
           type="submit" 
           disabled={submitting} 
-          className="w-full bg-temu-orange text-white font-extrabold py-3 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition disabled:opacity-50 cursor-pointer mt-2 active:scale-95 flex justify-center items-center gap-2"
+          className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 active:scale-95 shadow-md flex items-center justify-center gap-2"
         >
           {submitting ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : 'Submit Review'}
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            'Publish Verified Review'
+          )}
         </button>
       </form>
     </div>

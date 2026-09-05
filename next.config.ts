@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ضغط تلقائي فائق السرعة للصور بصيغتي WebP و AVIF
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -24,12 +25,54 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '**.aliexpress-media.com',
+      },
+      // ✨ إضافة Cloudinary لدعم صور الإيصالات وصور الأدمن والمستخدمين
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      // صور الأفاتار والمراجعات المعتمدة
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
       }
     ],
   },
-  // إزالة جميع أكواد console.log في الإنتاج
+
+  // إزالة جميع رسائل console.log في بيئة الإنتاج للحفاظ على الأداء والسرية
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
+  },
+
+  // ✨ هيدرز الأمان البنكية لحماية المتجر من الاختراق والتأطير الخبيث (Clickjacking)
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
   },
 };
 

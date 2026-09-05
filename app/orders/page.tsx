@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Order {
   id: string | number;
@@ -9,6 +10,7 @@ interface Order {
   status: string;
   total_amount: string | number;
   shipping_address: string;
+  customer_email?: string;
 }
 
 interface OrderItem {
@@ -28,8 +30,10 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
       router.push('/auth');
       return;
@@ -37,12 +41,13 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        const ordersRes = await fetch('https://neo-store-backend.onrender.com/api/orders/my-orders', {
+        const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (!ordersRes.ok) {
           if (ordersRes.status === 401 || ordersRes.status === 403) {
+            localStorage.removeItem('token');
             router.push('/auth');
             return;
           }
@@ -62,32 +67,33 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [router]);
+  }, [router, API_BASE_URL]);
 
+  // ✨ إضافة حالة 'completed' لشارات النجاح الرسمية
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'completed':
       case 'fulfilled':
       case 'paid':
-        return 'bg-temu-green-light/20 text-temu-green'; 
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200'; 
+      case 'reconciling':
       case 'pending':
-        return 'bg-temu-yellow-soft text-temu-gold';
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
       case 'manual':
       case 'cancelled':
       case 'expired':
-        return 'bg-red-50 text-temu-error';
+        return 'bg-rose-50 text-rose-700 border border-rose-200';
       default:
-        return 'bg-gray-100 text-gray-600';
+        return 'bg-gray-100 text-gray-700 border border-gray-200';
     }
   };
 
-  // ✨ دالة لتنسيق العنوان: إذا كان JSON تفكه وتعرضه بشكل مفهوم
   const formatAddress = (address: string) => {
     if (!address) return 'N/A';
     try {
       const parsed = JSON.parse(address);
       return [parsed.line1, parsed.city, parsed.state, parsed.postal_code, parsed.country].filter(Boolean).join(', ');
     } catch (e) {
-      // إذا لم يكن JSON، فهو نص عادي (مثل طلبات Stripe)، نعرضه كما هو
       return address;
     }
   };
@@ -99,12 +105,11 @@ export default function OrdersPage() {
     setOrderItems([]);
 
     try {
-      // ✨ إرسال التوكن في الـ Headers لتجاوز فحص الأمان الجديد
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: HeadersInit = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/${order.id}/items`, { headers });
+      const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/items`, { headers });
       
       if (!res.ok) {
         throw new Error('Failed to load details');
@@ -116,7 +121,7 @@ export default function OrdersPage() {
       }
     } catch (err) {
       setOrderItems([{ 
-        title: 'Could not load items. Please make sure the backend is running and restarted.', 
+        title: 'Could not load items. Details will sync automatically.', 
         image_url: '', 
         quantity: 0, 
         price_at_purchase: 0 
@@ -129,87 +134,92 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
+      <div className="max-w-3xl mx-auto space-y-6">
+        
+        {/* Navigation */}
         <button 
           onClick={() => router.push('/profile')} 
-          className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer mb-6 active:scale-95 w-fit"
+          className="flex items-center gap-2 text-gray-500 hover:text-black font-bold text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 w-fit"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Back to Profile
+          &larr; Back to Profile
         </button>
 
-        <h1 className="text-2xl font-extrabold text-temu-black mb-6">My Orders</h1>
+        <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-200 pb-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Purchase History</h1>
+            <p className="text-xs text-gray-500">Track and review all previous purchases with Laclarc</p>
+          </div>
+          <span className="text-xs font-mono font-bold bg-white px-3 py-1 rounded-full border border-gray-200">
+            {orders.length} Orders Recorded
+          </span>
+        </div>
 
         {orders.length === 0 ? (
-          <div className="bg-white p-10 rounded-temu-sm border border-temu-gray-border-light text-center">
-            <svg className="mx-auto mb-4 h-16 w-16 text-temu-gray-border" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <p className="text-temu-gray-text font-medium">You have no orders yet.</p>
-            <button onClick={() => router.push('/')} className="mt-6 bg-temu-orange text-white font-bold py-2 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-md">
-              Start Shopping
+          <div className="bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-sm space-y-4">
+            <div className="w-16 h-16 bg-purple-50 text-[#8B78C6] rounded-full flex items-center justify-center text-2xl mx-auto">
+              📦
+            </div>
+            <h3 className="text-base font-bold text-gray-800">No Orders Found Yet</h3>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
+            <button 
+              onClick={() => router.push('/')} 
+              className="bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+            >
+              Start Shopping &rarr;
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="bg-white p-5 rounded-temu-sm border border-temu-gray-border-light shadow-sm hover:shadow-md transition">
-                <div className="flex justify-between items-start pb-4 border-b border-temu-gray-border-light">
+              <div key={order.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                <div className="flex justify-between items-start pb-4 border-b border-gray-100 flex-wrap gap-2">
                   <div>
-                    <h3 className="font-bold text-temu-black text-lg">Order #{order.id}</h3>
-                    <p className="text-xs text-temu-gray-light mt-1">
+                    <h3 className="font-black text-gray-900 text-base">Order #{order.id}</h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5 font-medium">
                       {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusStyle(order.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusStyle(order.status)}`}>
                     {order.status}
                   </span>
                 </div>
 
-                <div className="flex items-start gap-3 py-4">
-                  <div className="bg-temu-offwhite p-2 rounded-temu-sm mt-1">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-temu-orange">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs text-temu-gray-light font-bold mb-1">Shipping Address</p>
-                    {/* ✨ استخدام الدالة لتنسيق العنوان قبل عرضه */}
-                    <p className="text-sm text-temu-dark font-medium">{formatAddress(order.shipping_address)}</p>
+                <div className="py-3 text-xs text-gray-600 flex items-start gap-2.5">
+                  <span className="text-base">📍</span>
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Delivery Destination</span>
+                    <p className="font-medium text-gray-800 truncate">{formatAddress(order.shipping_address)}</p>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4 border-t border-temu-gray-border-light">
+                <div className="flex justify-between items-center pt-3 border-t border-gray-100 flex-wrap gap-2">
                   <div>
-                    <p className="text-xs text-temu-gray-light font-bold">Total</p>
-                    <p className="text-xl font-extrabold text-temu-error">${Number(order.total_amount).toFixed(2)}</p>
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Billed</span>
+                    <span className="text-lg font-black text-[#FF6B9D]">${Number(order.total_amount).toFixed(2)}</span>
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="flex items-center gap-2">
+                    {/* ✨ تمرير رقم الطلب مباشرة لصفحة التتبع */}
                     <button 
-                      onClick={() => router.push('/track-order')} 
-                      className="px-4 py-2 bg-temu-offwhite border border-temu-gray-border text-temu-black rounded-temu-sm text-xs font-bold hover:bg-temu-gray-border-light transition cursor-pointer flex items-center gap-1 active:scale-95"
+                      onClick={() => router.push(`/track-order?orderId=${order.id}`)} 
+                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                      </svg>
-                      Track
+                      <span>🚚</span>
+                      <span>Track Shipment</span>
                     </button>
+                    
                     <button 
                       onClick={() => handleViewDetails(order)} 
-                      className="px-4 py-2 bg-temu-orange text-white rounded-temu-sm text-xs font-bold hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 shadow-sm"
+                      className="px-4 py-2 bg-[#8B78C6] hover:bg-[#7A67B5] text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm"
                     >
-                      View Details
+                      View Items
                     </button>
                   </div>
                 </div>
@@ -219,79 +229,62 @@ export default function OrdersPage() {
         )}
       </div>
 
-            {/* ✨ نافذة تفاصيل الطلب (Modal) - تصميم محسن واحترافي */}
+      {/* Details Modal */}
       {isModalOpen && modalOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white rounded-temu-sm max-w-md w-full shadow-2xl flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setIsModalOpen(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             
-            {/* رأس النافذة (Header) */}
-            <div className="p-6 border-b border-temu-gray-border-light">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xl font-extrabold text-temu-black">Order #{modalOrder.id}</h2>
-                  <p className="text-xs text-temu-gray-light mt-1">
-                    {new Date(modalOrder.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusStyle(modalOrder.status)}`}>
-                    {modalOrder.status}
-                  </span>
-                  <button onClick={() => setIsModalOpen(false)} className="text-temu-gray-light hover:text-temu-black cursor-pointer active:scale-90 transition p-1">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
-                </div>
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h3 className="font-black text-gray-900 text-base">Order #{modalOrder.id} Details</h3>
+                <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${getStatusStyle(modalOrder.status)}`}>
+                  {modalOrder.status}
+                </span>
               </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black p-1 text-sm font-bold">
+                ✕
+              </button>
             </div>
 
-            {/* محتوى النافذة (المنتجات) */}
-            <div className="p-6 space-y-4 overflow-y-auto scrollbar-hide touch-pan-y flex-1">
-              <h3 className="text-sm font-bold text-temu-gray-text uppercase tracking-wide">Items</h3>
+            {/* Modal Body */}
+            <div className="p-5 space-y-3 overflow-y-auto flex-1">
               {loadingDetails ? (
                 <div className="flex justify-center py-10">
-                  <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-3 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : orderItems.length > 0 && !orderItems[0].title.includes('Could not load') ? (
                 orderItems.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-3 bg-temu-offwhite rounded-temu-sm border border-temu-gray-border-light">
-                    <div className="w-20 h-20 rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light shrink-0 flex items-center justify-center">
-                      {item.image_url ? (
-                        <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-temu-gray-light text-[10px]">No Image</div>
-                      )}
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border border-gray-200 shrink-0 relative">
+                      <Image 
+                        src={item.image_url || '/placeholder.jpg'} 
+                        alt={item.title} 
+                        fill
+                        sizes="56px"
+                        className="object-cover" 
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-temu-black line-clamp-2 mb-2">{item.title || 'Unknown Product'}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-temu-gray-text font-medium bg-white px-2 py-1 rounded-full border border-temu-gray-border-light">Qty: {item.quantity}</span>
-                        <span className="text-base font-extrabold text-temu-error">${Number(item.price_at_purchase).toFixed(2)}</span>
+                      <p className="text-xs font-bold text-gray-900 line-clamp-2">{item.title}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[11px] text-gray-500 font-semibold">Qty: {item.quantity}</span>
+                        <span className="text-xs font-black text-[#FF6B9D]">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-temu-gray-light py-6">{orderItems[0]?.title || 'No items found for this order.'}</p>
+                <p className="text-center text-xs text-gray-400 py-6">{orderItems[0]?.title || 'No items available.'}</p>
               )}
             </div>
 
-            {/* تذييل النافذة (ملخص الأسعار) */}
-            <div className="p-6 border-t border-temu-gray-border-light bg-temu-offwhite rounded-b-temu-sm">
-              <div className="space-y-2 mb-4 text-sm">
-                <div className="flex justify-between text-temu-gray-text">
-                  <span>Subtotal</span>
-                  <span className="font-medium text-temu-black">${(Number(modalOrder.total_amount) || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-temu-gray-text">
-                  <span>Shipping</span>
-                  <span className="font-medium text-temu-green">Free</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-4 border-t border-temu-gray-border-light">
-                <span className="text-base font-bold text-temu-black">Total Amount</span>
-                <span className="text-xl font-extrabold text-temu-error">${Number(modalOrder.total_amount).toFixed(2)}</span>
-              </div>
+            {/* Modal Footer */}
+            <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-600">Total Settled</span>
+              <span className="text-lg font-black text-[#FF6B9D]">${Number(modalOrder.total_amount).toFixed(2)}</span>
             </div>
+
           </div>
         </div>
       )}

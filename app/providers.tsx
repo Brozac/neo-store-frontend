@@ -1,32 +1,51 @@
 'use client';
 
-import { useEffect } from 'react'; // ✨ تمت الإضافة
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { CartProvider } from './context/CartContext';
-import Cartwidget from './components/CartWidget';
+import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
 import WhatsAppButton from './components/WhatsAppButton';
 import SpinWheel from './components/SpinWheel';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // ✨ تسجيل الـ Service Worker
+  const pathname = usePathname();
+  
+  // ✨ التحقق مما إذا كانت الصفحة الحالية تابعة للوحة تحكم الأدمن
+  const isAdminRoute = pathname?.startsWith('/admin');
+
+  // ✨ تسجيل Service Worker في بيئة الإنتاج فقط لتفادي مشاكل الكاش أثناء التطوير
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => console.log('✅ Service Worker registered successfully.', registration))
-        .catch(error => console.log('❌ Service Worker registration failed:', error));
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('✅ Service Worker registered successfully:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('Service Worker registration skipped/failed:', error);
+          });
+      });
     }
   }, []);
 
   return (
     <CartProvider>
-      <Navbar />
-      <div className="pb-20 md:pb-0">
+      {/* عرض الهيدر فقط للمشترين وليس داخل لوحة تحكم الأدمن */}
+      {!isAdminRoute && <Navbar />}
+
+      <div className={!isAdminRoute ? 'pb-20 md:pb-0' : ''}>
         {children}
       </div>
       
-      <Cartwidget />
-      <WhatsAppButton />
-      <SpinWheel />
+      {/* المكونات العائمة تظهر فقط في صفحات المتجر للزبائن */}
+      {!isAdminRoute && (
+        <>
+          <CartWidget />
+          <WhatsAppButton />
+          <SpinWheel />
+        </>
+      )}
     </CartProvider>
   );
 }

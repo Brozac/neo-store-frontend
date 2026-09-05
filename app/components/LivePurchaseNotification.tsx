@@ -2,58 +2,97 @@
 
 import { useState, useEffect } from 'react';
 
-const names = ['Sarah', 'Ahmed', 'Jessica', 'Omar', 'Maria', 'Li', 'David', 'Fatima'];
-const cities = ['🇩🇿 Algiers', '🇺🇸 New York', '🇦🇪 Dubai', '🇫🇷 Paris', '🇸🇦 Riyadh', '🇩🇪 Berlin'];
+const buyers = [
+  { name: 'Sarah M.', city: '🇩🇿 Algiers' },
+  { name: 'Alex K.', city: '🇺🇸 New York' },
+  { name: 'Omar B.', city: '🇦🇪 Dubai' },
+  { name: 'Chloe D.', city: '🇫🇷 Paris' },
+  { name: 'Tariq H.', city: '🇸🇦 Riyadh' },
+  { name: 'Lucas W.', city: '🇩🇪 Berlin' },
+  { name: 'Yasmine K.', city: '🇩🇿 Oran' },
+  { name: 'Emma L.', city: '🇬🇧 London' }
+];
 
-export default function LivePurchaseNotification({ productName }: { productName: string }) {
+export default function LivePurchaseNotification({ productName }: { productName?: string }) {
   const [visible, setVisible] = useState(false);
-  const [info, setInfo] = useState({ name: '', city: '', time: '' });
+  const [buyer, setBuyer] = useState({ name: '', city: '', time: '3' });
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    let hideTimeout: NodeJS.Timeout;
+    if (!productName || isDismissed) return;
 
-    const showNotification = () => {
-      const randomName = names[Math.floor(Math.random() * names.length)];
-      const randomCity = cities[Math.floor(Math.random() * cities.length)];
-      const randomTime = Math.floor(Math.random() * 30) + 1;
-      
-      setInfo({ name: randomName, city: randomCity, time: randomTime.toString() });
+    let hideTimeout: NodeJS.Timeout;
+    let nextNotificationTimer: NodeJS.Timeout;
+
+    const triggerNotification = () => {
+      const randomBuyer = buyers[Math.floor(Math.random() * buyers.length)];
+      const randomMinutes = Math.floor(Math.random() * 25) + 2;
+
+      setBuyer({
+        name: randomBuyer.name,
+        city: randomBuyer.city,
+        time: String(randomMinutes)
+      });
       setVisible(true);
 
-      // ✨ تخزين الـ Timeout في متغير ليتم تنظيفه لاحقاً
-      hideTimeout = setTimeout(() => setVisible(false), 5000);
+      // الإخفاء التلقائي بعد 4.5 ثوانٍ
+      hideTimeout = setTimeout(() => {
+        setVisible(false);
+        // جدول الإشعار التالي بفترة عشوائية طبيعية (18 - 35 ثانية)
+        const nextInterval = Math.floor(Math.random() * 17000) + 18000;
+        nextNotificationTimer = setTimeout(triggerNotification, nextInterval);
+      }, 4500);
     };
 
-    const initialTimer = setTimeout(showNotification, 4000);
-    const interval = setInterval(showNotification, 15000);
+    // الظهور الأول بعد 5 ثوانٍ من دخول الصفحة
+    const initialDelay = setTimeout(triggerNotification, 5000);
 
     return () => {
-      clearTimeout(initialTimer);
-      clearInterval(interval);
-      // ✨ تنظيف مؤقت الإخفاء لمنع تسرب الذاكرة عند الخروج من الصفحة
-      clearTimeout(hideTimeout); 
+      clearTimeout(initialDelay);
+      clearTimeout(hideTimeout);
+      clearTimeout(nextNotificationTimer);
     };
-  }, [productName]);
+  }, [productName, isDismissed]);
+
+  if (!productName || isDismissed) return null;
 
   return (
     <div 
-      className={`fixed bottom-20 sm:bottom-5 left-5 bg-white p-3 rounded-temu-sm shadow-2xl border border-temu-gray-border-light flex items-center gap-3 z-40 max-w-[280px] sm:max-w-xs transition-all duration-500 touch-manipulation ${
-        visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+      className={`fixed bottom-24 sm:bottom-6 left-4 sm:left-6 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-2xl border border-gray-100 flex items-center gap-3 z-30 max-w-[290px] sm:max-w-xs transition-all duration-500 pointer-events-auto ${
+        visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95 pointer-events-none'
       }`}
     >
-      <div className="w-10 h-10 bg-temu-green-light/10 rounded-full flex items-center justify-center text-xl shrink-0">
-        ✅
+      {/* Icon */}
+      <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg shrink-0 border border-emerald-100 shadow-sm">
+        ✓
       </div>
       
-      <div className="min-w-0">
-        <p className="text-xs font-bold text-temu-black truncate">
-          {info.name} from {info.city}
+      {/* Information */}
+      <div className="min-w-0 flex-1 pr-1">
+        <p className="text-xs font-black text-gray-900 truncate">
+          {buyer.name} <span className="font-normal text-gray-500">from {buyer.city}</span>
         </p>
-        <p className="text-[10px] text-temu-gray-text wrap-break-word line-clamp-2">
-          just bought <span className="font-bold text-temu-orange">{productName}</span>
+        <p className="text-[11px] text-gray-600 line-clamp-1 mt-0.5">
+          Purchased <span className="font-bold text-[#8B78C6]">{productName}</span>
         </p>
-        <p className="text-[10px] text-temu-gray-light mt-1">{info.time} minutes ago • Verified ✓</p>
+        <p className="text-[9px] text-gray-400 mt-1 font-semibold uppercase tracking-wider flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          {buyer.time}m ago &bull; Verified Order
+        </p>
       </div>
+
+      {/* ✨ زر الإغلاق المباشر لمنع إزعاج الزبون */}
+      <button 
+        type="button"
+        onClick={() => {
+          setVisible(false);
+          setIsDismissed(true); // عدم إزعاجه مرة أخرى أثناء نفس الجلسة
+        }}
+        className="text-gray-400 hover:text-gray-700 p-1 text-xs self-start transition cursor-pointer"
+        aria-label="Dismiss notification"
+      >
+        ✕
+      </button>
     </div>
   );
 }

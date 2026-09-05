@@ -1,21 +1,28 @@
-// app/robots.ts
+// app/robots.ts - Laclarc Search Engine Directives
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://www.laclarc.com';
+  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
   
   return {
     rules: [
       {
-        userAgent: '*', // السماح لجميع زواحف جوجل وبنغ
+        userAgent: '*', // السماح لجميع محركات البحث العالمية
         allow: '/',
         disallow: [
           '/api/',
-          '/cart',
           '/admin',
+          '/admin/',
           '/auth',
-          '/orders'
-        ], // نمنع الأرشفة للصفحات الحساسة أو غير المفيدة للـ SEO
+          '/auth/',
+          '/cart',
+          '/checkout',
+          '/orders',
+          '/profile',
+          '/success',
+          '/cancel',
+          '/*?*session_id=*' // منع فهرسة جلسات الدفع
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

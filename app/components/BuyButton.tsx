@@ -4,34 +4,50 @@ import { useState } from 'react';
 import PaymentModal from './PaymentModal';
 
 interface BuyButtonProps {
-  product: any; 
+  product: {
+    id: string | number;
+    title?: string;
+    name?: string;
+    price: number | string;
+    image?: string;
+    image_url?: string;
+    color?: string;
+    size?: string;
+    quantity?: number;
+    vid?: string;
+  };
 }
 
 export default function BuyButton({ product }: BuyButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✨ أمان الأرقام: التأكد من أن السعر رقم صحيح
+  // ✨ استخراج السعر والكمية الحقيقية المحددة في الصفحة
   const safePrice = Number(product.price) || 0;
+  const safeQuantity = Math.max(1, Number(product.quantity) || 1);
+  const totalAmount = parseFloat((safePrice * safeQuantity).toFixed(2));
 
-  // تحويل المنتج الواحد إلى صيغة عناصر السلة
+  // ✨ تمرير كافة المتغيرات المحددة بما فيها vid لحماية شحن المتغير الصحيح
   const cartItems = [{
     id: product.id,
-    name: product.title,
+    name: product.title || product.name || 'Product',
     price: safePrice,
-    quantity: 1,
-    image: product.image || product.image_url
+    quantity: safeQuantity,
+    image: product.image || product.image_url || '/placeholder.jpg',
+    image_url: product.image || product.image_url || '/placeholder.jpg',
+    color: product.color || '',
+    size: product.size || '',
+    vid: product.vid || ''
   }];
-
-  const totalAmount = safePrice;
 
   return (
     <>
       <button 
+        type="button"
         onClick={() => setIsModalOpen(true)}
-        // ✨ توحيد الألوان، الحواف، وإضافة تأثير اللمس
-        className="w-full bg-temu-error text-white font-extrabold py-4 px-6 rounded-temu-sm hover:bg-temu-orange-bright transition-all shadow-md flex justify-center items-center gap-2 cursor-pointer active:scale-95 touch-manipulation text-lg"
+        className="w-full bg-gradient-to-r from-red-600 via-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-4 px-6 rounded-temu-sm transition shadow-lg shadow-red-500/20 flex justify-center items-center gap-2.5 cursor-pointer active:scale-95 touch-manipulation text-base uppercase tracking-wide"
       >
-        Buy Now 
+        <span>⚡</span>
+        <span>Buy Now &bull; ${(totalAmount).toFixed(2)}</span>
       </button>
 
       <PaymentModal 

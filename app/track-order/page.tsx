@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 interface TrackedOrder {
   id: number;
@@ -10,19 +11,25 @@ interface TrackedOrder {
   total_amount: string | number;
   status: string;
   created_at?: string;
+  tracking_number?: string;
 }
 
-export default function TrackOrderPage() {
-  const [orderId, setOrderId] = useState('');
-  const [email, setEmail] = useState('');
+function TrackOrderContent() {
+  const searchParams = useSearchParams();
+  const initialOrderId = searchParams.get('orderId') || '';
+  const initialEmail = searchParams.get('email') || '';
+
+  const [orderId, setOrderId] = useState(initialOrderId);
+  const [email, setEmail] = useState(initialEmail);
   const [orders, setOrders] = useState<TrackedOrder[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderId.trim() || !email.trim()) {
-      setError('Please enter both Order ID and Email.');
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
+  const executeTrack = async (targetId: string, targetEmail: string) => {
+    if (!targetId.trim() || !targetEmail.trim()) {
+      setError('Please provide both your Order ID and Account Email to verify shipment ownership.');
       return;
     }
 
@@ -31,86 +38,166 @@ export default function TrackOrderPage() {
     setOrders([]);
 
     try {
-      // ✨ إرسال الإيميل كـ Query Parameter للسيرفر للحماية من IDOR
-      const res = await fetch(`https://neo-store-backend.onrender.com/api/orders/track/${orderId}?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_BASE_URL}/api/orders/track/${encodeURIComponent(targetId.trim())}?email=${encodeURIComponent(targetEmail.trim().toLowerCase())}`);
       const data = await res.json();
       
       if (res.ok) {
-        setOrders(Array.isArray(data) ? data : []);
-        if (data.length === 0) {
-          setError('No orders found matching these details.');
+        if (Array.isArray(data) && data.length > 0) {
+          setOrders(data);
+        } else {
+          setError('No orders found matching this Order ID and Email combination.');
         }
       } else {
-        setError(data.error || 'Order not found');
+        setError(data.error || 'Unable to locate order with provided credentials.');
       }
     } catch (err) {
-      setError('Failed to fetch order status. Check your connection.');
+      setError('Unable to reach global logistics server. Please check your connection.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <main className="min-h-screen bg-temu-offwhite p-6 max-w-md mx-auto pb-24 font-sans">
-      <h1 className="text-2xl font-extrabold text-temu-black mb-2 text-center flex items-center justify-center gap-2">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-temu-orange">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        Track Your Order
-      </h1>
-      <p className="text-xs text-temu-gray-light mb-6 text-center">Enter your Order ID and Email address below</p>
+  // فحص تلقائي إذا جاء الزبون برابط مباشر يحتوي على Order ID
+  useEffect(() => {
+    if (initialOrderId && initialEmail) {
+      executeTrack(initialOrderId, initialEmail);
+    }
+  }, [initialOrderId, initialEmail]);
 
-      <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-2 mb-8">
-        <input 
-          type="text" 
-          placeholder="Order ID"
-          value={orderId}
-          onChange={(e) => setOrderId(e.target.value)}
-          className="flex-1 p-3.5 bg-white rounded-temu-sm shadow-sm text-sm outline-none text-temu-black focus:ring-1 focus:ring-temu-orange border border-temu-gray-border-light transition touch-manipulation mb-2 sm:mb-0"
-        />
-        <input 
-          type="email" 
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 p-3.5 bg-white rounded-temu-sm shadow-sm text-sm outline-none text-temu-black focus:ring-1 focus:ring-temu-orange border border-temu-gray-border-light transition touch-manipulation"
-        />
+  const handleTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeTrack(orderId, email);
+  };
+
+  // ✨ فك العنوان البشري النظيف بدلاً من إظهار JSON مشوه
+  const formatAddress = (address: string) => {
+    if (!address) return 'N/A';
+    try {
+      const parsed = JSON.parse(address);
+      return [parsed.line1, parsed.city, parsed.state, parsed.postal_code, parsed.country].filter(Boolean).join(', ');
+    } catch (e) {
+      return address;
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 max-w-lg mx-auto pb-24 font-sans">
+      
+      {/* Header */}
+      <div className="text-center mb-6 pt-4">
+        <div className="w-14 h-14 bg-purple-100 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+          📦
+        </div>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Track Your Shipment</h1>
+        <p className="text-xs text-gray-500 mt-1">Enter your Order ID and the Email used during checkout</p>
+      </div>
+
+      {/* Query Form */}
+      <form onSubmit={handleTrackSubmit} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3 mb-6">
+        <div>
+          <label className="block text-[11px] font-bold uppercase text-gray-700 mb-1">Order Identification Number *</label>
+          <input 
+            type="text" 
+            placeholder="e.g. 1042"
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            required
+            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#8B78C6] transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase text-gray-700 mb-1">Account / Order Email *</label>
+          <input 
+            type="email" 
+            placeholder="e.g. buyer@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#8B78C6] transition"
+          />
+        </div>
+
         <button 
           type="submit" 
           disabled={loading}
-          className="bg-temu-orange text-white px-6 py-3.5 rounded-temu-sm font-bold text-sm shadow-md hover:bg-temu-orange-bright transition-all disabled:opacity-70 active:scale-95 touch-manipulation cursor-pointer flex justify-center items-center gap-2"
+          className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer mt-1"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : 'Track'}
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            'Scan Logistics Status'
+          )}
         </button>
       </form>
 
-      {error && <p className="text-temu-error text-xs text-center font-bold mb-4 bg-red-50 p-3 rounded-temu-sm">{error}</p>}
+      {error && (
+        <div className="text-rose-700 text-xs font-bold mb-6 bg-rose-50 border border-rose-200 p-3.5 rounded-xl text-center">
+          ⚠️ {error}
+        </div>
+      )}
 
+      {/* Results & Visual Stepper */}
       <div className="space-y-4">
         {orders.map((order) => {
           const safeTotal = Number(order.total_amount) || 0;
-          const formattedDate = order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A';
-          
+          const statusLower = (order.status || '').toLowerCase();
+          const isFulfilled = statusLower === 'fulfilled' || statusLower === 'completed';
+
           return (
-            <div key={order.id} className="bg-white p-5 rounded-temu-sm shadow-sm border border-temu-gray-border-light">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-bold text-temu-gray-light">Order #{order.id}</span>
-                <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${
-                  order.status === 'paid' || order.status === 'fulfilled' ? 'bg-temu-green-light/20 text-temu-green' : 'bg-temu-yellow-soft text-temu-gold'
+            <div key={order.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+              
+              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                <span className="text-xs font-black text-gray-900">Order #{order.id}</span>
+                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                  isFulfilled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
                   {order.status ? order.status.toUpperCase() : 'PROCESSING'}
                 </span>
               </div>
-              <p className="text-lg font-extrabold text-temu-black mb-2">Total: ${safeTotal.toFixed(2)}</p>
-              <p className="text-xs text-temu-gray-text">Shipping To: <span className="font-semibold text-temu-black">{order.shipping_address || 'N/A'}</span></p>
-              <p className="text-[10px] text-temu-gray-light mt-2 pt-2 border-t border-temu-gray-border-light">Date: {formattedDate}</p>
+
+              {/* Visual Logistics Stepper */}
+              <div className="py-2">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-2">
+                  <span className="text-[#8B78C6]">Confirmed</span>
+                  <span className={isFulfilled ? 'text-[#8B78C6]' : 'text-gray-400'}>CJ Processing</span>
+                  <span className={isFulfilled ? 'text-emerald-600 font-black' : 'text-gray-400'}>Dispatched</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-[#8B78C6] to-emerald-500 h-full rounded-full transition-all duration-700" 
+                    style={{ width: isFulfilled ? '100%' : '65%' }}
+                  ></div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                <p><span className="text-gray-400 uppercase text-[10px] font-bold block">Destination:</span> <strong className="text-gray-800">{formatAddress(order.shipping_address)}</strong></p>
+                <p className="pt-1"><span className="text-gray-400 uppercase text-[10px] font-bold block">Total Billed:</span> <strong className="text-[#FF6B9D] font-black">${safeTotal.toFixed(2)}</strong></p>
+              </div>
+
+              {order.created_at && (
+                <p className="text-[10px] text-gray-400 text-center font-mono">
+                  Timestamp: {new Date(order.created_at).toLocaleString()}
+                </p>
+              )}
             </div>
           );
         })}
       </div>
+
     </main>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <TrackOrderContent />
+    </Suspense>
   );
 }

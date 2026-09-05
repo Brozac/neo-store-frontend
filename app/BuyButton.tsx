@@ -60,7 +60,7 @@ export default function BuyButton({ product }: { product: Product }) {
       {loading ? (
         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
       ) : (
-        <>Buy Now 🚀</>
+        <>Buy Now </>
       )}
     </button>
   );
