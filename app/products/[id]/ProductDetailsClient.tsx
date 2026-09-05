@@ -237,8 +237,8 @@ export default function ProductDetailsClient({
           
           {/* Visual Gallery */}
           <div className="flex flex-col gap-4 h-full">
-            <div 
-              className="relative flex-1 min-h-[350px] sm:min-h-[450px] rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
+                        <div 
+              className="relative flex-1 min-h-[350px] sm:min-h-[450px] rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-pointer"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onClick={() => setIsLightboxOpen(true)}
@@ -246,41 +246,45 @@ export default function ProductDetailsClient({
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <Image 
-                  src={mainImageSrc} 
-                  alt={product.title} 
-                  fill 
-                  sizes="(max-width: 768px) 100vw, 50vw" 
-                  className="object-contain p-2 transition-transform duration-500 group-hover:scale-105" 
-                  priority 
-                />
+                <Image src={mainImageSrc} alt={product.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-2 transition-transform duration-500 group-hover:scale-105" priority />
               )}
+              
               {galleryImages.length > 1 && !showVideo && (
                 <>
+                  {/* ✨ أسهم التبديل (تمت إضافة stopPropagation) */}
                   <button 
-                    onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} 
+                    onClick={(e) => { 
+                      e.stopPropagation(); // يمنع فتح الـ Zoom
+                      setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); 
+                    }} 
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
                   <button 
-                    onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} 
+                    onClick={(e) => { 
+                      e.stopPropagation(); // يمنع فتح الـ Zoom
+                      setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1); 
+                    }} 
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                 </>
               )}
+              
               {!showVideo && (
                 <button 
-                  onClick={() => setIsLightboxOpen(true)} 
+                  onClick={(e) => { 
+                    e.stopPropagation(); // يمنع التداخل
+                    setIsLightboxOpen(true); 
+                  }} 
                   className="absolute bottom-4 right-4 bg-white/90 hover:bg-white rounded-full p-2.5 shadow-md hover:scale-105 transition cursor-pointer z-10 active:scale-90"
                 >
                   🔍
                 </button>
               )}
             </div>
-
             {/* Thumbnails */}
             <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x">
               {product.video_url && (
