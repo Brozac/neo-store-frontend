@@ -241,6 +241,7 @@ export default function ProductDetailsClient({
               className="relative flex-1 min-h-[350px] sm:min-h-[450px] rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
+              onClick={() => setIsLightboxOpen(true)}
             >
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
@@ -385,7 +386,7 @@ export default function ProductDetailsClient({
                   onClick={handleAddToCart} 
                   className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg shadow-temu-orange/20"
                 >
-                  <span>🛒</span> Add to Cart
+                  <span></span> Add to Cart
                 </button>
                 <button 
                   onClick={() => handleToggleFavorite(product.id)} 
@@ -528,12 +529,113 @@ export default function ProductDetailsClient({
 
       </div>
 
-      {/* Lightbox Modal */}
+            {/* ✨ نافذة العرض السريع الاحترافية (Quick View Modal) */}
       {isLightboxOpen && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
-          <button className="absolute top-6 right-6 text-white text-3xl cursor-pointer" onClick={() => setIsLightboxOpen(false)}>✕</button>
-          <div className="relative w-full max-w-3xl h-[70vh]" onClick={e => e.stopPropagation()}>
-            <Image src={mainImageSrc} alt={product.title} fill className="object-contain" />
+          
+          {/* زر الإغلاق */}
+          <button 
+            className="absolute top-4 right-4 text-white text-3xl cursor-pointer z-10 active:scale-90 transition" 
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            ✕
+          </button>
+
+          {/* صندوق المحتوى (يمنع الإغلاق عند الضغط بداخله) */}
+          <div 
+            className="relative w-full max-w-5xl bg-white rounded-xl overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[80vh]" 
+            onClick={e => e.stopPropagation()}
+          >
+            
+            {/* قسم الصور (يسار/أعلى) */}
+            <div className="flex-1 flex flex-col bg-temu-offwhite p-4 relative">
+              <div 
+                className="relative w-full flex-1 min-h-[250px]"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                <Image 
+                  src={mainImageSrc} 
+                  alt={product.title} 
+                  fill 
+                  className="object-contain" 
+                />
+                
+                {/* أسهم التنقل بين الصور */}
+                {galleryImages.length > 1 && (
+                  <>
+                    <button 
+                      onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} 
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button 
+                      onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} 
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* شريط الصور المصغرة (Thumbnails) */}
+              <div className="flex gap-2 w-full overflow-x-auto pb-2 scrollbar-hide justify-center mt-2">
+                {galleryImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => setCurrentImageIndex(idx)} 
+                    className={`relative w-14 h-14 shrink-0 rounded-md overflow-hidden cursor-pointer border-2 transition ${currentImageIndex === idx ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  >
+                    <Image src={img} alt="Thumbnail" fill sizes="56px" className="object-contain p-1" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* قسم الشراء والتفاصيل (يمين/أسفل) */}
+            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between bg-white">
+              <div>
+                <h2 className="text-lg font-extrabold text-temu-black line-clamp-3 mb-2">{product.title}</h2>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-2xl font-black text-temu-error">${safePrice.toFixed(2)}</span>
+                  {safeOriginalPrice > safePrice && (
+                    <span className="text-sm text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
+                  )}
+                </div>
+                
+                {/* ملخص الاختيارات */}
+                <div className="text-xs text-temu-gray-text space-y-1 mb-4 bg-temu-offwhite p-3 rounded-lg">
+                  {selectedColor && <p>🎨 Color: <span className="font-bold text-temu-black">{selectedColor}</span></p>}
+                  {selectedSize && <p>📏 Size: <span className="font-bold text-temu-black">{selectedSize}</span></p>}
+                  <p>📦 Quantity: <span className="font-bold text-temu-black">{quantity}</span></p>
+                </div>
+              </div>
+
+              {/* أزرار الشراء */}
+              <div className="space-y-2">
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleAddToCart(); 
+                    setIsLightboxOpen(false); 
+                  }} 
+                  className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-3.5 rounded-lg active:scale-95 transition flex items-center justify-center gap-2 shadow-md"
+                >
+                  🛒 Add to Cart
+                </button>
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setIsLightboxOpen(false); 
+                  }} 
+                  className="w-full bg-white border border-temu-gray-border text-temu-black font-bold py-3 rounded-lg active:scale-95 transition"
+                >
+                  View Full Details
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

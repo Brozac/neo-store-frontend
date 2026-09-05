@@ -1,7 +1,11 @@
+'use client';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function HeroSection() {
+export default function HeroSection({ trendingProducts }: { trendingProducts: any[] }) {
+  // نختار أفضل 4 منتجات لعرضهم في الواجهة
+  const topProducts = trendingProducts.slice(0, 4);
+
   return (
     <section className="relative bg-[#0E1020] text-white rounded-3xl overflow-hidden mb-8 border border-white/10 shadow-2xl">
       {/* Background Decorative Mesh Glow */}
@@ -51,22 +55,50 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right Showcase Image */}
-          <div className="relative aspect-4/3 sm:aspect-16/10 lg:aspect-square w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-2xl group">
-            <Image
-              src="/hero-image.jpg" 
-              alt="Laclarc Premium Lifestyle Showcase"
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
-            />
+          {/* ✨ Right Dynamic Showcase: Trending Now Grid */}
+          <div className="relative w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-2xl p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-extrabold uppercase tracking-widest text-gray-300 flex items-center gap-2">
+                <span>🔥</span> Trending Now
+              </h3>
+              <span className="text-[10px] bg-temu-error/20 text-temu-error px-2 py-0.5 rounded-full font-bold">HOT</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {topProducts.map((p) => (
+                <Link 
+                  href={`/products/${p.id}`} 
+                  key={p.id} 
+                  className="group block bg-white rounded-xl overflow-hidden active:scale-95 transition-transform"
+                >
+                  <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
+                    <Image 
+                      src={p.image_url || p.image || '/placeholder.jpg'} 
+                      alt={p.title} 
+                      fill 
+                      sizes="200px" 
+                      className="object-contain p-2 group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] font-bold text-temu-black line-clamp-1 mb-1">{p.title}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-sm font-black text-temu-error">${Number(p.price).toFixed(2)}</span>
+                      {p.original_price && Number(p.original_price) > 0 && (
+                        <span className="text-[9px] text-gray-400 line-through">${Number(p.original_price).toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            
             {/* Floating Glass Deal Tag */}
-            <div className="absolute bottom-4 left-4 right-4 sm:right-auto bg-[#181B34]/80 backdrop-blur-md border border-white/15 p-3 rounded-xl flex items-center gap-3">
-              <span className="text-2xl">⚡</span>
+            <div className="absolute bottom-4 right-4 bg-[#181B34]/90 backdrop-blur-md border border-white/15 p-2 rounded-xl flex items-center gap-2 shadow-lg">
+              <span className="text-xl">⚡</span>
               <div>
-                <p className="text-xs font-black text-white">Daily Curated Drops</p>
-                <p className="text-[10px] text-gray-400">Up to 60% OFF On Selected Lightning Deals</p>
+                <p className="text-[10px] font-black text-white">Daily Drops</p>
+                <p className="text-[8px] text-gray-400">Up to 60% OFF</p>
               </div>
             </div>
           </div>

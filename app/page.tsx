@@ -110,7 +110,7 @@ function HomeContent() {
         
         {/* ✨ 1. راية المتجر الفاخرة (Hero Section) في الصفحة الأولى */}
         {activeCategory === 'All' && searchQuery === '' && (
-          <HeroSection />
+          <HeroSection trendingProducts={trendingProducts} />
         )}
 
         {/* Categories Bar */}

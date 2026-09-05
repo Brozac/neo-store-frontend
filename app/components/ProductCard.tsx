@@ -102,8 +102,8 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
             className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
             // ✨ إزالة priority لتحميل الصفحة فورياً وبدون استنزاف شبكة الهاتف
           />
-          {discountText && (
-            <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-400 to-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-sm">
+           {discountText && (
+            <div className="absolute top-2 left-2 bg-temu-error text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">
               {discountText}
             </div>
           )}
