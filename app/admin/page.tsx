@@ -34,7 +34,9 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
 export default function AdminDashboard() {
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState('overview');
+  // ✨ تعريف صريح لنوع الـ state لمنع أخطاء TypeScript
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -49,12 +51,12 @@ export default function AdminDashboard() {
   const [syncingCats, setSyncingCats] = useState(false);
   const [backfillingCats, setBackfillingCats] = useState(false);
 
-  // 1688 Sourcing state
   const [singlePid, setSinglePid] = useState('');
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [singleMessage, setSingleMessage] = useState('');
 
-  // Telemetry & Operations Pulse
+  const [massSyncing, setMassSyncing] = useState(false); // ✨ حالة زر Mass Sync
+
   const [telemetry, setTelemetry] = useState<TelemetryState>({
     backendStatus: 'checking',
     backendPing: 0,
@@ -68,13 +70,12 @@ export default function AdminDashboard() {
     description: '', material: '', colors: '', sizes: '', category: 'other'
   });
 
-  // فحص حيوية النظام وجلب المؤشرات التشغيلية
   const runDiagnostics = async () => {
     const startTime = Date.now();
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
       
-      const [manualOrdersRes, failedOrdersRes, pingRes] = await Promise.all([
+      const [manualOrdersRes, failedOrdersRes] = await Promise.all([
         adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
         adminApi.get('/admin/failed-orders').catch(() => ({ data: [] })),
         adminApi.get('/').catch(() => ({ data: 'ok' }))
@@ -107,24 +108,17 @@ export default function AdminDashboard() {
     adminApi.get('/categories')
       .then(res => setAvailableCategories(flattenCategories(res.data)))
       .catch((err) => {
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          router.push('/admin/login');
-        }
+        if (err.response?.status === 401 || err.response?.status === 403) router.push('/admin/login');
       });
   }, [router]);
 
-  // Handlers
   const handleAdminSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminSearch.trim()) router.push(`/admin/manage?search=${encodeURIComponent(adminSearch.trim())}`);
   };
 
   const handleLogout = async () => {
-    try {
-      await adminApi.post('/admin/logout');
-    } finally {
-      router.push('/admin/login');
-    }
+    try { await adminApi.post('/admin/logout'); } finally { router.push('/admin/login'); }
   };
 
   const handleSyncCategories = async () => {
@@ -132,9 +126,8 @@ export default function AdminDashboard() {
     try {
       const res = await adminApi.post('/admin/sync-categories');
       alert(`✅ ${res.data.message}`);
-    } catch (err: any) {
-      alert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`);
-    } finally { setSyncingCats(false); }
+    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`); } 
+    finally { setSyncingCats(false); }
   };
 
   const handleBackfillCategories = async () => {
@@ -143,9 +136,8 @@ export default function AdminDashboard() {
     try {
       const res = await adminApi.post('/admin/backfill-categories');
       alert(`✅ ${res.data.message}`);
-    } catch (err: any) {
-      alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`);
-    } finally { setBackfillingCats(false); }
+    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`); } 
+    finally { setBackfillingCats(false); }
   };
 
   const handleSyncCJ = async () => {
@@ -155,9 +147,8 @@ export default function AdminDashboard() {
       const url = syncCategory ? `/sync-cj-products?keyword=${encodeURIComponent(syncCategory)}` : '/sync-cj-products';
       const res = await adminApi.get(url);
       setSyncMessage(`✅ ${res.data.message}`);
-    } catch (err: any) {
-      setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`);
-    } finally { setSyncing(false); }
+    } catch (err: any) { setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`); } 
+    finally { setSyncing(false); }
   };
 
   const handleSyncSingle = async () => {
@@ -168,9 +159,21 @@ export default function AdminDashboard() {
       const res = await adminApi.post('/admin/sync-single-product', { pid: singlePid.trim() });
       setSingleMessage(`✅ ${res.data.message}`);
       setSinglePid('');
+    } catch (err: any) { setSingleMessage(`❌ Error: ${err.response?.data?.error || 'Failed to sync.'}`); } 
+    finally { setSyncingSingle(false); }
+  };
+
+  const handleMassSync = async () => {
+    if (!confirm('⚠️ This will fetch up to 1200 products from CJ. It will take a long time and run in the background. Continue?')) return;
+    setMassSyncing(true);
+    setSyncMessage('🚀 Mass Sync Engine started in background! Check server logs for progress.');
+    try {
+      await adminApi.post('/admin/mass-sync');
     } catch (err: any) {
-      setSingleMessage(`❌ Error: ${err.response?.data?.error || 'Failed to sync.'}`);
-    } finally { setSyncingSingle(false); }
+      setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start mass sync.'}`);
+    } finally {
+      setTimeout(() => setMassSyncing(false), 3000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -193,9 +196,8 @@ export default function AdminDashboard() {
         images: prev.images ? `${prev.images}, ${urls.join(', ')}` : urls.join(', ')
       }));
       setMessage('✅ Images uploaded successfully!');
-    } catch (err: any) {
-      setMessage(`❌ Upload Error: ${err.response?.data?.error || 'Unknown error'}`);
-    } finally { setUploading(false); e.target.value = ''; }
+    } catch (err: any) { setMessage(`❌ Upload Error: ${err.response?.data?.error || 'Unknown error'}`); } 
+    finally { setUploading(false); e.target.value = ''; }
   };
 
   const handleScrape = async () => {
@@ -205,11 +207,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminApi.post('/admin/scrape-product', { url: scrapeUrl.trim() });
       const data = res.data;
-      
-      const galleryImages = Array.isArray(data.images) && data.images.length > 0 
-        ? data.images.join(', ') 
-        : (data.image_url || '');
-
+      const galleryImages = Array.isArray(data.images) && data.images.length > 0 ? data.images.join(', ') : (data.image_url || '');
       setFormData(prev => ({
         ...prev,
         title: data.title || '',
@@ -219,9 +217,8 @@ export default function AdminDashboard() {
         description: data.description || ''
       }));
       setMessage('✅ Scraped product data & images fetched successfully!');
-    } catch (err: any) {
-      setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to fetch product details.'}`);
-    } finally { setScraping(false); }
+    } catch (err: any) { setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to fetch product details.'}`); } 
+    finally { setScraping(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,9 +242,8 @@ export default function AdminDashboard() {
       setMessage('✅ Product published successfully with auto-pricing!');
       setFormData({ title: '', price: '', original_price: '', image_url: '', images: '', description: '', material: '', colors: '', sizes: '', category: 'other' });
       setScrapeUrl('');
-    } catch (err: any) {
-      setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`);
-    } finally { setLoading(false); }
+    } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); } 
+    finally { setLoading(false); }
   };
 
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
@@ -267,7 +263,7 @@ export default function AdminDashboard() {
         {/* Top Header & Fast Nav */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
+            <div className="w-10 h-10 bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
               L
             </div>
             <div>
@@ -292,7 +288,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 🛰️ Live Infrastructure Pulse (Render & Neon & CJ Telemetry) */}
+        {/* 🛰️ Live Infrastructure Pulse */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -321,7 +317,7 @@ export default function AdminDashboard() {
           <div 
             onClick={() => router.push('/admin/baridimob')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
-              telemetry.pendingBaridiCount > 0 ? 'bg-gradient-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
+              telemetry.pendingBaridiCount > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -336,7 +332,7 @@ export default function AdminDashboard() {
           <div 
             onClick={() => router.push('/admin/failed-orders')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
-              telemetry.failedOrdersCount > 0 ? 'bg-gradient-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
+              telemetry.failedOrdersCount > 0 ? 'bg-linear-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -371,7 +367,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl ${
                 activeTab === tab.id
-                  ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white shadow-lg shadow-[#8B78C6]/20'
+                  ? 'bg-linear-to-r from-[#8B78C6] to-[#7A67B5] text-white shadow-lg shadow-[#8B78C6]/20'
                   : 'bg-white text-gray-500 border border-temu-gray-border-light hover:bg-temu-offwhite hover:text-temu-black'
               }`}
             >
@@ -412,7 +408,7 @@ export default function AdminDashboard() {
                     onClick={() => router.push(card.link)} 
                     className="text-left p-5 rounded-xl bg-temu-offwhite border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
                   >
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
+                    <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
                     </div>
                     <h3 className="font-bold text-temu-black text-sm group-hover:text-[#8B78C6] transition">{card.label}</h3>
@@ -435,7 +431,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Scraper Tool */}
               <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
                 <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -456,7 +451,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Image Upload */}
               <div className="mb-6 p-4 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Upload Product Images (Cloudinary)</label>
                 <input 
@@ -526,7 +520,7 @@ export default function AdminDashboard() {
                 <button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
+                  className="w-full bg-linear-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
                 >
                   {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
                 </button>
@@ -565,10 +559,10 @@ export default function AdminDashboard() {
                 {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}>{singleMessage}</p>}
               </div>
 
-              {/* Sync Category */}
+              {/* Sync Category & Mass Import */}
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sync Category Batch</label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   <select 
                     value={syncCategory} 
                     onChange={(e) => setSyncCategory(e.target.value)} 
@@ -591,7 +585,20 @@ export default function AdminDashboard() {
                     {syncing ? 'Triggering...' : 'Run Category Sync'}
                   </button>
                 </div>
-                {syncMessage && <p className="mt-2 text-xs font-bold text-gray-500">{syncMessage}</p>}
+
+                {/* زر الاستيراد بالجملة (Mass Import) */}
+                <div className="pt-4 border-t border-temu-gray-border-light">
+                  <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
+                  <button 
+                    onClick={handleMassSync} 
+                    disabled={massSyncing} 
+                    className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#8B78C6]/20"
+                  >
+                    {massSyncing ? 'Engine Starting...' : 'Start Mass Import Engine'}
+                  </button>
+                </div>
+
+                {syncMessage && <p className="mt-3 text-xs font-bold text-gray-500">{syncMessage}</p>}
               </div>
 
               {/* Official Category Tree Maintenance */}
@@ -655,7 +662,7 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Purchase Price ($ USD)</label>
                   <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20">
+                <button type="submit" className="w-full bg-linear-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20">
                   Transmit Sourcing Request to CJ Dropshipping
                 </button>
               </form>
@@ -701,7 +708,7 @@ export default function AdminDashboard() {
                     <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20">
+                <button type="submit" className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20">
                   Deploy Discount Code
                 </button>
               </form>
