@@ -86,12 +86,11 @@ export default function ProductDetailsClient({
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [purchaseCount, setPurchaseCount] = useState(38);
   
-  // ✨ حالات التكبير ملء الشاشة
+  // حالات التكبير ملء الشاشة
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
   const touchStartX = useRef(0);
-  // ✨ مرجع للتحكم في تمرير شريط الصور المصغرة
   const thumbnailsRef = useRef<HTMLDivElement>(null);
   
   const defaultImage = '/placeholder.jpg';
@@ -106,7 +105,7 @@ export default function ProductDetailsClient({
   const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // ✨ دالة التمرير البرمجي لشريط الصور بالأسهم
+  // دالة التمرير البرمجي لشريط الصور بالأسهم
   const scrollThumbnails = (direction: 'left' | 'right') => {
     if (thumbnailsRef.current) {
       const scrollAmount = direction === 'left' ? -180 : 180;
@@ -172,6 +171,19 @@ export default function ProductDetailsClient({
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
   const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
 
+  const safePrice = parsePrice(product.price);
+  const safeOriginalPrice = parsePrice(product.original_price);
+  const discountPct = safeOriginalPrice > safePrice 
+    ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
+    : 0;
+
+  // ✨ حساب سعر القطعة الواحدة المخفض (لتمريره للسلة وزر الشراء لتجنب الضرب المزدوج)
+  const discountedUnitPrice = useMemo(() => {
+    if (quantity >= 3) return safePrice * 0.75; // خصم 25%
+    if (quantity === 2) return safePrice * 0.85; // خصم 15%
+    return safePrice; // بدون خصم
+  }, [quantity, safePrice]);
+
   const handleToggleFavorite = (productId: string | number) => {
     const idStr = String(productId);
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -185,14 +197,11 @@ export default function ProductDetailsClient({
   const handleAddToCart = () => {
     const resolvedVid = matchedVariant?.vid || '';
     
-    // ✨ حساب سعر القطعة الواحدة بعد الخصم لتمريره للسلة
-    const discountedUnitPrice = quantity >= 3 ? safePrice * 0.75 : quantity === 2 ? safePrice * 0.85 : safePrice;
-    
     addToCart({
       id: product.id,
       title: product.title,
       name: product.title,
-      price: parseFloat(discountedUnitPrice.toFixed(2)), // السعر المخفض للقطعة
+      price: parseFloat(discountedUnitPrice.toFixed(2)), // ✨ السعر المخفض للقطعة الواحدة
       quantity,
       image: mainImageSrc,
       image_url: mainImageSrc,
@@ -218,18 +227,6 @@ export default function ProductDetailsClient({
       }
     }
   };
-
-  const safePrice = parsePrice(product.price);
-    // ✨ حساب السعر الإجمالي بناءً على الباقة المختارة (Bundle Discount)
-  const calculatedTotal = useMemo(() => {
-    if (quantity >= 3) return safePrice * 3 * 0.75;
-    if (quantity === 2) return safePrice * 2 * 0.85;
-    return safePrice;
-  }, [quantity, safePrice]);
-  const safeOriginalPrice = parsePrice(product.original_price);
-  const discountPct = safeOriginalPrice > safePrice 
-    ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
-    : 0;
 
   const isCurrentProductFavorited = favoriteIds.includes(String(product.id));
 
@@ -323,10 +320,9 @@ export default function ProductDetailsClient({
               )}
             </div>
 
-            {/* ✨ شريط الصور المصغرة مع أزرار Scroll لليمين واليسار (تم حل مشكلة الاقتطاع تماماً) */}
+            {/* شريط الصور المصغرة مع أزرار Scroll لليمين واليسار */}
             <div className="relative w-full flex items-center group/thumbs">
               
-              {/* زر التمرير لليسار */}
               {galleryImages.length > 4 && (
                 <button
                   type="button"
@@ -340,7 +336,6 @@ export default function ProductDetailsClient({
                 </button>
               )}
 
-              {/* حاوية الصور مع حاشية p-2 تمنع قص الصورة الأخيرة */}
               <div 
                 ref={thumbnailsRef}
                 className="flex gap-2.5 w-full overflow-x-auto p-2 scrollbar-hide touch-pan-x items-center scroll-smooth"
@@ -368,7 +363,6 @@ export default function ProductDetailsClient({
                 ))}
               </div>
 
-              {/* زر التمرير لليمين */}
               {galleryImages.length > 4 && (
                 <button
                   type="button"
@@ -458,76 +452,76 @@ export default function ProductDetailsClient({
               <CountdownTimer />
 
               {/* ✨ باقات الخصم التفاعلية الذكية (Tiered Quantity Bundles) */}
-            <div className="space-y-2.5 my-6">
-              <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
-                ⚡ Exclusive Bundle Savings:
-              </label>
+              <div className="space-y-2.5 my-6">
+                <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
+                  ⚡ Exclusive Bundle Savings:
+                </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {/* باقة 1 قطعة */}
-                <div 
-                  onClick={() => setQuantity(1)}
-                  className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                    quantity === 1 
-                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
-                      {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
-                    </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* باقة 1 قطعة */}
+                  <div 
+                    onClick={() => setQuantity(1)}
+                    className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                      quantity === 1 
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-extrabold text-xs text-gray-900">Standard</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                        {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600">Buy 1 Unit</span>
+                    <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
                   </div>
-                  <span className="text-xs font-bold text-gray-600">Buy 1 Unit</span>
-                  <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
-                </div>
 
-                {/* باقة قطعتين - الأكثر طلباً */}
-                <div 
-                  onClick={() => setQuantity(2)}
-                  className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                    quantity === 2 
-                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                    Popular 🔥
-                  </span>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-extrabold text-xs text-[#8B78C6]">Save 15%</span>
-                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
-                      {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                  {/* باقة قطعتين - الأكثر طلباً */}
+                  <div 
+                    onClick={() => setQuantity(2)}
+                    className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                      quantity === 2 
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                      Popular 🔥
                     </span>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-extrabold text-xs text-[#8B78C6]">Save 15%</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                        {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
+                    <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
                   </div>
-                  <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                  <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
-                </div>
 
-                {/* باقة 3 قطع - التوفير الأكبر */}
-                <div 
-                  onClick={() => setQuantity(3)}
-                  className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                    quantity >= 3 
-                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                    Best Value 🏆
-                  </span>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>
-                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
-                      {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                  {/* باقة 3 قطع - التوفير الأكبر */}
+                  <div 
+                    onClick={() => setQuantity(3)}
+                    className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                      quantity >= 3 
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                      Best Value 🏆
                     </span>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                        {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
+                    <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 0.75 * 3).toFixed(2)}</span>
                   </div>
-                  <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                  <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 0.75 * 3).toFixed(2)}</span>
                 </div>
               </div>
-            </div>
 
               <div className="flex gap-3">
                 <button 
@@ -547,12 +541,13 @@ export default function ProductDetailsClient({
                 </button>
               </div>
 
+              {/* ✨ زر الشراء المباشر (يستخدم سعر القطعة المخفض ليقوم بضربه في الكمية تلقائياً) */}
               <BuyButton 
                 product={{ 
                   id: product.id, 
                   title: product.title, 
                   name: product.title,
-                  price: parseFloat(calculatedTotal.toFixed(2)), // ✨ تمرير السعر الإجمالي المخفض
+                  price: parseFloat(discountedUnitPrice.toFixed(2)), // ✨ تمرير سعر القطعة المخفض
                   image: mainImageSrc,
                   color: selectedColor,
                   size: selectedSize,

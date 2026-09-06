@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 
@@ -11,10 +11,12 @@ interface PaymentModalProps {
   totalAmount: number;
 }
 
+const ALL_GATEWAYS = ['stripe', 'paysera', 'crypto', 'baridimob'];
+
 export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }: PaymentModalProps) {
   const router = useRouter();
   const { clearCart, finalTotal } = useCart();
-  
+
   const [loadingGateway, setLoadingGateway] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -27,23 +29,51 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerCity, setCustomerCity] = useState('');
-  const [customerState, setCustomerState] = useState(''); 
-  const [customerZip, setCustomerZip] = useState(''); 
+  const [customerState, setCustomerState] = useState('');
+  const [customerZip, setCustomerZip] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Fail-open par défaut : tant que le fetch n'a pas répondu, on affiche tout
+  const [enabledGateways, setEnabledGateways] = useState<string[]>(ALL_GATEWAYS);
+  const [gatewaysLoaded, setGatewaysLoaded] = useState(false);
+
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-  
-  // سعر الصرف الرسمي المعتمد في المتجر
-  const EXCHANGE_RATE = 255; 
+
+  const EXCHANGE_RATE = 255;
   const effectiveTotal = finalTotal > 0 ? finalTotal : totalAmount;
   const totalAmountDZD = Math.round(effectiveTotal * EXCHANGE_RATE);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/payment/gateways`);
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.enabled)) {
+          setEnabledGateways(data.enabled);
+        }
+      } catch {
+        // Silencieux : on garde ALL_GATEWAYS par défaut (fail-open)
+      } finally {
+        if (!cancelled) setGatewaysLoaded(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isOpen, API_BASE_URL]);
+
   if (!isOpen) return null;
+
+  const isEnabled = (key: string) => enabledGateways.includes(key);
+  const noGatewaysAvailable = gatewaysLoaded && enabledGateways.length === 0;
 
   const handlePayment = async (method: string) => {
     setLoadingGateway(method);
     setError('');
-    
+
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -52,14 +82,14 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       const res = await fetch(`${API_BASE_URL}/api/payment/${method}`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ 
-          items: cartItems, 
+        body: JSON.stringify({
+          items: cartItems,
           totalAmount: effectiveTotal,
           origin: window.location.origin
         })
       });
       const data = await res.json();
-      
+
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -74,7 +104,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
   const handleBaridiMobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!receiptFile) {
       setError('يرجى رفع صورة إيصال التحويل البنكي.');
       return;
@@ -94,10 +124,9 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
     try {
       const formData = new FormData();
       formData.append('receipt', receiptFile);
-      // ✨ إرسال المبلغ الفعلي بالدينار الجزائري ليتطابق مع إشعار تطبيق بريدي موب
       formData.append('totalAmount', String(totalAmountDZD));
       formData.append('items', JSON.stringify(cartItems));
-      
+
       formData.append('customerName', customerName.trim());
       formData.append('customerPhone', customerPhone.trim());
       formData.append('customerEmail', customerEmail.trim());
@@ -109,10 +138,10 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
       const res = await fetch(`${API_BASE_URL}/api/payment/manual`, {
         method: 'POST',
-        headers, 
+        headers,
         body: formData
       });
-      
+
       const data = await res.json();
       if (res.ok && data.success) {
         setReceiptUploaded(true);
@@ -130,7 +159,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-white rounded-temu-sm max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide" onClick={(e) => e.stopPropagation()}>
-        
+
         {!manualPayment ? (
           <>
             <div className="flex justify-between items-center mb-6">
@@ -143,84 +172,94 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
             {error && <div className="bg-red-50 text-temu-error p-3 rounded-temu-sm mb-4 text-xs font-bold text-center">{error}</div>}
 
-            <div className="space-y-3">
-              {/* Stripe */}
-              <button 
-                onClick={() => handlePayment('stripe')}
-                disabled={loadingGateway !== null} 
-                className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#635BFF]/10 text-[#635BFF] rounded-xl flex items-center justify-center font-black text-xs">
-                    💳
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-temu-black text-sm block">Credit & Debit Cards</span>
-                    <span className="text-[11px] text-temu-gray-light">Visa, MasterCard, Apple Pay (Stripe)</span>
-                  </div>
-                </div>
-                {loadingGateway === 'stripe' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
-              </button>
+            {noGatewaysAvailable ? (
+              <div className="bg-amber-50 text-amber-700 p-4 rounded-temu-sm text-xs font-bold text-center">
+                Aucune méthode de paiement n'est disponible pour le moment. Merci de réessayer plus tard.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {isEnabled('stripe') && (
+                  <button
+                    onClick={() => handlePayment('stripe')}
+                    disabled={loadingGateway !== null}
+                    className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#635BFF]/10 text-[#635BFF] rounded-xl flex items-center justify-center font-black text-xs">
+                        💳
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-temu-black text-sm block">Credit & Debit Cards</span>
+                        <span className="text-[11px] text-temu-gray-light">Visa, MasterCard, Apple Pay (Stripe)</span>
+                      </div>
+                    </div>
+                    {loadingGateway === 'stripe' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
+                  </button>
+                )}
 
-              {/* Paysera */}
-              <button 
-                onClick={() => handlePayment('paysera')}
-                disabled={loadingGateway !== null} 
-                className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs">
-                    🇪🇺
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-temu-black text-sm block">Paysera Checkout</span>
-                    <span className="text-[11px] text-temu-gray-light">European SEPA & Global Cards</span>
-                  </div>
-                </div>
-                {loadingGateway === 'paysera' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
-              </button>
+                {isEnabled('paysera') && (
+                  <button
+                    onClick={() => handlePayment('paysera')}
+                    disabled={loadingGateway !== null}
+                    className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs">
+                        🇪🇺
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-temu-black text-sm block">Paysera Checkout</span>
+                        <span className="text-[11px] text-temu-gray-light">European SEPA & Global Cards</span>
+                      </div>
+                    </div>
+                    {loadingGateway === 'paysera' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
+                  </button>
+                )}
 
-              {/* Crypto */}
-              <button 
-                onClick={() => handlePayment('crypto')}
-                disabled={loadingGateway !== null} 
-                className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-xs">
-                    ₿
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-temu-black text-sm block">Cryptocurrency (NowPayments)</span>
-                    <span className="text-[11px] text-temu-gray-light">USDT (TRC20), BTC, ETH</span>
-                  </div>
-                </div>
-                {loadingGateway === 'crypto' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
-              </button>
+                {isEnabled('crypto') && (
+                  <button
+                    onClick={() => handlePayment('crypto')}
+                    disabled={loadingGateway !== null}
+                    className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-xs">
+                        ₿
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-temu-black text-sm block">Cryptocurrency (NowPayments)</span>
+                        <span className="text-[11px] text-temu-gray-light">USDT (TRC20), BTC, ETH</span>
+                      </div>
+                    </div>
+                    {loadingGateway === 'crypto' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
+                  </button>
+                )}
 
-              {/* BaridiMob Algeria */}
-              <button 
-                onClick={() => setManualPayment(true)}
-                disabled={loadingGateway !== null} 
-                className="w-full flex items-center justify-between p-4 border-2 border-emerald-500/30 bg-emerald-50/20 rounded-temu-sm hover:border-emerald-500 transition cursor-pointer active:scale-95 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-600/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-lg">
-                    🇩🇿
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-temu-black text-sm block">BaridiMob / CCP</span>
-                    <span className="text-[11px] text-emerald-700 font-bold">الدفع عبر تطبيق بريدي موب (الجزائر)</span>
-                  </div>
-                </div>
-                <span className="text-xs text-emerald-600 font-bold">&rarr;</span>
-              </button>
-            </div>
+                {isEnabled('baridimob') && (
+                  <button
+                    onClick={() => setManualPayment(true)}
+                    disabled={loadingGateway !== null}
+                    className="w-full flex items-center justify-between p-4 border-2 border-emerald-500/30 bg-emerald-50/20 rounded-temu-sm hover:border-emerald-500 transition cursor-pointer active:scale-95 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-600/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-lg">
+                        🇩🇿
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-temu-black text-sm block">BaridiMob / CCP</span>
+                        <span className="text-[11px] text-emerald-700 font-bold">الدفع عبر تطبيق بريدي موب (الجزائر)</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-emerald-600 font-bold">&rarr;</span>
+                  </button>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div>
-            <button 
-              onClick={() => { setManualPayment(false); setError(''); }} 
+            <button
+              onClick={() => { setManualPayment(false); setError(''); }}
               className="text-temu-orange font-bold text-xs mb-4 flex items-center gap-1 cursor-pointer active:scale-95 transition"
             >
               &larr; Back to Payment Gateways
@@ -233,82 +272,81 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                   <h2 className="text-lg font-black text-temu-black">تحويل بريدي موب / CCP</h2>
                 </div>
 
-                {/* الحقول الشخصية */}
-                <input 
-                  type="text" 
+                {/* Personal info fields */}
+                <input
+                  type="text"
                   placeholder="الاسم واللقب الكامل *"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   required
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   placeholder="رقم الهاتف للتواصل (مثال: 0555123456) *"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   required
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   placeholder="البريد الإلكتروني لاستلام التتبع *"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   required
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="العنوان التفصيلي (الشارع، رقم المنزل...) *"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
                   required
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
                 <div className="grid grid-cols-2 gap-2">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="البلدية / المدينة *"
                     value={customerCity}
                     onChange={(e) => setCustomerCity(e.target.value)}
                     required
-                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                   />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="الولاية *"
                     value={customerState}
                     onChange={(e) => setCustomerState(e.target.value)}
                     required
-                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                    className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                   />
                 </div>
 
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="الرمز البريدي (مثال: 16000) *"
                   value={customerZip}
                   onChange={(e) => setCustomerZip(e.target.value)}
                   required
-                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange" 
+                  className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
-                {/* صندوق RIP */}
                 <div dir="rtl" className="bg-emerald-50/50 p-4 rounded-temu-sm border border-emerald-500/30 text-right">
                   <p className="text-xs text-temu-gray-text mb-2">
                     يرجى تحويل مبلغ <strong className="text-temu-error font-black text-sm">{totalAmountDZD.toLocaleString()} دج</strong> إلى الحساب:
                   </p>
-                  
+
                   <div className="flex items-center justify-between bg-white p-2.5 rounded border border-gray-200 gap-2">
                     <p dir="ltr" className="font-mono font-bold text-xs select-all text-gray-800">
                       RIP: 00799999 00012345678 90
                     </p>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText('007999990001234567890');
@@ -321,23 +359,23 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                     </button>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-bold text-temu-black mb-1">رفع صورة إيصال التحويل *</label>
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     accept="image/*"
                     onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                     required
                     className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-temu-orange file:text-white cursor-pointer"
                   />
                 </div>
-                
+
                 {error && <div className="bg-red-50 text-temu-error p-2.5 rounded text-xs font-bold text-center">{error}</div>}
-                
-                <button 
-                  type="submit" 
-                  disabled={loadingGateway !== null} 
+
+                <button
+                  type="submit"
+                  disabled={loadingGateway !== null}
                   className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold p-3.5 rounded-temu-sm transition flex justify-center items-center cursor-pointer disabled:opacity-50 active:scale-95 shadow-md text-sm gap-2"
                 >
                   {loadingGateway === 'baridimob' ? (
@@ -354,8 +392,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                 <p className="text-xs text-temu-gray-text leading-relaxed">
                   سيقوم فريقنا بمراجعة وصل التحويل وإرسال رقم التتبع إلى بريدك الإلكتروني وهاتفك فور تأكيد الطلب مع CJ Dropshipping.
                 </p>
-                <button 
-                  onClick={() => { onClose(); router.push('/'); }} 
+                <button
+                  onClick={() => { onClose(); router.push('/'); }}
                   className="bg-temu-black text-white font-bold py-3 px-6 rounded-temu-sm hover:bg-temu-dark transition active:scale-95 text-xs mt-4"
                 >
                   العودة للمتجر

@@ -114,11 +114,21 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
         {/* ✨ صورة المنتج الفاخر في المنتصف (تم تصحيح الرابط برابط سريع مضمون مع Fallback) */}
         <div className="gsap-parallax-img absolute bottom-12 lg:bottom-16 left-1/2 -translate-x-1/2 h-[50vh] sm:h-[65vh] w-full max-w-lg z-10 flex items-end justify-center pointer-events-none">
-          <img 
-            className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
-            src="https://images.unsplash.com/photo-1621607512214-68297480165e?w=800&auto=format&fit=crop&q=80" 
-            alt="Laclarc Premium Grooming Innovation" 
-          />
+          {trendingProducts && trendingProducts.length > 0 ? (
+            <Link href={`/products/${trendingProducts[0].id}`} className="h-full w-full flex items-end justify-center">
+              <img 
+                className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
+                src={trendingProducts[0].image_url || trendingProducts[0].image || '/placeholder.jpg'} 
+                alt={trendingProducts[0].title || "Laclarc Premium Product"} 
+              />
+            </Link>
+          ) : (
+            <img 
+              className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
+              src="/placeholder.jpg" 
+              alt="Laclarc Premium Product" 
+            />
+          )}
         </div>
 
         {/* المحتوى الرئيسي: يسار ويمين */}
