@@ -509,7 +509,7 @@ export default function ProductDetailsClient({
                     }`}
                   >
                     <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                      Best Value 🏆
+                      Best Value 
                     </span>
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>

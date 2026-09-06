@@ -50,7 +50,6 @@ export default function Navbar() {
               className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-gray-200 hover:text-white px-3 py-2 rounded-xl hover:bg-white/10 transition cursor-pointer"
               title="Track Your Order"
             >
-              <span>📦</span>
               <span>Track Order</span>
             </Link>
 
