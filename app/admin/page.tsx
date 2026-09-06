@@ -33,10 +33,9 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
 
 export default function AdminDashboard() {
   const router = useRouter();
-  
-  // ✨ تعريف صريح لنوع الـ state لمنع أخطاء TypeScript
+
   const [activeTab, setActiveTab] = useState<string>('overview');
-  
+
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -45,7 +44,7 @@ export default function AdminDashboard() {
   const [syncCategory, setSyncCategory] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
-  
+
   const [adminSearch, setAdminSearch] = useState('');
   const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
   const [syncingCats, setSyncingCats] = useState(false);
@@ -55,7 +54,7 @@ export default function AdminDashboard() {
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [singleMessage, setSingleMessage] = useState('');
 
-  const [massSyncing, setMassSyncing] = useState(false); // ✨ حالة زر Mass Sync
+  const [massSyncing, setMassSyncing] = useState(false);
 
   const [telemetry, setTelemetry] = useState<TelemetryState>({
     backendStatus: 'checking',
@@ -66,7 +65,7 @@ export default function AdminDashboard() {
   });
 
   const [formData, setFormData] = useState({
-    title: '', price: '', original_price: '', image_url: '', images: '', 
+    title: '', price: '', original_price: '', image_url: '', images: '',
     description: '', material: '', colors: '', sizes: '', category: 'other'
   });
 
@@ -74,7 +73,7 @@ export default function AdminDashboard() {
     const startTime = Date.now();
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
-      
+
       const [manualOrdersRes, failedOrdersRes] = await Promise.all([
         adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
         adminApi.get('/admin/failed-orders').catch(() => ({ data: [] })),
@@ -82,8 +81,8 @@ export default function AdminDashboard() {
       ]);
 
       const ping = Date.now() - startTime;
-      const pendingBaridi = Array.isArray(manualOrdersRes.data) 
-        ? manualOrdersRes.data.filter((o: any) => o.status === 'pending').length 
+      const pendingBaridi = Array.isArray(manualOrdersRes.data)
+        ? manualOrdersRes.data.filter((o: any) => o.status === 'pending').length
         : 0;
       const failedCount = Array.isArray(failedOrdersRes.data) ? failedOrdersRes.data.length : 0;
 
@@ -126,7 +125,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminApi.post('/admin/sync-categories');
       alert(`✅ ${res.data.message}`);
-    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`); } 
+    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`); }
     finally { setSyncingCats(false); }
   };
 
@@ -136,7 +135,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminApi.post('/admin/backfill-categories');
       alert(`✅ ${res.data.message}`);
-    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`); } 
+    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`); }
     finally { setBackfillingCats(false); }
   };
 
@@ -147,7 +146,7 @@ export default function AdminDashboard() {
       const url = syncCategory ? `/sync-cj-products?keyword=${encodeURIComponent(syncCategory)}` : '/sync-cj-products';
       const res = await adminApi.get(url);
       setSyncMessage(`✅ ${res.data.message}`);
-    } catch (err: any) { setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`); } 
+    } catch (err: any) { setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to connect.'}`); }
     finally { setSyncing(false); }
   };
 
@@ -159,7 +158,7 @@ export default function AdminDashboard() {
       const res = await adminApi.post('/admin/sync-single-product', { pid: singlePid.trim() });
       setSingleMessage(`✅ ${res.data.message}`);
       setSinglePid('');
-    } catch (err: any) { setSingleMessage(`❌ Error: ${err.response?.data?.error || 'Failed to sync.'}`); } 
+    } catch (err: any) { setSingleMessage(`❌ Error: ${err.response?.data?.error || 'Failed to sync.'}`); }
     finally { setSyncingSingle(false); }
   };
 
@@ -196,7 +195,7 @@ export default function AdminDashboard() {
         images: prev.images ? `${prev.images}, ${urls.join(', ')}` : urls.join(', ')
       }));
       setMessage('✅ Images uploaded successfully!');
-    } catch (err: any) { setMessage(`❌ Upload Error: ${err.response?.data?.error || 'Unknown error'}`); } 
+    } catch (err: any) { setMessage(`❌ Upload Error: ${err.response?.data?.error || 'Unknown error'}`); }
     finally { setUploading(false); e.target.value = ''; }
   };
 
@@ -217,7 +216,7 @@ export default function AdminDashboard() {
         description: data.description || ''
       }));
       setMessage('✅ Scraped product data & images fetched successfully!');
-    } catch (err: any) { setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to fetch product details.'}`); } 
+    } catch (err: any) { setMessage(`❌ Scrape Error: ${err.response?.data?.error || 'Failed to fetch product details.'}`); }
     finally { setScraping(false); }
   };
 
@@ -242,7 +241,7 @@ export default function AdminDashboard() {
       setMessage('✅ Product published successfully with auto-pricing!');
       setFormData({ title: '', price: '', original_price: '', image_url: '', images: '', description: '', material: '', colors: '', sizes: '', category: 'other' });
       setScrapeUrl('');
-    } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); } 
+    } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); }
     finally { setLoading(false); }
   };
 
@@ -259,7 +258,7 @@ export default function AdminDashboard() {
   return (
     <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* Top Header & Fast Nav */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
@@ -273,14 +272,14 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => router.push('/')} 
+            <button
+              onClick={() => router.push('/')}
               className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5"
             >
               🌐 Storefront
             </button>
-            <button 
-              onClick={handleLogout} 
+            <button
+              onClick={handleLogout}
               className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold text-red-500 transition flex items-center gap-1.5"
             >
               🔒 Logout
@@ -314,7 +313,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div 
+          <div
             onClick={() => router.push('/admin/baridimob')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
               telemetry.pendingBaridiCount > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
@@ -329,7 +328,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div 
+          <div
             onClick={() => router.push('/admin/failed-orders')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
               telemetry.failedOrdersCount > 0 ? 'bg-linear-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
@@ -347,12 +346,12 @@ export default function AdminDashboard() {
 
         {/* Quick Search */}
         <form onSubmit={handleAdminSearch} className="relative mb-6">
-          <input 
-            type="text" 
-            value={adminSearch} 
-            onChange={(e) => setAdminSearch(e.target.value)} 
-            placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..." 
-            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#8B78C6] transition shadow-sm" 
+          <input
+            type="text"
+            value={adminSearch}
+            onChange={(e) => setAdminSearch(e.target.value)}
+            placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..."
+            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#8B78C6] transition shadow-sm"
           />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B78C6] p-1">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -378,7 +377,7 @@ export default function AdminDashboard() {
 
         {/* Tab Content Box */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-sm">
-          
+
           {/* 1. Overview Operations */}
           {activeTab === 'overview' && (
             <div>
@@ -387,8 +386,8 @@ export default function AdminDashboard() {
                   <h2 className="text-lg font-black text-temu-black">Operations Center</h2>
                   <p className="text-xs text-gray-500">Direct modules to manage inventory, payments, and disputes</p>
                 </div>
-                <button 
-                  onClick={runDiagnostics} 
+                <button
+                  onClick={runDiagnostics}
                   className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5"
                 >
                   🔄 Refresh Status ({telemetry.lastChecked})
@@ -396,16 +395,17 @@ export default function AdminDashboard() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {[ 
+                {[
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
+                  { label: 'Payment Gateways', desc: 'Enable or disable checkout payment methods', link: '/admin/payment-settings', color: 'from-emerald-500 to-teal-600', icon: '💳' },
                   { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-purple-600 to-[#1D1E3C]', icon: '🛠️' },
                 ].map((card) => (
-                  <button 
-                    key={card.label} 
-                    onClick={() => router.push(card.link)} 
+                  <button
+                    key={card.label}
+                    onClick={() => router.push(card.link)}
                     className="text-left p-5 rounded-xl bg-temu-offwhite border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-lg font-black text-temu-black mb-2">Publish New Product</h2>
               <p className="text-xs text-gray-500 mb-6">Create manual items or auto-fill details via external link</p>
-              
+
               {message && (
                 <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-50 border border-emerald-200 text-emerald-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
                   {message}
@@ -434,16 +434,16 @@ export default function AdminDashboard() {
               <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
                 <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input 
-                    type="url" 
-                    value={scrapeUrl} 
-                    onChange={(e) => setScrapeUrl(e.target.value)} 
-                    placeholder="Paste product page URL here..." 
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-amber-400 transition" 
+                  <input
+                    type="url"
+                    value={scrapeUrl}
+                    onChange={(e) => setScrapeUrl(e.target.value)}
+                    placeholder="Paste product page URL here..."
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-amber-400 transition"
                   />
-                  <button 
-                    onClick={handleScrape} 
-                    disabled={scraping} 
+                  <button
+                    onClick={handleScrape}
+                    disabled={scraping}
                     className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95"
                   >
                     {scraping ? 'Extracting Data...' : 'Scrape Data'}
@@ -453,13 +453,13 @@ export default function AdminDashboard() {
 
               <div className="mb-6 p-4 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Upload Product Images (Cloudinary)</label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handleFileUpload} 
-                  disabled={uploading} 
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#8B78C6] file:text-white hover:file:brightness-110 cursor-pointer" 
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#8B78C6] file:text-white hover:file:brightness-110 cursor-pointer"
                 />
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -517,9 +517,9 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Description</label>
                   <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6] resize-none"></textarea>
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={loading} 
+                <button
+                  type="submit"
+                  disabled={loading}
                   className="w-full bg-linear-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
                 >
                   {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
@@ -541,16 +541,16 @@ export default function AdminDashboard() {
                 <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
                 <p className="text-xs text-gray-500 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input 
-                    type="text" 
-                    value={singlePid} 
-                    onChange={(e) => setSinglePid(e.target.value)} 
-                    placeholder="Enter CJ Product PID (e.g. 172938192)..." 
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" 
+                  <input
+                    type="text"
+                    value={singlePid}
+                    onChange={(e) => setSinglePid(e.target.value)}
+                    placeholder="Enter CJ Product PID (e.g. 172938192)..."
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]"
                   />
-                  <button 
-                    onClick={handleSyncSingle} 
-                    disabled={syncingSingle} 
+                  <button
+                    onClick={handleSyncSingle}
+                    disabled={syncingSingle}
                     className="bg-[#8B78C6] hover:bg-[#7A67B5] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
                   >
                     {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
@@ -563,9 +563,9 @@ export default function AdminDashboard() {
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sync Category Batch</label>
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                  <select 
-                    value={syncCategory} 
-                    onChange={(e) => setSyncCategory(e.target.value)} 
+                  <select
+                    value={syncCategory}
+                    onChange={(e) => setSyncCategory(e.target.value)}
                     className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]"
                   >
                     <option value="">🛍️ Trending / General Selection</option>
@@ -577,21 +577,21 @@ export default function AdminDashboard() {
                     <option value="tool">🛠️ Hardware Tools</option>
                     <option value="home decor">🏠 Home Accessories</option>
                   </select>
-                  <button 
-                    onClick={handleSyncCJ} 
-                    disabled={syncing} 
+                  <button
+                    onClick={handleSyncCJ}
+                    disabled={syncing}
                     className="bg-temu-black hover:bg-temu-dark text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95"
                   >
                     {syncing ? 'Triggering...' : 'Run Category Sync'}
                   </button>
                 </div>
 
-                {/* زر الاستيراد بالجملة (Mass Import) */}
+                {/* Mass Import */}
                 <div className="pt-4 border-t border-temu-gray-border-light">
                   <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
-                  <button 
-                    onClick={handleMassSync} 
-                    disabled={massSyncing} 
+                  <button
+                    onClick={handleMassSync}
+                    disabled={massSyncing}
                     className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#8B78C6]/20"
                   >
                     {massSyncing ? 'Engine Starting...' : 'Start Mass Import Engine'}
@@ -608,16 +608,16 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-500">Keep store taxonomy aligned with official CJ product mappings</p>
                 </div>
                 <div className="flex gap-2">
-                  <button 
-                    onClick={handleSyncCategories} 
-                    disabled={syncingCats} 
+                  <button
+                    onClick={handleSyncCategories}
+                    disabled={syncingCats}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
                   >
                     {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
                   </button>
-                  <button 
-                    onClick={handleBackfillCategories} 
-                    disabled={backfillingCats} 
+                  <button
+                    onClick={handleBackfillCategories}
+                    disabled={backfillingCats}
                     className="bg-temu-black hover:bg-temu-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
                   >
                     {backfillingCats ? 'Updating Products...' : '2. Backfill Catalog'}
@@ -681,9 +681,9 @@ export default function AdminDashboard() {
                 const formData = new FormData(form);
                 const payload = Object.fromEntries(formData.entries());
                 try {
-                  await adminApi.post('/admin/add-coupon', { 
-                    ...payload, 
-                    discount_value: Number(payload.discount_value) 
+                  await adminApi.post('/admin/add-coupon', {
+                    ...payload,
+                    discount_value: Number(payload.discount_value)
                   });
                   alert('✅ Coupon activated successfully in store system!');
                   form.reset();

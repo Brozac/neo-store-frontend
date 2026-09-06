@@ -118,14 +118,14 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             <Link href={`/products/${trendingProducts[0].id}`} className="h-full w-full flex items-end justify-center">
               <img 
                 className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
-                src={trendingProducts[0].image_url || trendingProducts[0].image || '/placeholder.jpg'} 
+                src={trendingProducts[0].image_url || trendingProducts[0].image || '/icon-512.png'} 
                 alt={trendingProducts[0].title || "Laclarc Premium Product"} 
               />
             </Link>
           ) : (
             <img 
               className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
-              src="/placeholder.jpg" 
+              src="/icon-512.png" 
               alt="Laclarc Premium Product" 
             />
           )}
@@ -137,7 +137,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           {/* الجانب الأيسر: العناوين والأزرار */}
           <div className="max-w-xl space-y-6 text-left">
             <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B78C6]/15 border border-[#8B78C6]/30 text-[#8B78C6] text-xs font-black uppercase tracking-wider">
-              <span></span> Exclusive Sourced Drops
+              <span></span> Exclusive Premium Deals
             </div>
 
             <h1 className="gsap-hero text-4xl sm:text-5xl lg:text-6xl font-black text-[#1D1E3C] tracking-tight leading-[1.08]">
