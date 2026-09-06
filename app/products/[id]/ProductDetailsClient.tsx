@@ -86,11 +86,14 @@ export default function ProductDetailsClient({
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [purchaseCount, setPurchaseCount] = useState(38);
   
-  // ✨ حالات نافذة التكبير ملء الشاشة الحقيقية
+  // ✨ حالات التكبير ملء الشاشة
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
   const touchStartX = useRef(0);
+  // ✨ مرجع للتحكم في تمرير شريط الصور المصغرة
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
+  
   const defaultImage = '/placeholder.jpg';
 
   const galleryImages = useMemo(() => {
@@ -102,6 +105,14 @@ export default function ProductDetailsClient({
 
   const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
+  // ✨ دالة التمرير البرمجي لشريط الصور بالأسهم
+  const scrollThumbnails = (direction: 'left' | 'right') => {
+    if (thumbnailsRef.current) {
+      const scrollAmount = direction === 'left' ? -180 : 180;
+      thumbnailsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   // مطابقة الـ vid الصحيح
   const matchedVariant = useMemo(() => {
@@ -193,7 +204,7 @@ export default function ProductDetailsClient({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (isZoomed) return; // منع التمرير أثناء وضع التكبير للسماح للزبون بتفحص الصورة
+    if (isZoomed) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchStartX.current - touchEndX;
     if (Math.abs(diffX) > 40) {
@@ -243,7 +254,7 @@ export default function ProductDetailsClient({
           </div>
         </div>
 
-        {/* Product Top Section */}
+        {/* Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
           
           {/* Visual Gallery */}
@@ -267,7 +278,7 @@ export default function ProductDetailsClient({
                 />
               )}
 
-              {/* أسهم التبديل السريع */}
+              {/* أسهم التبديل المباشرة */}
               {galleryImages.length > 1 && !showVideo && (
                 <>
                   <button 
@@ -303,29 +314,64 @@ export default function ProductDetailsClient({
               )}
             </div>
 
-            {/* شريط الصور المصغرة (تم إصلاح القص بإضافة p-1.5 و scroll-smooth) */}
-            <div className="flex gap-2.5 w-full overflow-x-auto p-1.5 scrollbar-hide touch-pan-x items-center scroll-smooth">
-              {product.video_url && (
-                <div 
-                  onClick={() => setShowVideo(true)} 
-                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
+            {/* ✨ شريط الصور المصغرة مع أزرار Scroll لليمين واليسار (تم حل مشكلة الاقتطاع تماماً) */}
+            <div className="relative w-full flex items-center group/thumbs">
+              
+              {/* زر التمرير لليسار */}
+              {galleryImages.length > 4 && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbnails('left')}
+                  className="absolute -left-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
+                  aria-label="Scroll Left"
                 >
-                  <span className="text-white text-xl">▶</span>
-                </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
               )}
-              {galleryImages.map((img, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
-                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
-                    !showVideo && currentImageIndex === idx 
-                      ? 'border-[#8B78C6] shadow-md ring-2 ring-[#8B78C6]/30 scale-95' 
-                      : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
-                  }`}
+
+              {/* حاوية الصور مع حاشية p-2 تمنع قص الصورة الأخيرة */}
+              <div 
+                ref={thumbnailsRef}
+                className="flex gap-2.5 w-full overflow-x-auto p-2 scrollbar-hide touch-pan-x items-center scroll-smooth"
+              >
+                {product.video_url && (
+                  <div 
+                    onClick={() => setShowVideo(true)} 
+                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
+                  >
+                    <span className="text-white text-xl">▶</span>
+                  </div>
+                )}
+                {galleryImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
+                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
+                      !showVideo && currentImageIndex === idx 
+                        ? 'border-[#8B78C6] shadow-md ring-2 ring-[#8B78C6]/30 scale-95' 
+                        : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
+                    }`}
+                  >
+                    <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
+                  </div>
+                ))}
+              </div>
+
+              {/* زر التمرير لليمين */}
+              {galleryImages.length > 4 && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbnails('right')}
+                  className="absolute -right-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
+                  aria-label="Scroll Right"
                 >
-                  <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
-                </div>
-              ))}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -565,7 +611,6 @@ export default function ProductDetailsClient({
 
       {/* =========================================================================
           ✨ نافذة التكبير السينمائية الكاملة (High-Resolution Zoom Lightbox)
-          الصورة تملأ الشاشة بنسبة 100% مع تكبير حقيقي 2x/2.5x وزر إغلاق واضح
          ========================================================================= */}
       {isLightboxOpen && (
         <div 
@@ -579,7 +624,6 @@ export default function ProductDetailsClient({
             </div>
 
             <div className="flex items-center gap-3">
-              {/* زر التكبير المباشر */}
               <button 
                 type="button"
                 onClick={() => setIsZoomed(!isZoomed)}
@@ -589,7 +633,6 @@ export default function ProductDetailsClient({
                 <span>🔍</span> {isZoomed ? 'Reset (1x)' : 'Zoom (2.5x)'}
               </button>
 
-              {/* زر الإغلاق المحمي والأنيق */}
               <button 
                 type="button"
                 onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
@@ -624,7 +667,6 @@ export default function ProductDetailsClient({
               />
             </div>
 
-            {/* أسهم التقليب بين الصور عالية الدقة */}
             {galleryImages.length > 1 && !isZoomed && (
               <>
                 <button 
