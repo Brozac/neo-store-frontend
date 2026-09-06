@@ -57,10 +57,25 @@ function HomeContent() {
     setVisibleCount(20);
   }, [activeCategory, searchQuery]);
 
-  // ✨ اختيار 5 منتجات عشوائية تماماً من كامل المتجر لعرضها في الـ Hero والـ Trending
+  // ✨ اختيار منتجات الـ Trending (آلات الحلاقة أولاً، مع Fallback ذكي)
   const trendingProducts = useMemo(() => {
     if (products.length === 0) return [];
-    return [...products].sort(() => Math.random() - 0.5).slice(0, 5);
+
+    // 1. البحث عن آلات الحلاقة في الفئة أو العنوان
+    const shavers = products.filter(p => 
+      p.category?.startsWith('shavers') || 
+      p.title?.toLowerCase().includes('shaver') || 
+      p.title?.toLowerCase().includes('clipper') ||
+      p.title?.toLowerCase().includes('trimmer')
+    );
+
+    // 2. إذا وجدنا آلات حلاقة، نعرضها (بحد أقصى 5)
+    if (shavers.length > 0) {
+      return shavers.slice(0, 5);
+    }
+
+    // 3. إذا لم نجد (Fallback)، نعرض أول 5 منتجات متوفرة لكي لا يختفي القسم
+    return products.slice(0, 5);
   }, [products]);
 
   // ✨ حل مشكلة الأقسام الفرعية (Prefix Matching)
