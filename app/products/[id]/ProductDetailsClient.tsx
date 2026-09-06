@@ -448,14 +448,77 @@ export default function ProductDetailsClient({
             <div className="space-y-4 pt-2 border-t border-gray-200">
               <CountdownTimer />
 
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-bold uppercase text-temu-black">Quantity:</span>
-                <div className="flex items-center border border-temu-gray-border rounded-temu-sm overflow-hidden bg-white">
-                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">-</button>
-                  <span className="px-4 py-1.5 font-bold text-sm text-temu-black border-x border-temu-gray-border">{quantity}</span>
-                  <button type="button" onClick={() => setQuantity(quantity + 1)} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">+</button>
+              {/* ✨ باقات الخصم التفاعلية الذكية (Tiered Quantity Bundles) */}
+            <div className="space-y-2.5 my-6">
+              <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
+                ⚡ Exclusive Bundle Savings:
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {/* باقة 1 قطعة */}
+                <div 
+                  onClick={() => setQuantity(1)}
+                  className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                    quantity === 1 
+                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-extrabold text-xs text-gray-900">Standard</span>
+                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                      {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-600">Buy 1 Unit</span>
+                  <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
+                </div>
+
+                {/* باقة قطعتين - الأكثر طلباً */}
+                <div 
+                  onClick={() => setQuantity(2)}
+                  className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                    quantity === 2 
+                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                    Popular 🔥
+                  </span>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-extrabold text-xs text-[#8B78C6]">Save 15%</span>
+                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                      {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
+                  <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
+                </div>
+
+                {/* باقة 3 قطع - التوفير الأكبر */}
+                <div 
+                  onClick={() => setQuantity(3)}
+                  className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
+                    quantity >= 3 
+                      ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                    Best Value 🏆
+                  </span>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>
+                    <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
+                      {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
+                  <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 0.75 * 3).toFixed(2)}</span>
                 </div>
               </div>
+            </div>
 
               <div className="flex gap-3">
                 <button 
