@@ -126,10 +126,9 @@ export default function Footer() {
           </p>
 
           <div className="flex items-center gap-4 text-xs font-semibold text-gray-400 flex-wrap justify-center">
-            <span>💳 Visa & MasterCard</span>
-            <span>🍏 Apple Pay</span>
-            <span>₿ USDT & Crypto</span>
-            <span>🇩🇿 BaridiMob</span>
+            <span> Visa & MasterCard</span>
+            <span> Apple Pay</span>
+            <span> USDT & Crypto</span>
           </div>
         </div>
 
