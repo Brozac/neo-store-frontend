@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
+
 interface Gateway {
   gateway_key: string;
   display_name: string;
