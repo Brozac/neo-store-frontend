@@ -1,11 +1,12 @@
+// context/CartContext.tsx - Type-Safe Cart Engine
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 export type Product = {
   id: number | string;
+  name: string; // ✨ جعلها string إجبارية لتتوافق 100% مع صفحات السلة والـ Build
   title?: string;
-  name?: string; // دعم الاسمين title و name لتفادي أي خطأ
   price: number | string;
   original_price?: number | string;
   description?: string;
@@ -14,7 +15,7 @@ export type Product = {
   color?: string;
   size?: string;
   quantity?: number;
-  vid?: string; // معرف المتغير الأساسي في CJ
+  vid?: string;
   [key: string]: any;
 };
 
@@ -26,9 +27,9 @@ export type CartItem = Product & {
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (itemKey: string) => void;
-  updateQuantity: (itemKey: string, newQuantity: number) => void;
+  addToCart: (product: any, quantity?: number) => void;
+  removeFromCart: (itemKey: any) => void;
+  updateQuantity: (itemKey: any, newQuantity: number, color?: string, size?: string) => void;
   clearCart: () => void;
   cartTotal: number;
   finalTotal: number;
@@ -40,9 +41,8 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const MAX_ITEM_QUANTITY = 50; // مطابق للحد الأقصى في السيرفر utils/secureCheckout.js
+const MAX_ITEM_QUANTITY = 50;
 
-// ✨ دالة لتوليد مفتاح فريد ومطلق لكل عنصر في السلة
 export const getCartItemKey = (item: { id: number | string; vid?: string; color?: string; size?: string }): string => {
   if (item.vid) {
     return `${item.id}_VID_${item.vid}`;
@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const [wheelDiscount, setWheelDiscount] = useState(0);
 
-  // 1. قراءة السلة والخصم عند أول تشغيل
+  // 1. استعادة السلة من localStorage
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('cart');
@@ -71,25 +71,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setWheelDiscount(Math.min(100, Math.max(0, Number(savedDiscount) || 0)));
       }
     } catch (e) {
-      console.error("CartContext: Error restoring cart from localStorage", e);
+      console.error("CartContext: Error restoring cart", e);
     } finally {
       setIsMounted(true);
     }
   }, []);
 
-  // 2. مزامنة السلة مع LocalStorage وإطلاق الحدث المحلي
+  // 2. حفظ السلة في localStorage
   useEffect(() => {
     if (isMounted) {
       try {
         localStorage.setItem('cart', JSON.stringify(cart));
         window.dispatchEvent(new Event('cartUpdated'));
       } catch (e) {
-        console.error("CartContext: Error saving cart to localStorage", e);
+        console.error("CartContext: Error saving cart", e);
       }
     }
   }, [cart, isMounted]);
 
-  // 3. ✨ مزامنة السلة عبر التبويبات المتعددة (Cross-Tab Sync)
+  // 3. مزامنة عبر النوافذ والتبويبات
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'cart' && e.newValue) {
@@ -113,8 +113,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  // ✨ إضافة منتج للسلة بمطابقة فريدة بواسطة vid
-  const addToCart = useCallback((product: Product, incomingQuantity?: number) => {
+  // ✨ إضافة منتج للسلة وضمان أن name و title نصوص حقيقية دائماً
+  const addToCart = useCallback((product: any, incomingQuantity?: number) => {
     setCart((prevCart) => {
       const targetKey = getCartItemKey(product);
       const addQty = Math.min(
@@ -122,10 +122,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         Math.max(1, incomingQuantity !== undefined ? incomingQuantity : (Number(product.quantity) || 1))
       );
 
-      const existingIndex = prevCart.findIndex((item) => getCartItemKey(item) === targetKey);
-
-      const displayTitle = (product.title || product.name || 'Product').trim();
+      const resolvedTitle = (product.title || product.name || 'Product').trim();
       const displayImage = product.image_url || product.image || '/placeholder.jpg';
+
+      const existingIndex = prevCart.findIndex((item) => getCartItemKey(item) === targetKey);
 
       if (existingIndex > -1) {
         const updated = [...prevCart];
@@ -135,9 +135,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updated[existingIndex] = {
           ...updated[existingIndex],
           ...product,
+          name: resolvedTitle, // ✨ مضمون كنص دائماً
+          title: resolvedTitle,
+          displayTitle: resolvedTitle,
+          displayImage,
           quantity: newQty,
-          displayTitle,
-          displayImage
         };
         return updated;
       }
@@ -146,32 +148,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...prevCart, 
         { 
           ...product, 
+          name: resolvedTitle, // ✨ مضمون كنص دائماً
+          title: resolvedTitle,
+          displayTitle: resolvedTitle, 
+          displayImage,
           quantity: addQty, 
-          displayTitle, 
-          displayImage 
         }
       ];
     });
   }, []);
 
-  // ✨ حذف منتج بواسطة المفتاح الفريد المطلق
-  const removeFromCart = useCallback((itemKey: string) => {
-    setCart((prevCart) => prevCart.filter((item) => getCartItemKey(item) !== itemKey));
+  // ✨ تدعم حذف المنتجات سواء بالمفتاح الموحد أو بالطريقة القديمة (productId, color, size)
+  const removeFromCart = useCallback((itemKeyOrId: any, color?: string, size?: string) => {
+    setCart((prevCart) => prevCart.filter((item) => {
+      if (color !== undefined || size !== undefined) {
+        return !(item.id === itemKeyOrId && item.color === color && item.size === size);
+      }
+      return getCartItemKey(item) !== String(itemKeyOrId) && item.id !== itemKeyOrId;
+    }));
   }, []);
 
-  // ✨ تحديث الكمية بأمان
-  const updateQuantity = useCallback((itemKey: string, newQuantity: number) => {
+  // ✨ تدعم تعديل الكمية بالطريقتين
+  const updateQuantity = useCallback((itemKeyOrId: any, newQuantity: number, color?: string, size?: string) => {
     if (newQuantity < 1) {
-      removeFromCart(itemKey);
+      removeFromCart(itemKeyOrId, color, size);
       return;
     }
 
     const safeQty = Math.min(MAX_ITEM_QUANTITY, newQuantity);
 
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        getCartItemKey(item) === itemKey ? { ...item, quantity: safeQty } : item
-      )
+      prevCart.map((item) => {
+        const isMatch = (color !== undefined || size !== undefined)
+          ? (item.id === itemKeyOrId && item.color === color && item.size === size)
+          : (getCartItemKey(item) === String(itemKeyOrId) || item.id === itemKeyOrId);
+
+        return isMatch ? { ...item, quantity: safeQty } : item;
+      })
     );
   }, [removeFromCart]);
 
@@ -190,10 +203,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch (e) {}
   }, []);
 
-  // حساب عدد القطع الإجمالي
   const totalItemsCount = cart.reduce((count, item) => count + item.quantity, 0);
 
-  // حساب إجمالي السلة بدقة عالية ومنع مشاكل الفاصلة العائمة
   const rawCartTotal = cart.reduce((total, item) => {
     const unitPrice = parsePrice(item.price);
     return total + (unitPrice * item.quantity);

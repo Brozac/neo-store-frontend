@@ -1,10 +1,20 @@
 'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function HeroSection({ trendingProducts }: { trendingProducts: any[] }) {
-  // نختار أفضل 4 منتجات لعرضهم في الواجهة
-  const topProducts = trendingProducts.slice(0, 4);
+interface Product {
+  id: string | number;
+  title: string;
+  price: number | string;
+  original_price?: number | string;
+  image?: string;
+  image_url?: string;
+}
+
+export default function HeroSection({ trendingProducts = [] }: { trendingProducts?: Product[] }) {
+  // ✨ حماية ضد undefined واختيار أفضل 4 منتجات
+  const safeProducts = Array.isArray(trendingProducts) ? trendingProducts.slice(0, 4) : [];
 
   return (
     <section className="relative bg-[#0E1020] text-white rounded-3xl overflow-hidden mb-8 border border-white/10 shadow-2xl">
@@ -12,10 +22,10 @@ export default function HeroSection({ trendingProducts }: { trendingProducts: an
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#8B78C6]/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#FF6B9D]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12 lg:py-16 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10 lg:py-14 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           
-          {/* Left Text Column */}
+          {/* Left Column: Brand Statement & CTA */}
           <div className="space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -47,7 +57,7 @@ export default function HeroSection({ trendingProducts }: { trendingProducts: an
               </div>
             </div>
 
-            {/* Quick Micro-Trust Badges */}
+            {/* Micro-Trust Strip */}
             <div className="grid grid-cols-3 gap-2 pt-6 border-t border-white/10 text-[11px] text-gray-400 font-medium">
               <div>✈️ Free Worldwide Shipping</div>
               <div>🔒 256-Bit Encrypted Payments</div>
@@ -55,52 +65,74 @@ export default function HeroSection({ trendingProducts }: { trendingProducts: an
             </div>
           </div>
 
-          {/* ✨ Right Dynamic Showcase: Trending Now Grid */}
-          <div className="relative w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-2xl p-4 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-extrabold uppercase tracking-widest text-gray-300 flex items-center gap-2">
-                <span>🔥</span> Trending Now
-              </h3>
-              <span className="text-[10px] bg-temu-error/20 text-temu-error px-2 py-0.5 rounded-full font-bold">HOT</span>
-            </div>
+          {/* Right Column: Dynamic Trending Showcase Grid */}
+          <div className="relative w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-2xl p-4 sm:p-5 backdrop-blur-sm">
             
-            <div className="grid grid-cols-2 gap-3">
-              {topProducts.map((p) => (
-                <Link 
-                  href={`/products/${p.id}`} 
-                  key={p.id} 
-                  className="group block bg-white rounded-xl overflow-hidden active:scale-95 transition-transform"
-                >
-                  <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
-                    <Image 
-                      src={p.image_url || p.image || '/placeholder.jpg'} 
-                      alt={p.title} 
-                      fill 
-                      sizes="200px" 
-                      className="object-contain p-2 group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-[11px] font-bold text-temu-black line-clamp-1 mb-1">{p.title}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-sm font-black text-temu-error">${Number(p.price).toFixed(2)}</span>
-                      {p.original_price && Number(p.original_price) > 0 && (
-                        <span className="text-[9px] text-gray-400 line-through">${Number(p.original_price).toFixed(2)}</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            
-            {/* Floating Glass Deal Tag */}
-            <div className="absolute bottom-4 right-4 bg-[#181B34]/90 backdrop-blur-md border border-white/15 p-2 rounded-xl flex items-center gap-2 shadow-lg">
-              <span className="text-xl">⚡</span>
-              <div>
-                <p className="text-[10px] font-black text-white">Daily Drops</p>
-                <p className="text-[8px] text-gray-400">Up to 60% OFF</p>
+            {/* Header with Deal Badge (موضعه علوي نظيف لا يحجب المنتجات) */}
+            <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔥</span>
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  Trending Showcase
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5 bg-[#8B78C6]/20 border border-[#8B78C6]/40 px-2.5 py-1 rounded-full text-[10px] font-black text-white">
+                <span>⚡</span> Up to 60% OFF
               </div>
             </div>
+            
+            {/* Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {safeProducts.length > 0 ? (
+                safeProducts.map((p) => {
+                  const safePrice = Number(p.price) || 0;
+                  const safeOldPrice = Number(p.original_price) || 0;
+
+                  return (
+                    <Link 
+                      href={`/products/${p.id}`} 
+                      key={p.id} 
+                      className="group block bg-white rounded-xl overflow-hidden active:scale-95 transition-all duration-300 hover:shadow-lg border border-transparent hover:border-[#8B78C6]/40"
+                    >
+                      <div className="relative aspect-square bg-white overflow-hidden">
+                        <Image 
+                          src={p.image_url || p.image || '/placeholder.jpg'} 
+                          alt={p.title || 'Trending Product'} 
+                          fill 
+                          sizes="(max-width: 768px) 160px, 220px" 
+                          className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-2.5 bg-[#181B34]">
+                        <p className="text-[11px] font-bold text-white line-clamp-1 group-hover:text-[#8B78C6] transition">
+                          {p.title}
+                        </p>
+                        <div className="flex items-baseline gap-1.5 mt-0.5">
+                          <span className="text-xs font-black text-[#FF6B9D]">${safePrice.toFixed(2)}</span>
+                          {safeOldPrice > safePrice && (
+                            <span className="text-[10px] text-gray-400 line-through font-medium">
+                              ${safeOldPrice.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                // Skeleton Placeholders أثناء التحميل
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="aspect-square bg-white/5 rounded-xl animate-pulse border border-white/5"></div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-3 text-center">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                Direct CJ Warehouse Drops &bull; Updated Hourly
+              </span>
+            </div>
+
           </div>
 
         </div>

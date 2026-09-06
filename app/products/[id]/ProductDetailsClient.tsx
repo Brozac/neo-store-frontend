@@ -40,7 +40,14 @@ interface Product {
   video_url?: string;
 }
 
-interface Review { id: number; author: string; rating: number; content: string; country: string; created_at: string; }
+interface Review { 
+  id: number; 
+  author: string; 
+  rating: number; 
+  content: string; 
+  country: string; 
+  created_at: string; 
+}
 
 const TABS = [
   { key: 'details', label: 'Details' },
@@ -78,21 +85,25 @@ export default function ProductDetailsClient({
   const [reviews, setReviews] = useState(initialReviews);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [purchaseCount, setPurchaseCount] = useState(38);
+  
+  // ✨ حالات نافذة التكبير ملء الشاشة الحقيقية
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  
   const touchStartX = useRef(0);
-
   const defaultImage = '/placeholder.jpg';
+
   const galleryImages = useMemo(() => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       return product.images.filter(img => img && typeof img === 'string');
     }
     return [product.image_url || product.image || defaultImage];
-  }, [product]);
+  }, [product, defaultImage]);
 
   const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // ✨ مطابقة المتغير الدقيق (Matching selected variant vid)
+  // مطابقة الـ vid الصحيح
   const matchedVariant = useMemo(() => {
     if (!product.variants) return null;
     try {
@@ -102,7 +113,6 @@ export default function ProductDetailsClient({
 
       if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) return null;
 
-      // 1. مطابقة اللون والمقاس معاً
       const exactMatch = parsedVariants.find((v: any) => {
         const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
         const matchesColor = selectedColor ? name.includes(selectedColor.toLowerCase()) : true;
@@ -111,14 +121,12 @@ export default function ProductDetailsClient({
       });
       if (exactMatch) return exactMatch;
 
-      // 2. مطابقة المقاس فقط
       const sizeMatch = parsedVariants.find((v: any) => {
         const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
         return selectedSize ? new RegExp(`\\b${selectedSize}\\b`, 'i').test(name) : false;
       });
       if (sizeMatch) return sizeMatch;
 
-      // 3. خيار احتياطي: أول متغير صالح
       return parsedVariants[0];
     } catch (e) {
       return null;
@@ -138,7 +146,6 @@ export default function ProductDetailsClient({
       setFavoriteIds(favs);
     } catch (e) {}
 
-    // جلب التقييمات عبر رابط البيئة الديناميكي
     fetch(`${API_BASE_URL}/api/reviews/${product.id}`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setReviews(data); })
@@ -164,13 +171,13 @@ export default function ProductDetailsClient({
     setFavoriteIds(newFavorites);
   };
 
-  // ✨ إضافة للسلة مع المتغير الحقيقي المختار (vid المطابق)
   const handleAddToCart = () => {
     const resolvedVid = matchedVariant?.vid || '';
     
     addToCart({
       id: product.id,
       title: product.title,
+      name: product.title,
       price: parsePrice(product.price),
       quantity,
       image: mainImageSrc,
@@ -181,8 +188,12 @@ export default function ProductDetailsClient({
     }, quantity);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchStart = (e: React.TouchEvent) => { 
+    touchStartX.current = e.touches[0].clientX; 
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isZoomed) return; // منع التمرير أثناء وضع التكبير للسماح للزبون بتفحص الصورة
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchStartX.current - touchEndX;
     if (Math.abs(diffX) > 40) {
@@ -232,74 +243,81 @@ export default function ProductDetailsClient({
           </div>
         </div>
 
-        {/* Product Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
+        {/* Product Top Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
           
           {/* Visual Gallery */}
-          <div className="flex flex-col gap-4 h-full">
-                        <div 
-              className="relative flex-1 min-h-[350px] sm:min-h-[450px] rounded-temu-sm overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-pointer"
+          <div className="flex flex-col gap-4 sticky top-20">
+            <div 
+              className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
-              onClick={() => setIsLightboxOpen(true)}
+              onClick={() => { setIsLightboxOpen(true); setIsZoomed(false); }}
             >
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <Image src={mainImageSrc} alt={product.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-2 transition-transform duration-500 group-hover:scale-105" priority />
+                <Image 
+                  src={mainImageSrc} 
+                  alt={product.title} 
+                  fill 
+                  sizes="(max-width: 768px) 100vw, 50vw" 
+                  className="object-contain p-3 transition-transform duration-500 group-hover:scale-105" 
+                  priority 
+                />
               )}
-              
+
+              {/* أسهم التبديل السريع */}
               {galleryImages.length > 1 && !showVideo && (
                 <>
-                  {/* ✨ أسهم التبديل (تمت إضافة stopPropagation) */}
                   <button 
+                    type="button"
                     onClick={(e) => { 
-                      e.stopPropagation(); // يمنع فتح الـ Zoom
+                      e.stopPropagation(); 
                       setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); 
                     }} 
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                    aria-label="Previous Image"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
                   <button 
+                    type="button"
                     onClick={(e) => { 
-                      e.stopPropagation(); // يمنع فتح الـ Zoom
+                      e.stopPropagation(); 
                       setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1); 
                     }} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
+                    aria-label="Next Image"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                 </>
               )}
-              
+
+              {/* شارة التكبير */}
               {!showVideo && (
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); // يمنع التداخل
-                    setIsLightboxOpen(true); 
-                  }} 
-                  className="absolute bottom-4 right-4 bg-white/90 hover:bg-white rounded-full p-2.5 shadow-md hover:scale-105 transition cursor-pointer z-10 active:scale-90"
-                >
-                  🔍
-                </button>
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
+                  <span>🔍</span> Tap to Zoom
+                </div>
               )}
             </div>
-            {/* Thumbnails */}
-            <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-hide touch-pan-x">
+
+            {/* شريط الصور المصغرة */}
+            <div className="flex gap-2.5 w-full overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
               {product.video_url && (
                 <div 
                   onClick={() => setShowVideo(true)} 
-                  className={`relative aspect-square w-16 shrink-0 rounded-temu-sm overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
+                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
                 >
-                  <span className="text-white text-lg">▶</span>
+                  <span className="text-white text-xl">▶</span>
                 </div>
               )}
               {galleryImages.map((img, idx) => (
                 <div 
                   key={idx} 
                   onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
-                  className={`relative aspect-square w-16 shrink-0 rounded-temu-sm overflow-hidden cursor-pointer border-2 transition bg-white ${!showVideo && currentImageIndex === idx ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition bg-white shrink-0 ${!showVideo && currentImageIndex === idx ? 'border-temu-orange shadow-md scale-95' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
                 >
                   <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
                 </div>
@@ -308,9 +326,11 @@ export default function ProductDetailsClient({
           </div>
 
           {/* Pricing & Customization Box */}
-          <div className="flex flex-col justify-between">
+          <div className="space-y-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">{product.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">
+                {product.title}
+              </h1>
               
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-temu-orange text-sm">★★★★★</span>
@@ -338,6 +358,7 @@ export default function ProductDetailsClient({
                     {product.colors.map((col, idx) => (
                       <button 
                         key={idx} 
+                        type="button"
                         onClick={() => setSelectedColor(col)} 
                         className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColor === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
                       >
@@ -353,7 +374,7 @@ export default function ProductDetailsClient({
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
-                    <button onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
+                    <button type="button" onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
                       Size Guide ↗
                     </button>
                   </div>
@@ -361,6 +382,7 @@ export default function ProductDetailsClient({
                     {product.sizes.map((sz) => (
                       <button 
                         key={sz} 
+                        type="button"
                         onClick={() => setSelectedSize(sz)} 
                         className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${selectedSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
                       >
@@ -373,38 +395,41 @@ export default function ProductDetailsClient({
             </div>
 
             {/* CTA Controls */}
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2 border-t border-gray-200">
               <CountdownTimer />
 
               <div className="flex items-center gap-4">
                 <span className="text-xs font-bold uppercase text-temu-black">Quantity:</span>
                 <div className="flex items-center border border-temu-gray-border rounded-temu-sm overflow-hidden bg-white">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">-</button>
+                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">-</button>
                   <span className="px-4 py-1.5 font-bold text-sm text-temu-black border-x border-temu-gray-border">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">+</button>
+                  <button type="button" onClick={() => setQuantity(quantity + 1)} className="px-3.5 py-1.5 text-base font-bold text-temu-gray-text hover:bg-gray-100 active:scale-90">+</button>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <button 
+                  type="button"
                   onClick={handleAddToCart} 
                   className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg shadow-temu-orange/20"
                 >
-                  <span></span> Add to Cart
+                  <span>🛒</span> Add to Cart
                 </button>
                 <button 
+                  type="button"
                   onClick={() => handleToggleFavorite(product.id)} 
                   className={`w-14 h-14 shrink-0 flex items-center justify-center border-2 rounded-temu-sm transition cursor-pointer active:scale-90 ${isCurrentProductFavorited ? 'border-temu-error bg-temu-error text-white' : 'border-temu-gray-border bg-white text-temu-gray-text hover:text-temu-error'}`}
+                  aria-label="Save to Wishlist"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
                 </button>
               </div>
 
-              {/* ✨ تمرير كامل المتغيرات إلى BuyButton */}
               <BuyButton 
                 product={{ 
                   id: product.id, 
                   title: product.title, 
+                  name: product.title,
                   price: safePrice, 
                   image: mainImageSrc,
                   color: selectedColor,
@@ -414,11 +439,11 @@ export default function ProductDetailsClient({
                 }} 
               />
 
-              {/* Dynamic Social Proof Indicator */}
+              {/* Social Proof */}
               <div className="flex items-center gap-3 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light shadow-sm">
                 <div className="flex -space-x-2.5">
                   {STATIC_AVATARS.map((av, idx) => (
-                    <img key={idx} src={av} className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm" alt="Buyer avatar" />
+                    <img key={idx} src={av} className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm" alt="Buyer" />
                   ))}
                 </div>
                 <p className="text-xs text-temu-gray-text font-medium">
@@ -441,6 +466,7 @@ export default function ProductDetailsClient({
             {TABS.map((tab) => (
               <button 
                 key={tab.key} 
+                type="button"
                 onClick={() => setActiveTab(tab.key)} 
                 className={`pb-3 text-xs uppercase font-extrabold whitespace-nowrap transition border-b-2 -mb-px cursor-pointer ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-black'}`}
               >
@@ -478,7 +504,7 @@ export default function ProductDetailsClient({
           </div>
         </div>
 
-        {/* You May Also Like Section */}
+        {/* You May Also Like */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
             <h2 className="text-lg font-black text-temu-black mb-6">Frequently Bought Together</h2>
@@ -500,7 +526,7 @@ export default function ProductDetailsClient({
           </div>
         )}
 
-        {/* Verified Customer Reviews */}
+        {/* Customer Reviews */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-black text-temu-black">Customer Reviews ({reviews.length})</h2>
@@ -533,115 +559,110 @@ export default function ProductDetailsClient({
 
       </div>
 
-      {/* ✨ نافذة العرض السريع الاحترافية (Quick View Modal) مع دعم الصور الطويلة والتكبير */}
+      {/* =========================================================================
+          ✨ نافذة التكبير السينمائية الكاملة (High-Resolution Zoom Lightbox)
+          الصورة تملأ الشاشة بنسبة 100% مع تكبير حقيقي 2x/2.5x وزر إغلاق واضح
+         ========================================================================= */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={() => setIsLightboxOpen(false)}>
-          
-          {/* زر الإغلاق */}
-          <button 
-            className="absolute top-4 right-4 text-white text-3xl cursor-pointer z-10 active:scale-90 transition bg-black/40 w-10 h-10 rounded-full flex items-center justify-center" 
-            onClick={() => setIsLightboxOpen(false)}
-          >
-            ✕
-          </button>
-
-          {/* صندوق المحتوى (يمنع الإغلاق عند الضغط بداخله) */}
-          <div 
-            className="relative w-full max-w-5xl bg-white rounded-xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[85vh]" 
-            onClick={e => e.stopPropagation()}
-          >
-            
-            {/* قسم الصور (يسار/أعلى) - يدعم التمرير للصور الطويلة */}
-            <div className="flex-1 flex flex-col bg-temu-offwhite p-4 relative overflow-hidden">
-              <div className="relative w-full flex-1 min-h-[250px] overflow-y-auto scrollbar-hide flex items-center justify-center">
-                <div 
-                  className="relative w-full h-full flex items-center justify-center active:scale-150 transition-transform duration-300 cursor-zoom-in"
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                >
-                  <Image 
-                    src={mainImageSrc} 
-                    alt={product.title} 
-                    width={500}
-                    height={500}
-                    className="object-contain max-w-full max-h-full"
-                  />
-                </div>
-                
-                {/* أسهم التنقل بين الصور */}
-                {galleryImages.length > 1 && (
-                  <>
-                    <button 
-                      onClick={() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} 
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer z-10"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <button 
-                      onClick={() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1)} 
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md active:scale-90 transition cursor-pointer z-10"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* شريط الصور المصغرة (Thumbnails) */}
-              <div className="flex gap-2 w-full overflow-x-auto pb-2 scrollbar-hide justify-center mt-2 shrink-0">
-                {galleryImages.map((img, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => setCurrentImageIndex(idx)} 
-                    className={`relative w-14 h-14 shrink-0 rounded-md overflow-hidden cursor-pointer border-2 transition ${currentImageIndex === idx ? 'border-temu-orange' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                  >
-                    <Image src={img} alt="Thumbnail" fill sizes="56px" className="object-contain p-1" />
-                  </div>
-                ))}
-              </div>
+        <div 
+          className="fixed inset-0 bg-black/95 z-[200] flex flex-col justify-between p-4 sm:p-6 backdrop-blur-md animate-fade-in select-none"
+          onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
+        >
+          {/* شريط التحكم العلوي */}
+          <div className="flex justify-between items-center w-full max-w-6xl mx-auto z-20" onClick={e => e.stopPropagation()}>
+            <div className="bg-white/10 backdrop-blur-md text-white font-mono text-xs px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm">
+              {currentImageIndex + 1} / {galleryImages.length}
             </div>
 
-            {/* قسم الشراء والتفاصيل (يمين/أسفل) */}
-            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between bg-white overflow-y-auto scrollbar-hide">
-              <div>
-                <h2 className="text-lg font-extrabold text-temu-black line-clamp-3 mb-2">{product.title}</h2>
-                <div className="flex items-baseline gap-2 mb-4">
-                  <span className="text-2xl font-black text-temu-error">${safePrice.toFixed(2)}</span>
-                  {safeOriginalPrice > safePrice && (
-                    <span className="text-sm text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
-                  )}
-                </div>
-                
-                {/* ملخص الاختيارات */}
-                <div className="text-xs text-temu-gray-text space-y-1 mb-4 bg-temu-offwhite p-3 rounded-lg">
-                  {selectedColor && <p>🎨 Color: <span className="font-bold text-temu-black">{selectedColor}</span></p>}
-                  {selectedSize && <p>📏 Size: <span className="font-bold text-temu-black">{selectedSize}</span></p>}
-                  <p>📦 Quantity: <span className="font-bold text-temu-black">{quantity}</span></p>
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              {/* زر التكبير المباشر */}
+              <button 
+                type="button"
+                onClick={() => setIsZoomed(!isZoomed)}
+                className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-full border border-white/10 transition cursor-pointer text-xs font-bold active:scale-95 flex items-center gap-1.5"
+                title={isZoomed ? "Reset Zoom" : "Zoom In (2.5x)"}
+              >
+                <span>🔍</span> {isZoomed ? 'Reset (1x)' : 'Zoom (2.5x)'}
+              </button>
 
-              {/* أزرار الشراء */}
-              <div className="space-y-2 mt-4">
+              {/* زر الإغلاق المحمي والأنيق */}
+              <button 
+                type="button"
+                onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
+                className="bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
+                aria-label="Close Lightbox"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* مساحة عرض الصورة المكبرة ملء الشاشة */}
+          <div 
+            className="relative flex-1 w-full max-w-5xl mx-auto flex items-center justify-center overflow-hidden my-2"
+            onClick={e => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div 
+              className={`relative w-full h-full flex items-center justify-center transition-transform duration-300 ${
+                isZoomed ? 'scale-175 sm:scale-225 cursor-zoom-out' : 'cursor-zoom-in'
+              }`}
+              onClick={() => setIsZoomed(!isZoomed)}
+            >
+              <Image 
+                src={mainImageSrc} 
+                alt={product.title} 
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+              />
+            </div>
+
+            {/* أسهم التقليب بين الصور عالية الدقة */}
+            {galleryImages.length > 1 && !isZoomed && (
+              <>
                 <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    handleAddToCart(); 
-                    setIsLightboxOpen(false); 
-                  }} 
-                  className="w-full bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-3.5 rounded-lg active:scale-95 transition flex items-center justify-center gap-2 shadow-md"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
+                  }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Previous Photo"
                 >
-                  🛒 Add to Cart
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
                 <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    setIsLightboxOpen(false); 
-                  }} 
-                  className="w-full bg-white border border-temu-gray-border text-temu-black font-bold py-3 rounded-lg active:scale-95 transition"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
+                  }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Next Photo"
                 >
-                  View Full Details
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
-              </div>
+              </>
+            )}
+          </div>
+
+          {/* شريط المعاينة المصغر في الأسفل */}
+          <div className="w-full max-w-xl mx-auto z-20 overflow-x-auto scrollbar-hide py-1" onClick={e => e.stopPropagation()}>
+            <div className="flex gap-2 justify-center">
+              {galleryImages.map((img, idx) => (
+                <div 
+                  key={idx}
+                  onClick={() => { setCurrentImageIndex(idx); setIsZoomed(false); }}
+                  className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 transition shrink-0 ${
+                    currentImageIndex === idx ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  <Image src={img} alt="Thumb" fill sizes="48px" className="object-cover" />
+                </div>
+              ))}
             </div>
           </div>
         </div>
