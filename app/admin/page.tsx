@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
+import PaymentGatewaysSettings from '../components/PaymentGatewaysSettings';
+
 
 interface CategoryNode {
   id: number;
@@ -394,19 +396,25 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
+              {/* ✨ قسم بوابات الدفع المدمج هنا بشكل صحيح */}
+              <div className="mt-8 mb-10 p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
+                <h3 className="text-lg font-black text-temu-black mb-1">Méthodes de paiement</h3>
+                <p className="text-xs text-gray-500 mb-5">Active ou désactive les méthodes visibles sur le checkout, sans toucher au code.</p>
+                <PaymentGatewaysSettings />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
-                  { label: 'Payment Gateways', desc: 'Enable or disable checkout payment methods', link: '/admin/payment-settings', color: 'from-emerald-500 to-teal-600', icon: '💳' },
                   { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-purple-600 to-[#1D1E3C]', icon: '🛠️' },
                 ].map((card) => (
                   <button
                     key={card.label}
                     onClick={() => router.push(card.link)}
-                    className="text-left p-5 rounded-xl bg-temu-offwhite border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
+                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
