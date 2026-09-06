@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 
-export default function HeroSection() {
+export default function HeroSection({ trendingProducts }: { trendingProducts?: any[] } = {}) {
   const [liveTime, setLiveTime] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
