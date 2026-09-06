@@ -25,7 +25,8 @@ export default function PaymentSettingsPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await adminApi.get('/api/admin/payment-gateways');
+      // ✨ إزالة /api من هنا
+      const res = await adminApi.get('/admin/payment-gateways');
       setGateways(res.data);
     } catch {
       setError('Impossible de charger les méthodes de paiement.');
@@ -40,7 +41,8 @@ export default function PaymentSettingsPage() {
     setGateways(prev => prev.map(g => g.gateway_key === key ? { ...g, enabled: !currentEnabled } : g));
 
     try {
-      await adminApi.patch(`/api/admin/payment-gateways/${key}`, { enabled: !currentEnabled });
+      // ✨ إزالة /api من هنا أيضاً
+      await adminApi.patch(`/admin/payment-gateways/${key}`, { enabled: !currentEnabled });
     } catch {
       setError(`Échec de la mise à jour de ${key}.`);
       setGateways(prev => prev.map(g => g.gateway_key === key ? { ...g, enabled: currentEnabled } : g));
