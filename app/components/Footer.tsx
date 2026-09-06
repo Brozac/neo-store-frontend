@@ -54,7 +54,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs text-gray-400 font-medium">
               <li><Link href="/" className="hover:text-white transition">Trending Home</Link></li>
               <li><Link href="/categories" className="hover:text-white transition">All Departments</Link></li>
-              <li><Link href="/track-order" className="hover:text-white transition flex items-center gap-1.5"><span className="text-emerald-400"></span> Track Shipment</Link></li>
+              <li><Link href="/track-order" className="hover:text-white transition flex items-center gap-1.5"><span className="text-emerald-400"></span>Track Shipment</Link></li>
               <li><Link href="/favorites" className="hover:text-white transition">Saved Wishlist</Link></li>
               <li><Link href="/cart" className="hover:text-white transition">Shopping Bag</Link></li>
             </ul>
