@@ -185,11 +185,14 @@ export default function ProductDetailsClient({
   const handleAddToCart = () => {
     const resolvedVid = matchedVariant?.vid || '';
     
+    // ✨ حساب سعر القطعة الواحدة بعد الخصم لتمريره للسلة
+    const discountedUnitPrice = quantity >= 3 ? safePrice * 0.75 : quantity === 2 ? safePrice * 0.85 : safePrice;
+    
     addToCart({
       id: product.id,
       title: product.title,
       name: product.title,
-      price: parsePrice(product.price),
+      price: parseFloat(discountedUnitPrice.toFixed(2)), // السعر المخفض للقطعة
       quantity,
       image: mainImageSrc,
       image_url: mainImageSrc,
@@ -217,6 +220,12 @@ export default function ProductDetailsClient({
   };
 
   const safePrice = parsePrice(product.price);
+    // ✨ حساب السعر الإجمالي بناءً على الباقة المختارة (Bundle Discount)
+  const calculatedTotal = useMemo(() => {
+    if (quantity >= 3) return safePrice * 3 * 0.75;
+    if (quantity === 2) return safePrice * 2 * 0.85;
+    return safePrice;
+  }, [quantity, safePrice]);
   const safeOriginalPrice = parsePrice(product.original_price);
   const discountPct = safeOriginalPrice > safePrice 
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
@@ -258,7 +267,7 @@ export default function ProductDetailsClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
           
           {/* Visual Gallery */}
-          <div className="flex flex-col gap-4 sticky top-20">
+          <div className="flex flex-col gap-4">
             <div 
               className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
               onTouchStart={handleTouchStart}
@@ -543,7 +552,7 @@ export default function ProductDetailsClient({
                   id: product.id, 
                   title: product.title, 
                   name: product.title,
-                  price: safePrice, 
+                  price: parseFloat(calculatedTotal.toFixed(2)), // ✨ تمرير السعر الإجمالي المخفض
                   image: mainImageSrc,
                   color: selectedColor,
                   size: selectedSize,
