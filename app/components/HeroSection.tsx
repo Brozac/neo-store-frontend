@@ -127,7 +127,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           {/* الجانب الأيسر: العناوين والأزرار */}
           <div className="max-w-xl space-y-6 text-left">
             <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B78C6]/15 border border-[#8B78C6]/30 text-[#8B78C6] text-xs font-black uppercase tracking-wider">
-              <span>⚡</span> Exclusive Sourced Drops
+              <span></span> Exclusive Sourced Drops
             </div>
 
             <h1 className="gsap-hero text-4xl sm:text-5xl lg:text-6xl font-black text-[#1D1E3C] tracking-tight leading-[1.08]">
@@ -217,7 +217,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             <span className="text-emerald-500">✔</span> 100% Buyer Protection Guaranteed
           </span>
           <span className="hidden sm:flex items-center gap-1.5">
-            <span className="text-[#8B78C6]">✈</span> Direct Automated CJ Logistics
+            <span className="text-[#8B78C6]">✈</span> Direct Automated Logistics
           </span>
           <span className="text-gray-500">
             {isMounted ? liveTime : 'Live Global Time'}
@@ -238,7 +238,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                 The Laclarc Standard
               </div>
               <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                Insured Worldwide Shipping across USA, Europe, Algeria (BaridiMob), and Gulf regions with real-time live tracking.
+                Insured Worldwide Shipping across USA, Europe, Africa, and Gulf regions with real-time live tracking.
               </p>
             </div>
 

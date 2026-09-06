@@ -309,7 +309,7 @@ export default function ProductDetailsClient({
               {/* شارة التكبير */}
               {!showVideo && (
                 <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
-                  <span>🔍</span> Tap to Zoom
+                  <span></span> Tap to Zoom
                 </div>
               )}
             </div>
@@ -463,7 +463,7 @@ export default function ProductDetailsClient({
                   onClick={handleAddToCart} 
                   className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg shadow-temu-orange/20"
                 >
-                  <span>🛒</span> Add to Cart
+                  <span></span> Add to Cart
                 </button>
                 <button 
                   type="button"
@@ -502,9 +502,9 @@ export default function ProductDetailsClient({
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center pt-2 text-[11px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
-                <div>✈️ Free Shipping</div>
-                <div>🛡️ 30-Day Guarantee</div>
-                <div>🔒 Secure Checkout</div>
+                <div> Free Shipping</div>
+                <div> 30-Day Guarantee</div>
+                <div> Secure Checkout</div>
               </div>
             </div>
           </div>
