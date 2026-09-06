@@ -1,60 +1,91 @@
-const CACHE_NAME = 'neo-store-cache-v1';
-const PRECACHE_ASSETS = ['/', '/manifest.webmanifest'];
+// public/sw.js - Laclarc Enterprise PWA Engine
+const CACHE_NAME = 'laclarc-pwa-v2'; // ✨ اسم ورقم إصدار جديد يمسح كل شيء قديم
+const PRECACHE_ASSETS = [
+  '/', 
+  '/manifest.webmanifest',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/placeholder.jpg'
+];
 
-// تثبيت الـ Service Worker وحفظ الصفحة الرئيسية في الكاش
-self.addEventListener('install', event => {
-  // ✨ تفعيل الـ SW الجديد فوراً بلا ما ينتظر إغلاق كل التبويبات المفتوحة —
-  // ضروري باش هاد التصحيح يطبق مباشرة عند أول نشر (deploy) بلا ما نضطرو
-  // نمسحو الـ SW القديم يدوياً من كل جهاز مستخدم.
-  self.skipWaiting();
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(PRECACHE_ASSETS);
-  })());
+// 1. التثبيت والتحميل المسبق (Install)
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // ✨ تفعيل فوري دون انتظار إغلاق المتصفح
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS);
+    })
+  );
 });
 
-// تفعيل الـ Service Worker والسيطرة الفورية
-self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+// 2. التفعيل ومسح الكاش القديم تلقائياً (Activate & Clean Old Caches)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          // ✨ حذف أي كاش قديم بما في ذلك neo-store-cache-v1 فوراً
+          if (cache !== CACHE_NAME) {
+            console.log('🧹 Purging outdated PWA cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim()) // السيطرة الفورية على كل التبويبات المفتوحة
+  );
 });
 
-// استراتيجية Cache-First: البحث في الكاش أولاً، ثم الإنترنت
-self.addEventListener('fetch', event => {
+// 3. استراتيجية الجلب الذكية (Network-First for Pages, Cache Fallback for Offline)
+self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
-  // ✨ التصحيح الأساسي: لا نتدخل خالص فـ:
-  //   1) الطلبات لي ماشي GET (POST/PUT/DELETE) — بحال كل طلبات الأدمن
-  //      (add-product, sync-categories, add-coupon...)
-  //   2) الطلبات لدومين آخر غير دومين الموقع نفسه (الباكاند على onrender.com،
-  //      بيكسلات فيسبوك/تيكتوك، إلخ)
-  // Cache API ماشي مصمم للتعامل مع هاد النوع ديال الطلبات، وأي محاولة
-  // تدخل فيهم (حتى قراءة فقط عبر cache.match) كتقدر ترمي استثناء غير
-  // محمي بـ try/catch ويخلي الصفحة تشوف "Network Error" رغم أن الطلب
-  // الحقيقي للسيرفر نجح.
-  const isSameOrigin = new URL(request.url).origin === self.location.origin;
-  if (request.method !== 'GET' || !isSameOrigin) {
-    return; // ما كايناش respondWith هنا = الطلب كيمشي مباشرة للشبكة، بلا تدخل SW
+  // استثناء الطلبات غير المتعلقة بالـ GET أو الخارجية
+  if (request.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
   }
 
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = await cache.match(request);
+  // استثناء مسارات الأدمن والـ API تماماً من الكاش
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')) {
+    return;
+  }
 
-    if (cachedResponse) {
-      return cachedResponse; // إرجاع النسخة المحفوظة إذا وجدت
-    }
+  // ✨ للصفحات وعمليات التنقل (HTML Documents): نطلب دائماً من الإنترنت أولاً لتظهر التحديثات فوراً
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // حفظ أحدث نسخة في الكاش للمستقبل
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // إذا كان الزبون في وضع الـ Offline فقط، نرجع الصفحة المحفوظة
+          const cachedPage = await caches.match(request);
+          if (cachedPage) return cachedPage;
+          const fallbackHome = await caches.match('/');
+          return fallbackHome || Response.error();
+        })
+    );
+    return;
+  }
 
-    try {
-      // إذا لم توجد في الكاش، جلبها من الإنترنت
-      const networkResponse = await fetch(request);
-      return networkResponse;
-    } catch (error) {
-      // إذا فشل الإنترنت ولم تكن الصفحة محفوظة، نرجع للصفحة الرئيسية
-      const fallback = await caches.match('/');
-      // ✨ حماية إضافية: respondWith ما كايقبلش undefined كـ Response،
-      // فإلا حتى الصفحة الرئيسية ماكانتش فالكاش، نرجعو Response.error()
-      // بدل ما نخليو الاستثناء يهرب بلا رد.
-      return fallback || Response.error();
-    }
-  })());
+  // للملفات الثابتة (الصور، الأيقونات): Cache First مع تحديث الخلفية
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+        }
+        return networkResponse;
+      });
+    })
+  );
 });
