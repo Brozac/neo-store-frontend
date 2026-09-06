@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
-import PaymentGatewaysSettings from '../components/PaymentGatewaysSettings';
 
 
 interface CategoryNode {
@@ -380,7 +379,7 @@ export default function AdminDashboard() {
         {/* Tab Content Box */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-sm">
 
-          {/* 1. Overview Operations */}
+                    {/* 1. Overview Operations */}
           {activeTab === 'overview' && (
             <div>
               <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
@@ -396,19 +395,13 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* ✨ قسم بوابات الدفع المدمج هنا بشكل صحيح */}
-              <div className="mt-8 mb-10 p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
-                <h3 className="text-lg font-black text-temu-black mb-1">Méthodes de paiement</h3>
-                <p className="text-xs text-gray-500 mb-5">Active ou désactive les méthodes visibles sur le checkout, sans toucher au code.</p>
-                <PaymentGatewaysSettings />
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
+                  { label: 'Payment Gateways', desc: 'Enable or disable checkout payment methods', link: '/admin/payment-settings', color: 'from-emerald-500 to-teal-600', icon: '💳' },
                   { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-purple-600 to-[#1D1E3C]', icon: '🛠️' },
                 ].map((card) => (
                   <button
