@@ -250,21 +250,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             </div>
           </div>
 
-          {/* 3D Clay Pills */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-            <div className="h-24 rounded-3xl bg-white border border-gray-200 shadow-[6px_8px_16px_rgba(139,120,198,0.1),-6px_-8px_16px_rgba(255,255,255,0.9)] flex items-center justify-center font-black text-lg text-[#1D1E3C] active:scale-95 transition-transform cursor-pointer">
-              Sourced
-            </div>
-            <div className="h-24 rounded-3xl bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] shadow-[6px_8px_20px_rgba(139,120,198,0.35)] flex items-center justify-center font-black text-lg text-white active:scale-95 transition-transform cursor-pointer">
-              Verified
-            </div>
-            <div className="h-24 rounded-3xl bg-[#1D1E3C] shadow-[6px_8px_20px_rgba(29,30,60,0.3)] flex items-center justify-center font-black text-2xl text-[#FF6B9D] active:scale-95 transition-transform cursor-pointer">
-              ⚡
-            </div>
-            <div className="h-24 rounded-3xl bg-gradient-to-r from-[#FF6B9D] to-rose-500 shadow-[6px_8px_20px_rgba(255,107,157,0.35)] flex items-center justify-center font-black text-lg text-white active:scale-95 transition-transform cursor-pointer">
-              Delivered
-            </div>
-          </div>
+          
 
         </div>
       </section>
