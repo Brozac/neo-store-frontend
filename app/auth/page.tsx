@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import MultiStepRegister from '../components/MultiStepRegister';
-
+import Image from 'next/image';
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -172,8 +172,15 @@ function AuthContent() {
       <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
         
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto mb-3 shadow-md">
-            L
+          <div className="w-16 h-16 relative mx-auto mb-3">
+            <Image 
+              src="/icon-512.png" 
+              alt="Laclarc Logo" 
+              width={64} 
+              height={64} 
+              className="w-16 h-16 rounded-2xl object-contain shadow-md hover:scale-105 transition-transform" 
+              priority 
+            />
           </div>
           <h1 className="text-2xl font-black text-gray-900">Welcome to Laclarc</h1>
           <p className="text-gray-500 text-xs mt-1">Sign in to manage orders, wishlist, and rewards</p>

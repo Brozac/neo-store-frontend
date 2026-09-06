@@ -303,8 +303,8 @@ export default function ProductDetailsClient({
               )}
             </div>
 
-            {/* شريط الصور المصغرة */}
-            <div className="flex gap-2.5 w-full overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
+            {/* شريط الصور المصغرة (تم إصلاح القص بإضافة p-1.5 و scroll-smooth) */}
+            <div className="flex gap-2.5 w-full overflow-x-auto p-1.5 scrollbar-hide touch-pan-x items-center scroll-smooth">
               {product.video_url && (
                 <div 
                   onClick={() => setShowVideo(true)} 
@@ -317,7 +317,11 @@ export default function ProductDetailsClient({
                 <div 
                   key={idx} 
                   onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
-                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition bg-white shrink-0 ${!showVideo && currentImageIndex === idx ? 'border-temu-orange shadow-md scale-95' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
+                  className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
+                    !showVideo && currentImageIndex === idx 
+                      ? 'border-[#8B78C6] shadow-md ring-2 ring-[#8B78C6]/30 scale-95' 
+                      : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
+                  }`}
                 >
                   <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
                 </div>
