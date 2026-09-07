@@ -69,8 +69,17 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* رأس الصفحة (شعار + مؤشر حي) */}
         <div className="relative z-20 flex justify-between items-start w-full">
           <div className="float-anim gsap-hero bg-white/80 backdrop-blur-md border border-white/80 p-2.5 rounded-xl flex items-center gap-2 shadow-sm">
-            <div className="w-7 h-7 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-lg flex items-center justify-center font-black text-white text-xs">L</div>
-            <div className="text-[#1D1E3C]">
+            <div className="w-7 h-7 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-lg flex items-center justify-center p-1 shadow-sm shrink-0">
+  <Image 
+    src="/icon-512.png" 
+    alt="Laclarc Logo" 
+    width={20} 
+    height={20} 
+    className="w-full h-full object-contain"
+    priority
+  />
+</div>
+<div className="text-[#1D1E3C]">
               <h4 className="text-[10px] font-black uppercase tracking-wider leading-none">Laclarc</h4>
               <span className="text-[8px] text-gray-500 uppercase">Enterprise</span>
             </div>
@@ -107,7 +116,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           {/* النصوص والأزرار */}
           <div className="max-w-xl space-y-6 text-center lg:text-left z-20 lg:w-1/2 order-2 lg:order-1">
             <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B78C6]/15 border border-[#8B78C6]/30 text-[#8B78C6] text-[10px] font-black uppercase tracking-wider">
-              <span>✨</span> Exclusive Premium Deals
+              <span></span> Exclusive Premium Deals
             </div>
 
             <h1 className="gsap-hero text-3xl sm:text-4xl lg:text-6xl font-black text-[#1D1E3C] tracking-tight leading-[1.1]">
@@ -142,13 +151,13 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* الشريط السفلي */}
         <div className="relative z-20 w-full pt-8 pb-4 border-t border-gray-200/60 flex justify-between items-center text-[10px] font-bold text-gray-400 flex-wrap gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="text-emerald-500">✔</span> 100% Buyer Protection
+            <span className="text-emerald-500"></span> 100% Buyer Protection
           </span>
           <span className="hidden sm:flex items-center gap-1.5">
-            <span className="text-[#8B78C6]">✈</span> Direct Automated Logistics
+            <span className="text-[#8B78C6]"></span> Direct Automated Logistics
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-[#FF6B9D]">🔒</span> Bank-Grade Security
+            <span className="text-[#FF6B9D]"></span> Bank-Grade Security
           </span>
         </div>
       </section>
