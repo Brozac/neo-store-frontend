@@ -75,10 +75,10 @@ export default function AdminDashboard() {
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
 
+      // ✨ إزالة الطلب الثالث الزائد
       const [manualOrdersRes, failedOrdersRes] = await Promise.all([
         adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
-        adminApi.get('/admin/failed-orders').catch(() => ({ data: [] })),
-        adminApi.get('/').catch(() => ({ data: 'ok' }))
+        adminApi.get('/admin/failed-orders').catch(() => ({ data: [] }))
       ]);
 
       const ping = Date.now() - startTime;
