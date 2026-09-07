@@ -8,112 +8,164 @@ import { useCart } from '../context/CartContext';
 function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  const rawAmount = searchParams.get('amount');
   const sessionId = searchParams.get('session_id') || '';
-  const method = searchParams.get('method') || 'Stripe';
 
-  const [orderAmount, setOrderAmount] = useState<number>(0);
-  const { clearCart, cartTotal } = useCart();
+  const [loading, setLoading] = useState(true);
+  const [verifiedOrder, setVerifiedOrder] = useState<any>(null);
+  const [error, setError] = useState('');
+  
+  const { clearCart } = useCart();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
-    // 1. حساب القيمة الحقيقية للطلب
-    let finalVal = 0;
-    if (rawAmount) {
-      finalVal = parseFloat(rawAmount) || 0;
-    } else if (cartTotal > 0) {
-      finalVal = cartTotal;
-    } else {
-      finalVal = 29.99; // Fallback لقيمة متوسطة لتفادي تسجيل 0$ في البيكسل
-    }
-    setOrderAmount(finalVal);
-
-    // 2. تفريغ سلة المشتريات فور تأكيد الدفع
+    // 1. تفريغ السلة فوراً
     clearCart();
 
-    // 3. ✨ منع التكرار (Deduplication): تسجيل الشراء مرة واحدة فقط حتى لو ضغط الزبون Refresh
-    const trackingKey = `pixel_tracked_${sessionId || finalVal || 'default'}`;
-    const alreadyTracked = typeof window !== 'undefined' ? sessionStorage.getItem(trackingKey) : null;
-
-    if (!alreadyTracked && finalVal > 0) {
-      // إرسال البيكسل لفيسبوك (Meta Pixel)
-      if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'Purchase', {
-          value: finalVal,
-          currency: 'USD',
-          content_type: 'product',
-        }, { eventID: sessionId || undefined });
-      }
-
-      // إرسال البيكسل لتيك توك (TikTok Pixel)
-      if (typeof window !== 'undefined' && (window as any).ttq) {
-        (window as any).ttq.track('CompletePayment', {
-          value: finalVal,
-          currency: 'USD',
-          content_type: 'product',
-        });
-      }
-
-      try {
-        sessionStorage.setItem(trackingKey, 'true');
-      } catch (e) {}
+    // 2. إذا لم يكن هناك session_id، ننهي التحميل
+    if (!sessionId) {
+      setLoading(false);
+      return;
     }
-  }, [rawAmount, sessionId, clearCart, cartTotal]);
+
+    // 3. ✨ التحقق اللحظي (JIT Direct Verification مع Stripe)
+    const verifyPayment = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/payment/verify-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          setVerifiedOrder(data);
+
+          // ✨ تتبع البيكسل بالمبلغ الحقيقي المؤكد من Stripe بنسبة 100%
+          const finalPaid = Number(data.amount) || 0;
+          const trackingKey = `jit_tracked_${data.orderId || sessionId}`;
+
+          if (!sessionStorage.getItem(trackingKey) && finalPaid > 0) {
+            // Meta Pixel
+            if (typeof window !== 'undefined' && (window as any).fbq) {
+              (window as any).fbq('track', 'Purchase', {
+                value: finalPaid,
+                currency: data.currency || 'USD',
+                content_type: 'product',
+              }, { eventID: sessionId });
+            }
+
+            // TikTok Pixel
+            if (typeof window !== 'undefined' && (window as any).ttq) {
+              (window as any).ttq.track('CompletePayment', {
+                value: finalPaid,
+                currency: data.currency || 'USD',
+                content_type: 'product',
+              });
+            }
+
+            sessionStorage.setItem(trackingKey, 'true');
+          }
+        } else {
+          setError(data.message || 'Payment confirmation pending or failed.');
+        }
+      } catch (err) {
+        setError('Network error verifying payment. Our team is inspecting your order.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyPayment();
+  }, [sessionId, clearCart, API_BASE_URL]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#F9F8FC] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <div className="w-12 h-12 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 className="text-xl font-black text-[#1D1E3C]">Verifying Payment with Stripe...</h2>
+        <p className="text-xs text-gray-500 mt-1">Securing order and dispatching to automated fulfillment...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F9F8FC] flex items-center justify-center p-4 sm:p-6 font-sans">
       <div className="bg-white border border-gray-100 shadow-2xl rounded-3xl p-8 sm:p-10 max-w-md w-full text-center space-y-6">
         
-        {/* Animated Checkmark Badge */}
-        <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50 animate-scale">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#8B78C6] bg-purple-50 px-3 py-1 rounded-full border border-purple-100 inline-block mb-2">
-            Payment Confirmed &bull; {method}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1D1E3C]">Order Confirmed!</h1>
-          <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-            Thank you for shopping with Laclarc. Your payment has been securely verified and your order is currently being fulfilled via automated logistics.
-          </p>
-        </div>
-
-        {/* Financial & Shipping Assurance Box */}
-        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs text-left space-y-2">
-          {orderAmount > 0 && (
-            <div className="flex justify-between items-center border-b border-gray-200 pb-2">
-              <span className="text-gray-500 font-medium">Total Billed:</span>
-              <span className="font-black text-[#FF6B9D] text-sm">${orderAmount.toFixed(2)}</span>
+        {error ? (
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto text-2xl">
+              ⚠️
             </div>
-          )}
-          <div className="flex justify-between items-center pt-1">
-            <span className="text-temu-gray-text font-medium">Shipping:</span>
-            <span className="text-sm font-bold text-emerald-500">Free Worldwide Express (Included)</span>
+            <h1 className="text-2xl font-black text-[#1D1E3C]">Payment Pending Verification</h1>
+            <p className="text-xs text-gray-500 leading-relaxed">{error}</p>
+            <button 
+              onClick={() => router.push('/track-order')}
+              className="w-full bg-[#1D1E3C] text-white py-3.5 rounded-xl font-bold text-xs uppercase"
+            >
+              Check Order Status &rarr;
+            </button>
           </div>
-          <p className="text-[11px] text-gray-400 pt-1">
-            Tracking updates will be dispatched directly to your email address.
-          </p>
-        </div>
+        ) : (
+          <>
+            {/* أيقونة النجاح المؤكد */}
+            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50 animate-scale">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3 pt-2">
-          <button 
-            onClick={() => router.push('/track-order')}
-            className="w-full bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
-          >
-            Track My Order &rarr;
-          </button>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#8B78C6] bg-purple-50 px-3 py-1 rounded-full border border-purple-100 inline-block mb-2">
+                Stripe Verified &bull; Just-In-Time
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-black text-[#1D1E3C]">Payment Successful!</h1>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Thank you for your purchase. We have verified your transaction directly with Stripe and your order is now in automated dispatch.
+              </p>
+            </div>
 
-          <Link 
-            href="/"
-            className="block w-full bg-white hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-bold text-xs uppercase tracking-wider border border-gray-200 transition active:scale-95"
-          >
-            Return to Storefront
-          </Link>
-        </div>
+            {/* تفاصيل الطلب المأخوذة مباشرة من السيرفر لحظياً */}
+            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs text-left space-y-2.5">
+              {verifiedOrder && (
+                <>
+                  <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                    <span className="text-gray-500 font-medium">Order Reference:</span>
+                    <span className="font-mono font-black text-gray-900">#{verifiedOrder.orderId}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                    <span className="text-gray-500 font-medium">Verified Paid:</span>
+                    <span className="font-black text-[#FF6B9D] text-sm">
+                      ${Number(verifiedOrder.amount).toFixed(2)} {verifiedOrder.currency}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between items-center text-emerald-700 font-bold">
+                <span>Shipping Status:</span>
+                <span>Dispatched to CJ Logistics</span>
+              </div>
+            </div>
+
+            {/* أزرار التوجيه */}
+            <div className="space-y-3 pt-2">
+              <button 
+                onClick={() => router.push(`/track-order?orderId=${verifiedOrder?.orderId || ''}&email=${encodeURIComponent(verifiedOrder?.customerEmail || '')}`)}
+                className="w-full bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
+              >
+                Track My Order &rarr;
+              </button>
+
+              <Link 
+                href="/"
+                className="block w-full bg-white hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-bold text-xs uppercase tracking-wider border border-gray-200 transition active:scale-95"
+              >
+                Return to Storefront
+              </Link>
+            </div>
+          </>
+        )}
 
       </div>
     </main>

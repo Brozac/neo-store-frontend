@@ -127,7 +127,6 @@ function ManageProductsContent() {
     }
   };
 
-  // تبديل حالة عرض البرق (Lightning Deal)
   const handleToggleDeal = async (id: string | number) => {
     setTogglingDealId(id);
     try {
@@ -179,7 +178,6 @@ function ManageProductsContent() {
     setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
   };
 
-  // ✨ حفظ التعديلات المحصن: حماية الألوان والمقاسات من الضياع
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editProduct) return;
@@ -238,41 +236,41 @@ function ManageProductsContent() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0E1020] text-gray-200 p-6 pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto">
         
         {/* Navigation Bar */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-white/10 pb-4">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-gray-200 pb-4">
           <button 
             onClick={() => router.push('/admin')} 
-            className="text-xs font-bold text-[#8B78C6] hover:text-[#9B88D6] transition flex items-center gap-2 cursor-pointer active:scale-95"
+            className="text-xs font-bold text-temu-orange hover:brightness-110 transition flex items-center gap-2 cursor-pointer active:scale-95"
           >
             &larr; Back to Mission Control
           </button>
           
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 font-mono">
+            <span className="text-xs text-gray-500 font-mono">
               Live Buffer: 30 Items / Query
             </span>
           </div>
         </div>
         
-        <div className="bg-[#181B34] rounded-2xl p-6 sm:p-8 border border-white/10 shadow-xl">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm">
           
           {/* Header & Auto-Categorize */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-white/10 pb-5">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-gray-200 pb-5">
             <div>
-              <h1 className="text-xl font-black text-white tracking-wide">Inventory Management</h1>
-              <p className="text-xs text-gray-400">Control prices, categories, and Lightning Deals ⚡</p>
+              <h1 className="text-xl font-black text-temu-black tracking-wide">Inventory Management</h1>
+              <p className="text-xs text-gray-500">Control prices, categories, and Lightning Deals ⚡</p>
             </div>
 
             <button 
               onClick={handleAutoCategorize} 
               disabled={isCategorizing} 
-              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
             >
               {isCategorizing ? (
-                <><div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
+                <><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
               ) : (
                 <>🤖 Run Auto-Categorizer</>
               )}
@@ -286,7 +284,7 @@ function ManageProductsContent() {
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               placeholder="Search products by title or ID (showing latest 30)..." 
-              className="w-full bg-[#0E1020] border border-white/15 rounded-xl py-3.5 pl-11 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#8B78C6] transition" 
+              className="w-full bg-temu-offwhite border border-gray-200 rounded-xl py-3.5 pl-11 pr-10 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-temu-orange transition" 
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -294,7 +292,7 @@ function ManageProductsContent() {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')} 
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-temu-black transition p-1"
               >
                 ✕
               </button>
@@ -304,12 +302,12 @@ function ManageProductsContent() {
           {/* Items List */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="w-8 h-8 border-3 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs font-bold text-gray-400">Fetching inventory slice...</p>
+              <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs font-bold text-gray-500">Fetching inventory slice...</p>
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl">
-              <p className="text-gray-400 text-sm">{searchQuery ? `No matches found for "${searchQuery}"` : 'No active products found.'}</p>
+            <div className="text-center py-16 border border-dashed border-gray-200 rounded-2xl">
+              <p className="text-gray-500 text-sm">{searchQuery ? `No matches found for "${searchQuery}"` : 'No active products found.'}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -321,11 +319,11 @@ function ManageProductsContent() {
                 return (
                   <div 
                     key={product.id} 
-                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 bg-[#0E1020] rounded-xl border border-white/5 hover:border-white/15 transition"
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 bg-temu-offwhite rounded-xl border border-gray-100 hover:border-gray-300 transition"
                   >
                     {/* Product Info */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-black/40 border border-white/10 shrink-0">
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                         <img src={imgSrc} alt={product.title} className="w-full h-full object-cover" />
                         {product.is_sourced && (
                           <span className="absolute top-0.5 right-0.5 bg-amber-400 text-black text-[9px] font-black px-1 rounded shadow">
@@ -335,23 +333,23 @@ function ManageProductsContent() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-sm text-white truncate">{product.title}</h3>
+                          <h3 className="font-bold text-sm text-temu-black truncate">{product.title}</h3>
                           <a 
                             href={`/products/${product.id}`} 
                             target="_blank" 
                             rel="noreferrer"
-                            className="text-[11px] text-[#8B78C6] hover:underline shrink-0"
+                            className="text-[11px] text-temu-orange hover:underline shrink-0"
                             title="Open live storefront page"
                           >
                             Live ↗
                           </a>
                         </div>
                         <div className="flex items-center gap-2.5 mt-1">
-                          <span className="text-[#FF6B9D] font-extrabold text-sm">${safePrice.toFixed(2)}</span>
+                          <span className="text-temu-error font-extrabold text-sm">${safePrice.toFixed(2)}</span>
                           {safeOldPrice > safePrice && (
-                            <span className="text-gray-500 line-through text-xs">${safeOldPrice.toFixed(2)}</span>
+                            <span className="text-gray-400 line-through text-xs">${safeOldPrice.toFixed(2)}</span>
                           )}
-                          <span className="text-[10px] text-gray-400 font-mono bg-white/5 px-2 py-0.5 rounded">
+                          <span className="text-[10px] text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">
                             ID: {product.id}
                           </span>
                         </div>
@@ -364,14 +362,14 @@ function ManageProductsContent() {
                         value={product.category || 'other'} 
                         onChange={(e) => handleCategoryChange(product.id, e.target.value)} 
                         disabled={updatingCategoryId === product.id} 
-                        className="w-full bg-[#181B34] border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-gray-200 focus:outline-none focus:border-[#8B78C6] disabled:opacity-50 cursor-pointer"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-temu-black focus:outline-none focus:border-temu-orange disabled:opacity-50 cursor-pointer"
                       >
                         {availableCategories.map(cat => (
-                          <option key={cat.value} value={cat.value} className="bg-[#181B34]">{cat.label}</option>
+                          <option key={cat.value} value={cat.value} className="bg-white">{cat.label}</option>
                         ))}
                       </select>
                       {updatingCategoryId === product.id && (
-                        <div className="w-4 h-4 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin shrink-0"></div>
+                        <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin shrink-0"></div>
                       )}
                     </div>
 
@@ -380,7 +378,7 @@ function ManageProductsContent() {
                       {/* Edit Button */}
                       <button 
                         onClick={() => openEditModal(product)} 
-                        className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Edit Price & Details"
                       >
                         ✏️
@@ -389,7 +387,7 @@ function ManageProductsContent() {
                       {/* Review Button */}
                       <button 
                         onClick={() => openReviewModal(product)} 
-                        className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-amber-50 hover:bg-amber-100 text-amber-500 border border-amber-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Add Verified Review"
                       >
                         ⭐
@@ -401,8 +399,8 @@ function ManageProductsContent() {
                         disabled={togglingDealId === product.id}
                         className={`p-2.5 rounded-xl border transition cursor-pointer active:scale-95 disabled:opacity-50 ${
                           product.is_sourced 
-                            ? 'bg-amber-500 text-black border-amber-400 font-bold shadow-lg shadow-amber-500/20' 
-                            : 'bg-white/5 hover:bg-white/10 text-gray-400 border-white/10'
+                            ? 'bg-amber-500 text-white border-amber-400 font-bold shadow-md shadow-amber-500/20' 
+                            : 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-200'
                         }`}
                         title={product.is_sourced ? 'Active Lightning Deal (Click to Remove)' : 'Activate Lightning Deal'}
                       >
@@ -417,11 +415,11 @@ function ManageProductsContent() {
                       <button 
                         onClick={() => handleSendToSourcing(product)} 
                         disabled={sourcingId === product.id} 
-                        className="bg-purple-500/10 hover:bg-purple-500/20 text-[#8B78C6] border border-[#8B78C6]/30 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
+                        className="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
                         title="Request CJ Sourcing Quote"
                       >
                         {sourcingId === product.id ? (
-                          <div className="w-4 h-4 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           '🏭'
                         )}
@@ -431,11 +429,11 @@ function ManageProductsContent() {
                       <button 
                         onClick={() => handleDelete(product.id)} 
                         disabled={deletingId === product.id} 
-                        className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
+                        className="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
                         title="Hide / Out of Stock"
                       >
                         {deletingId === product.id ? (
-                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           '🗑️'
                         )}
@@ -451,16 +449,16 @@ function ManageProductsContent() {
 
       {/* Edit Product Modal (Secure Attribute Shield) */}
       {isEditModalOpen && editProduct && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#181B34] border border-white/15 rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
               <div>
-                <h2 className="text-lg font-black text-white">Edit Product Details</h2>
-                <p className="text-xs text-gray-400">ID: {editProduct.id}</p>
+                <h2 className="text-lg font-black text-temu-black">Edit Product Details</h2>
+                <p className="text-xs text-gray-500">ID: {editProduct.id}</p>
               </div>
               <button 
                 onClick={() => setIsEditModalOpen(false)} 
-                className="text-gray-400 hover:text-white transition p-1"
+                className="text-gray-400 hover:text-temu-black transition p-1"
               >
                 ✕
               </button>
@@ -468,20 +466,20 @@ function ManageProductsContent() {
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Product Title *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Product Title *</label>
                 <input 
                   type="text" 
                   name="title" 
                   value={editProduct.title || ''} 
                   onChange={handleEditChange} 
                   required 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange" 
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Selling Price ($) *</label>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Selling Price ($) *</label>
                   <input 
                     type="number" 
                     step="0.01" 
@@ -489,55 +487,55 @@ function ManageProductsContent() {
                     value={editProduct.price || ''} 
                     onChange={handleEditChange} 
                     required 
-                    className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                    className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Original Price ($)</label>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Original Price ($)</label>
                   <input 
                     type="number" 
                     step="0.01" 
                     name="original_price" 
                     value={editProduct.original_price || ''} 
                     onChange={handleEditChange} 
-                    className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                    className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange" 
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Primary Image URL</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Primary Image URL</label>
                 <input 
                   type="url" 
                   name="image_url" 
                   value={editProduct.image_url || editProduct.image || ''} 
                   onChange={handleEditChange} 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange" 
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Category</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Category</label>
                 <select 
                   name="category" 
                   value={editProduct.category || 'other'} 
                   onChange={handleEditChange} 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]"
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange"
                 >
                   {availableCategories.map(cat => (
-                    <option key={cat.value} value={cat.value} className="bg-[#181B34]">{cat.label}</option>
+                    <option key={cat.value} value={cat.value} className="bg-white">{cat.label}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Description</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Description</label>
                 <textarea 
                   name="description" 
                   rows={3} 
                   value={editProduct.description || ''} 
                   onChange={handleEditChange} 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] resize-none"
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange resize-none"
                 ></textarea>
               </div>
 
@@ -545,7 +543,7 @@ function ManageProductsContent() {
                 <button 
                   type="submit" 
                   disabled={savingEdit} 
-                  className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-[#8B78C6]/20"
+                  className="w-full bg-linear-to-r from-temu-orange to-temu-orange-bright hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-[0.98] shadow-md"
                 >
                   {savingEdit ? 'Syncing to Database...' : 'Save & Refresh Live Cache'}
                 </button>
@@ -557,27 +555,27 @@ function ManageProductsContent() {
 
       {/* Add Review Modal */}
       {isReviewModalOpen && reviewProduct && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#181B34] border border-white/15 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-black text-white">Create Organic Review</h2>
+              <h2 className="text-lg font-black text-temu-black">Create Organic Review</h2>
               <button 
                 onClick={() => setIsReviewModalOpen(false)} 
-                className="text-gray-400 hover:text-white transition p-1"
+                className="text-gray-400 hover:text-temu-black transition p-1"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 mb-4 truncate">
-              Product: <span className="text-white font-semibold">{reviewProduct.title}</span>
+            <p className="text-xs text-gray-500 mb-4 truncate">
+              Product: <span className="text-temu-black font-semibold">{reviewProduct.title}</span>
             </p>
 
             {reviewMessage && (
               <div className={`p-3 rounded-xl mb-4 text-xs font-bold ${
                 reviewMessage.includes('✅') 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' 
-                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                  : 'bg-red-50 text-red-500 border border-red-200'
               }`}>
                 {reviewMessage}
               </div>
@@ -585,35 +583,35 @@ function ManageProductsContent() {
 
             <form onSubmit={handleAddReview} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Customer Display Name *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Customer Display Name *</label>
                 <input 
                   type="text" 
                   name="author" 
                   required 
                   placeholder="e.g. Jessica M." 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6]" 
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange" 
                 />
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Rating Score</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Rating Score</label>
                 <StarRating onChange={(val) => setReviewRating(val)} />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1 uppercase">Review Feedback *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Review Feedback *</label>
                 <textarea 
                   name="content" 
                   required 
                   rows={3} 
                   placeholder="Incredible build quality, arrived much faster than expected!" 
-                  className="w-full bg-[#0E1020] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#8B78C6] resize-none"
+                  className="w-full bg-temu-offwhite border border-gray-200 rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-temu-orange resize-none"
                 ></textarea>
               </div>
 
               <button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-lg shadow-[#FF6B9D]/20"
+                className="w-full bg-linear-to-r from-temu-error to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-md"
               >
                 Inject Verified Review
               </button>
@@ -628,8 +626,8 @@ function ManageProductsContent() {
 export default function ManageProducts() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#0E1020]">
-        <div className="w-8 h-8 border-3 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-temu-offwhite">
+        <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <ManageProductsContent />
