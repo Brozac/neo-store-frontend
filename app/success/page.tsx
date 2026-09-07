@@ -18,66 +18,99 @@ function SuccessContent() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
-    // 1. تفريغ السلة فوراً
     clearCart();
 
-    // 2. إذا لم يكن هناك session_id، ننهي التحميل
-    if (!sessionId) {
-      setLoading(false);
+    const method = searchParams.get('method') || '';
+    const orderId = searchParams.get('order_id') || '';
+
+    // ==========================================
+    // 1. مسار التحقق اللحظي للكريبتو (Crypto JIT)
+    // ==========================================
+    if (method === 'crypto' && orderId) {
+      const verifyCrypto = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/payment/crypto/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: orderId })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            setVerifiedOrder(data);
+
+            if (data.verified) {
+              // تسجيل الشراء في بيكسل فيسبوك وتيك توك
+              const trackingKey = `crypto_tracked_${orderId}`;
+              if (!sessionStorage.getItem(trackingKey)) {
+                if (typeof window !== 'undefined' && (window as any).fbq) {
+                  (window as any).fbq('track', 'Purchase', { value: Number(data.amount), currency: 'USD' });
+                }
+                if (typeof window !== 'undefined' && (window as any).ttq) {
+                  (window as any).ttq.track('CompletePayment', { value: Number(data.amount), currency: 'USD' });
+                }
+                sessionStorage.setItem(trackingKey, 'true');
+              }
+            } else {
+              setError('Crypto transaction is confirming on the blockchain. Your order will be dispatched automatically in minutes!');
+            }
+          }
+        } catch (e) {
+          setError('Order recorded! Awaiting final blockchain confirmations.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      verifyCrypto();
       return;
     }
 
-    // 3. ✨ التحقق اللحظي (JIT Direct Verification مع Stripe)
-    const verifyPayment = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/payment/verify-session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId })
-        });
+    // ==========================================
+    // 2. مسار التحقق اللحظي لـ Stripe (Stripe JIT)
+    // ==========================================
+    if (sessionId) {
+      const verifyStripe = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/payment/verify-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId })
+          });
+          const data = await res.json();
 
-        const data = await res.json();
+          if (res.ok && data.success) {
+            setVerifiedOrder(data);
 
-        if (res.ok && data.success) {
-          setVerifiedOrder(data);
+            const finalPaid = Number(data.amount) || 0;
+            const trackingKey = `jit_tracked_${data.orderId || sessionId}`;
 
-          // ✨ تتبع البيكسل بالمبلغ الحقيقي المؤكد من Stripe بنسبة 100%
-          const finalPaid = Number(data.amount) || 0;
-          const trackingKey = `jit_tracked_${data.orderId || sessionId}`;
-
-          if (!sessionStorage.getItem(trackingKey) && finalPaid > 0) {
-            // Meta Pixel
-            if (typeof window !== 'undefined' && (window as any).fbq) {
-              (window as any).fbq('track', 'Purchase', {
-                value: finalPaid,
-                currency: data.currency || 'USD',
-                content_type: 'product',
-              }, { eventID: sessionId });
+            if (!sessionStorage.getItem(trackingKey) && finalPaid > 0) {
+              if (typeof window !== 'undefined' && (window as any).fbq) {
+                (window as any).fbq('track', 'Purchase', { value: finalPaid, currency: data.currency || 'USD' }, { eventID: sessionId });
+              }
+              if (typeof window !== 'undefined' && (window as any).ttq) {
+                (window as any).ttq.track('CompletePayment', { value: finalPaid, currency: data.currency || 'USD' });
+              }
+              sessionStorage.setItem(trackingKey, 'true');
             }
-
-            // TikTok Pixel
-            if (typeof window !== 'undefined' && (window as any).ttq) {
-              (window as any).ttq.track('CompletePayment', {
-                value: finalPaid,
-                currency: data.currency || 'USD',
-                content_type: 'product',
-              });
-            }
-
-            sessionStorage.setItem(trackingKey, 'true');
+          } else {
+            setError(data.message || 'Payment confirmation pending.');
           }
-        } else {
-          setError(data.message || 'Payment confirmation pending or failed.');
+        } catch (err) {
+          setError('Verifying payment. Your order is secured.');
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        setError('Network error verifying payment. Our team is inspecting your order.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    verifyPayment();
-  }, [sessionId, clearCart, API_BASE_URL]);
+      verifyStripe();
+      return;
+    }
+
+    // Fallback عام
+    setLoading(false);
+  }, [sessionId, searchParams, clearCart, API_BASE_URL]);
 
   if (loading) {
     return (
