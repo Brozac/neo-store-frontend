@@ -89,9 +89,9 @@ function SuccessContent() {
               <span className="font-black text-[#FF6B9D] text-sm">${orderAmount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between items-center text-emerald-700 font-bold">
-            <span>Shipping:</span>
-            <span>Free Worldwide Express (Included)</span>
+          <div className="flex justify-between items-center pt-1">
+            <span className="text-temu-gray-text font-medium">Shipping:</span>
+            <span className="text-sm font-bold text-emerald-500">Free Worldwide Express (Included)</span>
           </div>
           <p className="text-[11px] text-gray-400 pt-1">
             Tracking updates will be dispatched directly to your email address.
