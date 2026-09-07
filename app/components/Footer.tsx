@@ -79,7 +79,7 @@ export default function Footer() {
           {/* PWA App Install */}
           <div>
             <h3 className="text-xs font-black uppercase tracking-wider text-white mb-4">Install Store App</h3>
-            <p className="text-[11px] text-gray-400 mb-4">Install our standalone PWA app for instant order tracking and lightning speed.</p>
+            <p className="text-[11px] text-gray-400 mb-4">Install our app for instant order tracking and lightning speed.</p>
             
             <div className="flex flex-col gap-2.5">
               {/* Google Play / Android PWA Button */}
