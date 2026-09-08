@@ -46,6 +46,8 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [syncingVideos, setSyncingVideos] = useState(false);
+  const [showReels, setShowReels] = useState(true);
+  const [videoProducts, setVideoProducts] = useState<any[]>([]);
 
   const [adminSearch, setAdminSearch] = useState('');
   const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
@@ -71,12 +73,11 @@ export default function AdminDashboard() {
     description: '', material: '', colors: '', sizes: '', category: 'other'
   });
 
-  const runDiagnostics = async () => {
+    const runDiagnostics = async () => {
     const startTime = Date.now();
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
 
-      // ✨ إزالة الطلب الثالث الزائد
       const [manualOrdersRes, failedOrdersRes] = await Promise.all([
         adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
         adminApi.get('/admin/failed-orders').catch(() => ({ data: [] }))
@@ -104,8 +105,24 @@ export default function AdminDashboard() {
     }
   };
 
+  // ✨ دالة جلب بيانات الريلز (تم إخراجها لتصبح دالة مستقلة)
+  const fetchVideoProducts = async () => {
+    try {
+      const settingsRes = await adminApi.get('/admin/settings');
+      const settingsData: any = settingsRes.data || {};
+      setShowReels(settingsData.show_reels !== false); // افتراضي true
+      
+      const productsRes = await adminApi.get('/products');
+      const vids = productsRes.data.filter((p: any) => p.video_url && p.video_url.trim() !== '');
+      setVideoProducts(vids);
+    } catch (err) {
+      console.error('Error fetching reels data:', err);
+    }
+  };
+
   useEffect(() => {
     runDiagnostics();
+    fetchVideoProducts(); // ✨ استدعاء الدالة هنا
     adminApi.get('/categories')
       .then(res => setAvailableCategories(flattenCategories(res.data)))
       .catch((err) => {
@@ -407,6 +424,51 @@ export default function AdminDashboard() {
                   🔄 Refresh Status ({telemetry.lastChecked})
                 </button>
               </div>
+              {/* ✨ قسم إدارة الريلز (Shoppable Reels) */}
+<div className="mt-8 pt-8 border-t border-temu-gray-border-light">
+  <h3 className="text-lg font-black text-temu-black mb-4">Watch & Shop Reels Management</h3>
+  
+  <div className="bg-temu-offwhite p-4 rounded-xl border border-temu-gray-border-light mb-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="font-bold text-sm text-temu-black">Show Reels Section</p>
+        <p className="text-xs text-gray-500">Toggle to show or hide the video section on the storefront homepage.</p>
+       </div >     
+       {/* ملاحظة: يجب إضافة حالة showReels وجلبها من الخادم */}
+      <button
+        onClick={async () => {
+          const newValue = !showReels;
+          setShowReels(newValue);
+          await adminApi.put(`/admin/settings/show_reels`, { value: newValue });
+        }}
+        className={`w-12 h-6 rounded-full transition relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
+      >
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${showReels ? 'translate-x-6' : 'translate-x-0'}`} />
+      </button>
+    </div>
+  </div>
+
+  <div className="space-y-3">
+    <p className="text-xs text-gray-500">Current Videos in Store:</p>
+    {/* ملاحظة: يجب جلب المنتجات التي تحتوي على فيديوهات من الخادم */}
+    {videoProducts.map((p) => (
+      <div key={p.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
+        <span className="text-xs font-bold text-temu-black truncate flex-1">{p.title}</span>
+        <button
+          onClick={async () => {
+            if (!confirm('Delete this video? The product will remain in the store but without a video.')) return;
+            await adminApi.delete(`/admin/videos/${p.id}`);
+            // إعادة جلب المنتجات
+            fetchVideoProducts();
+          }}
+          className="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold ml-3"
+        >
+          Delete Video
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
@@ -694,6 +756,7 @@ export default function AdminDashboard() {
               </form>
             </div>
           )}
+          
 
           {/* 5. Coupons Tab */}
           {activeTab === 'coupons' && (
