@@ -23,6 +23,7 @@ function HomeContent() {
   const [visibleCount, setVisibleCount] = useState(20);
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
+  const [showReels, setShowReels] = useState(true);
 
   // ✨ جلب البيانات المتوازي (Parallel Data Fetching) لسرعة تحميل فائقة
   useEffect(() => {
@@ -57,6 +58,11 @@ function HomeContent() {
   useEffect(() => {
     setVisibleCount(20);
   }, [activeCategory, searchQuery]);
+      fetch(`${API_URL}/api/settings`)
+      .then(r => r.ok ? r.json() : {})
+      .then((data: any) => { if (data.show_reels === false) setShowReels(false); })
+      .catch(() => {});
+
 
   // ✨ اختيار منتجات الـ Trending (آلات الحلاقة أولاً، مع Fallback ذكي)
   const trendingProducts = useMemo(() => {
@@ -153,7 +159,7 @@ function HomeContent() {
         
   
         {/* ✨ 2.5 قسم الريلز القابلة للتسوق (Watch & Shop Reels) */}
-        {activeCategory === 'All' && searchQuery === '' && (
+        {activeCategory === 'All' && searchQuery === '' && showReels && (
           <div className="mb-8 mt-8">
             <ShoppableReels products={products} />
           </div>
