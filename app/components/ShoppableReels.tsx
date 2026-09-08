@@ -45,8 +45,38 @@ const CURATED_DEMO_REELS: Product[] = [
     original_price: 64.99,
     image_url: 'https://images.unsplash.com/photo-1503602642458-232111445657?w=500&auto=format&fit=crop&q=80',
     image: 'https://images.unsplash.com/photo-1503602642458-232111445657?w=500&auto=format&fit=crop&q=80',
-    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
     badge: 'Must Have 🏆'
+  },
+  {
+    id: 'demo-4',
+    title: 'Smart Posture Corrector & Massager',
+    price: 29.99,
+    original_price: 49.99,
+    image_url: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=500&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=500&auto=format&fit=crop&q=80',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    badge: 'Health Boost 🩺'
+  },
+  {
+    id: 'demo-5',
+    title: 'Wireless Bluetooth Sleep Mask',
+    price: 19.99,
+    original_price: 34.99,
+    image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    badge: 'Best Seller 🌙'
+  },
+  {
+    id: 'demo-6',
+    title: 'Mini Portable Espresso Machine',
+    price: 45.99,
+    original_price: 69.99,
+    image_url: 'https://images.unsplash.com/photo-1610889556528-9a770e32642c?w=500&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1610889556528-9a770e32642c?w=500&auto=format&fit=crop&q=80',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+    badge: 'New Arrival ✨'
   }
 ];
 
@@ -143,7 +173,6 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
 
-              {/* ✨ تحديث الكلاس إلى صيغة Tailwind v4: bg-linear-to-t */}
               <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/30"></div>
 
               <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md w-7 h-7 rounded-full flex items-center justify-center text-white text-xs border border-white/20">
@@ -190,11 +219,17 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               className="absolute inset-0 w-full h-full object-cover cursor-pointer"
             />
 
-            {/* ✨ تحديث الكلاسات إلى صيغة Tailwind v4 */}
             <div className="relative z-20 flex justify-between items-center p-4 bg-linear-to-b from-black/80 to-transparent">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] flex items-center justify-center font-black text-white text-xs shadow">
-                  L
+                {/* ✨ استبدال حرف L بشعار المتجر الرسمي */}
+                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] flex items-center justify-center p-1 shadow overflow-hidden">
+                  <Image 
+                    src="/icon-512.png" 
+                    alt="Laclarc Logo" 
+                    width={20} 
+                    height={20} 
+                    className="w-full h-full object-contain" 
+                  />
                 </div>
                 <span className="text-white text-xs font-black tracking-wide">Laclarc Live</span>
               </div>
