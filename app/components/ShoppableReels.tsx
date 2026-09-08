@@ -153,8 +153,8 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
         </span>
       </div>
 
-      {/* Horizontal Story Cards Carousel */}
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide touch-pan-x px-2">
+            {/* Horizontal Story Cards Carousel */}
+      <div className="flex gap-4 overflow-x-auto pb-5 scrollbar-hide touch-pan-x pl-4 sm:pl-6 pr-4 sm:pr-6">
         {activeReels.map((reel, idx) => {
           const price = Number(reel.price) || 0;
           const img = reel.image_url || reel.image || '/icon-512.png';
@@ -163,31 +163,35 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
             <div
               key={reel.id || idx}
               onClick={() => setSelectedReelIndex(idx)}
-              className="relative aspect-9/16 w-36 sm:w-44 shrink-0 rounded-2xl overflow-hidden cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300 active:scale-95 border-2 border-transparent hover:border-[#8B78C6]"
+              // ✨ استخدام w-[42vw] لجعل البطاقة تأخذ 42% من عرض الشاشة على الهاتف
+              // هذا يضمن أن البطاقة الثالثة ستظهر مقصوصة قليلاً للإيحاء بالسحب، ويمنع الفراغات الكبيرة
+              className="relative aspect-[9/16] w-[42vw] max-w-[180px] sm:w-[180px] shrink-0 rounded-3xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 ring-1 ring-black/5"
             >
               <Image
                 src={img}
                 alt={reel.title}
                 fill
-                sizes="(max-width: 768px) 150px, 180px"
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 42vw, 180px"
+                className="object-cover group-hover:scale-110 transition-transform duration-700"
               />
+              
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-black/40"></div>
 
-              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/30"></div>
-
-              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md w-7 h-7 rounded-full flex items-center justify-center text-white text-xs border border-white/20">
-                ▶
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </div>
               </div>
 
-              <span className="absolute top-3 right-3 bg-[#FF6B9D] text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+              <span className="absolute top-3 right-3 bg-[#FF6B9D] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
                 {reel.badge || 'Live Drop'}
               </span>
 
               <div className="absolute bottom-3 left-3 right-3 text-white">
-                <p className="text-xs font-bold line-clamp-2 leading-snug mb-1 drop-shadow">
+                <p className="text-xs font-bold line-clamp-2 leading-tight mb-1 drop-shadow-lg">
                   {reel.title}
                 </p>
-                <p className="text-sm font-black text-amber-300">
+                <p className="text-base font-black text-amber-300 drop-shadow-lg">
                   ${price.toFixed(2)}
                 </p>
               </div>
@@ -320,9 +324,10 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 </button>
               </div>
 
-              <div className="text-center mt-2.5">
+              <div className="text-center mt-3">
                 <Link
-                  href={`/products/${currentReel.id}`}
+                  // ✨ إذا كان المنتج تجريبي (demo)، نوجهه للصفحة الرئيسية. وإذا كان حقيقياً، نوجهه لصفحته.
+                  href={String(currentReel.id).startsWith('demo-') ? '/' : `/products/${currentReel.id}`}
                   onClick={() => setSelectedReelIndex(null)}
                   className="text-[11px] text-gray-300 hover:text-white font-semibold underline"
                 >
