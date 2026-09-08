@@ -16,7 +16,6 @@ interface Product {
   badge?: string;
 }
 
-// ✨ تحديد النوع Product[] بشكل صريح لمنع خطأ TypeScript 2339
 const CURATED_DEMO_REELS: Product[] = [
   {
     id: 'demo-1',
@@ -153,7 +152,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
         </span>
       </div>
 
-            {/* Horizontal Story Cards Carousel */}
+      {/* Horizontal Story Cards Carousel */}
       <div className="flex gap-4 overflow-x-auto pb-5 scrollbar-hide touch-pan-x pl-4 sm:pl-6 pr-4 sm:pr-6">
         {activeReels.map((reel, idx) => {
           const price = Number(reel.price) || 0;
@@ -163,8 +162,6 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
             <div
               key={reel.id || idx}
               onClick={() => setSelectedReelIndex(idx)}
-              // ✨ استخدام w-[42vw] لجعل البطاقة تأخذ 42% من عرض الشاشة على الهاتف
-              // هذا يضمن أن البطاقة الثالثة ستظهر مقصوصة قليلاً للإيحاء بالسحب، ويمنع الفراغات الكبيرة
               className="relative aspect-[9/16] w-[42vw] max-w-[180px] sm:w-[180px] shrink-0 rounded-3xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 ring-1 ring-black/5"
             >
               <Image
@@ -201,17 +198,19 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
       </div>
 
       {/* =========================================================================
-          ✨ مشغل الريلز السينمائي ملء الشاشة (TikTok Video Player)
+          ✨ مشغل الريلز السينمائي ملء الشاشة (TikTok Style Full-Screen Player)
          ========================================================================= */}
       {selectedReelIndex !== null && currentReel && (
         <div 
-          className="fixed inset-0 bg-black/95 z-250 flex items-center justify-center p-0 sm:p-4 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 bg-black z-[250] flex items-center justify-center backdrop-blur-md animate-fade-in"
           onClick={() => setSelectedReelIndex(null)}
         >
+          {/* الحاوية الرئيسية: تملأ الشاشة على الهاتف، وتكون بحجم محدد على الكمبيوتر */}
           <div 
-            className="relative w-full sm:max-w-md h-full sm:h-[90vh] bg-black sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between"
+            className="relative w-full h-full sm:w-[400px] sm:h-[90vh] sm:max-h-[850px] bg-black sm:rounded-[2rem] overflow-hidden shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
+            {/* الفيديو: مطلق (absolute) ويملأ الحاوية بنسبة 100% بدون أي هوامش سوداء */}
             <video
               ref={videoRef}
               src={currentReel.video_url}
@@ -223,26 +222,27 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               className="absolute inset-0 w-full h-full object-cover cursor-pointer"
             />
 
-            <div className="relative z-20 flex justify-between items-center p-4 bg-linear-to-b from-black/80 to-transparent">
+            {/* التدرج العلوي للشعار والأزرار */}
+            <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-5 pt-7 bg-linear-to-b from-black/70 to-transparent">
               <div className="flex items-center gap-2">
-                {/* ✨ استبدال حرف L بشعار المتجر الرسمي */}
-                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] flex items-center justify-center p-1 shadow overflow-hidden">
+                {/* ✨ شعار المتجر الرسمي يملأ الدائرة بالكامل بدون حواف وردية */}
+                <div className="relative w-8 h-8 rounded-full overflow-hidden shadow shrink-0 border border-white/20">
                   <Image 
                     src="/icon-512.png" 
                     alt="Laclarc Logo" 
-                    width={20} 
-                    height={20} 
-                    className="w-full h-full object-contain" 
+                    fill 
+                    sizes="32px"
+                    className="object-cover" 
                   />
                 </div>
-                <span className="text-white text-xs font-black tracking-wide">Laclarc Live</span>
+                <span className="text-white text-xs font-black tracking-wide drop-shadow-lg">Laclarc Live</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsMuted(!isMuted)}
-                  className="bg-black/40 hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm border border-white/20 active:scale-90 transition"
+                  className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm border border-white/20 active:scale-90 transition"
                   title={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? '🔇' : '🔊'}
@@ -251,7 +251,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 <button
                   type="button"
                   onClick={() => setSelectedReelIndex(null)}
-                  className="bg-black/40 hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border border-white/20 active:scale-90 transition"
+                  className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border border-white/20 active:scale-90 transition"
                 >
                   ✕
                 </button>
@@ -269,11 +269,12 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               </div>
             )}
 
+            {/* أزرار التنقل الجانبية (يسار ويمين) */}
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={prevReel}
-                className="w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
+                className="w-9 h-9 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
                 title="Previous Video"
               >
                 ▲
@@ -281,15 +282,15 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               <button
                 type="button"
                 onClick={nextReel}
-                className="w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
+                className="w-9 h-9 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
                 title="Next Video"
               >
                 ▼
               </button>
             </div>
 
-            {/* بطاقة الشراء الزجاجية */}
-            <div className="relative z-20 p-4 bg-linear-to-t from-black/95 via-black/80 to-transparent">
+            {/* بطاقة الشراء الزجاجية السفلية (مع هوامش آمنة Safe Area) */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-5 pb-8 bg-linear-to-t from-black via-black/80 to-transparent">
               <div className="bg-white/10 backdrop-blur-xl p-3.5 rounded-2xl border border-white/20 flex items-center justify-between gap-3 shadow-2xl">
                 
                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -326,7 +327,6 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
 
               <div className="text-center mt-3">
                 <Link
-                  // ✨ إذا كان المنتج تجريبي (demo)، نوجهه للصفحة الرئيسية. وإذا كان حقيقياً، نوجهه لصفحته.
                   href={String(currentReel.id).startsWith('demo-') ? '/' : `/products/${currentReel.id}`}
                   onClick={() => setSelectedReelIndex(null)}
                   className="text-[11px] text-gray-300 hover:text-white font-semibold underline"

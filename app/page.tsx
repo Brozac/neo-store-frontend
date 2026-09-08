@@ -155,6 +155,12 @@ function HomeContent() {
         {activeCategory === 'All' && searchQuery === '' && (
           <ShoppableReels products={products} />
         )}
+        {/* ✨ 2.5 قسم الريلز القابلة للتسوق (Watch & Shop Reels) */}
+        {activeCategory === 'All' && searchQuery === '' && (
+          <div className="mb-8 mt-8">
+            <ShoppableReels products={products} />
+          </div>
+        )}
 
         {/* 3. Trending Now Section */}
         {activeCategory === 'All' && searchQuery === '' && trendingProducts.length > 0 && (

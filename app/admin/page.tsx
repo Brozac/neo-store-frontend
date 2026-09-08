@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [syncCategory, setSyncCategory] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [syncingVideos, setSyncingVideos] = useState(false);
 
   const [adminSearch, setAdminSearch] = useState('');
   const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
@@ -244,6 +245,18 @@ export default function AdminDashboard() {
       setScrapeUrl('');
     } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); }
     finally { setLoading(false); }
+  };
+  const handleSyncVideos = async () => {
+    if (!confirm('🎬 This will scan CJ trending products and import ONLY those that have videos. Continue?')) return;
+    setSyncingVideos(true);
+    setSyncMessage('🎬 Video Sync Engine started in background! Fetching products with videos...');
+    try {
+      await adminApi.post('/admin/sync-videos');
+    } catch (err: any) {
+      setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start video sync.'}`);
+    } finally {
+      setTimeout(() => setSyncingVideos(false), 3000);
+    }
   };
 
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
@@ -601,6 +614,18 @@ export default function AdminDashboard() {
 
                 {syncMessage && <p className="mt-3 text-xs font-bold text-gray-500">{syncMessage}</p>}
               </div>
+
+               {/* زر مزامنة منتجات الفيديو فقط */}
+                <div className="pt-4 border-t border-temu-gray-border-light mt-4">
+                  <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-2">🎬 Sync Video Products (For Reels)</label>
+                  <button 
+                    onClick={handleSyncVideos} 
+                    disabled={syncingVideos} 
+                    className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B9D]/20"
+                  >
+                    {syncingVideos ? 'Engine Starting...' : 'Scan & Import Video Products'}
+                  </button>
+                </div>
 
               {/* Official Category Tree Maintenance */}
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light flex items-center justify-between flex-wrap gap-4">
