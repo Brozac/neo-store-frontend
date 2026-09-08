@@ -214,7 +214,8 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
             {/* الفيديو: مطلق (absolute) ويملأ الحاوية بنسبة 100% بدون أي هوامش سوداء */}
             <video
               ref={videoRef}
-              src={currentReel.video_url}
+              // ✨ تمرير رابط الفيديو عبر مسار الـ Proxy لإضافة هيدر Referer
+              src={`/api/video-proxy?url=${encodeURIComponent(currentReel.video_url || '')}`}
               loop
               playsInline
               muted={isMuted}
