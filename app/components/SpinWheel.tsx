@@ -88,7 +88,7 @@ export default function SpinWheel() {
         {!result ? (
           <>
             <h2 className="text-2xl sm:text-3xl font-black text-temu-black mb-1 tracking-tight">
-              🎉 Spin & Win Discounts!
+               Spin & Win Discounts!
             </h2>
             <p className="text-temu-gray-text text-xs sm:text-sm mb-6 font-medium">
               Enter your email to unlock your exclusive instant store discount.
