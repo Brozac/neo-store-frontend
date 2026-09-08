@@ -10,6 +10,8 @@ import LivePurchaseNotification from '../../components/LivePurchaseNotification'
 import BuyButton from '../../components/BuyButton';
 import TiltCard from '../../components/TiltCard';
 import ReviewForm from '../../components/ReviewForm';
+import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
+import DeliveryEstimator from '../../components/DeliveryEstimator';
 
 interface Product {
   id: string | number;
@@ -46,7 +48,8 @@ interface Review {
   rating: number; 
   content: string; 
   country: string; 
-  created_at: string; 
+  created_at: string;
+  images?: string[]; 
 }
 
 const TABS = [
@@ -85,15 +88,18 @@ export default function ProductDetailsClient({
   const [reviews, setReviews] = useState(initialReviews);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [purchaseCount, setPurchaseCount] = useState(38);
-  
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [stickyAdded, setStickyAdded] = useState(false);
   // حالات التكبير ملء الشاشة
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
   const touchStartX = useRef(0);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
+  const mainCtaRef = useRef<HTMLDivElement>(null);
+
   
-  const defaultImage = '/placeholder.jpg';
+  const defaultImage = '/icon-512.png'; // صورة افتراضية في حال عدم وجود صور للمنتج 
 
   const galleryImages = useMemo(() => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -143,6 +149,7 @@ export default function ProductDetailsClient({
     }
   }, [product.variants, selectedColor, selectedSize]);
 
+// 1. الـ useEffect الخاصة بالتقييمات والعداد المباشر
   useEffect(() => {
     const controller = new AbortController();
     setPurchaseCount(Math.floor(Math.random() * 35) + 18);
@@ -166,6 +173,23 @@ export default function ProductDetailsClient({
       controller.abort();
     };
   }, [product.id, API_BASE_URL]);
+
+  // 2. الـ useEffect الخاصة بشريط الشراء اللاصق الذكي (مفصولة وحدها)
+  useEffect(() => {
+    const target = mainCtaRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // إذا كان الزر الرئيسي خارج الشاشة وكان الزبون قد نزل في الصفحة
+        setShowStickyBar(!entry.isIntersecting && window.scrollY > 400);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
 
   const parsePrice = (price: any) => Number(price) || 0;
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -448,8 +472,10 @@ export default function ProductDetailsClient({
             </div>
 
             {/* CTA Controls */}
-            <div className="space-y-4 pt-2 border-t border-gray-200">
+            <div ref={mainCtaRef} className="space-y-4 pt-2 border-t border-gray-200">
               <CountdownTimer />
+              {/* ✨ حاسبة موعد الوصول الذكية وشارات الثقة */}
+              <DeliveryEstimator />
 
               {/* ✨ باقات الخصم التفاعلية الذكية (Tiered Quantity Bundles) */}
               <div className="space-y-2.5 my-6">
@@ -620,6 +646,13 @@ export default function ProductDetailsClient({
             )}
           </div>
         </div>
+        {/* ✨ باقة اشترِ معاً ووفر (Frequently Bought Together) */}
+        {relatedProducts.length > 0 && (
+          <FrequentlyBoughtTogether 
+            currentProduct={product} 
+            relatedProducts={relatedProducts} 
+          />
+        )}
 
         {/* You May Also Like */}
         {relatedProducts.length > 0 && (
@@ -652,13 +685,32 @@ export default function ProductDetailsClient({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {reviews.slice(0, 6).map((rev) => (
-              <div key={rev.id} className="p-4 bg-white rounded-temu-sm border border-temu-gray-border-light shadow-sm space-y-1.5">
+              <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-temu-black">{rev.author} ({rev.country || 'Verified Buyer'})</span>
-                  <span className="text-temu-orange text-xs">{'★'.repeat(rev.rating)}</span>
+                  <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
+                  <span className="text-amber-400 text-xs">{'★'.repeat(rev.rating)}</span>
                 </div>
-                <p className="text-xs text-temu-gray-text leading-relaxed">{rev.content}</p>
-                <span className="text-[10px] text-gray-400 block font-mono">{new Date(rev.created_at).toLocaleDateString()}</span>
+                <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
+
+                {/* ✨ عرض صور الزبائن الحقيقية إن وُجدت */}
+                {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
+                  <div className="flex gap-2 pt-1">
+                    {rev.images.map((photoUrl, pIdx) => (
+                      <div 
+                        key={pIdx} 
+                        className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
+                        onClick={() => window.open(photoUrl, '_blank')}
+                        title="Click to view full photo"
+                      >
+                        <Image src={photoUrl} alt="Buyer proof photo" fill sizes="56px" className="object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <span className="text-[10px] text-gray-400 block font-mono">
+                  {new Date(rev.created_at).toLocaleDateString()}
+                </span>
               </div>
             ))}
           </div>
@@ -783,6 +835,93 @@ export default function ProductDetailsClient({
 
       {/* Live Social Proof Notification */}
       <LivePurchaseNotification productName={product.title} />
+      {/* =========================================================================
+          🔥 شريط الشراء اللاصق في أسفل الشاشة (Sticky Mobile Buy Bar)
+          ينبثق تلقائياً عند النزول لأسفل ويتيح الشراء الفوري بنقرة واحدة
+         ========================================================================= */}
+      <div 
+        className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] p-3 sm:p-4 transition-all duration-300 transform ${
+          showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+          
+          {/* تفاصيل المنتج المصغرة (صورة + سعر + خيارات) */}
+          <div 
+            onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
+            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+            title="Tap to review choices"
+          >
+            <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
+              <Image 
+                src={mainImageSrc} 
+                alt={product.title} 
+                fill 
+                sizes="48px" 
+                className="object-contain p-1" 
+              />
+            </div>
+            
+            <div className="min-w-0 pr-1">
+              <p className="text-xs font-black text-gray-900 truncate">{product.title}</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-sm font-black text-[#FF6B9D]">${safePrice.toFixed(2)}</span>
+                {safeOriginalPrice > safePrice && (
+                  <span className="text-[10px] text-gray-400 line-through">${safeOriginalPrice.toFixed(2)}</span>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-500 font-semibold truncate">
+                {selectedColor && `${selectedColor} • `}{selectedSize} • Qty: {quantity}
+              </p>
+            </div>
+          </div>
+
+          {/* أزرار الشراء الفورية */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* زر إضافة للسلة مع وميض تأكيد */}
+            <button
+              type="button"
+              onClick={() => {
+                handleAddToCart();
+                setStickyAdded(true);
+                setTimeout(() => setStickyAdded(false), 1200);
+              }}
+              className={`py-3 px-3.5 sm:px-4 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm ${
+                stickyAdded 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+              }`}
+            >
+              {stickyAdded ? <span>✓ Added</span> : <span>🛒 +Bag</span>}
+            </button>
+
+            {/* زر الشراء الفوري بنقرة واحدة */}
+            <button
+              type="button"
+              onClick={() => {
+                const resolvedVid = matchedVariant?.vid || '';
+                addToCart({
+                  id: product.id,
+                  title: product.title,
+                  name: product.title,
+                  price: safePrice,
+                  quantity,
+                  image: mainImageSrc,
+                  image_url: mainImageSrc,
+                  color: selectedColor,
+                  size: selectedSize,
+                  vid: resolvedVid
+                }, quantity);
+                router.push('/cart');
+              }}
+              className="bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <span></span> Buy Now
+            </button>
+          </div>
+
+        </div>
+      </div>
     </main>
   );
 }

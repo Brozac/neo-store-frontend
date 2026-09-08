@@ -7,6 +7,7 @@ import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
 import WhatsAppButton from './components/WhatsAppButton';
 import SpinWheel from './components/SpinWheel';
+import ExitIntentPopup from './components/ExitIntentPopup';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,6 +45,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <CartWidget />
           <WhatsAppButton />
           <SpinWheel />
+          <ExitIntentPopup /> 
         </>
       )}
     </CartProvider>

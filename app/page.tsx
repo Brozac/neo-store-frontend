@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
+import ShoppableReels from './components/ShoppableReels';
 
 function HomeContent() {
   const router = useRouter();
@@ -148,6 +149,11 @@ function HomeContent() {
           <div className="mb-6">
             <LightningDeals products={dealsProducts} />
           </div>
+        )}
+        
+        {/* ✨ قسم فيديوهات تيك توك التفاعلية للشراء الفوري */}
+        {activeCategory === 'All' && searchQuery === '' && (
+          <ShoppableReels products={products} />
         )}
 
         {/* 3. Trending Now Section */}
