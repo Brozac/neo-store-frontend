@@ -151,10 +151,7 @@ function HomeContent() {
           </div>
         )}
         
-        {/* ✨ قسم فيديوهات تيك توك التفاعلية للشراء الفوري */}
-        {activeCategory === 'All' && searchQuery === '' && (
-          <ShoppableReels products={products} />
-        )}
+  
         {/* ✨ 2.5 قسم الريلز القابلة للتسوق (Watch & Shop Reels) */}
         {activeCategory === 'All' && searchQuery === '' && (
           <div className="mb-8 mt-8">
