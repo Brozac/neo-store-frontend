@@ -80,7 +80,8 @@ const CURATED_DEMO_REELS: Product[] = [
 ];
 
 export default function ShoppableReels({ products = [] }: { products?: Product[] }) {
-  const videoProducts = products.filter(p => p.video_url && p.video_url.trim().length > 0);
+  // ✨ فلترة المنتجات التي تحتوي على فيديو، واختيار أول 8 فقط لمنع تكدس الصفحة
+  const videoProducts = products.filter(p => p.video_url && p.video_url.trim().length > 0).slice(0, 8);
   const activeReels: Product[] = videoProducts.length > 0 ? videoProducts : CURATED_DEMO_REELS;
 
   const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
