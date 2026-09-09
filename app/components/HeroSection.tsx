@@ -6,13 +6,13 @@ import Image from 'next/image';
 import Script from 'next/script';
 
 interface HeroSectionProps {
-  trendingProducts?: any[]; // بقيت اختيارية كـ fallback فقط
+  trendingProducts?: any[];
 }
 
 export default function HeroSection({ trendingProducts }: HeroSectionProps = {}) {
   const [liveTime, setLiveTime] = useState('');
   const [isMounted, setIsMounted] = useState(false);
-  const [heroProducts, setHeroProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -29,24 +29,18 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ جلب أي منتجات من الموقع مباشرة (ماشي غير trending)
+  // ✅ كيجيب أي 3 منتجات من الموقع (ماشي شرط trending)
   useEffect(() => {
     let cancelled = false;
     const fetchProducts = async () => {
       try {
-        // ⚠️ بدّل الرابط إلا كان الـ endpoint ديالكم مختلف
-        const res = await fetch('/api/products?limit=4', { cache: 'no-store' });
+        const res = await fetch('/api/products?limit=3', { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
-        // دعم عدة أشكال للاستجابة
-        const list = Array.isArray(data)
-          ? data
-          : data.products || data.items || data.data || [];
-        if (!cancelled && list.length > 0) {
-          setHeroProducts(list.slice(0, 4));
-        }
+        const list = Array.isArray(data) ? data : data.products || data.items || data.data || [];
+        if (!cancelled && list.length > 0) setProducts(list.slice(0, 3));
       } catch (err) {
-        console.warn('HeroSection: product fetch failed', err);
+        console.warn('HeroSection: fetch failed', err);
       }
     };
     fetchProducts();
@@ -68,23 +62,19 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
     if (ScrollTrigger) {
       gsap.to(".hero-container", {
-        opacity: 0.3,
-        scale: 0.98,
-        ease: "none",
+        opacity: 0.3, scale: 0.98, ease: "none",
         scrollTrigger: { trigger: ".hero-container", start: "top top", end: "bottom top", scrub: 1 }
       });
     }
   };
 
-  // ✅ الأولوية للمنتجات المجوّدة من الـ API، وإلا trendingProducts كـ fallback
-  const products = heroProducts.length > 0
-    ? heroProducts
-    : (trendingProducts || []).slice(0, 4);
+  // Fallback لإلا الـ API ماجاب والو
+  const cards = products.length > 0
+    ? products
+    : (trendingProducts || []).slice(0, 3);
 
-  const layoutClass =
-    products.length === 1 ? 'count-1' :
-    products.length === 2 ? 'count-2' :
-    products.length === 3 ? 'count-3' : 'count-4';
+  const positions = ['pos-top', 'pos-bottom-left', 'pos-bottom-right'];
+  const countClass = cards.length === 1 ? 'count-1' : cards.length === 2 ? 'count-2' : '';
 
   const getImage = (p: any) => p?.image_url || p?.image || p?.thumbnail || '/icon-512.png';
   const formatPrice = (p: any) => {
@@ -124,34 +114,34 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
 
-          {/* ✨ بطاقات المنتجات التفاعلية */}
+          {/* ✨ بطاقات المنتجات — Collage زي الصورة بالضبط */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
-            <div className={`hero-cards-container float-anim-slow ${layoutClass}`}>
-              {products.length > 0 ? (
-                products.map((product: any, index: number) => (
+            <div className={`hero-cards-container float-anim-slow ${countClass}`}>
+              {cards.length > 0 ? (
+                cards.map((product: any, index: number) => (
                   <Link
                     key={product?.id ?? index}
                     href={`/products/${product.id}`}
-                    className="hero-card"
+                    className={`hero-card ${positions[index]}`}
                     style={{ backgroundImage: `url(${getImage(product)})` }}
                   >
-                    {!!product?.discount && (
-                      <span className="hero-card-badge">-{product.discount}%</span>
-                    )}
-                    <div className="card-content">
-                      <div className="card-title">{product?.title || 'Laclarc Premium'}</div>
-                      {product?.price && <div className="card-price">{formatPrice(product)}</div>}
-                      <div className="card-description">
+                    <div className="hero-card-content">
+                      <div className="hero-card-title">{product?.title || 'Laclarc Premium'}</div>
+                      {product?.price && <div className="hero-card-price">{formatPrice(product)}</div>}
+                      <div className="hero-card-description">
                         {product?.description || 'Exclusive premium quality — limited stock available.'}
                       </div>
                     </div>
                   </Link>
                 ))
               ) : (
-                <div className="hero-card is-fallback" style={{ backgroundImage: 'url(/icon-512.png)' }}>
-                  <div className="card-content">
-                    <div className="card-title">Laclarc Premium Collection</div>
-                    <div className="card-description">Trending deals across all departments.</div>
+                <div
+                  className="hero-card pos-top"
+                  style={{ backgroundImage: 'url(/icon-512.png)', backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundColor: 'white' }}
+                >
+                  <div className="hero-card-content">
+                    <div className="hero-card-title">Laclarc Premium Collection</div>
+                    <div className="hero-card-description">Trending deals across all departments.</div>
                   </div>
                 </div>
               )}
@@ -220,7 +210,6 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                 Insured Worldwide Shipping across USA, Europe, Africa, and Gulf regions with real-time live tracking.
               </p>
             </div>
-
             <div className="max-w-xl space-y-4">
               <h2 className="text-xl sm:text-2xl font-black text-[#1D1E3C] leading-snug">
                 Premium curated quality meets accessibility:<br />
