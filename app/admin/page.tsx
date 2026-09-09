@@ -215,15 +215,20 @@ export default function AdminDashboard() {
     }
   };
 
-  // ✨ حذف الفيديو من المنتج دون حذف المنتج نفسه
+// ✨ حذف الفيديو عبر المسار المخصص والصحيح في السيرفر
   const handleDeleteVideo = async (productId: number | string) => {
     if (!confirm('Remove video from this product? The item will remain in the store without video.')) return;
     try {
-      await adminApi.put(`/admin/update-product/${productId}`, { video_url: '' });
-      setVideoProducts(prev => prev.filter(p => p.id !== productId));
-      alert('✅ Video removed successfully.');
-    } catch (err) {
-      alert('Failed to delete video.');
+      const res = await adminApi.delete(`/admin/videos/${productId}`);
+      
+      if (res.data?.success) {
+        setVideoProducts(prev => prev.filter(p => p.id !== productId));
+        alert('✅ Video removed successfully. Product remains in store.');
+      } else {
+        alert(`❌ ${res.data?.error || 'Failed to delete video.'}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Error: ${err.response?.data?.error || 'Failed to delete video.'}`);
     }
   };
 
