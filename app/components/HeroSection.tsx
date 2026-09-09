@@ -92,16 +92,23 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#8B78C6]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
           LACLARC
         </div>
-
-        {/* رأس الصفحة */}
+        {/* رأس الصفحة (شعار + مؤشر حي) */}
         <div className="relative z-20 flex justify-between items-start w-full">
-          <div className="float-anim gsap-hero bg-white/80 backdrop-blur-md border border-white/80 p-2.5 rounded-xl flex items-center gap-2 shadow-sm">
-            <div className="w-7 h-7 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-lg flex items-center justify-center p-1 shadow-sm shrink-0">
-              <Image src="/icon-512.png" alt="Laclarc Logo" width={20} height={20} className="w-full h-full object-contain" priority />
+          <div className="float-anim gsap-hero flex items-center gap-2.5">
+            {/* ✨ الشعار: دائري + كبير + حواف وردية + بلا خلفية بيضاء */}
+            <div className="w-12 h-12 rounded-full border-2 border-[#FF6B9D] overflow-hidden shrink-0 shadow-lg shadow-[#FF6B9D]/25">
+              <Image
+                src="/icon-512.png"
+                alt="Laclarc Logo"
+                width={48}
+                height={48}
+                className="w-full h-full object-cover mix-blend-multiply"
+                priority
+              />
             </div>
             <div className="text-[#1D1E3C]">
-              <h4 className="text-[10px] font-black uppercase tracking-wider leading-none">Laclarc</h4>
-              <span className="text-[8px] text-gray-500 uppercase">Enterprise</span>
+              <h4 className="text-xs font-black uppercase tracking-wider leading-none">Laclarc</h4>
+              <span className="text-[9px] text-gray-500 uppercase">Enterprise</span>
             </div>
           </div>
 
