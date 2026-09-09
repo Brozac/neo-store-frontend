@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 
@@ -37,7 +36,6 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
     e.stopPropagation();
     e.preventDefault();
 
-    // استخراج أول vid شرعي إن وجد
     let defaultVid = '';
     if (product.variants) {
       try {
@@ -56,7 +54,6 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
       vid: defaultVid
     }, 1);
 
-    // تفاعل بصري فوري للزبون
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1200);
   };
@@ -74,7 +71,6 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
     }
   }
 
-  // حساب تخفيض وهمي جذاب إن لم يتوفر السعر الأصلي
   if (!discountText && safePrice > 0) {
     const discounts = [15, 20, 25, 30, 40, 50];
     const fakeDiscount = discounts[Math.abs(Number(product.id) || 0) % discounts.length];
@@ -94,13 +90,11 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
     >
       <div>
         <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
-          <Image
+          {/* ✨ استبدال Image بـ img */}
+          <img
             src={imgSrc}
             alt={product.title || 'Product'}
-            fill
-            sizes="(max-width: 768px) 50vw, 25vw"
-            className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
-            // ✨ إزالة priority لتحميل الصفحة فورياً وبدون استنزاف شبكة الهاتف
+            className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
            {discountText && (
             <div className="absolute top-2 left-2 bg-temu-error text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">

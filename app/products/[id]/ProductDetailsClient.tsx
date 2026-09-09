@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../../context/CartContext';
 import CountdownTimer from '../../components/CountdownTimer';
@@ -90,7 +89,6 @@ export default function ProductDetailsClient({
   const [purchaseCount, setPurchaseCount] = useState(38);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
-  // حالات التكبير ملء الشاشة
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
@@ -98,8 +96,7 @@ export default function ProductDetailsClient({
   const thumbnailsRef = useRef<HTMLDivElement>(null);
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
-  
-  const defaultImage = '/icon-512.png'; // صورة افتراضية في حال عدم وجود صور للمنتج 
+  const defaultImage = '/icon-512.png'; 
 
   const galleryImages = useMemo(() => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -111,7 +108,6 @@ export default function ProductDetailsClient({
   const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // دالة التمرير البرمجي لشريط الصور بالأسهم
   const scrollThumbnails = (direction: 'left' | 'right') => {
     if (thumbnailsRef.current) {
       const scrollAmount = direction === 'left' ? -180 : 180;
@@ -119,7 +115,6 @@ export default function ProductDetailsClient({
     }
   };
 
-  // مطابقة الـ vid الصحيح
   const matchedVariant = useMemo(() => {
     if (!product.variants) return null;
     try {
@@ -149,7 +144,6 @@ export default function ProductDetailsClient({
     }
   }, [product.variants, selectedColor, selectedSize]);
 
-// 1. الـ useEffect الخاصة بالتقييمات والعداد المباشر
   useEffect(() => {
     const controller = new AbortController();
     setPurchaseCount(Math.floor(Math.random() * 35) + 18);
@@ -174,14 +168,12 @@ export default function ProductDetailsClient({
     };
   }, [product.id, API_BASE_URL]);
 
-  // 2. الـ useEffect الخاصة بشريط الشراء اللاصق الذكي (مفصولة وحدها)
   useEffect(() => {
     const target = mainCtaRef.current;
     if (!target) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // إذا كان الزر الرئيسي خارج الشاشة وكان الزبون قد نزل في الصفحة
         setShowStickyBar(!entry.isIntersecting && window.scrollY > 400);
       },
       { threshold: 0.1 }
@@ -201,11 +193,10 @@ export default function ProductDetailsClient({
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
     : 0;
 
-  // ✨ حساب سعر القطعة الواحدة المخفض (لتمريره للسلة وزر الشراء لتجنب الضرب المزدوج)
   const discountedUnitPrice = useMemo(() => {
-    if (quantity >= 3) return safePrice * 0.75; // خصم 25%
-    if (quantity === 2) return safePrice * 0.85; // خصم 15%
-    return safePrice; // بدون خصم
+    if (quantity >= 3) return safePrice * 0.75;
+    if (quantity === 2) return safePrice * 0.85;
+    return safePrice;
   }, [quantity, safePrice]);
 
   const handleToggleFavorite = (productId: string | number) => {
@@ -225,7 +216,7 @@ export default function ProductDetailsClient({
       id: product.id,
       title: product.title,
       name: product.title,
-      price: parseFloat(discountedUnitPrice.toFixed(2)), // ✨ السعر المخفض للقطعة الواحدة
+      price: parseFloat(discountedUnitPrice.toFixed(2)),
       quantity,
       image: mainImageSrc,
       image_url: mainImageSrc,
@@ -298,17 +289,14 @@ export default function ProductDetailsClient({
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <Image 
+                /* ✨ استبدال Image بـ img */
+                <img 
                   src={mainImageSrc} 
                   alt={product.title} 
-                  fill 
-                  sizes="(max-width: 768px) 100vw, 50vw" 
-                  className="object-contain p-3 transition-transform duration-500 group-hover:scale-105" 
-                  priority 
+                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105" 
                 />
               )}
 
-              {/* أسهم التبديل المباشرة */}
               {galleryImages.length > 1 && !showVideo && (
                 <>
                   <button 
@@ -336,7 +324,6 @@ export default function ProductDetailsClient({
                 </>
               )}
 
-              {/* شارة التكبير */}
               {!showVideo && (
                 <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
                   <span></span> Tap to Zoom
@@ -344,7 +331,6 @@ export default function ProductDetailsClient({
               )}
             </div>
 
-            {/* شريط الصور المصغرة مع أزرار Scroll لليمين واليسار */}
             <div className="relative w-full flex items-center group/thumbs">
               
               {galleryImages.length > 4 && (
@@ -354,9 +340,7 @@ export default function ProductDetailsClient({
                   className="absolute -left-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
                   aria-label="Scroll Left"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
               )}
 
@@ -382,7 +366,8 @@ export default function ProductDetailsClient({
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
-                    <Image src={img} alt="Thumbnail" fill sizes="80px" className="object-contain p-1" />
+                    {/* ✨ استبدال Image بـ img */}
+                    <img src={img} alt="Thumbnail" className="w-full h-full object-contain p-1" />
                   </div>
                 ))}
               </div>
@@ -394,9 +379,7 @@ export default function ProductDetailsClient({
                   className="absolute -right-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
                   aria-label="Scroll Right"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
               )}
             </div>
@@ -425,7 +408,6 @@ export default function ProductDetailsClient({
                 )}
               </div>
 
-              {/* Color Options */}
               {product.colors && product.colors.length > 0 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
@@ -446,7 +428,6 @@ export default function ProductDetailsClient({
                 </div>
               )}
 
-              {/* Size Options */}
               {product.sizes && product.sizes.length > 0 && (
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
@@ -474,17 +455,14 @@ export default function ProductDetailsClient({
             {/* CTA Controls */}
             <div ref={mainCtaRef} className="space-y-4 pt-2 border-t border-gray-200">
               <CountdownTimer />
-              {/* ✨ حاسبة موعد الوصول الذكية وشارات الثقة */}
               <DeliveryEstimator />
 
-              {/* ✨ باقات الخصم التفاعلية الذكية (Tiered Quantity Bundles) */}
               <div className="space-y-2.5 my-6">
                 <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
                   ⚡ Exclusive Bundle Savings:
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {/* باقة 1 قطعة */}
                   <div 
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
@@ -503,7 +481,6 @@ export default function ProductDetailsClient({
                     <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
                   </div>
 
-                  {/* باقة قطعتين - الأكثر طلباً */}
                   <div 
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
@@ -525,7 +502,6 @@ export default function ProductDetailsClient({
                     <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
                   </div>
 
-                  {/* باقة 3 قطع - التوفير الأكبر */}
                   <div 
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
@@ -567,13 +543,12 @@ export default function ProductDetailsClient({
                 </button>
               </div>
 
-              {/* ✨ زر الشراء المباشر (يستخدم سعر القطعة المخفض ليقوم بضربه في الكمية تلقائياً) */}
               <BuyButton 
                 product={{ 
                   id: product.id, 
                   title: product.title, 
                   name: product.title,
-                  price: parseFloat(discountedUnitPrice.toFixed(2)), // ✨ تمرير سعر القطعة المخفض
+                  price: parseFloat(discountedUnitPrice.toFixed(2)), 
                   image: mainImageSrc,
                   color: selectedColor,
                   size: selectedSize,
@@ -582,7 +557,6 @@ export default function ProductDetailsClient({
                 }} 
               />
 
-              {/* Social Proof */}
               <div className="flex items-center gap-3 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light shadow-sm">
                 <div className="flex -space-x-2.5">
                   {STATIC_AVATARS.map((av, idx) => (
@@ -646,7 +620,7 @@ export default function ProductDetailsClient({
             )}
           </div>
         </div>
-        {/* ✨ باقة اشترِ معاً ووفر (Frequently Bought Together) */}
+
         {relatedProducts.length > 0 && (
           <FrequentlyBoughtTogether 
             currentProduct={product} 
@@ -657,13 +631,14 @@ export default function ProductDetailsClient({
         {/* You May Also Like */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
-            <h2 className="text-lg font-black text-temu-black mb-6">Frequently Bought Together</h2>
+            <h2 className="text-lg font-black text-temu-black mb-6">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {relatedProducts.map((p) => (
                 <TiltCard key={p.id}>
                   <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
-                      <Image src={p.image_url || p.image || defaultImage} alt={p.title} fill sizes="200px" className="object-contain p-2 transition group-hover:scale-105" />
+                      {/* ✨ استبدال Image بـ img */}
+                      <img src={p.image_url || p.image || defaultImage} alt={p.title} className="w-full h-full object-contain p-2 transition group-hover:scale-105" />
                     </div>
                     <div className="p-3 pt-2 flex flex-col justify-between flex-1">
                       <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
@@ -692,7 +667,6 @@ export default function ProductDetailsClient({
                 </div>
                 <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
 
-                {/* ✨ عرض صور الزبائن الحقيقية إن وُجدت */}
                 {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
                   <div className="flex gap-2 pt-1">
                     {rev.images.map((photoUrl, pIdx) => (
@@ -702,7 +676,8 @@ export default function ProductDetailsClient({
                         onClick={() => window.open(photoUrl, '_blank')}
                         title="Click to view full photo"
                       >
-                        <Image src={photoUrl} alt="Buyer proof photo" fill sizes="56px" className="object-cover" />
+                        {/* ✨ استبدال Image بـ img */}
+                        <img src={photoUrl} alt="Buyer proof photo" className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
@@ -728,15 +703,12 @@ export default function ProductDetailsClient({
 
       </div>
 
-      {/* =========================================================================
-          ✨ نافذة التكبير السينمائية الكاملة (High-Resolution Zoom Lightbox)
-         ========================================================================= */}
+      {/* Lightbox Modal */}
       {isLightboxOpen && (
         <div 
           className="fixed inset-0 bg-black/95 z-[200] flex flex-col justify-between p-4 sm:p-6 backdrop-blur-md animate-fade-in select-none"
           onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
         >
-          {/* شريط التحكم العلوي */}
           <div className="flex justify-between items-center w-full max-w-6xl mx-auto z-20" onClick={e => e.stopPropagation()}>
             <div className="bg-white/10 backdrop-blur-md text-white font-mono text-xs px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm">
               {currentImageIndex + 1} / {galleryImages.length}
@@ -763,7 +735,6 @@ export default function ProductDetailsClient({
             </div>
           </div>
 
-          {/* مساحة عرض الصورة المكبرة ملء الشاشة */}
           <div 
             className="relative flex-1 w-full max-w-5xl mx-auto flex items-center justify-center overflow-hidden my-2"
             onClick={e => e.stopPropagation()}
@@ -776,13 +747,11 @@ export default function ProductDetailsClient({
               }`}
               onClick={() => setIsZoomed(!isZoomed)}
             >
-              <Image 
+              {/* ✨ استبدال Image بـ img */}
+              <img 
                 src={mainImageSrc} 
                 alt={product.title} 
-                fill
-                sizes="100vw"
-                className="object-contain"
-                priority
+                className="w-full h-full object-contain"
               />
             </div>
 
@@ -814,7 +783,6 @@ export default function ProductDetailsClient({
             )}
           </div>
 
-          {/* شريط المعاينة المصغر في الأسفل */}
           <div className="w-full max-w-xl mx-auto z-20 overflow-x-auto scrollbar-hide py-1" onClick={e => e.stopPropagation()}>
             <div className="flex gap-2 justify-center">
               {galleryImages.map((img, idx) => (
@@ -825,7 +793,8 @@ export default function ProductDetailsClient({
                     currentImageIndex === idx ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
                   }`}
                 >
-                  <Image src={img} alt="Thumb" fill sizes="48px" className="object-cover" />
+                  {/* ✨ استبدال Image بـ img */}
+                  <img src={img} alt="Thumb" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
@@ -833,12 +802,9 @@ export default function ProductDetailsClient({
         </div>
       )}
 
-      {/* Live Social Proof Notification */}
       <LivePurchaseNotification productName={product.title} />
-      {/* =========================================================================
-          🔥 شريط الشراء اللاصق في أسفل الشاشة (Sticky Mobile Buy Bar)
-          ينبثق تلقائياً عند النزول لأسفل ويتيح الشراء الفوري بنقرة واحدة
-         ========================================================================= */}
+      
+      {/* Sticky Buy Bar */}
       <div 
         className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] p-3 sm:p-4 transition-all duration-300 transform ${
           showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
@@ -846,19 +812,17 @@ export default function ProductDetailsClient({
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           
-          {/* تفاصيل المنتج المصغرة (صورة + سعر + خيارات) */}
           <div 
             onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
             className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
             title="Tap to review choices"
           >
             <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
-              <Image 
+              {/* ✨ استبدال Image بـ img */}
+              <img 
                 src={mainImageSrc} 
                 alt={product.title} 
-                fill 
-                sizes="48px" 
-                className="object-contain p-1" 
+                className="w-full h-full object-contain p-1" 
               />
             </div>
             
@@ -876,9 +840,7 @@ export default function ProductDetailsClient({
             </div>
           </div>
 
-          {/* أزرار الشراء الفورية */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* زر إضافة للسلة مع وميض تأكيد */}
             <button
               type="button"
               onClick={() => {
@@ -895,7 +857,6 @@ export default function ProductDetailsClient({
               {stickyAdded ? <span>✓ Added</span> : <span>🛒 +Bag</span>}
             </button>
 
-            {/* زر الشراء الفوري بنقرة واحدة */}
             <button
               type="button"
               onClick={() => {
@@ -916,7 +877,7 @@ export default function ProductDetailsClient({
               }}
               className="bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <span></span> Buy Now
+              <span>⚡</span> Buy Now
             </button>
           </div>
 

@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // ضغط تلقائي فائق السرعة للصور بصيغتي WebP و AVIF
   images: {
-    formats: ['image/avif', 'image/webp'],
+    // ✨ هذا السطر هو الحل السحري: يلغي الاعتماد على كوتا Vercel نهائياً
+    // ويجعل الصور تفتح مباشرة وبسرعة من مصادرها بدون حظر
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'http',
@@ -26,12 +27,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.aliexpress-media.com',
       },
-      // ✨ إضافة Cloudinary لدعم صور الإيصالات وصور الأدمن والمستخدمين
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
-      // صور الأفاتار والمراجعات المعتمدة
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
@@ -43,12 +42,12 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // إزالة جميع رسائل console.log في بيئة الإنتاج للحفاظ على الأداء والسرية
+  // إزالة رسائل console.log في الإنتاج
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
   },
 
-  // ✨ هيدرز الأمان البنكية لحماية المتجر من الاختراق والتأطير الخبيث (Clickjacking)
+  // هيدرز الأمان
   async headers() {
     return [
       {

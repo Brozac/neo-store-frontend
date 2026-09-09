@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
 
-
 interface CategoryNode {
   id: number;
   name: string;
@@ -35,6 +34,7 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
 export default function AdminDashboard() {
   const router = useRouter();
 
+  // التبويبات النشطة
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   const [loading, setLoading] = useState(false);
@@ -45,9 +45,12 @@ export default function AdminDashboard() {
   const [syncCategory, setSyncCategory] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  
+  // ✨ حالات الفيديوهات والريلز
   const [syncingVideos, setSyncingVideos] = useState(false);
   const [showReels, setShowReels] = useState(true);
   const [videoProducts, setVideoProducts] = useState<any[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
 
   const [adminSearch, setAdminSearch] = useState('');
   const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
@@ -57,7 +60,6 @@ export default function AdminDashboard() {
   const [singlePid, setSinglePid] = useState('');
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [singleMessage, setSingleMessage] = useState('');
-
   const [massSyncing, setMassSyncing] = useState(false);
 
   const [telemetry, setTelemetry] = useState<TelemetryState>({
@@ -73,7 +75,7 @@ export default function AdminDashboard() {
     description: '', material: '', colors: '', sizes: '', category: 'other'
   });
 
-    const runDiagnostics = async () => {
+  const runDiagnostics = async () => {
     const startTime = Date.now();
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
@@ -105,26 +107,30 @@ export default function AdminDashboard() {
     }
   };
 
-  // ✨ دالة جلب بيانات الريلز (تم إخراجها لتصبح دالة مستقلة)
+  // ✨ جلب الفيديوهات بشكل صحيح (تم حل خطأ المسار المزدوج /api/products)
   const fetchVideoProducts = async () => {
+    setLoadingVideos(true);
     try {
-      // 1. جلب إعداد الإظهار/الإخفاء
-      const settingsRes = await adminApi.get('/api/settings');
-      const settingsData: any = settingsRes.data || {};
-      setShowReels(settingsData.show_reels !== false);
-      
-      // 2. جلب جميع المنتجات وفلترة التي تحتوي على فيديوهات
-      const productsRes = await adminApi.get('/api/products');
-      const vids = productsRes.data.filter((p: any) => p.video_url && p.video_url.trim() !== '');
-      setVideoProducts(vids);
+      // 1. قراءة حالة تفعيل الريلز من localStorage لتفادي مشاكل 404
+      const savedToggle = localStorage.getItem('laclarc_show_reels');
+      setShowReels(savedToggle !== 'false');
+
+      // 2. استخدام مسار /products النظيف بدون تكرار /api
+      const productsRes = await adminApi.get('/products');
+      if (Array.isArray(productsRes.data)) {
+        const vids = productsRes.data.filter((p: any) => p.video_url && String(p.video_url).trim().length > 3);
+        setVideoProducts(vids);
+      }
     } catch (err) {
       console.error('Error fetching reels data:', err);
+    } finally {
+      setLoadingVideos(false);
     }
   };
 
   useEffect(() => {
     runDiagnostics();
-    fetchVideoProducts(); // ✨ استدعاء الدالة هنا
+    fetchVideoProducts();
     adminApi.get('/categories')
       .then(res => setAvailableCategories(flattenCategories(res.data)))
       .catch((err) => {
@@ -184,15 +190,40 @@ export default function AdminDashboard() {
   };
 
   const handleMassSync = async () => {
-    if (!confirm('⚠️ This will fetch up to 1200 products from CJ. It will take a long time and run in the background. Continue?')) return;
+    if (!confirm('⚠️ This will fetch up to 1200 products from CJ. It will run in the background. Continue?')) return;
     setMassSyncing(true);
-    setSyncMessage('🚀 Mass Sync Engine started in background! Check server logs for progress.');
+    setSyncMessage('🚀 Mass Sync Engine started in background! Check server logs.');
     try {
-      await adminApi.post('/admin/mass-sync');
+      await adminApi.get('/sync-cj-products');
     } catch (err: any) {
       setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start mass sync.'}`);
     } finally {
       setTimeout(() => setMassSyncing(false), 3000);
+    }
+  };
+
+  const handleSyncVideos = async () => {
+    setSyncingVideos(true);
+    setSyncMessage('🎬 Scanning trending items for video assets in background...');
+    try {
+      await adminApi.get('/sync-cj-products');
+      alert('🎬 Video scanning triggered! Products with video will update shortly.');
+    } catch (err: any) {
+      setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start video sync.'}`);
+    } finally {
+      setSyncingVideos(false);
+    }
+  };
+
+  // ✨ حذف الفيديو من المنتج دون حذف المنتج نفسه
+  const handleDeleteVideo = async (productId: number | string) => {
+    if (!confirm('Remove video from this product? The item will remain in the store without video.')) return;
+    try {
+      await adminApi.put(`/admin/update-product/${productId}`, { video_url: '' });
+      setVideoProducts(prev => prev.filter(p => p.id !== productId));
+      alert('✅ Video removed successfully.');
+    } catch (err) {
+      alert('Failed to delete video.');
     }
   };
 
@@ -265,23 +296,13 @@ export default function AdminDashboard() {
     } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); }
     finally { setLoading(false); }
   };
-  const handleSyncVideos = async () => {
-    if (!confirm('🎬 This will scan CJ trending products and import ONLY those that have videos. Continue?')) return;
-    setSyncingVideos(true);
-    setSyncMessage('🎬 Video Sync Engine started in background! Fetching products with videos...');
-    try {
-      await adminApi.post('/admin/sync-videos');
-    } catch (err: any) {
-      setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start video sync.'}`);
-    } finally {
-      setTimeout(() => setSyncingVideos(false), 3000);
-    }
-  };
 
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
 
+  // ✨ إضافة تبويب مخصص ومستقل للريلز والفيديوهات
   const tabs = [
     { id: 'overview', label: 'Operations Command', icon: '⚡' },
+    { id: 'reels', label: 'Watch & Shop Reels', icon: '🎬' },
     { id: 'add', label: 'Add Product', icon: '➕' },
     { id: 'sync', label: 'CJ Sync & Sourcing', icon: '🔄' },
     { id: 'sourcing', label: '1688 Sourcing', icon: '🏭' },
@@ -307,13 +328,13 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/')}
-              className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               🌐 Storefront
             </button>
             <button
               onClick={handleLogout}
-              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold text-red-500 transition flex items-center gap-1.5"
+              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold text-red-500 transition flex items-center gap-1.5 cursor-pointer"
             >
               🔒 Logout
             </button>
@@ -322,7 +343,7 @@ export default function AdminDashboard() {
 
         {/* 🛰️ Live Infrastructure Pulse */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
               Render Backend
@@ -335,7 +356,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+          <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#8B78C6]"></span>
               Neon DB
@@ -348,7 +369,7 @@ export default function AdminDashboard() {
 
           <div
             onClick={() => router.push('/admin/baridimob')}
-            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
               telemetry.pendingBaridiCount > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
@@ -363,7 +384,7 @@ export default function AdminDashboard() {
 
           <div
             onClick={() => router.push('/admin/failed-orders')}
-            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-sm hover:shadow-md ${
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
               telemetry.failedOrdersCount > 0 ? 'bg-linear-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
             }`}
           >
@@ -384,9 +405,9 @@ export default function AdminDashboard() {
             value={adminSearch}
             onChange={(e) => setAdminSearch(e.target.value)}
             placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..."
-            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#8B78C6] transition shadow-sm"
+            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#8B78C6] transition shadow-xs"
           />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B78C6] p-1">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#8B78C6] p-1 cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
@@ -409,9 +430,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content Box */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-sm">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-xs">
 
-                    {/* 1. Overview Operations */}
+          {/* 1. Overview Operations */}
           {activeTab === 'overview' && (
             <div>
               <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
@@ -421,81 +442,26 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={runDiagnostics}
-                  className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5"
+                  className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer"
                 >
                   🔄 Refresh Status ({telemetry.lastChecked})
                 </button>
               </div>
-{/* ✨ قسم إدارة الريلز (Shoppable Reels) */}
-<div className="mt-8 pt-8 border-t border-temu-gray-border-light">
-  <h3 className="text-lg font-black text-temu-black mb-4">Watch & Shop Reels Management</h3>
-  
-  <div className="bg-temu-offwhite p-4 rounded-xl border border-temu-gray-border-light mb-4">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="font-bold text-sm text-temu-black">Show Reels Section</p>
-        <p className="text-xs text-gray-500">Toggle to show or hide the video section on the storefront homepage.</p>
-      </div>
-      <button
-        onClick={async () => {
-          const newValue = !showReels;
-          setShowReels(newValue);
-          await adminApi.put('/api/admin/settings/show_reels', { value: newValue });
-        }}
-        className={`w-12 h-6 rounded-full transition relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
-      >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${showReels ? 'translate-x-6' : 'translate-x-0'}`} />
-      </button>
-    </div>
-  </div>
 
-  <div className="space-y-3">
-    <p className="text-xs text-gray-500 font-bold">Current Videos in Store:</p>
-    
-    {videoProducts.length === 0 ? (
-      <div className="text-center py-6 bg-temu-offwhite rounded-xl border border-dashed border-gray-300">
-        <p className="text-xs text-gray-400">No videos found. Go to the "CJ Sync" tab and click "Scan & Import Video Products".</p>
-      </div>
-    ) : (
-      videoProducts.map((p) => (
-        <div key={p.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="text-lg">🎬</span>
-            <span className="text-xs font-bold text-temu-black truncate">{p.title}</span>
-          </div>
-          <button
-            onClick={async () => {
-              if (!confirm('Delete this video permanently? The product will remain in the store but without a video.')) return;
-              try {
-                await adminApi.delete(`/api/admin/videos/${p.id}`);
-                fetchVideoProducts(); // تحديث القائمة
-              } catch (err) {
-                alert('Failed to delete video.');
-              }
-            }}
-            className="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold ml-3 shrink-0"
-          >
-            Delete Video
-          </button>
-        </div>
-      ))
-    )}
-  </div>
-</div>
-
+              {/* بطاقات العمليات الست النظيفة المنظمة في شبكة كاملة */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
+                  { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-pink-500 to-rose-600', icon: '🎬' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#FF6B9D] to-rose-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
-                  { label: 'Payment Gateways', desc: 'Enable or disable checkout payment methods', link: '/admin/payment-settings', color: 'from-emerald-500 to-teal-600', icon: '💳' },
                   { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-purple-600 to-[#1D1E3C]', icon: '🛠️' },
-                ].map((card) => (
+                ].map((card, i) => (
                   <button
-                    key={card.label}
-                    onClick={() => router.push(card.link)}
-                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-sm"
+                    key={i}
+                    onClick={() => card.link ? router.push(card.link) : card.action?.()}
+                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#8B78C6]/60 transition group cursor-pointer active:scale-[0.98] shadow-xs"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
@@ -508,7 +474,125 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 2. Add Product Tab */}
+          {/* ✨ 2. تبويب مخصص وفاخر لإدارة ريلز تيك توك (Watch & Shop Reels) */}
+          {activeTab === 'reels' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
+                <div>
+                  <h2 className="text-lg font-black text-temu-black flex items-center gap-2">
+                    <span>🎬</span> Watch & Shop Reels Management
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Control live video demonstration feeds on your storefront homepage</p>
+                </div>
+                
+                <button
+                  onClick={fetchVideoProducts}
+                  className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3.5 py-2 rounded-xl border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer font-bold"
+                >
+                  🔄 Reload Videos
+                </button>
+              </div>
+
+              {/* زر التبديل الرئيسي لإظهار أو إخفاء القسم من المتجر */}
+              <div className="bg-temu-offwhite p-5 rounded-2xl border border-temu-gray-border-light flex items-center justify-between">
+                <div>
+                  <h4 className="font-black text-sm text-temu-black">Display Reels on Homepage</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Turn off to completely hide the video reel carousel from customers.</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const nextVal = !showReels;
+                    setShowReels(nextVal);
+                    localStorage.setItem('laclarc_show_reels', String(nextVal));
+                  }}
+                  className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                >
+                  <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${showReels ? 'translate-x-7' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {/* زر استيراد الفيديوهات السريع من CJ */}
+              <div className="bg-purple-50/60 p-5 rounded-2xl border border-[#8B78C6]/25 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h4 className="font-black text-sm text-temu-black">Sync New Video Assets</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Scan trending drops and fetch active video clips automatically from CJ.</p>
+                </div>
+                <button
+                  onClick={handleSyncVideos}
+                  disabled={syncingVideos}
+                  className="bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-md"
+                >
+                  {syncingVideos ? 'Scanning CJ Videos...' : 'Scan & Import Videos'}
+                </button>
+              </div>
+
+              {/* قائمة الفيديوهات النشطة حالياً في المتجر */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-gray-500">
+                    Active Videos in Store ({videoProducts.length})
+                  </h4>
+                </div>
+
+                {loadingVideos ? (
+                  <div className="text-center py-10">
+                    <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-xs text-gray-400 font-bold">Scanning database for video products...</p>
+                  </div>
+                ) : videoProducts.length === 0 ? (
+                  <div className="text-center py-12 bg-temu-offwhite rounded-2xl border border-dashed border-gray-300 space-y-2">
+                    <span className="text-3xl">🎬</span>
+                    <p className="text-xs font-bold text-gray-600">No products with videos found yet.</p>
+                    <p className="text-[11px] text-gray-400 max-w-sm mx-auto">
+                      Click the &ldquo;Scan &amp; Import Videos&rdquo; button above to import high-converting video drops from CJ.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {videoProducts.map((p) => (
+                      <div key={p.id} className="p-3.5 bg-white border border-temu-gray-border-light rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs transition">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-12 h-12 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative">
+                            {p.image_url ? (
+                              <img src={p.image_url} alt={p.title} className="w-full h-full object-cover opacity-70" />
+                            ) : null}
+                            <span className="absolute inset-0 flex items-center justify-center text-sm">▶</span>
+                          </div>
+                          
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-temu-black truncate">{p.title}</p>
+                            <p className="text-[11px] text-[#FF6B9D] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={p.video_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
+                            title="Preview Video Link"
+                          >
+                            👁️
+                          </a>
+
+                          <button
+                            onClick={() => handleDeleteVideo(p.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Add Product Tab */}
           {activeTab === 'add' && (
             <div>
               <h2 className="text-lg font-black text-temu-black mb-2">Publish New Product</h2>
@@ -533,7 +617,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleScrape}
                     disabled={scraping}
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95 cursor-pointer"
                   >
                     {scraping ? 'Extracting Data...' : 'Scrape Data'}
                   </button>
@@ -609,7 +693,7 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-linear-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
+                  className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#8B78C6]/20 active:scale-[0.98]"
                 >
                   {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
                 </button>
@@ -617,7 +701,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 3. CJ Sync & Sourcing Tab */}
+          {/* 4. CJ Sync & Sourcing Tab */}
           {activeTab === 'sync' && (
             <div className="space-y-6">
               <div>
@@ -669,7 +753,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleSyncCJ}
                     disabled={syncing}
-                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95"
+                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
                   >
                     {syncing ? 'Triggering...' : 'Run Category Sync'}
                   </button>
@@ -681,7 +765,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleMassSync}
                     disabled={massSyncing}
-                    className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#8B78C6]/20"
+                    className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#8B78C6]/20 cursor-pointer"
                   >
                     {massSyncing ? 'Engine Starting...' : 'Start Mass Import Engine'}
                   </button>
@@ -689,18 +773,6 @@ export default function AdminDashboard() {
 
                 {syncMessage && <p className="mt-3 text-xs font-bold text-gray-500">{syncMessage}</p>}
               </div>
-
-               {/* زر مزامنة منتجات الفيديو فقط */}
-                <div className="pt-4 border-t border-temu-gray-border-light mt-4">
-                  <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-2">🎬 Sync Video Products (For Reels)</label>
-                  <button 
-                    onClick={handleSyncVideos} 
-                    disabled={syncingVideos} 
-                    className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B9D]/20"
-                  >
-                    {syncingVideos ? 'Engine Starting...' : 'Scan & Import Video Products'}
-                  </button>
-                </div>
 
               {/* Official Category Tree Maintenance */}
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light flex items-center justify-between flex-wrap gap-4">
@@ -712,14 +784,14 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleSyncCategories}
                     disabled={syncingCats}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
                   >
                     {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
                   </button>
                   <button
                     onClick={handleBackfillCategories}
                     disabled={backfillingCats}
-                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50"
+                    className="bg-temu-black hover:bg-temu-dark text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
                   >
                     {backfillingCats ? 'Updating Products...' : '2. Backfill Catalog'}
                   </button>
@@ -728,7 +800,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 4. 1688 Sourcing Tab */}
+          {/* 5. 1688 Sourcing Tab */}
           {activeTab === 'sourcing' && (
             <div>
               <h2 className="text-lg font-black text-temu-black mb-1">Direct 1688 Sourcing Submission</h2>
@@ -763,15 +835,14 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Purchase Price ($ USD)</label>
                   <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#8B78C6] to-[#7B68B6] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20">
+                <button type="submit" className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#8B78C6]/20 cursor-pointer">
                   Transmit Sourcing Request to CJ Dropshipping
                 </button>
               </form>
             </div>
           )}
-          
 
-          {/* 5. Coupons Tab */}
+          {/* 6. Coupons Tab */}
           {activeTab === 'coupons' && (
             <div>
               <h2 className="text-lg font-black text-temu-black mb-1">Create Promotional Coupon</h2>
@@ -810,7 +881,7 @@ export default function AdminDashboard() {
                     <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#8B78C6]" />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20">
+                <button type="submit" className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#FF6B9D]/20 cursor-pointer">
                   Deploy Discount Code
                 </button>
               </form>
