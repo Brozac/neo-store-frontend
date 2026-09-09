@@ -398,3 +398,150 @@
   text-align: center;
   box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
 }
+/* ==========================================
+   ✨ بطاقات المنتجات في الـ Hero (Hero Product Cards)
+   ========================================== */
+.hero-cards-container {
+  position: relative;
+  height: 505px;
+  width: 512px;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+@media (max-width: 1023px) {
+  .hero-cards-container {
+    width: min(512px, 100%);
+    height: clamp(300px, 62vw, 505px);
+  }
+}
+
+.hero-card {
+  position: absolute;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-color: #EEEBF7;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  will-change: top, left, width, height;
+}
+
+/* شبكة 4 منتجات (2×2) */
+.count-4 .hero-card:nth-child(1),
+.count-4 .hero-card:nth-child(2) { top: 6px; height: calc(50% - 9px); }
+.count-4 .hero-card:nth-child(3),
+.count-4 .hero-card:nth-child(4) { bottom: 6px; height: calc(50% - 9px); }
+.count-4 .hero-card:nth-child(1),
+.count-4 .hero-card:nth-child(3) { left: 6px; width: calc(50% - 9px); }
+.count-4 .hero-card:nth-child(2),
+.count-4 .hero-card:nth-child(4) { right: 6px; width: calc(50% - 9px); }
+
+/* منتج واحد: يملأ الحاوية */
+.count-1 .hero-card { top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; }
+
+/* منتجان: نصفين جنب بعض */
+.count-2 .hero-card:nth-child(1) { top: 6px; bottom: 6px; left: 6px; width: calc(50% - 9px); height: auto; }
+.count-2 .hero-card:nth-child(2) { top: 6px; bottom: 6px; right: 6px; width: calc(50% - 9px); height: auto; }
+
+/* ثلاثة منتجات */
+.count-3 .hero-card:nth-child(1) { top: 6px; bottom: 6px; left: 6px; width: calc(50% - 9px); height: auto; }
+.count-3 .hero-card:nth-child(2) { top: 6px; right: 6px; width: calc(50% - 9px); height: calc(50% - 9px); }
+.count-3 .hero-card:nth-child(3) { bottom: 6px; right: 6px; width: calc(50% - 9px); height: calc(50% - 9px); }
+
+/* ✨ التوسّع عند التحويم (كمبيوتر) أو الضغط (موبايل) */
+.hero-card:hover,
+.hero-card:active,
+.hero-card.is-active {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 10;
+  border-radius: 16px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* شارة الخصم */
+.hero-card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #FF6B9D;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 4px 9px;
+  border-radius: 9999px;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(255, 107, 157, 0.4);
+}
+
+/* المحتوى السفلي (تدرّج + نصوص) */
+.hero-card .card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(to top, rgba(29, 30, 60, 0.85), transparent);
+  transition: all 0.3s ease;
+  text-align: left;
+  color: white;
+}
+
+.hero-card:hover .card-content,
+.hero-card:active .card-content { padding-bottom: 1.75rem; }
+
+.hero-card .card-title {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-card:hover .card-title { -webkit-line-clamp: 2; }
+
+.hero-card .card-price {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #FF6B9D;
+}
+
+.hero-card .card-description {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  max-height: 0;
+  transition: all 0.3s ease;
+}
+
+.hero-card:hover .card-description,
+.hero-card:active .card-description {
+  opacity: 1;
+  max-height: 100px;
+}
+
+/* الحالة الاحتياطية (بدون منتجات) */
+.hero-cards-container .hero-card.is-fallback {
+  top: 0; left: 0; width: 100%; height: 100%;
+  border-radius: 16px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: white;
+  border: 1px solid #ECE9F5;
+}

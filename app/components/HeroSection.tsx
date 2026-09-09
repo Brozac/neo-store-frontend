@@ -6,20 +6,21 @@ import Image from 'next/image';
 import Script from 'next/script';
 
 interface HeroSectionProps {
-  trendingProducts?: any[];
+  trendingProducts?: any[]; // بقيت اختيارية كـ fallback فقط
 }
 
 export default function HeroSection({ trendingProducts }: HeroSectionProps = {}) {
   const [liveTime, setLiveTime] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+  const [heroProducts, setHeroProducts] = useState<any[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
     const updateTime = () => {
       const now = new Date();
       setLiveTime(
-        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + 
-        ' • ' + 
+        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) +
+        ' • ' +
         now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
       );
     };
@@ -28,11 +29,34 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
+  // ✅ جلب أي منتجات من الموقع مباشرة (ماشي غير trending)
+  useEffect(() => {
+    let cancelled = false;
+    const fetchProducts = async () => {
+      try {
+        // ⚠️ بدّل الرابط إلا كان الـ endpoint ديالكم مختلف
+        const res = await fetch('/api/products?limit=4', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        // دعم عدة أشكال للاستجابة
+        const list = Array.isArray(data)
+          ? data
+          : data.products || data.items || data.data || [];
+        if (!cancelled && list.length > 0) {
+          setHeroProducts(list.slice(0, 4));
+        }
+      } catch (err) {
+        console.warn('HeroSection: product fetch failed', err);
+      }
+    };
+    fetchProducts();
+    return () => { cancelled = true; };
+  }, []);
+
   const initGSAP = () => {
     if (typeof window === 'undefined' || !(window as any).gsap) return;
     const gsap = (window as any).gsap;
     const ScrollTrigger = (window as any).ScrollTrigger;
-
     if (ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
 
     const tl = gsap.timeline();
@@ -52,7 +76,21 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     }
   };
 
-  const heroProduct = trendingProducts && trendingProducts.length > 0 ? trendingProducts[0] : null;
+  // ✅ الأولوية للمنتجات المجوّدة من الـ API، وإلا trendingProducts كـ fallback
+  const products = heroProducts.length > 0
+    ? heroProducts
+    : (trendingProducts || []).slice(0, 4);
+
+  const layoutClass =
+    products.length === 1 ? 'count-1' :
+    products.length === 2 ? 'count-2' :
+    products.length === 3 ? 'count-3' : 'count-4';
+
+  const getImage = (p: any) => p?.image_url || p?.image || p?.thumbnail || '/icon-512.png';
+  const formatPrice = (p: any) => {
+    const val = Number(p?.price);
+    return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
+  };
 
   return (
     <div className="w-full font-sans text-[#1D1E3C] overflow-hidden bg-[#F9F8FC] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
@@ -60,57 +98,64 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP} />
 
       <section className="hero-container relative min-h-[90vh] md:min-h-[85vh] lg:min-h-[92vh] w-full flex flex-col justify-between p-6 sm:p-12 lg:p-16 overflow-hidden">
-        
-        {/* كلمة LACLARC في الخلفية - تظهر فقط على الشاشات الكبيرة لتفادي الفوضى على الهاتف */}
+
         <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#8B78C6]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
           LACLARC
         </div>
 
-        {/* رأس الصفحة (شعار + مؤشر حي) */}
+        {/* رأس الصفحة */}
         <div className="relative z-20 flex justify-between items-start w-full">
           <div className="float-anim gsap-hero bg-white/80 backdrop-blur-md border border-white/80 p-2.5 rounded-xl flex items-center gap-2 shadow-sm">
             <div className="w-7 h-7 bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-lg flex items-center justify-center p-1 shadow-sm shrink-0">
-  <Image 
-    src="/icon-512.png" 
-    alt="Laclarc Logo" 
-    width={20} 
-    height={20} 
-    className="w-full h-full object-contain"
-    priority
-  />
-</div>
-<div className="text-[#1D1E3C]">
+              <Image src="/icon-512.png" alt="Laclarc Logo" width={20} height={20} className="w-full h-full object-contain" priority />
+            </div>
+            <div className="text-[#1D1E3C]">
               <h4 className="text-[10px] font-black uppercase tracking-wider leading-none">Laclarc</h4>
               <span className="text-[8px] text-gray-500 uppercase">Enterprise</span>
             </div>
           </div>
-          
+
           <div className="gsap-hero bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-500 text-[10px] font-mono font-bold flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
             {isMounted ? liveTime : 'Live'}
           </div>
         </div>
 
-        {/* المحتوى الرئيسي: عمودي على الهاتف، أفقي على الكمبيوتر */}
+        {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
-          
-          {/* صورة المنتج الفاخر */}
-          <div className="gsap-parallax-img relative h-[35vh] md:h-[50vh] lg:h-[65vh] w-full lg:w-1/2 flex items-center justify-center pointer-events-none order-1 lg:order-2">
-            {heroProduct ? (
-              <Link href={`/products/${heroProduct.id}`} className="h-full w-full flex items-center justify-center">
-                <img 
-                  className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
-                  src={heroProduct.image_url || heroProduct.image || '/icon-512.png'} 
-                  alt={heroProduct.title || "Laclarc Premium Product"} 
-                />
-              </Link>
-            ) : (
-              <img 
-                className="float-anim-slow max-h-full max-w-full object-contain drop-shadow-[0_25px_35px_rgba(29,30,60,0.25)]" 
-                src="/icon-512.png" 
-                alt="Laclarc Premium Product" 
-              />
-            )}
+
+          {/* ✨ بطاقات المنتجات التفاعلية */}
+          <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
+            <div className={`hero-cards-container float-anim-slow ${layoutClass}`}>
+              {products.length > 0 ? (
+                products.map((product: any, index: number) => (
+                  <Link
+                    key={product?.id ?? index}
+                    href={`/products/${product.id}`}
+                    className="hero-card"
+                    style={{ backgroundImage: `url(${getImage(product)})` }}
+                  >
+                    {!!product?.discount && (
+                      <span className="hero-card-badge">-{product.discount}%</span>
+                    )}
+                    <div className="card-content">
+                      <div className="card-title">{product?.title || 'Laclarc Premium'}</div>
+                      {product?.price && <div className="card-price">{formatPrice(product)}</div>}
+                      <div className="card-description">
+                        {product?.description || 'Exclusive premium quality — limited stock available.'}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="hero-card is-fallback" style={{ backgroundImage: 'url(/icon-512.png)' }}>
+                  <div className="card-content">
+                    <div className="card-title">Laclarc Premium Collection</div>
+                    <div className="card-description">Trending deals across all departments.</div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* النصوص والأزرار */}
@@ -130,16 +175,16 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             </div>
 
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">
-              <Link 
-                href="#catalog" 
+              <Link
+                href="#catalog"
                 className="bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-xl shadow-[#1D1E3C]/20 active:scale-95 flex items-center gap-2 border border-white/10"
               >
                 Shop Trending Deals
                 <span className="w-5 h-5 bg-[#FF6B9D] rounded-full flex items-center justify-center text-[10px] text-white">⚡</span>
               </Link>
-              
-              <Link 
-                href="/categories" 
+
+              <Link
+                href="/categories"
                 className="bg-white hover:bg-gray-50 text-[#1D1E3C] border border-[#8B78C6]/30 px-5 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-sm active:scale-95"
               >
                 All Departments
@@ -162,7 +207,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         </div>
       </section>
 
-      {/* SECTION 2: BOTTOM ASSURANCE */}
+      {/* SECTION 2 */}
       <section className="bg-white p-8 sm:p-14 border-t border-gray-200 relative z-20">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
