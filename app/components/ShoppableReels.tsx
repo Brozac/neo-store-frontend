@@ -221,7 +221,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               muted={isMuted}
               autoPlay
               onClick={togglePlay}
-              className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+              className="absolute inset-0 w-full h-full object-contain bg-black cursor-pointer"
             />
 
             {/* التدرج العلوي للشعار والأزرار */}

@@ -24,7 +24,7 @@ export default function FrequentlyBoughtTogether({
   currentProduct, 
   relatedProducts = [] 
 }: FrequentlyBoughtTogetherProps) {
-  const { addToCart } = useCart();
+  const { addToCart, applyWheelDiscount } = useCart();
   
   // نختار أول منتج مقترح ليكون الشريك في الباقة
   const bundlePartner = relatedProducts.length > 0 ? relatedProducts[0] : null;
@@ -47,41 +47,45 @@ export default function FrequentlyBoughtTogether({
   const partnerImg = bundlePartner.image_url || bundlePartner.image || '/placeholder.jpg';
 
   const handleAddBundleToCart = () => {
-    // 1. إضافة المنتج الأول بسعره المخفض
+    // 1. إضافة المنتج الأساسي
     addToCart({
       id: currentProduct.id,
       title: currentProduct.title,
       name: currentProduct.title,
-      price: includePartner ? parseFloat((currentPrice * 0.85).toFixed(2)) : currentPrice,
+      price: currentPrice,
       quantity: 1,
       image: currentImg,
       image_url: currentImg,
       vid: currentProduct.vid || ''
     }, 1);
 
-    // 2. إضافة المنتج الثاني بالخصم إذا كان محدداً
+    // 2. إضافة المنتج المكمل وتطبيق خصم الـ 15% على السلة بالكامل
     if (includePartner) {
       addToCart({
         id: bundlePartner.id,
         title: bundlePartner.title,
         name: bundlePartner.title,
-        price: parseFloat((partnerPrice * 0.85).toFixed(2)),
+        price: partnerPrice,
         quantity: 1,
         image: partnerImg,
         image_url: partnerImg,
         vid: bundlePartner.vid || ''
       }, 1);
+
+      // ✨ تفعيل خصم 15% في نظام السلة والـ Checkout لضمان مطابقة السعر مع Stripe
+      applyWheelDiscount(15);
     }
 
     setAddedSuccess(true);
-    setTimeout(() => setAddedSuccess(false), 2000);
+    setTimeout(() => setAddedSuccess(false), 2200);
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm my-8 space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-100 pb-3">
+        {/* ✨ إعادة أيقونة المصافحة 🤝 */}
         <h3 className="text-base font-black text-[#1D1E3C] flex items-center gap-2">
-          <span></span> Frequently Bought Together
+          <span>🤝</span> Frequently Bought Together
         </h3>
         <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
           Bundle & Save 15%
@@ -94,7 +98,13 @@ export default function FrequentlyBoughtTogether({
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
           {/* المنتج الأول */}
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-50 border border-gray-200 overflow-hidden shrink-0 shadow-sm">
-            <Image src={currentImg} alt={currentProduct.title} fill sizes="96px" className="object-contain p-1.5" />
+            <Image 
+              src={currentImg} 
+              alt={currentProduct.title} 
+              fill 
+              sizes="96px" 
+              className="object-contain p-1.5" 
+            />
           </div>
 
           <span className="text-xl font-black text-[#8B78C6]">+</span>
@@ -103,7 +113,13 @@ export default function FrequentlyBoughtTogether({
           <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-50 border-2 overflow-hidden shrink-0 shadow-sm transition ${
             includePartner ? 'border-[#8B78C6]' : 'border-gray-200 opacity-40'
           }`}>
-            <Image src={partnerImg} alt={bundlePartner.title} fill sizes="96px" className="object-contain p-1.5" />
+            <Image 
+              src={partnerImg} 
+              alt={bundlePartner.title} 
+              fill 
+              sizes="96px" 
+              className="object-contain p-1.5" 
+            />
           </div>
         </div>
 
@@ -155,7 +171,7 @@ export default function FrequentlyBoughtTogether({
             }`}
           >
             {addedSuccess ? (
-              <><span>✓</span> Both Added to Bag!</>
+              <><span>✓</span> Both Added to Bag (15% OFF Saved)!</>
             ) : (
               <><span>⚡</span> {includePartner ? 'Add Both to Cart (Save 15%)' : 'Add Item to Cart'}</>
             )}
