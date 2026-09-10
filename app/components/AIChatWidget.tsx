@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface ChatMessage {
   id: string;
@@ -28,6 +28,7 @@ export default function AIChatWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -38,10 +39,22 @@ export default function AIChatWidget() {
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
+      // ✨ فوكس تلقائي على حقل الإدخال ملي الشات يتحل
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [messages, isOpen]);
 
-  const handleSendMessage = async (textToSend?: string) => {
+  // ✨ الإغلاق بمفتاح Escape (Accessibility)
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
+  const handleSendMessage = useCallback(async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim();
     if (!text || isTyping) return;
 
@@ -56,6 +69,10 @@ export default function AIChatWidget() {
     if (!textToSend) setInputMessage('');
     setIsTyping(true);
 
+    // ✨ Timeout 45 ثانية — يغطي cold start ديال Render + بطء Gemini
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
@@ -63,8 +80,23 @@ export default function AIChatWidget() {
         body: JSON.stringify({
           message: text,
           history: messages.slice(-4)
-        })
+        }),
+        signal: controller.signal
       });
+
+      // ✨ رسالة واضحة خاصة بالـ Rate Limit (chatLimiter 30/10m)
+      if (res.status === 429) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `limit_${Date.now()}`,
+            sender: 'bot',
+            text: "You're sending messages a bit fast! 😅 Please wait a few minutes, or reach our human team instantly via WhatsApp.",
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+        return;
+      }
 
       const data = await res.json();
       const botMsg: ChatMessage = {
@@ -75,32 +107,34 @@ export default function AIChatWidget() {
       };
 
       setMessages(prev => [...prev, botMsg]);
-    } catch (err) {
+    } catch {
+      const isTimeout = false; // الرسالة موحدة — كافية وواضحة
       setMessages(prev => [
         ...prev,
         {
           id: `err_${Date.now()}`,
           sender: 'bot',
-          text: "I'm updating my connection. You can also chat directly with our human support via WhatsApp!",
+          text: "I'm having trouble connecting right now. You can chat directly with our human support via WhatsApp!",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
     } finally {
+      clearTimeout(timeoutId);
       setIsTyping(false);
     }
-  };
+  }, [inputMessage, isTyping, messages, API_BASE_URL]);
 
   return (
-    // ✨ التموضع: فوق زر الواتساب مباشرة بارتفاع مريح لا يحجب أي عنصر
+    // ✨ التموضع: فوق زر الواتساب مباشرة
     <aside aria-label="Live AI Shopping Assistant" className="fixed bottom-24 left-6 z-40 font-sans pointer-events-auto">
-      
+
       {/* نافذة المحادثة المنبثقة */}
       {isOpen && (
-        <div 
+        <div
           className="bg-white border border-gray-200 rounded-3xl shadow-2xl w-[320px] sm:w-[360px] h-[480px] mb-3 flex flex-col justify-between overflow-hidden animate-scale"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* شريط العنوان العلوي الفاخر */}
+          {/* شريط العنوان العلوي */}
           <div className="bg-gradient-to-r from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6] text-white p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-lg border border-white/20 shadow-xs">
@@ -111,11 +145,11 @@ export default function AIChatWidget() {
                   Laclarc AI Assistant
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 </h3>
-                <p className="text-[10px] text-gray-300 font-medium">Instant Product & Shipping Guide</p>
+                <p className="text-[10px] text-gray-300 font-medium">Instant Product &amp; Shipping Guide</p>
               </div>
             </div>
 
-            <button 
+            <button
               type="button"
               onClick={() => setIsOpen(false)}
               className="text-gray-300 hover:text-white p-1 text-sm font-bold active:scale-90 transition cursor-pointer"
@@ -128,14 +162,14 @@ export default function AIChatWidget() {
           {/* تغذية الرسائل */}
           <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-[#F9F8FC] scrollbar-hide text-xs">
             {messages.map((m) => (
-              <div 
-                key={m.id} 
+              <div
+                key={m.id}
                 className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
-                <div 
+                <div
                   className={`max-w-[85%] p-3 rounded-2xl leading-relaxed shadow-xs ${
-                    m.sender === 'user' 
-                      ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white rounded-br-xs' 
+                    m.sender === 'user'
+                      ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white rounded-br-xs'
                       : 'bg-white text-gray-800 border border-gray-200/80 rounded-bl-xs'
                   }`}
                 >
@@ -165,7 +199,8 @@ export default function AIChatWidget() {
                   key={i}
                   type="button"
                   onClick={() => handleSendMessage(prompt)}
-                  className="whitespace-nowrap bg-purple-50 hover:bg-purple-100 text-[#8B78C6] border border-purple-200 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition active:scale-95 cursor-pointer"
+                  disabled={isTyping}
+                  className="whitespace-nowrap bg-purple-50 hover:bg-purple-100 text-[#8B78C6] border border-purple-200 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -174,18 +209,20 @@ export default function AIChatWidget() {
           )}
 
           {/* شريط الإدخال */}
-          <form 
-            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} 
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
             className="p-2.5 bg-white border-t border-gray-200 flex items-center gap-2"
           >
-            <input 
-              type="text" 
+            <input
+              ref={inputRef}
+              type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask anything in English, Français, or دارجة..."
-              className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-xs text-gray-900 outline-none focus:border-[#8B78C6] transition"
+              maxLength={1000}
+              placeholder="Ask anything — English, Français, Darja..."
+              className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-xs text-gray-900 outline-none focus:border-[#8B78C6] transition"
             />
-            
+
             <button
               type="submit"
               disabled={isTyping || !inputMessage.trim()}
@@ -198,17 +235,18 @@ export default function AIChatWidget() {
         </div>
       )}
 
-      {/* زر فتح وإغلاق الشات العائم (أيقونة الروبوت 🤖) */}
+      {/* زر فتح وإغلاق الشات العائم */}
+      {/* ✨ زدنا relative — التلميح دابا كيتقاس من الزر نفسه ماشي من الـ aside */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 cursor-pointer flex items-center justify-center group active:scale-90 border-2 border-white/30"
+        className="relative bg-gradient-to-r from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6] text-white p-3.5 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 cursor-pointer flex items-center justify-center group active:scale-90 border-2 border-white/30"
         title="Chat with Laclarc AI"
         aria-label="Open AI Shopping Assistant"
+        aria-expanded={isOpen}
       >
         <span className="text-xl">🤖</span>
-        
-        {/* تلميح عند المرور بالماوس على شاشات الكمبيوتر */}
+
         <span className="absolute left-full ml-3 bg-[#1D1E3C] text-white text-[11px] font-bold py-1.5 px-3 rounded-xl whitespace-nowrap hidden md:group-hover:block transition-all shadow-xl pointer-events-none border border-white/10">
           Ask Laclarc AI 💬
         </span>
