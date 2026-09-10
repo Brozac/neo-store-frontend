@@ -9,11 +9,12 @@ interface PaymentModalProps {
   onClose: () => void;
   cartItems: any[];
   totalAmount: number;
+  couponCode?: string;
 }
 
 const ALL_GATEWAYS = ['stripe', 'paysera', 'crypto', 'baridimob'];
 
-export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, couponCode }: PaymentModalProps) {
   const router = useRouter();
   const { clearCart, finalTotal } = useCart();
 
@@ -39,7 +40,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  const EXCHANGE_RATE = 255;
+  // ✨ نفس سعر الصرف الرسمي ديال الـ backend (يتبدل من Vercel بلا تعديل الكود)
+  const EXCHANGE_RATE = Number(process.env.NEXT_PUBLIC_USD_TO_DZD_RATE) || 255;
   const effectiveTotal = finalTotal > 0 ? finalTotal : totalAmount;
   const totalAmountDZD = Math.round(effectiveTotal * EXCHANGE_RATE);
 
@@ -85,7 +87,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
         body: JSON.stringify({
           items: cartItems,
           totalAmount: effectiveTotal,
-          origin: window.location.origin
+          origin: window.location.origin,
+          couponCode: couponCode || null // ✨ كيتوصل للسيرفر باش يتصادق ويعاود يحسب
         })
       });
       const data = await res.json();
@@ -95,7 +98,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       } else {
         setError(data.error || `Failed to initiate ${method} payment.`);
       }
-    } catch (err: any) {
+    } catch {
       setError('Server connection error. Please try again.');
     } finally {
       setLoadingGateway(null);
@@ -126,6 +129,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       formData.append('receipt', receiptFile);
       formData.append('totalAmount', String(totalAmountDZD));
       formData.append('items', JSON.stringify(cartItems));
+      formData.append('couponCode', couponCode || ''); // ✨ كيتوصل للسيرفر
 
       formData.append('customerName', customerName.trim());
       formData.append('customerPhone', customerPhone.trim());
@@ -149,7 +153,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
       } else {
         setError(data.error || 'Failed to submit receipt verification.');
       }
-    } catch (err: any) {
+    } catch {
       setError('Server connection error.');
     } finally {
       setLoadingGateway(null);
@@ -174,7 +178,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
 
             {noGatewaysAvailable ? (
               <div className="bg-amber-50 text-amber-700 p-4 rounded-temu-sm text-xs font-bold text-center">
-                Aucune méthode de paiement n'est disponible pour le moment. Merci de réessayer plus tard.
+                No payment method is available at the moment. Please try again later.
               </div>
             ) : (
               <div className="space-y-3">
@@ -189,7 +193,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                         💳
                       </div>
                       <div>
-                        <span className="font-extrabold text-temu-black text-sm block">Credit & Debit Cards</span>
+                        <span className="font-extrabold text-temu-black text-sm block">Credit &amp; Debit Cards</span>
                         <span className="text-[11px] text-temu-gray-light">Visa, MasterCard, Apple Pay (Stripe)</span>
                       </div>
                     </div>
@@ -209,7 +213,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                       </div>
                       <div>
                         <span className="font-extrabold text-temu-black text-sm block">Paysera Checkout</span>
-                        <span className="text-[11px] text-temu-gray-light">European SEPA & Global Cards</span>
+                        <span className="text-[11px] text-temu-gray-light">European SEPA &amp; Global Cards</span>
                       </div>
                     </div>
                     {loadingGateway === 'paysera' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
@@ -272,7 +276,6 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount }
                   <h2 className="text-lg font-black text-temu-black">تحويل بريدي موب / CCP</h2>
                 </div>
 
-                {/* Personal info fields */}
                 <input
                   type="text"
                   placeholder="الاسم واللقب الكامل *"

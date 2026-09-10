@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';  
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
+
 
 interface HeroSectionProps {
   trendingProducts?: any[];
@@ -13,6 +14,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const [liveTime, setLiveTime] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
+  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -29,23 +32,41 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
-  // ✅ كيجيب أي 3 منتجات من الموقع (ماشي شرط trending)
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // ✅ حسب Tenet #4
+
+useEffect(() => {
+  let cancelled = false;
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/products?limit=3`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data)
+        ? data
+        : data.products || data.items || data.data || [];
+      if (!cancelled && list.length > 0) setProducts(list.slice(0, 3));
+    } catch (err) {
+      console.warn('HeroSection: fetch failed', err);
+    }
+  };
+  fetchProducts();
+  return () => { cancelled = true; };
+}, []);
+  // ✨ كيسدّ البطاقة الموسعة ملي كنضغطو خارجها
   useEffect(() => {
-    let cancelled = false;
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products?limit=3', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : data.products || data.items || data.data || [];
-        if (!cancelled && list.length > 0) setProducts(list.slice(0, 3));
-      } catch (err) {
-        console.warn('HeroSection: fetch failed', err);
+    if (activeCard === null) return;
+    const handleOutside = (e: Event) => {
+      if (cardsRef.current && !cardsRef.current.contains(e.target as Node)) {
+        setActiveCard(null);
       }
     };
-    fetchProducts();
-    return () => { cancelled = true; };
-  }, []);
+    document.addEventListener('click', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    return () => {
+      document.removeEventListener('click', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [activeCard]);
 
   const initGSAP = () => {
     if (typeof window === 'undefined' || !(window as any).gsap) return;
@@ -80,6 +101,15 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const formatPrice = (p: any) => {
     const val = Number(p?.price);
     return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
+  };
+    // ✨ أول ضغطة = توسيع | ضغطة ثانية = دخول للمنتج
+  const handleCardTap = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
+    if (activeCard !== index) {
+      e.preventDefault();   // مانمنعوش التنقل — غير نوسعو البطاقة
+      setActiveCard(index);
+    } else {
+      setActiveCard(null);  // دخول للمنتج + إعادة تعيين
+    }
   };
 
   return (
@@ -123,14 +153,19 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
           {/* ✨ بطاقات المنتجات — Collage زي الصورة بالضبط */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
-            <div className={`hero-cards-container float-anim-slow ${countClass}`}>
+                        <div
+              ref={cardsRef}
+              className={`hero-cards-container float-anim-slow ${countClass}`}
+            >
               {cards.length > 0 ? (
                 cards.map((product: any, index: number) => (
                   <Link
                     key={product?.id ?? index}
                     href={`/products/${product.id}`}
-                    className={`hero-card ${positions[index]}`}
+                    className={`hero-card ${positions[index]} ${activeCard === index ? 'is-active' : ''}`}
                     style={{ backgroundImage: `url(${getImage(product)})` }}
+                    onClick={(e) => handleCardTap(e, index)}
+                    aria-expanded={activeCard === index}
                   >
                     <div className="hero-card-content">
                       <div className="hero-card-title">{product?.title || 'Laclarc Premium'}</div>
@@ -144,7 +179,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
               ) : (
                 <div
                   className="hero-card pos-top"
-                  style={{ backgroundImage: 'url(/icon-512.png)', backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundColor: 'white' }}
+                  style={{ backgroundImage: 'url(/icon-192.png)', backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundColor: 'white' }}
                 >
                   <div className="hero-card-content">
                     <div className="hero-card-title">Laclarc Premium Collection</div>
