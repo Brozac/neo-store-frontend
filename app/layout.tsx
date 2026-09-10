@@ -127,8 +127,7 @@ export default function RootLayout({
             `}
           </Script>
         )}
-
-        <Footer />
+        
       </body>
     </html>
   );
