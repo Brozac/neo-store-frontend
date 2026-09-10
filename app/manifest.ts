@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#F9F8FC',
     theme_color: '#8B78C6',
-    id: '/?homescreen=1', 
+    id: '/?homescreen=1', // ✨ مطابق للـ default الضمني — بلا كسر هوية المستخدمين المركبين
     orientation: 'portrait',
     categories: ['shopping', 'lifestyle'],
     icons: [
@@ -28,7 +28,8 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'any',
       },
       {
-        src: '/icon-512.png',
+        // ✨ نسخة مخصصة بـ safe zone 80% — الشعار مايتقصش فالأيقونات الدائرية
+        src: '/icon-512-maskable.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
@@ -40,14 +41,14 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Track Order',
         short_name: 'Track',
         description: 'Track your live parcel shipment',
-        url: '/track-order',
+        url: '/track-order', // ⚠️ تحقق أن المسار كاين فالـ frontend
         icons: [{ src: '/icon-192.png', sizes: '192x192' }]
       },
       {
         name: 'Lightning Deals',
         short_name: 'Deals',
         description: 'Explore limited-time flash drops',
-        url: '/#catalog',
+        url: '/#catalog', // ✅ داخل الـ scope — Chrome كيسكرول للـ anchor عند الإطلاق
         icons: [{ src: '/icon-192.png', sizes: '192x192' }]
       }
     ]

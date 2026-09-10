@@ -1,85 +1,84 @@
 // app/sitemap.ts - Laclarc Automated Dynamic Sitemap
 import type { MetadataRoute } from 'next';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
+// ✨ سلسلة fallbacks: متغير مخصص → متغير Vercel الأوتوماتيكي → الدومين الرسمي
+const SITE_URL =
+  process.env.NEXT_PUBLIC_FRONTEND_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : 'https://laclarc.com');
 
-  // 1. الصفحات الأساسية والصفحات القانونية الموثوقة لـ Google
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  'https://neo-store-backend.onrender.com';
+
+// ✨ شجرة الأقسام: مشي عمقي (Level 1 + كل الـ children) — ماشي غير المستوى الأول
+interface CategoryNode {
+  slug?: string;
+  children?: CategoryNode[];
+}
+
+function flattenCategoryTree(nodes: CategoryNode[], out: string[] = []): string[] {
+  for (const node of nodes) {
+    if (node?.slug) out.push(node.slug);
+    if (Array.isArray(node?.children) && node.children.length > 0) {
+      flattenCategoryTree(node.children, out);
+    }
+  }
+  return out;
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // 1. الصفحات الأساسية والقانونية
   const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/categories`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/track-order`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/refund`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.4,
-    },
+    { url: SITE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
+    { url: `${SITE_URL}/categories`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/track-order`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${SITE_URL}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${SITE_URL}/refund`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
   ];
 
-  // 2. جلب وتوليد روابط الأقسام الديناميكية
+  // 2. الأقسام الديناميكية (شجرة كاملة — كل المستويات)
   let categoryPages: MetadataRoute.Sitemap = [];
   try {
-    const catRes = await fetch(`${backendUrl}/api/categories`, {
-      next: { revalidate: 86400 } // تحديث يومي
+    const catRes = await fetch(`${BACKEND_URL}/api/categories`, {
+      next: { revalidate: 86400 }, // تحديث يومي
     });
     if (catRes.ok) {
-      const categories = await catRes.json();
-      if (Array.isArray(categories)) {
-        categoryPages = categories.map((cat: any) => ({
-          url: `${baseUrl}/category/${cat.slug}`,
-          lastModified: new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.8,
-        }));
-      }
+      const data = await catRes.json();
+      // ✨ دفاعي: الرد ممكن يكون Array مباشرة ولا Object فيه children
+      const tree: CategoryNode[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.children)
+          ? data.children
+          : [];
+      const slugs = flattenCategoryTree(tree);
+      categoryPages = slugs.map((slug) => ({
+        url: `${SITE_URL}/category/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      }));
     }
-  } catch (catErr) {
+  } catch {
     console.warn('Sitemap: Category fetch fallback');
   }
 
-  // 3. جلب وتوليد روابط المنتجات بأمان
+  // 3. المنتجات (غير المتوفرة stock_status=true كيرجعها الـ backend أصلاً)
   let productPages: MetadataRoute.Sitemap = [];
   try {
-    const res = await fetch(`${backendUrl}/api/products`, {
-      next: { revalidate: 3600 } // تحديث كل ساعة
+    const res = await fetch(`${BACKEND_URL}/api/products`, {
+      next: { revalidate: 3600 }, // تحديث كل ساعة
     });
-    
     if (res.ok) {
       const products = await res.json();
-      // ✨ حماية ضد انهيار map في حال كان الرد ليس مصفوفة
       if (Array.isArray(products)) {
         productPages = products.map((product: any) => ({
-          url: `${baseUrl}/products/${product.id}`,
-          lastModified: new Date(),
+          url: `${SITE_URL}/products/${product.id}`,
+          // ✨ التاريخ الحقيقي ديال المنتج فـ lastmod (غير متوفر؟ نرجع لليوم)
+          lastModified: product.created_at ? new Date(product.created_at) : new Date(),
           changeFrequency: 'weekly',
           priority: 0.9,
         }));
@@ -89,5 +88,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap: Product fetch fallback', error);
   }
 
-  return [...staticPages, ...categoryPages, ...productPages];
+  // ✨ منع التكرار (URL وحد مرة وحدة) — حماية رخيصة ومهمة
+  const seen = new Set<string>();
+  const all = [...staticPages, ...categoryPages, ...productPages].filter((entry) => {
+    if (seen.has(entry.url)) return false;
+    seen.add(entry.url);
+    return true;
+  });
+
+  return all;
 }

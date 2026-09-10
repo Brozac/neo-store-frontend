@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
-  
+
   return {
     rules: [
       {
@@ -21,7 +21,7 @@ export default function robots(): MetadataRoute.Robots {
           '/profile',
           '/success',
           '/cancel',
-          '/*?*session_id=*' // منع فهرسة جلسات الدفع
+          '/*?*session_id=*', // جلسات الدفع (غطاء إضافي فوق /success)
         ],
       },
     ],

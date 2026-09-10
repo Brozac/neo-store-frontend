@@ -4,8 +4,11 @@ import Script from 'next/script';
 import Footer from './components/Footer';
 import type { Metadata, Viewport } from 'next';
 
+// ✨ Tenet #4 — مصدر واحد للحقيقة (متسق مع sitemap.ts و robots.ts)
+const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://laclarc.com'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Laclarc | Curated Lifestyle, Electric Grooming & Trending Essentials',
     template: '%s | Laclarc',
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
-  // ✨ الإعداد الرسمي المدمج لـ Apple PWA (يمنع تحذيرات Next.js)
+  // ✨ الإعداد الرسمي المدمج لـ Apple PWA
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -30,11 +33,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Laclarc | Premium Lifestyle & Electric Grooming Drops',
     description: 'Explore the latest trending gear and lifestyle essentials with free worldwide delivery.',
-    url: 'https://laclarc.com',
+    url: SITE_URL,                      // ✨ من الـ env
     siteName: 'Laclarc',
     images: [
       {
-        url: 'https://laclarc.com/hero-image.jpg',
+        // ✨ URL نسبي — metadataBase كيكملو أوتوماتيكياً
+        url: '/hero-image.jpg',         // ⚠️ تأكد أن الملف كاين فـ /public
         width: 1200,
         height: 630,
         alt: 'Laclarc Global Flagship Store',
@@ -47,15 +51,30 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Laclarc | Premium Lifestyle Store',
     description: 'Explore curated trending items with Free Worldwide Express Shipping.',
-    images: ['https://laclarc.com/hero-image.jpg'],
+    images: ['/hero-image.jpg'],
   },
 };
 
+// ✨ Section 8.2 — Schema.org JSON-LD (كان ناقص)
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'OnlineStore',
+  name: 'Laclarc',
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon-512.png`,
+  description: 'Curated lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_URL}/?search={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+// ✨ zoom متاح — WCAG accessibility + iOS أصلاً كيتجاهل القيد
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: 'cover', // ✨ شاشات الـ notch
   themeColor: '#8B78C6',
 };
 
@@ -67,12 +86,18 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
-        
+
+        {/* ✨ JSON-LD Structured Data — كيقراه Google مباشرة من الـ HTML */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
         <Providers>
           {children}
         </Providers>
 
-        {/* Meta Pixel (Facebook Ads) */}
+        {/* Meta Pixel (Facebook Ads) — بشرط تحقق رقمي بسيط */}
         {process.env.NEXT_PUBLIC_META_PIXEL_ID && (
           <Script id="meta-pixel" strategy="afterInteractive">
             {`
@@ -84,7 +109,7 @@ export default function RootLayout({
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
+              fbq('init', '${String(process.env.NEXT_PUBLIC_META_PIXEL_ID).replace(/[^\d]/g, '')}');
               fbq('track', 'PageView');
             `}
           </Script>
@@ -96,13 +121,13 @@ export default function RootLayout({
             {`
               !function (w, d, t) {
                 w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-                ttq.load('${process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID}');
+                ttq.load('${String(process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID).replace(/[^\w-]/g, '')}');
                 ttq.page();
               }(window, document, 'ttq');
             `}
           </Script>
         )}
-        
+
         <Footer />
       </body>
     </html>
