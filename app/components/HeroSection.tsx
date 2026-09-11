@@ -122,28 +122,29 @@ useEffect(() => {
         <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#8B78C6]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
           LACLARC
         </div>
-        {/* رأس الصفحة (شعار + مؤشر حي) */}
-        <div className="relative z-20 flex justify-between items-start w-full">
-          <div className="float-anim gsap-hero flex items-center gap-2.5">
-            {/* ✨ الشعار: دائري + كبير + حواف وردية + بلا خلفية بيضاء */}
-            <div className="w-12 h-12 rounded-full border-2 border-[#FF6B9D] overflow-hidden shrink-0 shadow-lg shadow-[#FF6B9D]/25">
+                {/* رأس الصفحة — مضغوط ومحكم */}
+        <div className="relative z-20 flex justify-between items-center w-full gap-2">
+          {/* الهوية — أصغر وأنيق */}
+          <div className="float-anim gsap-hero flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-full border-2 border-[#FF6B9D] overflow-hidden shrink-0 shadow-lg shadow-[#FF6B9D]/25">
               <Image
-                src="/icon-512.png"
+                src="/icon-192.png"
                 alt="Laclarc Logo"
-                width={48}
-                height={48}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover mix-blend-multiply"
                 priority
               />
             </div>
-            <div className="text-[#1D1E3C]">
+            <div className="text-[#1D1E3C] min-w-0">
               <h4 className="text-xs font-black uppercase tracking-wider leading-none">Laclarc</h4>
               <span className="text-[9px] text-gray-500 uppercase">Enterprise</span>
             </div>
           </div>
 
-          <div className="gsap-hero bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-500 text-[10px] font-mono font-bold flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+          {/* ✨ الساعة — nowrap + حجم مضبوط، عمرها ماكتبسر */}
+          <div className="gsap-hero shrink-0 bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-600 text-[10px] font-mono font-bold flex items-center gap-1.5 whitespace-nowrap tabular-nums">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
             {isMounted ? liveTime : 'Live'}
           </div>
         </div>

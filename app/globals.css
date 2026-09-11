@@ -527,6 +527,94 @@
   .hero-card-description { font-size: 0.75rem; }
 }
 /* ==========================================
+   ✨ Hero Cards — تحسين الموبايل (Responsive)
+   ========================================== */
+@media (max-width: 640px) {
+  /* العناوين: أصغر + سطر واحد محسوب — ماكتغطيش الصورة */
+  .hero-card-title {
+    font-size: 0.8rem;
+    line-height: 1.25;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* السعر: صغير ومدمج تحت العنوان */
+  .hero-card-price {
+    font-size: 0.75rem;
+    margin-top: 2px;
+  }
+
+  /* المحتوى: padding أقل — نتركو الصورة تبان */
+  .hero-card-content {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .hero-card:hover .hero-card-content,
+  .hero-card.is-active .hero-card-content {
+    padding-bottom: 1.5rem;
+  }
+
+  /* الوصف: نتصغير حتى هو */
+  .hero-card-description {
+    font-size: 0.7rem;
+  }
+}
+
+/* ✨ تدرج أقوى فالموبايل — العنوان يبقى مقروء فوق أي صورة */
+@media (max-width: 640px) {
+  .hero-card-content {
+    background: linear-gradient(to top, rgba(29, 30, 60, 0.92) 20%, rgba(29, 30, 60, 0.45) 55%, transparent);
+  }
+}
+/* ==========================================
+   ✨ Hero Cards — تخطيط موبايل: شبكة متساوية
+   (بدل collage مضغوط كيخنق العناوين)
+   ========================================== */
+@media (max-width: 640px) {
+  .hero-cards-container {
+    aspect-ratio: 1 / 1.15; /* مربع ممدود شوية */
+  }
+
+  /* بطاقة 1: فوق بعرض كامل */
+  .hero-card.pos-top {
+    top: 0; left: 0;
+    width: 100%;
+    height: 58%;
+  }
+
+  /* بطاقتين تحت — جنب بجوج متساويين */
+  .hero-card.pos-bottom-left {
+    top: 59%; left: 0;
+    width: 49%; height: 40%;
+  }
+
+  .hero-card.pos-bottom-right {
+    top: 59%; right: 0;
+    width: 49%; height: 40%;
+  }
+
+  /* العناوين فالشبكة الصغيرة: سطر واحد فقط + حجم مصغر */
+  .hero-card.pos-bottom-left .hero-card-title,
+  .hero-card.pos-bottom-right .hero-card-title {
+    font-size: 0.7rem;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-card.pos-bottom-left .hero-card-price,
+  .hero-card.pos-bottom-right .hero-card-price {
+    font-size: 0.65rem;
+  }
+
+  .hero-card.pos-bottom-left .hero-card-content,
+  .hero-card.pos-bottom-right .hero-card-content {
+    padding: 0.5rem 0.6rem;
+  }
+}
+/* ==========================================
    ✨ حالة النشطة (Tap-to-Expand للموبايل)
    ========================================== */
 .hero-card {
@@ -590,4 +678,21 @@
 }
 .animate-scale {
   animation: chat-pop 0.25s cubic-bezier(0.2, 0, 0, 1) both;
+}
+/* ✨ أنيميشن احترافية للشات */
+@keyframes chat-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-chat-open {
+  animation: chat-slide-up 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* ✨ نبضة حلقة زر الشات */
+@keyframes fab-ring {
+  0%   { transform: scale(1); opacity: 0.35; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.animate-fab-ring {
+  animation: fab-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
