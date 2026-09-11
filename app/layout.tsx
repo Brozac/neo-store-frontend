@@ -1,7 +1,6 @@
 import './globals.css';
 import { Providers } from './providers';
 import Script from 'next/script';
-import Footer from './components/Footer';
 import type { Metadata, Viewport } from 'next';
 
 // ✨ Tenet #4 — مصدر واحد للحقيقة (متسق مع sitemap.ts و robots.ts)
