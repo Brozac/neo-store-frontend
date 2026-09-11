@@ -8,16 +8,26 @@ export default function ExitIntentPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10 دقائق
   const [claimed, setClaimed] = useState(false);
+  // ✨ state فاري default — القراءة ديال localStorage كتتم غير داخل useEffect
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    // ✨ حماية مزدوجة: session + تخطي السلة الفارغة (عرض بلا سلة = إزعاج بلا قيمة)
+    // ✨✨ كل شي كيلمس المتصفح (localStorage/sessionStorage) هنا فقط —
+    // الـ useEffect عمرو مايتنفذ فالـ SSR/prerender
+
+    // تخصيص بالاسم إلا كان المستخدم مسجل
+    try {
+      const userData = JSON.parse(localStorage.getItem('user_data') || 'null');
+      setUserName(userData?.name?.split(' ')[0] || '');
+    } catch {
+      // user_data تالف — نتجاهلو بصمت
+    }
+
     if (sessionStorage.getItem('exit_intent_shown')) return;
 
     const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      // ماكاينش سلة → ما نعرضو والو (كل خروج = تخلي عن الزبون البارد)
-      return;
+      return; // سلة خاوية → بلا بوب
     }
 
     let shown = false;
@@ -28,18 +38,17 @@ export default function ExitIntentPopup() {
       setIsOpen(true);
     };
 
-    // 1. ديسكتوب: نية الخروج الحقيقية (الماوس طالع)
+    // 1. ديسكتوب: نية الخروج (الماوس طالع)
     const handleMouseLeave = (e: MouseEvent) => {
       if (e.clientY <= 15) markShown();
     };
 
-    // 2. موبايل: نية "مغادرة" واقعية = بدّل التاب/قرّب التطبيق
-    //    (أدق بكثير من مؤقت خمول أعمى يطلق على كل زائر)
+    // 2. موبايل: بدل التاب/قرّب التطبيق
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden') markShown();
     };
 
-    // 3. موبايل احتياط: خمول طويل 45 ثانية (تفاعل مع الصفحة = اهتمام)
+    // 3. موبايل احتياط: خمول 45 ثانية بلا تفاعل
     let idleTimer: ReturnType<typeof setTimeout>;
     const resetIdle = () => {
       clearTimeout(idleTimer);
@@ -59,9 +68,6 @@ export default function ExitIntentPopup() {
       clearTimeout(idleTimer);
     };
   }, []);
-    // 4.✨ تخصيص بالاسم إلا كان المستخدم مسجل
-    const userData = JSON.parse(localStorage.getItem('user_data') || 'null');
-    setUserName(userData?.name?.split(' ')[0] || ''); // الاسم الأول فقط
 
   // عداد التنازلي
   useEffect(() => {
@@ -87,8 +93,6 @@ export default function ExitIntentPopup() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // ✨ المطالبة: نسجل الكود محلياً + نوجه للسلة حيث يدخله بنقرة
-  // (الخصم الحقيقي كيتصادق server-side عبر validate-coupon — بلا خصم مضاعف)
   const handleClaim = () => {
     setClaimed(true);
     sessionStorage.setItem('laclarc_coupon', 'LACLARC10');
@@ -127,14 +131,13 @@ export default function ExitIntentPopup() {
         </span>
 
         <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mt-2">
-          Wait! Don&apos;t Leave Empty Handed...
+          {userName ? `Wait ${userName}! ` : 'Wait! '}Don&apos;t Leave Empty Handed...
         </h2>
 
         <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto mt-2">
           Take an extra <strong className="text-[#8B78C6]">10% OFF</strong> on your entire purchase right now. Valid for the next 10 minutes only!
         </p>
 
-        {/* بطاقة كود الخصم */}
         <div className="bg-white/5 border border-dashed border-[#8B78C6] p-3.5 rounded-2xl my-4">
           <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Use Code at Checkout:</span>
           <span className="font-mono font-black text-lg sm:text-xl text-white tracking-widest bg-[#8B78C6]/30 px-4 py-1 rounded-xl border border-[#8B78C6]/40 inline-block">
