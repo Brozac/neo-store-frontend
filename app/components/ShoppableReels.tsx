@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PaymentModal from './PaymentModal';
+import { useRouter } from 'next/navigation';
+
 
 interface Product {
   id: string | number;
@@ -91,14 +93,35 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentReel = selectedReelIndex !== null ? activeReels[selectedReelIndex] : null;
+  const router = useRouter();
 
+  // ✨ Autoplay آمن: ديميوم muted فالبداية — unmute فقط بعد تفاعل مستخدم
+  // (سياسات Chrome/Safari: autoplay بالصوت ممنوع — إلا حظرنا التبديل، الفيديو يجمّد)
   useEffect(() => {
     if (selectedReelIndex !== null && videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
+      const v = videoRef.current;
+      v.currentTime = 0;
+      v.muted = true;       // نبدأ دائماً صامت — مضمون autoplay
+      setIsMuted(true);
+      v.play().catch(() => {
+        // حتى muted ممكن يفشل نادراً — نشوف زر play يدوي
+        setIsPlaying(false);
+      });
       setIsPlaying(true);
     }
   }, [selectedReelIndex]);
+    // ✨ أسهم الكيبورد — تجربة سطح مكتب سينمائية
+  useEffect(() => {
+    if (selectedReelIndex === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedReelIndex(null);
+      if (e.key === 'ArrowRight') nextReel();
+      if (e.key === 'ArrowLeft') prevReel();
+      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedReelIndex, activeReels.length]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -318,9 +341,19 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   </div>
                 </div>
 
-                <button
+                                <button
                   type="button"
-                  onClick={() => setIsPaymentOpen(true)}
+                  onClick={() => {
+                    // 🛡️ حماية مالية (Tenet #1): منتجات الـ demo ما عندهاش DB entry
+                    // الدفع عليها = crash ولا item زائف
+                    if (String(currentReel.id).startsWith('demo-')) {
+                      // نوجه للكتالوغ الحقيقي بدل الدفع الزائف
+                      setSelectedReelIndex(null);
+                      router.push('/#catalog');
+                      return;
+                    }
+                    setIsPaymentOpen(true);
+                  }}
                   className="bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-pink-500/30 flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>⚡</span> Buy Now
