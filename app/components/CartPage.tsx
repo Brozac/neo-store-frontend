@@ -68,6 +68,30 @@ export default function CartPage() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponCode, payableTotal]);
+    // ✨ استرجاع كوبون Exit-Intent تلقائياً — تجربة بضغطة وحدة
+  useEffect(() => {
+    const saved = sessionStorage.getItem('laclarc_coupon');
+    if (saved && !couponCode) {
+      setCouponInput(saved);
+      // تطبيق مباشر عبر نفس مسار التصادق الموحد
+      const apply = async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/validate-coupon`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: saved, cartTotal: payableTotal }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setCouponCode(saved);
+            setCouponInfo({ discount: Number(data.discount) || 0, message: data.message });
+          }
+        } catch {}
+      };
+      apply();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const applyCoupon = () => {
     const trimmed = couponInput.trim().toUpperCase();

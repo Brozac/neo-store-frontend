@@ -1,45 +1,69 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCart } from '../context/CartContext';
 import { useRouter } from 'next/navigation';
 
 export default function ExitIntentPopup() {
   const router = useRouter();
-  const { applyWheelDiscount, cartTotal } = useCart();
   const [isOpen, setIsOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 دقائق (600 ثانية)
+  const [timeLeft, setTimeLeft] = useState(600); // 10 دقائق
   const [claimed, setClaimed] = useState(false);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    const hasShown = sessionStorage.getItem('exit_intent_shown');
-    if (hasShown) return;
+    // ✨ حماية مزدوجة: session + تخطي السلة الفارغة (عرض بلا سلة = إزعاج بلا قيمة)
+    if (sessionStorage.getItem('exit_intent_shown')) return;
 
-    // 1. رصد حركة الماوس نحو أعلى الشاشة على أجهزة الحاسوب
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 15 && !sessionStorage.getItem('exit_intent_shown')) {
-        setIsOpen(true);
-        sessionStorage.setItem('exit_intent_shown', 'true');
-      }
+    const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      // ماكاينش سلة → ما نعرضو والو (كل خروج = تخلي عن الزبون البارد)
+      return;
+    }
+
+    let shown = false;
+    const markShown = () => {
+      if (shown) return;
+      shown = true;
+      sessionStorage.setItem('exit_intent_shown', 'true');
+      setIsOpen(true);
     };
 
-    // 2. مؤقت خمول احتياطي للأجهزة الذكية (الهواتف) بعد 35 ثانية
-    const mobileTimer = setTimeout(() => {
-      if (!sessionStorage.getItem('exit_intent_shown')) {
-        setIsOpen(true);
-        sessionStorage.setItem('exit_intent_shown', 'true');
-      }
-    }, 35000);
+    // 1. ديسكتوب: نية الخروج الحقيقية (الماوس طالع)
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 15) markShown();
+    };
+
+    // 2. موبايل: نية "مغادرة" واقعية = بدّل التاب/قرّب التطبيق
+    //    (أدق بكثير من مؤقت خمول أعمى يطلق على كل زائر)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') markShown();
+    };
+
+    // 3. موبايل احتياط: خمول طويل 45 ثانية (تفاعل مع الصفحة = اهتمام)
+    let idleTimer: ReturnType<typeof setTimeout>;
+    const resetIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(markShown, 45000);
+    };
+    resetIdle();
+    const idleEvents: (keyof WindowEventMap)[] = ['scroll', 'touchstart', 'click'];
+    idleEvents.forEach((ev) => window.addEventListener(ev, resetIdle, { passive: true }));
 
     document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       document.removeEventListener('mouseleave', handleMouseLeave);
-      clearTimeout(mobileTimer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      idleEvents.forEach((ev) => window.removeEventListener(ev, resetIdle));
+      clearTimeout(idleTimer);
     };
   }, []);
+    // 4.✨ تخصيص بالاسم إلا كان المستخدم مسجل
+    const userData = JSON.parse(localStorage.getItem('user_data') || 'null');
+    setUserName(userData?.name?.split(' ')[0] || ''); // الاسم الأول فقط
 
-  // عداد الـ 10 دقائق المتناقص
+  // عداد التنازلي
   useEffect(() => {
     if (!isOpen) return;
 
@@ -63,33 +87,28 @@ export default function ExitIntentPopup() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // تطبيق الخصم ومتابعة التسوق بنقرة زر واحدة
+  // ✨ المطالبة: نسجل الكود محلياً + نوجه للسلة حيث يدخله بنقرة
+  // (الخصم الحقيقي كيتصادق server-side عبر validate-coupon — بلا خصم مضاعف)
   const handleClaim = () => {
     setClaimed(true);
-    // تفعيل خصم 10% في السلة مباشرة
-    applyWheelDiscount(10);
-
+    sessionStorage.setItem('laclarc_coupon', 'LACLARC10');
     setTimeout(() => {
       setIsOpen(false);
-      // إذا كانت السلة تحتوي على منتجات، نوجهه لإنهاء الدفع فوراً
-      if (cartTotal > 0) {
-        router.push('/cart');
-      }
+      router.push('/cart');
     }, 800);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in"
       onClick={() => setIsOpen(false)}
     >
-      <div 
+      <div
         className="bg-linear-to-br from-[#1D1E3C] to-[#2D2E5C] text-white border-2 border-[#8B78C6] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center overflow-hidden animate-scale"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* زر الإغلاق */}
         <button
           type="button"
           onClick={() => setIsOpen(false)}
@@ -99,12 +118,10 @@ export default function ExitIntentPopup() {
           ✕
         </button>
 
-        {/* أيقونة العرض (باللون الوردي Laclarc) */}
         <div className="w-14 h-14 bg-[#FF6B9D]/20 text-[#FF6B9D] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-[#FF6B9D]/30">
           🎁
         </div>
 
-        {/* العداد والتحذير */}
         <span className="text-[10px] font-black uppercase tracking-widest bg-black/40 text-[#FF6B9D] px-3 py-1 rounded-full border border-white/10 inline-block mb-1">
           Limited Exit Offer &bull; Expires in {formatTimer(timeLeft)}
         </span>
@@ -125,7 +142,6 @@ export default function ExitIntentPopup() {
           </span>
         </div>
 
-        {/* أزرار الإجراء */}
         <div className="space-y-2 pt-1">
           <button
             type="button"
@@ -136,7 +152,7 @@ export default function ExitIntentPopup() {
             {claimed ? (
               <><span>✓</span> 10% Discount Applied!</>
             ) : (
-              <><span>⚡</span> Claim 10% & Shop Now</>
+              <><span>⚡</span> Claim 10% &amp; Shop Now</>
             )}
           </button>
 
@@ -148,7 +164,6 @@ export default function ExitIntentPopup() {
             No thanks, I prefer paying full price
           </button>
         </div>
-
       </div>
     </div>
   );
