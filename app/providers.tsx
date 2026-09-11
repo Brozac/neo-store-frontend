@@ -10,17 +10,17 @@ import SpinWheel from './components/SpinWheel';
 import ExitIntentPopup from './components/ExitIntentPopup';
 import AIChatWidget from './components/AIChatWidget';
 import Footer from './components/Footer';
+import UtmTracker from './components/UtmTracker'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // ✨ التحقق مما إذا كانت الصفحة الحالية تابعة للوحة تحكم الأدمن
+  // ✨ عزل مسارات لوحة تحكم الأدمن
   const isAdminRoute = pathname?.startsWith('/admin');
 
-  // ✨ تسجيل Service Worker في الإنتاج فقط
+  // ✨ تسجيل Service Worker في بيئة الإنتاج فقط
   useEffect(() => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      // ✨ Guard: إلا فات حدث load قبل الـ mount (hydration بطيء) — نسجل مباشرة
       const registerSW = () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
@@ -42,17 +42,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <CartProvider>
-      {/* عرض الهيدر فقط للمشترين وليس داخل لوحة تحكم الأدمن */}
+      {/* ✨ التقاط معلمات إعلانات فيسبوك وتيك توك تلقائياً */}
+      <UtmTracker />
+
+      {/* عرض الهيدر فقط للمشترين (مرة واحدة فقط) */}
       {!isAdminRoute && <Navbar />}
 
       <div className={!isAdminRoute ? 'pb-20 md:pb-0' : ''}>
         {children}
       </div>
 
-      {/* ✨ Footer انضم للعزل — كيبان فقط في واجهة المتجر */}
+      {/* ✨ الفوتر محمي ومعزول — يظهر فقط في صفحات المتجر للزبائن */}
       {!isAdminRoute && <Footer />}
 
-      {/* المكونات العائمة تظهر فقط في صفحات المتجر للزبائن */}
+      {/* المكونات التفاعلية العائمة تظهر فقط لزبائن المتجر */}
       {!isAdminRoute && (
         <>
           <CartWidget />

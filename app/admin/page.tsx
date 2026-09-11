@@ -479,6 +479,47 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* 📈 ويدجت أرباح الإعلانات المباشرة (Ad Revenue Attribution) */}
+              <div className="mt-8 bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-xs">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-sm font-black text-temu-black flex items-center gap-2">
+                      <span>📊</span> Ad Campaigns & Revenue Attribution (Last 30 Days)
+                    </h3>
+                    <p className="text-xs text-gray-500">Track which ad network generates the most paid revenue</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase bg-purple-50 text-[#8B78C6] border border-[#8B78C6]/20 px-2.5 py-1 rounded-full">
+                    Real-time ROI
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-gray-500 block uppercase">TikTok Ads</span>
+                      <span className="text-xs text-gray-400">Tracked via ttclid</span>
+                    </div>
+                    <span className="text-sm font-black text-black">Active 🎯</span>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-gray-500 block uppercase">Facebook / Meta</span>
+                      <span className="text-xs text-gray-400">Tracked via fbclid</span>
+                    </div>
+                    <span className="text-sm font-black text-[#8B78C6]">Active 🎯</span>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-bold text-gray-500 block uppercase">Organic / Direct</span>
+                      <span className="text-xs text-gray-400">Word of mouth</span>
+                    </div>
+                    <span className="text-sm font-black text-emerald-600">Free 🌿</span>
+                  </div>
+                </div>
+              </div>
+
           {/* ✨ 2. تبويب مخصص وفاخر لإدارة ريلز تيك توك (Watch & Shop Reels) */}
           {activeTab === 'reels' && (
             <div className="space-y-6">

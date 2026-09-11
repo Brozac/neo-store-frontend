@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { getStoredUtm } from '../components/UtmTracker';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartTotal, finalTotal, wheelDiscount, isMounted } = useCart();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const utmData = getStoredUtm();
+
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -38,7 +41,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: items,
           origin: window.location.origin,
-          wheelDiscount: wheelDiscount || 0
+          wheelDiscount: wheelDiscount || 0,
+          utm: utmData
         }),
       });
 

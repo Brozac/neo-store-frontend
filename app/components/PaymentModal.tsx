@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { getStoredUtm } from './UtmTracker'; // ✨ استيراد دالة التتبع
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -34,13 +35,11 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
   const [customerZip, setCustomerZip] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Fail-open par défaut : tant que le fetch n'a pas répondu, on affiche tout
   const [enabledGateways, setEnabledGateways] = useState<string[]>(ALL_GATEWAYS);
   const [gatewaysLoaded, setGatewaysLoaded] = useState(false);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // ✨ نفس سعر الصرف الرسمي ديال الـ backend (يتبدل من Vercel بلا تعديل الكود)
   const EXCHANGE_RATE = Number(process.env.NEXT_PUBLIC_USD_TO_DZD_RATE) || 255;
   const effectiveTotal = finalTotal > 0 ? finalTotal : totalAmount;
   const totalAmountDZD = Math.round(effectiveTotal * EXCHANGE_RATE);
@@ -58,7 +57,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
           setEnabledGateways(data.enabled);
         }
       } catch {
-        // Silencieux : on garde ALL_GATEWAYS par défaut (fail-open)
+        // fail-open
       } finally {
         if (!cancelled) setGatewaysLoaded(true);
       }
@@ -81,6 +80,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      const utmData = getStoredUtm(); // ✨ جلب مصدر الإعلان
+
       const res = await fetch(`${API_BASE_URL}/api/payment/${method}`, {
         method: 'POST',
         headers,
@@ -88,7 +89,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
           items: cartItems,
           totalAmount: effectiveTotal,
           origin: window.location.origin,
-          couponCode: couponCode || null // ✨ كيتوصل للسيرفر باش يتصادق ويعاود يحسب
+          couponCode: couponCode || null,
+          utm: utmData // ✨ تمرير كائن UTM للبوابة
         })
       });
       const data = await res.json();
@@ -125,11 +127,14 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
     };
 
     try {
+      const utmData = getStoredUtm(); // ✨ جلب مصدر الإعلان لبريدي موب
+
       const formData = new FormData();
       formData.append('receipt', receiptFile);
       formData.append('totalAmount', String(totalAmountDZD));
       formData.append('items', JSON.stringify(cartItems));
-      formData.append('couponCode', couponCode || ''); // ✨ كيتوصل للسيرفر
+      formData.append('couponCode', couponCode || '');
+      formData.append('utm', JSON.stringify(utmData)); // ✨ توثيق إعلان بريدي موب
 
       formData.append('customerName', customerName.trim());
       formData.append('customerPhone', customerPhone.trim());
