@@ -111,11 +111,14 @@ export default function AdminDashboard() {
   const fetchVideoProducts = async () => {
     setLoadingVideos(true);
     try {
-      // 1. قراءة حالة تفعيل الريلز من localStorage لتفادي مشاكل 404
-      const savedToggle = localStorage.getItem('laclarc_show_reels');
-      setShowReels(savedToggle !== 'false');
+      // ✨ القراءة من store_settings عبر الـ API — ماشي localStorage محلي
+      adminApi.get('/settings')
+        .then(res => {
+          if (typeof res.data.show_reels === 'boolean') setShowReels(res.data.show_reels);
+        })
+        .catch(() => {});
 
-      // 2. استخدام مسار /products النظيف بدون تكرار /api
+      // مسار /products النظيف (adminApi baseURL = .../api أصلاً)
       const productsRes = await adminApi.get('/products');
       if (Array.isArray(productsRes.data)) {
         const vids = productsRes.data.filter((p: any) => p.video_url && String(p.video_url).trim().length > 3);
@@ -204,10 +207,11 @@ export default function AdminDashboard() {
 
   const handleSyncVideos = async () => {
     setSyncingVideos(true);
-    setSyncMessage('🎬 Scanning trending items for video assets in background...');
+    setSyncMessage('🎬 Multi-keyword video hunt started in background (~15 min)...');
     try {
-      await adminApi.get('/sync-cj-products');
-      alert('🎬 Video scanning triggered! Products with video will update shortly.');
+      // ✨ المسار الصحيح — تشغل runCjVideoSync (12 كلمة مفتاحية × 3 صفحات)
+      await adminApi.post('/admin/sync-videos');
+      alert('🎬 Video Sync v2 triggered! Check server logs in ~15 minutes for results.');
     } catch (err: any) {
       setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start video sync.'}`);
     } finally {
@@ -520,7 +524,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-          {/* ✨ 2. تبويب مخصص وفاخر لإدارة ريلز تيك توك (Watch & Shop Reels) */}
+                    {/* ✨ 2. تبويب مخصص وفاخر لإدارة ريلز تيك توك (Watch & Shop Reels) */}
           {activeTab === 'reels' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
@@ -530,7 +534,7 @@ export default function AdminDashboard() {
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">Control live video demonstration feeds on your storefront homepage</p>
                 </div>
-                
+
                 <button
                   onClick={fetchVideoProducts}
                   className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3.5 py-2 rounded-xl border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer font-bold"
@@ -539,20 +543,31 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* زر التبديل الرئيسي لإظهار أو إخفاء القسم من المتجر */}
+              {/* زر التبديل الرئيسي — ✨ محفوظ في قاعدة البيانات (يؤثر على كل الزوار) */}
               <div className="bg-temu-offwhite p-5 rounded-2xl border border-temu-gray-border-light flex items-center justify-between">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Display Reels on Homepage</h4>
-                  <p className="text-xs text-gray-500 mt-0.5">Turn off to completely hide the video reel carousel from customers.</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Global setting — applies to <strong>all visitors</strong> instantly.
+                  </p>
                 </div>
 
-                <button
-                  onClick={() => {
+                                <button
+                  onClick={async () => {
                     const nextVal = !showReels;
-                    setShowReels(nextVal);
-                    localStorage.setItem('laclarc_show_reels', String(nextVal));
+                    setShowReels(nextVal); // تحديث فوري للواجهة (optimistic)
+                    try {
+                      // ✨ الحفظ الحقيقي في PostgreSQL عبر store_settings
+                      // adminApi كيدير baseURL + withCredentials أوتوماتيكياً
+                      await adminApi.put('/admin/settings/show_reels', { value: nextVal });
+                    } catch (e) {
+                      // فشل الشبكة → تراجع + تنبيه
+                      setShowReels(!nextVal);
+                      alert('⚠️ Could not save the setting. Check your connection and try again.');
+                    }
                   }}
                   className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  aria-pressed={showReels}
                 >
                   <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${showReels ? 'translate-x-7' : 'translate-x-0'}`} />
                 </button>
@@ -562,7 +577,9 @@ export default function AdminDashboard() {
               <div className="bg-purple-50/60 p-5 rounded-2xl border border-[#8B78C6]/25 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Sync New Video Assets</h4>
-                  <p className="text-xs text-gray-500 mt-0.5">Scan trending drops and fetch active video clips automatically from CJ.</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Multi-keyword hunt (v2): scans 12 categories for fresh video drops. Takes ~15 min in background.
+                  </p>
                 </div>
                 <button
                   onClick={handleSyncVideos}
@@ -579,6 +596,14 @@ export default function AdminDashboard() {
                   <h4 className="text-xs font-black uppercase tracking-wider text-gray-500">
                     Active Videos in Store ({videoProducts.length})
                   </h4>
+                  {/* ✨ مؤشر جاهزية للريلز */}
+                  <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full border ${
+                    videoProducts.length >= 5
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      : 'bg-amber-50 text-amber-600 border-amber-200'
+                  }`}>
+                    {videoProducts.length >= 5 ? '✓ Reels Ready' : 'Need 5+ for full carousel'}
+                  </span>
                 </div>
 
                 {loadingVideos ? (
@@ -600,12 +625,18 @@ export default function AdminDashboard() {
                       <div key={p.id} className="p-3.5 bg-white border border-temu-gray-border-light rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs transition">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative">
+                            {/* ✨ fallback أنيق إلا فشلت الصورة */}
                             {p.image_url ? (
-                              <img src={p.image_url} alt={p.title} className="w-full h-full object-cover opacity-70" />
+                              <img
+                                src={p.image_url}
+                                alt={p.title}
+                                className="w-full h-full object-cover opacity-70"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
                             ) : null}
                             <span className="absolute inset-0 flex items-center justify-center text-sm">▶</span>
                           </div>
-                          
+
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-temu-black truncate">{p.title}</p>
                             <p className="text-[11px] text-[#FF6B9D] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
@@ -613,12 +644,13 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
+                          {/* ✨ المعاينة عبر الـ Proxy — رابط CJ مايتكشفش + Range خدام */}
                           <a
-                            href={p.video_url}
+                            href={`/api/video-proxy?url=${encodeURIComponent(p.video_url || '')}`}
                             target="_blank"
                             rel="noreferrer"
                             className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition"
-                            title="Preview Video Link"
+                            title="Preview Video"
                           >
                             👁️
                           </a>
