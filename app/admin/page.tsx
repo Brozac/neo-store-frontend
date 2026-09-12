@@ -322,7 +322,7 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto">
 
-        {/* Top Header & Fast Nav */}
+                {/* Top Header & Fast Nav */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
@@ -334,7 +334,36 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* 🐺 مؤقت: تسجيل Webhooks CJ — تحيدو من بعد الاستعمال */}
+            <button
+              onClick={async () => {
+                try {
+                  const res = await adminApi.post('/admin/webhook/register');
+                  alert(`1️⃣ Register:\n${res.data?.message || 'Done'}`);
+                } catch (err: any) {
+                  alert(`❌ Register failed:\n${err.response?.data?.error || err.message}`);
+                }
+              }}
+              className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-bold text-purple-600 transition cursor-pointer"
+            >
+              🐺 Register Webhooks
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  const res = await adminApi.post('/admin/webhook/subscribe');
+                  alert(`2️⃣ Subscribe:\n${res.data?.message || 'Done'}`);
+                } catch (err: any) {
+                  alert(`❌ Subscribe failed:\n${err.response?.data?.error || err.message}`);
+                }
+              }}
+              className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-600 transition cursor-pointer"
+            >
+              📌 Subscribe Products
+            </button>
+
             <button
               onClick={() => router.push('/')}
               className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
