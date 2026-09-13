@@ -99,7 +99,7 @@ export default function FailedOrdersAdmin() {
     if (!confirm(`Trigger background retry for Order #${id} to CJ Dropshipping?`)) return;
     setActionLoading(id);
     try {
-      const res = await adminApi.put(`/admin/manual-orders/approve/${id}`);
+      const res = await adminApi.put(`/admin/retry-fulfillment/${id}`);
       alert(`✅ ${res.data.message || 'Order fulfillment retry initiated in background!'}`);
       fetchOrders(); 
     } catch (error: any) {

@@ -27,6 +27,7 @@ function HomeContent() {
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
   const [showReels, setShowReels] = useState(true);
+  const [shuffleSeed, setShuffleSeed] = useState<number | null>(null);
 
   // ✨ حالات الفرز والتصفية الذكية
   const [sortBy, setSortBy] = useState<SortOption>('default');
@@ -67,6 +68,22 @@ function HomeContent() {
   useEffect(() => {
     setVisibleCount(20);
   }, [activeCategory, searchQuery, sortBy, priceRange]);
+
+  useEffect(() => {
+    // بعد الـ mount فقط (Tenet #2 — SSR آمن)
+    try {
+      const saved = sessionStorage.getItem('catalog_seed');
+      if (saved) {
+        setShuffleSeed(Number(saved));
+      } else {
+        const seed = Math.floor(Math.random() * 1_000_000);
+        sessionStorage.setItem('catalog_seed', String(seed));
+        setShuffleSeed(seed);
+      }
+    } catch {
+      setShuffleSeed(1); // sessionStorage محظور — seed ثابت (بدون دوّار)
+    }
+  }, []);
 
   // ✨ اختيار منتجات الـ Trending (آلات الحلاقة أولاً، مع Fallback ذكي)
   const trendingProducts = useMemo(() => {
@@ -147,7 +164,28 @@ function HomeContent() {
     return list;
   }, [filteredProducts, sortBy]);
 
-  // استبعاد الـ Trending من القائمة السفلية الافتراضية لمنع التكرار
+    // ✨ Seeded Fisher-Yates — ترتيب عشوائي لكن حتمي (deterministic) لنفس الـ seed
+  // نفس الـ seed = نفس الترتيب → Load More والتنقل يستقر، جلسة جديدة = ترتيب جديد
+  const rotatedProducts = useMemo(() => {
+    if (shuffleSeed === null) return sortedProducts; // أول render (SSR): الترتيب الأصلي
+
+    const list = [...sortedProducts];
+    let seed = shuffleSeed;
+    // mulberry32 — PRNG خفيف وحتمي
+    const rand = () => {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  }, [sortedProducts, shuffleSeed]);
+
+  // استبعاد الـ Trending + الدوار (فقط فالـ default feed — الفرز والفلترة يبقاو منطقيين)
   const displayProducts = useMemo(() => {
     const isDefaultFeed = activeCategory === 'All' && searchQuery === '' && sortBy === 'default' && priceRange === 'all';
     if (!isDefaultFeed) {
@@ -155,9 +193,9 @@ function HomeContent() {
     }
 
     const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
-    const nonTrending = sortedProducts.filter(p => !trendingIdSet.has(String(p.id)));
-    return nonTrending.slice(0, visibleCount);
-  }, [sortedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange, visibleCount]);
+    const source = rotatedProducts.filter(p => !trendingIdSet.has(String(p.id)));  // ✨ rotated
+    return source.slice(0, visibleCount);
+  }, [sortedProducts, rotatedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange, visibleCount]);
 
   const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
 

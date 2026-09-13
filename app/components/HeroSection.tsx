@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';  
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
-
 
 interface HeroSectionProps {
   trendingProducts?: any[];
@@ -15,6 +14,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [shuffleSeed, setShuffleSeed] = useState<number | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,26 +32,42 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // ✅ حسب Tenet #4
-
-useEffect(() => {
-  let cancelled = false;
-  const fetchProducts = async () => {
+  // ✨ Seed مشترك مع الكتالوغ — نفس الجلسة = نفس الترتيب فينما بانو المنتجات
+  useEffect(() => {
     try {
-      const res = await fetch(`${API_URL}/api/products?limit=3`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = Array.isArray(data)
-        ? data
-        : data.products || data.items || data.data || [];
-      if (!cancelled && list.length > 0) setProducts(list.slice(0, 3));
-    } catch (err) {
-      console.warn('HeroSection: fetch failed', err);
+      const saved = sessionStorage.getItem('catalog_seed');
+      if (saved) {
+        setShuffleSeed(Number(saved));
+      } else {
+        const seed = Math.floor(Math.random() * 1_000_000);
+        sessionStorage.setItem('catalog_seed', String(seed));
+        setShuffleSeed(seed);
+      }
+    } catch {
+      setShuffleSeed(1); // sessionStorage محظور — seed ثابت (بلا دوّار)
     }
-  };
-  fetchProducts();
-  return () => { cancelled = true; };
-}, []);
+  }, []);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'; // ✨ Tenet #4 + fallback
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchProducts = async () => {
+      try {
+        // ✨ limit=12 — الدوار كيختار 3 من 12 (ماشي ديما نفس الثلاثة الأولين)
+        const res = await fetch(`${API_URL}/api/products?limit=12`, { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : data.products || data.items || data.data || [];
+        if (list.length > 0) setProducts(list.slice(0, 12));
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.warn('HeroSection: fetch failed', err);
+      }
+    };
+    fetchProducts();
+    return () => controller.abort();
+  }, []);
+
   // ✨ كيسدّ البطاقة الموسعة ملي كنضغطو خارجها
   useEffect(() => {
     if (activeCard === null) return;
@@ -89,26 +105,46 @@ useEffect(() => {
     }
   };
 
-  // Fallback لإلا الـ API ماجاب والو
-  const cards = products.length > 0
-    ? products
-    : (trendingProducts || []).slice(0, 3);
+  // ✨ Seeded Fisher-Yates — ترتيب حتمي لنفس الـ seed (Tenet #2 آمن: بلا Math.random فالـ render الأول)
+  // كيخدم على المنتجات المجوّدة، ولا fallback على trendingProducts
+  const rotated = useMemo(() => {
+    const pool = products.length > 0 ? products : (trendingProducts || []);
+    if (shuffleSeed === null || pool.length <= 3) return pool.slice(0, 3);
+
+    const list = [...pool];
+    let seed = shuffleSeed;
+    const rand = () => {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list.slice(0, 3);
+  }, [products, trendingProducts, shuffleSeed]);
+
+  // ✨ Fallback: rotated (أو trending إلا الـ API طايح)
+  const cards = rotated.length > 0 ? rotated : [];
 
   const positions = ['pos-top', 'pos-bottom-left', 'pos-bottom-right'];
   const countClass = cards.length === 1 ? 'count-1' : cards.length === 2 ? 'count-2' : '';
 
-  const getImage = (p: any) => p?.image_url || p?.image || p?.thumbnail || '/icon-512.png';
+  const getImage = (p: any) => p?.image_url || p?.image || p?.thumbnail || '/icon-192.png';
   const formatPrice = (p: any) => {
     const val = Number(p?.price);
     return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
   };
-    // ✨ أول ضغطة = توسيع | ضغطة ثانية = دخول للمنتج
+
+  // ✨ أول ضغطة = توسيع | ضغطة ثانية = دخول للمنتج
   const handleCardTap = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
     if (activeCard !== index) {
-      e.preventDefault();   // مانمنعوش التنقل — غير نوسعو البطاقة
+      e.preventDefault();
       setActiveCard(index);
     } else {
-      setActiveCard(null);  // دخول للمنتج + إعادة تعيين
+      setActiveCard(null);
     }
   };
 
@@ -122,9 +158,9 @@ useEffect(() => {
         <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#8B78C6]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
           LACLARC
         </div>
-                {/* رأس الصفحة — مضغوط ومحكم */}
+
+        {/* رأس الصفحة — مضغوط ومحكم */}
         <div className="relative z-20 flex justify-between items-center w-full gap-2">
-          {/* الهوية — أصغر وأنيق */}
           <div className="float-anim gsap-hero flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 rounded-full border-2 border-[#FF6B9D] overflow-hidden shrink-0 shadow-lg shadow-[#FF6B9D]/25">
               <Image
@@ -142,7 +178,7 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* ✨ الساعة — nowrap + حجم مضبوط، عمرها ماكتبسر */}
+          {/* الساعة — nowrap + tabular-nums، عمرها ماكتبسر */}
           <div className="gsap-hero shrink-0 bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-600 text-[10px] font-mono font-bold flex items-center gap-1.5 whitespace-nowrap tabular-nums">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
             {isMounted ? liveTime : 'Live'}
@@ -152,9 +188,9 @@ useEffect(() => {
         {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
 
-          {/* ✨ بطاقات المنتجات — Collage زي الصورة بالضبط */}
+          {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
-                        <div
+            <div
               ref={cardsRef}
               className={`hero-cards-container float-anim-slow ${countClass}`}
             >
