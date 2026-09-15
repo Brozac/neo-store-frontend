@@ -49,6 +49,41 @@ function fireDedupedPurchase(
     });
   }
 }
+/**
+ * 🆕 Mission #4: بصمات Meta المتصفحية — تُمرر للسيرفر ليرفقها بحدث CAPI
+ * _fbp: كوكي Meta Pixel (ديما موجودة عند زوار الإعلانات)
+ * _fbc: click identifier (موجودة فقط عند نقر إعلان fbclid) — إن لم توجد نصنعها من fbclid
+ * قراءة محلية فقط — لا حساسية، لا تخزين (العمر: دقة المطابقة برك)
+ */
+function collectMetaFingerprints(): { fbp?: string; fbc?: string } {
+  if (typeof document === 'undefined') return {};
+  try {
+    const cookies = Object.fromEntries(
+      document.cookie.split(';').map(c => {
+        const i = c.indexOf('=');
+        return [c.slice(0, i).trim(), decodeURIComponent(c.slice(i + 1).trim())];
+      })
+    );
+
+    let fbp = cookies._fbp;
+    let fbc = cookies._fbc;
+
+    // 🧠 نفس منطق Meta الرسمي: لا _fbc + يوجد fbclid في الرابط → نصنعها
+    // الصيغة المعتمدة: fb.1.{timestamp}.{fbclid}
+    if (!fbc) {
+      const fbclid = new URLSearchParams(window.location.search).get('fbclid');
+      if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
+    }
+
+    // حدود أمان — Meta نفسها تقيد الأطوال
+    return {
+      ...(fbp ? { fbp: String(fbp).slice(0, 200) } : {}),
+      ...(fbc ? { fbc: String(fbc).slice(0, 500) } : {}),
+    };
+  } catch {
+    return {}; // أي فشل = صفر مطابقة إضافية — لا يؤثر على مسار الدفع أبداً
+  }
+}
 
 function SuccessContent() {
   const router = useRouter();
@@ -105,11 +140,14 @@ function SuccessContent() {
           ? { order_id: orderIdParam } 
           : { session_id: sessionId };
 
-        const res = await fetch(endpoint, {
+         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+          body: JSON.stringify({
+            ...(method === 'crypto' ? { order_id: orderIdParam } : { session_id: sessionId }),
+            ...collectMetaFingerprints(),  // 🆕 Mission #4 — بصمات المطابقة
+          }),
+        });;
 
         const data = await res.json();
         if (res.ok && data.success) {
