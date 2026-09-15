@@ -5,6 +5,51 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 
+// 🆕 FILE 5: Browser Purchase بمطابقة eventID حرفية مع conversionService.js
+// نفس event_id (purch_{orderId}) → Meta تعده مرة واحدة (Deduplication داخل 48h)
+function fireDedupedPurchase(
+  orderId: string | number,
+  value: number,
+  contentIds: string[],
+  currency = 'USD'
+) {
+  if (typeof window === 'undefined') return;
+
+  // 🐛 HARDEN: amount قد يصل string من pg (DECIMAL) — توحيد النوع إجباري
+  const numeric = typeof value === 'string' ? parseFloat(value) : value;
+  const safeValue = parseFloat((Number.isFinite(numeric) ? numeric : 0).toFixed(2));
+  const ids = contentIds.length > 0 ? contentIds : ['LACLARC_ORDER'];
+  const eventId = `purch_${orderId}`; // 🔑 MUST match server EXACTLY
+
+  const w = window as any;
+
+  // Meta Pixel: eventID فالوسيط الرابع — مفتاح الـ Dedup
+  if (typeof w.fbq === 'function') {
+    w.fbq('track', 'Purchase',
+      {
+        value: safeValue,
+        currency,
+        content_type: 'product',
+        content_ids: ids,
+        contents: ids.map((id: string) => ({ id, quantity: 1 })),
+        order_id: eventId,
+      },
+      { eventID: eventId } // 🔑 ضد العد المزدوج مع حدث السيرفر
+    );
+  }
+
+  // TikTok Pixel: event_id داخل properties — جاهز ليوم التفعيل (gate على ttq)
+  if (w.ttq && typeof w.ttq.track === 'function') {
+    w.ttq.track('CompletePayment', {
+      value: safeValue,
+      currency,
+      content_type: 'product',
+      event_id: eventId, // 🔑 نفس المفتاح
+      contents: ids.map((id: string) => ({ content_id: id, content_type: 'product', quantity: 1 })),
+    });
+  }
+}
+
 function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,17 +115,20 @@ function SuccessContent() {
         if (res.ok && data.success) {
           setVerifiedOrder(data);
 
-          // تتبع البيكسل بالمبلغ الحقيقي
+          // 🆕 FILE 5: تتبع البكسل بـ eventID مطابق للسيرفر + items من الرد الموثّق
           const paidAmount = Number(data.amount) || 0;
-          const trackingKey = `upsell_page_tracked_${data.orderId || sessionId}`;
-          if (!sessionStorage.getItem(trackingKey) && paidAmount > 0) {
-            if (typeof window !== 'undefined' && (window as any).fbq) {
-              (window as any).fbq('track', 'Purchase', { value: paidAmount, currency: 'USD' });
+
+          // ⚠️ Fail-Safe: بلا orderId من السيرفر → ما يتفيرش بكسل متصفحي
+          //   (السيرفر يرسل الحدث بوحدو — نقص متصفحي أحسن من عد مزدوج أبداً)
+          if (data.orderId && paidAmount > 0) {
+            const dedupKey = `jit_tracked_${data.orderId}`; // 🔑 العقد الموحد (§4.4)
+            if (!sessionStorage.getItem(dedupKey)) {
+              const ids = (Array.isArray(data.items) ? data.items : [])
+                .map((i: any) => String(i.productId))
+                .filter(Boolean);
+              fireDedupedPurchase(data.orderId, paidAmount, ids);
+              sessionStorage.setItem(dedupKey, new Date().toISOString());
             }
-            if (typeof window !== 'undefined' && (window as any).ttq) {
-              (window as any).ttq.track('CompletePayment', { value: paidAmount, currency: 'USD' });
-            }
-            sessionStorage.setItem(trackingKey, 'true');
           }
         }
       } catch (err) {
