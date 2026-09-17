@@ -31,7 +31,7 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
   return flat;
 }
 
-// ═══ 📋 System Events Panel — سجل القرارات الآلية (Mission #9) ═══
+// ═══ 📋 System Events Panel — Automated Decision Audit Trail (Mission #9) ═══
 function SystemEventsPanel() {
   const [events, setEvents] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>('');
@@ -50,9 +50,9 @@ function SystemEventsPanel() {
   useEffect(() => { load(filter); }, [filter]);
 
   const sevStyle: Record<string, string> = {
-    critical: 'text-red-400 border-red-500/40 bg-red-500/10',
-    warning:  'text-amber-400 border-amber-500/40 bg-amber-500/10',
-    info:     'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+    critical: 'text-red-600 border-red-200 bg-red-50',
+    warning:  'text-amber-600 border-amber-200 bg-amber-50',
+    info:     'text-emerald-600 border-emerald-200 bg-emerald-50',
   };
 
   const EVENT_TYPES = [
@@ -61,29 +61,29 @@ function SystemEventsPanel() {
   ];
 
   return (
-    <div className="bg-[#1D1E3C] text-white rounded-2xl p-5 border border-[#8B78C6]/30 space-y-4">
+    <div className="bg-white text-temu-black rounded-2xl p-5 border border-temu-gray-border-light space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black uppercase tracking-wider text-[#8B78C6] flex items-center gap-2">
-          📋 System Events — القرارات الآلية
+          📋 System Events — Automated Decisions
         </h3>
-        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-white transition cursor-pointer">↻ تحديث</button>
+        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-[#8B78C6] transition cursor-pointer">↻ Refresh</button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         {EVENT_TYPES.map(t => (
           <button key={t} onClick={() => setFilter(t)}
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition cursor-pointer ${
-              filter === t ? 'bg-[#8B78C6] text-white border-[#8B78C6]' : 'border-gray-600 text-gray-400 hover:text-white'
+              filter === t ? 'bg-[#8B78C6] text-white border-[#8B78C6]' : 'border-temu-gray-border-light text-gray-500 hover:text-temu-black'
             }`}>
-            {t || 'الكل'}
+            {t || 'All'}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-xs text-gray-400 py-6 text-center">⏳ جاري التحميل...</div>
+        <div className="text-xs text-gray-400 py-6 text-center">⏳ Loading...</div>
       ) : events.length === 0 ? (
-        <div className="text-xs text-gray-500 py-6 text-center">🟢 لا أحداث — النظام هادئ وكلش خدام</div>
+        <div className="text-xs text-gray-500 py-6 text-center">🟢 No events — system quiet and fully operational</div>
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
           {events.map(ev => (
@@ -95,7 +95,7 @@ function SystemEventsPanel() {
                 </span>
               </div>
               {Object.keys(ev.details || {}).length > 0 && (
-                <pre className="mt-1.5 text-[10px] text-gray-300 whitespace-pre-wrap break-all">
+                <pre className="mt-1.5 text-[10px] text-gray-600 whitespace-pre-wrap break-all">
                   {JSON.stringify(ev.details, null, 0)}
                 </pre>
               )}
