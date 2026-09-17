@@ -319,6 +319,11 @@ export default function CartPage() {
               <span>Bag Subtotal:</span>
               <span className="font-bold text-temu-black">${cartTotal.toFixed(2)}</span>
             </div>
+            <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 pt-1 border-t border-dashed border-temu-gray-border pt-3">
+  <span>🔒 SSL Secure</span>
+  <span>💳 Visa · MC · Apple Pay</span>
+  <span>↩️ 30-Day Returns</span>
+</div>
 
             {wheelDiscount > 0 && (
               <div className="flex justify-between text-emerald-600 font-bold">

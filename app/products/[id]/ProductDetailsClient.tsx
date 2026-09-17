@@ -89,6 +89,7 @@ export default function ProductDetailsClient({
   const [purchaseCount, setPurchaseCount] = useState(38);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
+  const [mainAdded, setMainAdded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   
@@ -209,22 +210,26 @@ export default function ProductDetailsClient({
     setFavoriteIds(newFavorites);
   };
 
-  const handleAddToCart = () => {
-    const resolvedVid = matchedVariant?.vid || '';
-    
-    addToCart({
-      id: product.id,
-      title: product.title,
-      name: product.title,
-      price: parseFloat(discountedUnitPrice.toFixed(2)),
-      quantity,
-      image: mainImageSrc,
-      image_url: mainImageSrc,
-      color: selectedColor,
-      size: selectedSize,
-      vid: resolvedVid
-    }, quantity);
-  };
+const handleAddToCart = () => {
+  const resolvedVid = matchedVariant?.vid || '';
+  
+  addToCart({
+    id: product.id,
+    title: product.title,
+    name: product.title,
+    price: parseFloat(discountedUnitPrice.toFixed(2)),
+    quantity,
+    image: mainImageSrc,
+    image_url: mainImageSrc,
+    color: selectedColor,
+    size: selectedSize,
+    vid: resolvedVid
+  }, quantity);
+  
+  // 🎯 Mission #15 — feedback فوري (نفس نمط stickyAdded الموجود)
+  setMainAdded(true);
+  setTimeout(() => setMainAdded(false), 1500);
+};
 
   const handleTouchStart = (e: React.TouchEvent) => { 
     touchStartX.current = e.touches[0].clientX; 
@@ -527,12 +532,20 @@ export default function ProductDetailsClient({
 
               <div className="flex gap-3">
                 <button 
-                  type="button"
-                  onClick={handleAddToCart} 
-                  className="flex-1 bg-temu-orange hover:bg-temu-orange-bright text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg shadow-temu-orange/20"
-                >
-                  <span></span> Add to Cart
-                </button>
+  type="button"
+  onClick={handleAddToCart} 
+  className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
+    mainAdded 
+      ? 'bg-emerald-600 shadow-emerald-600/20' 
+      : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
+  }`}
+>
+  {mainAdded ? (
+    <><span>✓</span> Added to Bag — View Cart →</>
+  ) : (
+    <><span></span> Add to Cart</>
+  )}
+</button>
                 <button 
                   type="button"
                   onClick={() => handleToggleFavorite(product.id)} 
@@ -865,7 +878,7 @@ export default function ProductDetailsClient({
                   id: product.id,
                   title: product.title,
                   name: product.title,
-                  price: safePrice,
+                  price: parseFloat(discountedUnitPrice.toFixed(2)),
                   quantity,
                   image: mainImageSrc,
                   image_url: mainImageSrc,
