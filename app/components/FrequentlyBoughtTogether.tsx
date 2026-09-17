@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useCart } from '../context/CartContext';
+import { IMG } from '@/lib/imageOptimizer';
 
 interface Product {
   id: string | number;
@@ -20,13 +20,14 @@ interface FrequentlyBoughtTogetherProps {
   relatedProducts: Product[];
 }
 
+const BUNDLE_DISCOUNT_PERCENT = 15;
+
 export default function FrequentlyBoughtTogether({ 
   currentProduct, 
   relatedProducts = [] 
 }: FrequentlyBoughtTogetherProps) {
-  const { addToCart, applyWheelDiscount } = useCart();
+  const { addToCart } = useCart(); // ✨ Mission #15 fix — applyWheelDiscount حُذفت (تسرب مالي)
   
-  // نختار أول منتج مقترح ليكون الشريك في الباقة
   const bundlePartner = relatedProducts.length > 0 ? relatedProducts[0] : null;
   const [includePartner, setIncludePartner] = useState(true);
   const [addedSuccess, setAddedSuccess] = useState(false);
@@ -36,18 +37,22 @@ export default function FrequentlyBoughtTogether({
   const currentPrice = Number(currentProduct.price) || 0;
   const partnerPrice = Number(bundlePartner.price) || 0;
 
-  // حساب أسعار الباقة مع خصم 15% عند شرائهما معاً
-  const originalCombinedPrice = currentPrice + partnerPrice;
-  const BUNDLE_DISCOUNT_PERCENT = 15;
-  const discountedCombinedPrice = includePartner 
-    ? originalCombinedPrice * (1 - BUNDLE_DISCOUNT_PERCENT / 100)
+  // ✨ الإصلاح المالي (Mission #15):
+  // قبل: applyWheelDiscount(15) كانت تطبق 15% على السلة كاملة + تبقى حية 
+  //      حتى بعد حذف المكمل → تسرب مالي مزدوج.
+  // بعد: الخصم يسكن مع سعر السطر نفسه — عزل تام، لا تراكب، لا تسرب.
+  const partnerFinalPrice = includePartner 
+    ? parseFloat((partnerPrice * (1 - BUNDLE_DISCOUNT_PERCENT / 100)).toFixed(2)) 
+    : 0;
+  const discountedCombinedPrice = includePartner
+    ? parseFloat((currentPrice + partnerFinalPrice).toFixed(2))
     : currentPrice;
 
   const currentImg = currentProduct.image_url || currentProduct.image || '/placeholder.jpg';
   const partnerImg = bundlePartner.image_url || bundlePartner.image || '/placeholder.jpg';
 
   const handleAddBundleToCart = () => {
-    // 1. إضافة المنتج الأساسي
+    // 1. المنتج الأساسي — سعره الكامل
     addToCart({
       id: currentProduct.id,
       title: currentProduct.title,
@@ -59,21 +64,18 @@ export default function FrequentlyBoughtTogether({
       vid: currentProduct.vid || ''
     }, 1);
 
-    // 2. إضافة المنتج المكمل وتطبيق خصم الـ 15% على السلة بالكامل
+    // 2. المكمل — بسعره المخفض مباشرة
     if (includePartner) {
       addToCart({
         id: bundlePartner.id,
         title: bundlePartner.title,
         name: bundlePartner.title,
-        price: partnerPrice,
+        price: partnerFinalPrice,
         quantity: 1,
         image: partnerImg,
         image_url: partnerImg,
         vid: bundlePartner.vid || ''
       }, 1);
-
-      // ✨ تفعيل خصم 15% في نظام السلة والـ Checkout لضمان مطابقة السعر مع Stripe
-      applyWheelDiscount(15);
     }
 
     setAddedSuccess(true);
@@ -83,7 +85,6 @@ export default function FrequentlyBoughtTogether({
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm my-8 space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-100 pb-3">
-        {/* ✨ إعادة أيقونة المصافحة 🤝 */}
         <h3 className="text-base font-black text-[#1D1E3C] flex items-center gap-2">
           <span>🤝</span> Frequently Bought Together
         </h3>
@@ -99,7 +100,7 @@ export default function FrequentlyBoughtTogether({
           {/* المنتج الأول */}
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-50 border border-gray-200 overflow-hidden shrink-0 shadow-sm">
             <Image 
-              src={currentImg} 
+              src={IMG.card(currentImg)} 
               alt={currentProduct.title} 
               fill 
               sizes="96px" 
@@ -114,7 +115,7 @@ export default function FrequentlyBoughtTogether({
             includePartner ? 'border-[#8B78C6]' : 'border-gray-200 opacity-40'
           }`}>
             <Image 
-              src={partnerImg} 
+              src={IMG.card(partnerImg)} 
               alt={bundlePartner.title} 
               fill 
               sizes="96px" 
@@ -155,7 +156,7 @@ export default function FrequentlyBoughtTogether({
               </span>
               {includePartner && (
                 <span className="text-xs text-gray-400 line-through">
-                  ${originalCombinedPrice.toFixed(2)}
+                  ${originalCombinedPriceRaw(currentPrice, partnerPrice, includePartner).toFixed(2)}
                 </span>
               )}
             </div>
@@ -181,4 +182,9 @@ export default function FrequentlyBoughtTogether({
       </div>
     </div>
   );
+}
+
+// ✨ helper — المجموع الخام (لخط الشطب) — خارج JSX للنقاء
+function originalCombinedPriceRaw(current: number, partner: number, includePartner: boolean): number {
+  return includePartner ? current + partner : current;
 }

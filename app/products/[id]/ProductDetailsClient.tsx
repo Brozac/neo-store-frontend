@@ -11,6 +11,7 @@ import TiltCard from '../../components/TiltCard';
 import ReviewForm from '../../components/ReviewForm';
 import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
 import DeliveryEstimator from '../../components/DeliveryEstimator';
+import { IMG } from '../../../lib/imageOptimizer';
 
 interface Product {
   id: string | number;
@@ -294,9 +295,12 @@ const handleAddToCart = () => {
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                /* ✨ استبدال Image بـ img */
                 <img 
-                  src={mainImageSrc} 
+                  src={IMG.detail(mainImageSrc)}
+                  srcSet={`${IMG.card(mainImageSrc)} 400w, ${IMG.detail(mainImageSrc)} 800w`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  fetchPriority="high"
+                  decoding="async"
                   alt={product.title} 
                   className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105" 
                 />
@@ -372,7 +376,13 @@ const handleAddToCart = () => {
                     }`}
                   >
                     {/* ✨ استبدال Image بـ img */}
-                    <img src={img} alt="Thumbnail" className="w-full h-full object-contain p-1" />
+                    <img 
+                      src={IMG.thumb(img)} 
+                      alt="Thumbnail" 
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-contain p-1" 
+                    />
                   </div>
                 ))}
               </div>
@@ -651,7 +661,13 @@ const handleAddToCart = () => {
                   <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
                       {/* ✨ استبدال Image بـ img */}
-                      <img src={p.image_url || p.image || defaultImage} alt={p.title} className="w-full h-full object-contain p-2 transition group-hover:scale-105" />
+                      <img 
+                        src={IMG.card(p.image_url || p.image || defaultImage)} 
+                        alt={p.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-contain p-2 transition group-hover:scale-105" 
+                      />
                     </div>
                     <div className="p-3 pt-2 flex flex-col justify-between flex-1">
                       <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
@@ -690,7 +706,12 @@ const handleAddToCart = () => {
                         title="Click to view full photo"
                       >
                         {/* ✨ استبدال Image بـ img */}
-                        <img src={photoUrl} alt="Buyer proof photo" className="w-full h-full object-cover" />
+                         <img 
+                          src={IMG.thumb(photoUrl)} 
+                          alt="Buyer proof photo" 
+                          loading="lazy"
+                          className="w-full h-full object-cover" 
+                        />
                       </div>
                     ))}
                   </div>
@@ -762,8 +783,9 @@ const handleAddToCart = () => {
             >
               {/* ✨ استبدال Image بـ img */}
               <img 
-                src={mainImageSrc} 
+                src={IMG.zoom(mainImageSrc)} 
                 alt={product.title} 
+                decoding="async"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -807,7 +829,12 @@ const handleAddToCart = () => {
                   }`}
                 >
                   {/* ✨ استبدال Image بـ img */}
-                  <img src={img} alt="Thumb" className="w-full h-full object-cover" />
+                  <img 
+                    src={IMG.thumb(img)} 
+                    alt="Thumb" 
+                    loading="lazy"
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
               ))}
             </div>
@@ -815,7 +842,10 @@ const handleAddToCart = () => {
         </div>
       )}
 
-      <LivePurchaseNotification productName={product.title} />
+      <LivePurchaseNotification 
+  productName={product.title} 
+  productImage={mainImageSrc} 
+/>
       
       {/* Sticky Buy Bar */}
       <div 
@@ -832,9 +862,10 @@ const handleAddToCart = () => {
           >
             <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
               {/* ✨ استبدال Image بـ img */}
-              <img 
-                src={mainImageSrc} 
+               <img 
+                src={IMG.thumb(mainImageSrc)} 
                 alt={product.title} 
+                loading="lazy"
                 className="w-full h-full object-contain p-1" 
               />
             </div>

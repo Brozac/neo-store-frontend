@@ -701,3 +701,10 @@
 .tabstrip::-webkit-scrollbar-track { background: transparent; }
 .tabstrip::-webkit-scrollbar-thumb { background: rgba(139,120,198,.4); border-radius: 999px; }
 .tabstrip { scrollbar-width: thin; scrollbar-color: rgba(139,120,198,.4) transparent; }
+/* ═══ Image Beast — Guard against CLS on lazy images ═══ */
+img[loading="lazy"] {
+  background-color: #f3f1f8; /* placeholder tint — brand-adjacent */
+}
+img {
+  content-visibility: auto;
+}

@@ -19,11 +19,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/context/*": ["./context/*"],
-      "@/utils/*": ["./utils/*"]
-    }
+  "@/*": ["./*"],
+  "@/components/*": ["./components/*"],
+  "@/context/*": ["./context/*"],
+  "@/lib/*": ["./lib/*"],
+  "@/utils/*": ["./utils/*"]
+}
   },
   "include": [
     "next-env.d.ts",

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { IMG } from '../../lib/imageOptimizer';
 
 const buyers = [
   { name: 'Sarah M.', city: '🇩🇿 Algiers' },
@@ -13,7 +14,13 @@ const buyers = [
   { name: 'Emma L.', city: '🇬🇧 London' }
 ];
 
-export default function LivePurchaseNotification({ productName }: { productName?: string }) {
+export default function LivePurchaseNotification({ 
+  productName, 
+  productImage 
+}: { 
+  productName?: string; 
+  productImage?: string;
+}) {
   const [visible, setVisible] = useState(false);
   const [buyer, setBuyer] = useState({ name: '', city: '', time: '3' });
   const [isDismissed, setIsDismissed] = useState(false);
@@ -62,10 +69,20 @@ export default function LivePurchaseNotification({ productName }: { productName?
         visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95 pointer-events-none'
       }`}
     >
-      {/* Icon */}
-      <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg shrink-0 border border-emerald-100 shadow-sm">
-        ✓
-      </div>
+      {/* ✨ صورة المنتج الحقيقية (مُحسّنة عبر CJ CDN) — إثبات بصري أقوى */}
+      {productImage ? (
+        <img 
+          src={IMG.thumb(productImage)} 
+          alt={productName || 'Product'} 
+          loading="lazy"
+          decoding="async"
+          className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-200 shadow-sm bg-gray-50"
+        />
+      ) : (
+        <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg shrink-0 border border-emerald-100 shadow-sm">
+          ✓
+        </div>
+      )}
       
       {/* Information */}
       <div className="min-w-0 flex-1 pr-1">
@@ -81,12 +98,12 @@ export default function LivePurchaseNotification({ productName }: { productName?
         </p>
       </div>
 
-      {/* ✨ زر الإغلاق المباشر لمنع إزعاج الزبون */}
+      {/* زر الإغلاق المباشر لمنع إزعاج الزبون */}
       <button 
         type="button"
         onClick={() => {
           setVisible(false);
-          setIsDismissed(true); // عدم إزعاجه مرة أخرى أثناء نفس الجلسة
+          setIsDismissed(true);
         }}
         className="text-gray-400 hover:text-gray-700 p-1 text-xs self-start transition cursor-pointer"
         aria-label="Dismiss notification"
