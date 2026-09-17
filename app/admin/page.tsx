@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
 
@@ -31,11 +31,101 @@ function flattenCategories(nodes: CategoryNode[], parentPath = ''): { value: str
   return flat;
 }
 
+// ═══ 📋 System Events Panel — سجل القرارات الآلية (Mission #9) ═══
+function SystemEventsPanel() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [filter, setFilter] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  const load = async (t?: string) => {
+    setLoading(true);
+    try {
+      const res = await adminApi.get(`/admin/system-events?limit=50${t ? `&type=${t}` : ''}`);
+      setEvents(res.data.events || []);
+    } catch (e) {
+      console.error('system-events fetch failed', e);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(filter); }, [filter]);
+
+  const sevStyle: Record<string, string> = {
+    critical: 'text-red-400 border-red-500/40 bg-red-500/10',
+    warning:  'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    info:     'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+  };
+
+  const EVENT_TYPES = [
+    '', 'FINANCIAL_GATE_DENY', 'FINANCIAL_GATE_ERROR', 'SELFHEAL_DELETE',
+    'SELFHEAL_PAYBALANCE', 'SELFHEAL_MANUALIZED', 'DISPUTE_FOUND', 'WALLET_EMPTY',
+  ];
+
+  return (
+    <div className="bg-[#1D1E3C] text-white rounded-2xl p-5 border border-[#8B78C6]/30 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black uppercase tracking-wider text-[#8B78C6] flex items-center gap-2">
+          📋 System Events — القرارات الآلية
+        </h3>
+        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-white transition cursor-pointer">↻ تحديث</button>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {EVENT_TYPES.map(t => (
+          <button key={t} onClick={() => setFilter(t)}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition cursor-pointer ${
+              filter === t ? 'bg-[#8B78C6] text-white border-[#8B78C6]' : 'border-gray-600 text-gray-400 hover:text-white'
+            }`}>
+            {t || 'الكل'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-xs text-gray-400 py-6 text-center">⏳ جاري التحميل...</div>
+      ) : events.length === 0 ? (
+        <div className="text-xs text-gray-500 py-6 text-center">🟢 لا أحداث — النظام هادئ وكلش خدام</div>
+      ) : (
+        <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+          {events.map(ev => (
+            <div key={ev.id} className={`p-3 rounded-xl border text-xs ${sevStyle[ev.severity] || sevStyle.info}`}>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="font-black">{ev.event_type}</span>
+                <span className="text-gray-400 text-[10px]">
+                  {ev.order_id ? `#${ev.order_id} • ` : ''}{new Date(ev.created_at).toLocaleString()}
+                </span>
+              </div>
+              {Object.keys(ev.details || {}).length > 0 && (
+                <pre className="mt-1.5 text-[10px] text-gray-300 whitespace-pre-wrap break-all">
+                  {JSON.stringify(ev.details, null, 0)}
+                </pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
 
-  // التبويبات النشطة
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // 🖱️ عجلة الموس → سكرول أفقي (listener أصلي — passive:false يسمح بـ preventDefault)
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
@@ -45,7 +135,7 @@ export default function AdminDashboard() {
   const [syncCategory, setSyncCategory] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
-  
+
   // ✨ حالات الفيديوهات والريلز
   const [syncingVideos, setSyncingVideos] = useState(false);
   const [showReels, setShowReels] = useState(true);
@@ -107,18 +197,16 @@ export default function AdminDashboard() {
     }
   };
 
-  // ✨ جلب الفيديوهات بشكل صحيح (تم حل خطأ المسار المزدوج /api/products)
+  // ✨ جلب الفيديوهات
   const fetchVideoProducts = async () => {
     setLoadingVideos(true);
     try {
-      // ✨ القراءة من store_settings عبر الـ API — ماشي localStorage محلي
       adminApi.get('/settings')
         .then(res => {
           if (typeof res.data.show_reels === 'boolean') setShowReels(res.data.show_reels);
         })
         .catch(() => {});
 
-      // مسار /products النظيف (adminApi baseURL = .../api أصلاً)
       const productsRes = await adminApi.get('/products');
       if (Array.isArray(productsRes.data)) {
         const vids = productsRes.data.filter((p: any) => p.video_url && String(p.video_url).trim().length > 3);
@@ -209,7 +297,6 @@ export default function AdminDashboard() {
     setSyncingVideos(true);
     setSyncMessage('🎬 Multi-keyword video hunt started in background (~15 min)...');
     try {
-      // ✨ المسار الصحيح — تشغل runCjVideoSync (12 كلمة مفتاحية × 3 صفحات)
       await adminApi.post('/admin/sync-videos');
       alert('🎬 Video Sync v2 triggered! Check server logs in ~15 minutes for results.');
     } catch (err: any) {
@@ -219,12 +306,10 @@ export default function AdminDashboard() {
     }
   };
 
-// ✨ حذف الفيديو عبر المسار المخصص والصحيح في السيرفر
   const handleDeleteVideo = async (productId: number | string) => {
     if (!confirm('Remove video from this product? The item will remain in the store without video.')) return;
     try {
       const res = await adminApi.delete(`/admin/videos/${productId}`);
-      
       if (res.data?.success) {
         setVideoProducts(prev => prev.filter(p => p.id !== productId));
         alert('✅ Video removed successfully. Product remains in store.');
@@ -308,7 +393,6 @@ export default function AdminDashboard() {
 
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
 
-  // ✨ إضافة تبويب مخصص ومستقل للريلز والفيديوهات
   const tabs = [
     { id: 'overview', label: 'Operations Command', icon: '⚡' },
     { id: 'reels', label: 'Watch & Shop Reels', icon: '🎬' },
@@ -316,13 +400,14 @@ export default function AdminDashboard() {
     { id: 'sync', label: 'CJ Sync & Sourcing', icon: '🔄' },
     { id: 'sourcing', label: '1688 Sourcing', icon: '🏭' },
     { id: 'coupons', label: 'Coupons & Promos', icon: '🎟️' },
+    { id: 'events', label: 'System Events', icon: '📋' },
   ];
 
   return (
     <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto">
 
-                {/* Top Header & Fast Nav */}
+        {/* Top Header & Fast Nav */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
@@ -450,13 +535,17 @@ export default function AdminDashboard() {
           </button>
         </form>
 
-        {/* Command Center Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide border-b border-temu-gray-border-light">
+        {/* Command Center Tabs — 🖱️ wheel=أفقي + مؤشر رقيق */}
+        <div
+          ref={tabsRef}
+          className="tabstrip flex gap-2 overflow-x-auto pb-3 mb-6 border-b border-temu-gray-border-light snap-x"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl ${
+              className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl snap-start shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-linear-to-r from-[#8B78C6] to-[#7A67B5] text-white shadow-lg shadow-[#8B78C6]/20'
                   : 'bg-white text-gray-500 border border-temu-gray-border-light hover:bg-temu-offwhite hover:text-temu-black'
@@ -486,7 +575,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* بطاقات العمليات الست النظيفة المنظمة في شبكة كاملة */}
+              {/* بطاقات العمليات */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#8B78C6] to-indigo-600', icon: '📦' },
@@ -512,48 +601,48 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 📈 ويدجت أرباح الإعلانات المباشرة (Ad Revenue Attribution) */}
-              <div className="mt-8 bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-xs">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className="text-sm font-black text-temu-black flex items-center gap-2">
-                      <span>📊</span> Ad Campaigns & Revenue Attribution (Last 30 Days)
-                    </h3>
-                    <p className="text-xs text-gray-500">Track which ad network generates the most paid revenue</p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase bg-purple-50 text-[#8B78C6] border border-[#8B78C6]/20 px-2.5 py-1 rounded-full">
-                    Real-time ROI
-                  </span>
+          {/* 📈 ويدجت أرباح الإعلانات المباشرة */}
+          <div className="mt-8 bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-xs">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-sm font-black text-temu-black flex items-center gap-2">
+                  <span>📊</span> Ad Campaigns & Revenue Attribution (Last 30 Days)
+                </h3>
+                <p className="text-xs text-gray-500">Track which ad network generates the most paid revenue</p>
+              </div>
+              <span className="text-[10px] font-bold uppercase bg-purple-50 text-[#8B78C6] border border-[#8B78C6]/20 px-2.5 py-1 rounded-full">
+                Real-time ROI
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-gray-500 block uppercase">TikTok Ads</span>
+                  <span className="text-xs text-gray-400">Tracked via ttclid</span>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 block uppercase">TikTok Ads</span>
-                      <span className="text-xs text-gray-400">Tracked via ttclid</span>
-                    </div>
-                    <span className="text-sm font-black text-black">Active 🎯</span>
-                  </div>
-
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 block uppercase">Facebook / Meta</span>
-                      <span className="text-xs text-gray-400">Tracked via fbclid</span>
-                    </div>
-                    <span className="text-sm font-black text-[#8B78C6]">Active 🎯</span>
-                  </div>
-
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-gray-500 block uppercase">Organic / Direct</span>
-                      <span className="text-xs text-gray-400">Word of mouth</span>
-                    </div>
-                    <span className="text-sm font-black text-emerald-600">Free 🌿</span>
-                  </div>
-                </div>
+                <span className="text-sm font-black text-black">Active 🎯</span>
               </div>
 
-                    {/* ✨ 2. تبويب مخصص وفاخر لإدارة ريلز تيك توك (Watch & Shop Reels) */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-gray-500 block uppercase">Facebook / Meta</span>
+                  <span className="text-xs text-gray-400">Tracked via fbclid</span>
+                </div>
+                <span className="text-sm font-black text-[#8B78C6]">Active 🎯</span>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-gray-500 block uppercase">Organic / Direct</span>
+                  <span className="text-xs text-gray-400">Word of mouth</span>
+                </div>
+                <span className="text-sm font-black text-emerald-600">Free 🌿</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ✨ 2. Watch & Shop Reels */}
           {activeTab === 'reels' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
@@ -572,7 +661,6 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* زر التبديل الرئيسي — ✨ محفوظ في قاعدة البيانات (يؤثر على كل الزوار) */}
               <div className="bg-temu-offwhite p-5 rounded-2xl border border-temu-gray-border-light flex items-center justify-between">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Display Reels on Homepage</h4>
@@ -581,16 +669,13 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
-                                <button
+                <button
                   onClick={async () => {
                     const nextVal = !showReels;
-                    setShowReels(nextVal); // تحديث فوري للواجهة (optimistic)
+                    setShowReels(nextVal);
                     try {
-                      // ✨ الحفظ الحقيقي في PostgreSQL عبر store_settings
-                      // adminApi كيدير baseURL + withCredentials أوتوماتيكياً
                       await adminApi.put('/admin/settings/show_reels', { value: nextVal });
                     } catch (e) {
-                      // فشل الشبكة → تراجع + تنبيه
                       setShowReels(!nextVal);
                       alert('⚠️ Could not save the setting. Check your connection and try again.');
                     }
@@ -602,7 +687,6 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* زر استيراد الفيديوهات السريع من CJ */}
               <div className="bg-purple-50/60 p-5 rounded-2xl border border-[#8B78C6]/25 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Sync New Video Assets</h4>
@@ -619,13 +703,11 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* قائمة الفيديوهات النشطة حالياً في المتجر */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-black uppercase tracking-wider text-gray-500">
                     Active Videos in Store ({videoProducts.length})
                   </h4>
-                  {/* ✨ مؤشر جاهزية للريلز */}
                   <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full border ${
                     videoProducts.length >= 5
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
@@ -654,7 +736,6 @@ export default function AdminDashboard() {
                       <div key={p.id} className="p-3.5 bg-white border border-temu-gray-border-light rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:shadow-xs transition">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative">
-                            {/* ✨ fallback أنيق إلا فشلت الصورة */}
                             {p.image_url ? (
                               <img
                                 src={p.image_url}
@@ -673,7 +754,6 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                          {/* ✨ المعاينة عبر الـ Proxy — رابط CJ مايتكشفش + Range خدام */}
                           <a
                             href={`/api/video-proxy?url=${encodeURIComponent(p.video_url || '')}`}
                             target="_blank"
@@ -816,7 +896,6 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
               </div>
 
-              {/* Sync Single PID (1688 / Deals) */}
               <div className="p-5 bg-purple-50 rounded-xl border border-[#8B78C6]/30">
                 <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
                 <p className="text-xs text-gray-500 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
@@ -839,7 +918,6 @@ export default function AdminDashboard() {
                 {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}>{singleMessage}</p>}
               </div>
 
-              {/* Sync Category & Mass Import */}
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sync Category Batch</label>
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -866,7 +944,6 @@ export default function AdminDashboard() {
                   </button>
                 </div>
 
-                {/* Mass Import */}
                 <div className="pt-4 border-t border-temu-gray-border-light">
                   <label className="block text-xs font-bold text-[#8B78C6] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
                   <button
@@ -881,7 +958,6 @@ export default function AdminDashboard() {
                 {syncMessage && <p className="mt-3 text-xs font-bold text-gray-500">{syncMessage}</p>}
               </div>
 
-              {/* Official Category Tree Maintenance */}
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h4 className="text-sm font-bold text-temu-black">CJ Categories Tree Architecture</h4>
@@ -993,6 +1069,11 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
+          )}
+
+          {/* 📋 7. System Events — Audit Trail (Mission #9) */}
+          {activeTab === 'events' && (
+            <SystemEventsPanel />
           )}
 
         </div>
