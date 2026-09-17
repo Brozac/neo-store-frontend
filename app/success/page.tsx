@@ -166,6 +166,13 @@ function SuccessContent() {
                 .filter(Boolean);
               fireDedupedPurchase(data.orderId, paidAmount, ids);
               sessionStorage.setItem(dedupKey, new Date().toISOString());
+            // 🩹 Mission #13: second-shot — إعادة إرسال CAPI بالبصمات الكاملة
+            // (آمن: نفس event_id → Meta dedup → لا مضاعفة، فقط تحسين المطابقة)
+            fetch(`${API_BASE_URL}/api/payment/second-shot`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId: data.orderId }),
+            }).catch(() => {});
             }
           }
         }
