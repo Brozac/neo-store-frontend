@@ -3,15 +3,30 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';                                    // 🆕 Phase 3
 import { useCart } from '../../context/CartContext';
 import CountdownTimer from '../../components/CountdownTimer';
-import LivePurchaseNotification from '../../components/LivePurchaseNotification';
 import BuyButton from '../../components/BuyButton';
 import TiltCard from '../../components/TiltCard';
-import ReviewForm from '../../components/ReviewForm';
-import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
+
+// 🆕 Phase 3 — مكونات ما تشافش في أول paint — تُحمّل عند الحاجة فقط
+const LivePurchaseNotification = dynamic(
+  () => import('../../components/LivePurchaseNotification'),
+  { ssr: false }
+);
+const FrequentlyBoughtTogether = dynamic(
+  () => import('../../components/FrequentlyBoughtTogether'),
+  {
+    ssr: false,
+    loading: () => <div className="h-48 animate-pulse bg-gray-50 rounded-2xl my-8" />, // skeleton — لا layout jump
+  }
+);
+const ReviewForm = dynamic(() => import('../../components/ReviewForm'), {
+  ssr: false,
+  loading: () => <div className="h-32 animate-pulse bg-gray-50 rounded-2xl" />,
+});
 
 interface Product {
   id: string | number;
