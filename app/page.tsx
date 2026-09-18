@@ -6,6 +6,7 @@ import ProductCard from './components/ProductCard';
 import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
+import { IMG } from '@/lib/imageOptimizer';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -276,7 +277,7 @@ function HomeContent() {
             >
                             {trendingProducts.map((product) => {
                 const safePrice = Number(product.price) || 0;
-                const img = product.image_url || product.image || '/icon-512.png';
+                const img = IMG.card(product.image_url || product.image || '/icon-512.png');   // 🆕
                 // ✨ Tenet #9 — title غير قابل لـ null أبداً
                 const safeTitle = product.title || 'Laclarc Product';
                 const truncatedTitle = safeTitle.length > 22 ? safeTitle.substring(0, 22) + '...' : safeTitle;

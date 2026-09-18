@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import PaymentModal from './PaymentModal';
 import { useRouter } from 'next/navigation';
+import { IMG } from '@/lib/imageOptimizer';
 
 
 interface Product {
@@ -189,12 +190,13 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               className="relative aspect-[9/16] w-[42vw] max-w-[180px] sm:w-[180px] shrink-0 rounded-3xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 ring-1 ring-black/5"
             >
               <Image
-                src={img}
-                alt={reel.title}
-                fill
-                sizes="(max-width: 768px) 42vw, 180px"
-                className="object-cover group-hover:scale-110 transition-transform duration-700"
-              />
+  src={IMG.card(img)}          // 🆕 400w webp بدل الأصل الكامل
+  alt={reel.title}
+  fill
+  sizes="(max-width: 768px) 42vw, 180px"
+  loading="lazy"                // 🆕 تحت الطية في أغلب الحالات
+  className="object-cover group-hover:scale-110 transition-transform duration-700"
+/>
               
               <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-black/40"></div>
 
@@ -253,7 +255,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 {/* ✨ شعار المتجر الرسمي يملأ الدائرة بالكامل بدون حواف وردية */}
                 <div className="relative w-8 h-8 rounded-full overflow-hidden shadow shrink-0 border border-white/20">
                   <Image 
-                    src="/icon-512.png" 
+                    src={IMG.thumb(currentReel.image_url || currentReel.image || '/icon-512.png')} 
                     alt="Laclarc Logo" 
                     fill 
                     sizes="32px"

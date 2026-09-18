@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
+import { IMG } from '@/lib/imageOptimizer';
 
 interface HeroSectionProps {
   trendingProducts?: any[];
@@ -132,8 +133,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const positions = ['pos-top', 'pos-bottom-left', 'pos-bottom-right'];
   const countClass = cards.length === 1 ? 'count-1' : cards.length === 2 ? 'count-2' : '';
 
-  const getImage = (p: any) => p?.image_url || p?.image || p?.thumbnail || '/icon-192.png';
-  const formatPrice = (p: any) => {
+  const getImage = (p: any) => IMG.card(p?.image_url || p?.image || p?.thumbnail || '/icon-192.png');
+    const formatPrice = (p: any) => {
     const val = Number(p?.price);
     return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
   };
@@ -195,21 +196,25 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
               className={`hero-cards-container float-anim-slow ${countClass}`}
             >
               {cards.length > 0 ? (
-                cards.map((product: any, index: number) => (
+                                cards.map((product: any, index: number) => (
                   <Link
                     key={product?.id ?? index}
                     href={`/products/${product.id}`}
                     className={`hero-card ${positions[index]} ${activeCard === index ? 'is-active' : ''}`}
-                    style={{ backgroundImage: `url(${getImage(product)})` }}
                     onClick={(e) => handleCardTap(e, index)}
                     aria-expanded={activeCard === index}
                   >
+                    {/* 🆕 صورة حقيقية بدل CSS background — قابلة للتحويل والأولوية */}
+                    <img
+                      src={index === 0 ? IMG.detail(getImage(product)) : IMG.card(getImage(product))}
+                      alt=""
+                      fetchPriority={index === 0 ? 'high' : undefined}
+                      decoding="async"
+                      className="hero-card-img"          // ← زيد هذا class في globals.css
+                      aria-hidden="true"
+                    />
                     <div className="hero-card-content">
-                      <div className="hero-card-title">{product?.title || 'Laclarc Premium'}</div>
-                      {product?.price && <div className="hero-card-price">{formatPrice(product)}</div>}
-                      <div className="hero-card-description">
-                        {product?.description || 'Exclusive premium quality — limited stock available.'}
-                      </div>
+                      ... كما هو ...
                     </div>
                   </Link>
                 ))
