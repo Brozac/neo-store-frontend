@@ -184,6 +184,7 @@ export default function ProductDetailsClient({
     observer.observe(target);
     return () => observer.disconnect();
   }, []);
+  
 
   const parsePrice = (price: any) => Number(price) || 0;
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
