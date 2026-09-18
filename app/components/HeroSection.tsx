@@ -189,14 +189,14 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
 
-          {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
+                    {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
             <div
               ref={cardsRef}
               className={`hero-cards-container float-anim-slow ${countClass}`}
             >
               {cards.length > 0 ? (
-                                cards.map((product: any, index: number) => (
+                cards.map((product: any, index: number) => (
                   <Link
                     key={product?.id ?? index}
                     href={`/products/${product.id}`}
@@ -204,28 +204,43 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                     onClick={(e) => handleCardTap(e, index)}
                     aria-expanded={activeCard === index}
                   >
-                    {/* 🆕 صورة حقيقية بدل CSS background — قابلة للتحويل والأولوية */}
+                    {/* 🆕 صورة حقيقية — تحويل OSS + أولوية للكبيرة */}
                     <img
                       src={index === 0 ? IMG.detail(getImage(product)) : IMG.card(getImage(product))}
                       alt=""
                       fetchPriority={index === 0 ? 'high' : undefined}
                       decoding="async"
-                      className="hero-card-img"          // ← زيد هذا class في globals.css
+                      className="hero-card-img"
                       aria-hidden="true"
                     />
                     <div className="hero-card-content">
-                      ... كما هو ...
+                      <div className="hero-card-title">
+                        {product?.title || 'Laclarc Premium'}
+                      </div>
+                      {product?.price && (
+                        <div className="hero-card-price">{formatPrice(product)}</div>
+                      )}
+                      <div className="hero-card-description">
+                        {product?.description || 'Exclusive premium quality — limited stock available.'}
+                      </div>
                     </div>
                   </Link>
                 ))
               ) : (
                 <div
                   className="hero-card pos-top"
-                  style={{ backgroundImage: 'url(/icon-192.png)', backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundColor: 'white' }}
+                  style={{ 
+                    backgroundImage: 'url(/icon-192.png)', 
+                    backgroundSize: 'contain', 
+                    backgroundRepeat: 'no-repeat', 
+                    backgroundColor: 'white' 
+                  }}
                 >
                   <div className="hero-card-content">
                     <div className="hero-card-title">Laclarc Premium Collection</div>
-                    <div className="hero-card-description">Trending deals across all departments.</div>
+                    <div className="hero-card-description">
+                      Trending deals across all departments.
+                    </div>
                   </div>
                 </div>
               )}
