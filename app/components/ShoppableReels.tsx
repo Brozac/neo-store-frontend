@@ -255,11 +255,12 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 {/* ✨ شعار المتجر الرسمي يملأ الدائرة بالكامل بدون حواف وردية */}
                 <div className="relative w-8 h-8 rounded-full overflow-hidden shadow shrink-0 border border-white/20">
                   <Image 
-                    src={IMG.thumb(currentReel.image_url || currentReel.image || '/icon-512.png')} 
-                    alt="Laclarc Logo" 
-                    fill 
-                    sizes="32px"
-                    className="object-cover" 
+  src="/icon-512.png"          // ✅ شعار المتجر — ما يتبدلش
+  alt="Laclarc Logo" 
+  fill 
+  sizes="32px"
+  className="object-cover" 
+
                   />
                 </div>
                 <span className="text-white text-xs font-black tracking-wide drop-shadow-lg">Laclarc Live</span>
@@ -323,12 +324,12 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="relative w-12 h-12 rounded-xl bg-white overflow-hidden shrink-0 border border-white/20">
                     <Image
-                      src={currentReel.image_url || currentReel.image || '/icon-512.png'}
-                      alt={currentReel.title}
-                      fill
-                      sizes="48px"
-                      className="object-contain p-1"
-                    />
+  src={IMG.thumb(currentReel.image_url || currentReel.image || '/icon-512.png')}   // ✅
+  alt={currentReel.title}
+  fill
+  sizes="48px"
+  className="object-contain p-1"
+/>
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs font-bold text-white truncate">{currentReel.title}</h4>
