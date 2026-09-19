@@ -312,18 +312,14 @@ export default function CartPage() {
           )}
         </div>
 
-        {/* Total & Checkout Section */}
+                {/* Total & Checkout Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-temu-gray-border-light p-5 sm:p-6 space-y-4">
+          {/* قائمة المبالغ — نظيفة فقط */}
           <div className="space-y-2 text-xs text-temu-gray-text border-b border-dashed border-temu-gray-border pb-4">
             <div className="flex justify-between">
               <span>Bag Subtotal:</span>
               <span className="font-bold text-temu-black">${cartTotal.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 pt-1 border-t border-dashed border-temu-gray-border pt-3">
-  <span>🔒 SSL Secure</span>
-  <span>💳 Visa · MC · Apple Pay</span>
-  <span>↩️ 30-Day Returns</span>
-</div>
 
             {wheelDiscount > 0 && (
               <div className="flex justify-between text-emerald-600 font-bold">
@@ -357,6 +353,13 @@ export default function CartPage() {
             >
               Proceed to Payment &rarr;
             </button>
+          </div>
+
+          {/* 🆕 Trust strip — تحت زر الدفع، خارج قائمة المبالغ */}
+          <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 pt-2 border-t border-dashed border-temu-gray-border">
+            <span>🔒 SSL Secure</span>
+            <span>💳 Visa · MC · Apple Pay</span>
+            <span>↩️ 30-Day Returns</span>
           </div>
         </div>
 
