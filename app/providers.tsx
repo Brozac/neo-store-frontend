@@ -11,6 +11,7 @@ import ExitIntentPopup from './components/ExitIntentPopup';
 import AIChatWidget from './components/AIChatWidget';
 import Footer from './components/Footer';
 import UtmTracker from './components/UtmTracker'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
+import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -63,6 +64,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <AIChatWidget />
           <SpinWheel />
           <ExitIntentPopup />
+          <GlassDock />
         </>
       )}
     </CartProvider>

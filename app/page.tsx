@@ -7,6 +7,7 @@ import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
 import { IMG } from '@/lib/imageOptimizer';
+import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -443,18 +444,7 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* Floating Bottom Nav */}
-      <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md rounded-full px-7 py-3 shadow-xl flex items-center gap-8 z-30 border border-gray-200">
-         <button onClick={() => router.push('/profile')} className="text-gray-400 hover:text-temu-orange transition cursor-pointer active:scale-90" title="Account Profile">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-         </button>
-         <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-temu-orange scale-110 cursor-pointer active:scale-90" title="Scroll to Top">
-           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-         </button>
-         <button onClick={() => router.push('/categories')} className="text-gray-400 hover:text-temu-orange transition cursor-pointer active:scale-90" title="All Categories">
-           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-         </button>
-      </div>
+   <GlassDock />
     </main>
   );
 }
