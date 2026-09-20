@@ -28,14 +28,12 @@ export default function FloatingSupport() {
 
   return (
     <div
-      className="fixed z-[60] flex flex-col items-start gap-2.5"
-      style={{
-        // 📱 Responsive: مسافة نسبية من الأسفل + safe-area للهواتف الحديثة
-        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.25rem)', // 100px فوق الـ dock
-        left: 'max(0.75rem, env(safe-area-inset-left, 0px))',        // مسافة من اليسار
-      }}
+      className="fixed z-[60] flex flex-col items-start gap-2.5
+                 bottom-[8.5rem] left-4
+                 md:bottom-6 md:left-5"
+      aria-label="Customer Support Channels"
     >
-      {/* ── 🟢 WhatsApp — أصغر (w-11) ── */}
+      {/* ── 🟢 WhatsApp ── */}
       <a
         href={`https://wa.me/${WHATSAPP_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(WHATSAPP_MSG)}`}
         target="_blank"
@@ -64,7 +62,7 @@ export default function FloatingSupport() {
         </span>
       </a>
 
-      {/* ── 🤖 AI Chat — أكبر (w-14) ── */}
+      {/* ── 🤖 AI Chat ── */}
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('laclarc:open-ai-chat'))}
