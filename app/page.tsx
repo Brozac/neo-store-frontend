@@ -7,7 +7,7 @@ import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
 import { IMG } from '@/lib/imageOptimizer';
-import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
+import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناءمن
 import FloatingSupport from './components/floating/FloatingSupport';
 
 
