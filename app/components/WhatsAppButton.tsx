@@ -25,7 +25,7 @@ export default function WhatsAppButton() {
            - موبايل: bottom-28 (فوق GlassDock) + right-4 (زاوية يمين — بعيد عن مسار الـ dock)
            - ديسكتوب: bottom-6 left-5 (الوضع الأصلي — لا تصادم مع الـ dock المركزي)
         */
-        className="fixed bottom-28 right-4 md:bottom-6 md:right-auto md:left-5 z-[60] w-14 h-14 group cursor-pointer"
+        className="fixed bottom-32 right-4 z-[55] w-14 h-14 group cursor-pointer"
         title="Chat with us on WhatsApp"
         aria-label="WhatsApp Support"
       >
