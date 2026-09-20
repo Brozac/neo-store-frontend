@@ -3,28 +3,28 @@
 
 @theme {
   /* 1. الألوان الأساسية (البنفسجي الملكي) */
-  --color-temu-orange: #8B78C6;          /* البنفسجي الأساسي */
-  --color-temu-orange-bright: #7A68AF;   /* بنفسجي داكن للتفاعل */
-  
-  /* 2. ألوان الإلحاح والخصم والأسعار (الوردي الزاهي) */
-  --color-temu-error: #FF6B9D;           /* وردي زاهي للأسعار وشارات الخصم */
-  --color-temu-yellow: #FFE0F0;          /* خلفيات الخصومات الناعمة */
-  --color-temu-yellow-soft: #FFEFF5;     /* خلفية أشرطة الإلحاح */
-  --color-temu-gold: #FF6B9D;            /* حدود وردية بارزة */
-  
-  /* 3. ألوان الثقة والهوية العميقة (الكحلي) */
-  --color-temu-green: #1D1E3C;           /* كحلي لشريط الثقة */
-  --color-temu-green-light: #8B78C6;     /* بنفسجي الأيقونات */
-  
+  --color-temu-orange: #8B78C6;
+  --color-temu-orange-bright: #7A68AF;
+
+  /* 2. ألوان الإلحاح والخصم والأسعار */
+  --color-temu-error: #FF6B9D;
+  --color-temu-yellow: #FFE0F0;
+  --color-temu-yellow-soft: #FFEFF5;
+  --color-temu-gold: #FF6B9D;
+
+  /* 3. ألوان الثقة والهوية العميقة */
+  --color-temu-green: #1D1E3C;
+  --color-temu-green-light: #8B78C6;
+
   /* 4. الألوان المحايدة والخلفيات */
-  --color-temu-black: #1D1E3C;           /* النصوص الأساسية بالكحلي الفاخر */
-  --color-temu-dark: #2D2E5C;            /* درجة أفتح للكحلي */
+  --color-temu-black: #1D1E3C;
+  --color-temu-dark: #2D2E5C;
   --color-temu-gray-text: #4B5563;
   --color-temu-gray-light: #6B7280;
   --color-temu-gray-border: #E5E7EB;
   --color-temu-gray-border-light: #F3F4F6;
-  --color-temu-offwhite: #F9F8FC;        /* خلفية المتجر العاجية الفاتحة */
-  
+  --color-temu-offwhite: #F9F8FC;
+
   --radius-temu-sm: 8px;
   --radius-temu-pill: 9999px;
 }
@@ -221,10 +221,10 @@
   will-change: transform;
 }
 
-.lightning-svg-container { 
-  position: absolute; 
-  width: 0; 
-  height: 0; 
+.lightning-svg-container {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
 
 .lightning-card-container {
@@ -252,43 +252,34 @@
   border: 2px solid var(--electric-border-color);
   filter: url(#turbulent-displace);
   background: #1D1E3C;
-  transform: translateZ(0); /* تسريع عتادي GPU */
+  transform: translateZ(0);
 }
 
 .lightning-glow-layer-1 {
   border: 2px solid rgba(255, 107, 157, 0.5);
   border-radius: 24px;
-  width: 100%; 
+  width: 100%;
   height: 100%;
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
   filter: blur(1px);
 }
 
 .lightning-glow-layer-2 {
   border: 2px solid var(--electric-light-color);
   border-radius: 24px;
-  width: 100%; 
+  width: 100%;
   height: 100%;
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
   filter: blur(4px);
 }
 
 .lightning-overlay-1, .lightning-overlay-2 {
-  position: absolute; 
-  width: 100%; 
-  height: 100%; 
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
   border-radius: 24px;
   mix-blend-mode: overlay;
   transform: scale(1.1);
@@ -299,13 +290,10 @@
 .lightning-overlay-2 { opacity: 0.5; }
 
 .lightning-background-glow {
-  position: absolute; 
-  width: 100%; 
-  height: 100%; 
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
   border-radius: 24px;
   filter: blur(32px);
   transform: scale(1.1);
@@ -316,16 +304,13 @@
 
 .lightning-content-container {
   position: absolute;
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0;
-  width: 100%; 
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   z-index: 10;
-  padding: 24px; /* ✨ تم تصحيح الخطأ هنا */
+  padding: 24px;
 }
 
 @media (min-width: 640px) {
@@ -357,7 +342,7 @@
 }
 
 .lightning-title {
-  font-size: 24px; /* ✨ تم تصحيح الخطأ هنا */
+  font-size: 24px;
   font-weight: 900;
   color: white;
   text-shadow: 0 0 20px rgba(139, 120, 198, 0.7);
@@ -398,8 +383,9 @@
   text-align: center;
   box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
 }
+
 /* ==========================================
-   ✨ Hero Cards — نفس تصميم البطاقات الثلاث (Collage)
+   ✨ Hero Cards — Collage
    ========================================== */
 .hero-cards-container {
   position: relative;
@@ -424,29 +410,31 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   cursor: pointer;
+  background-color: #E8E5F2; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
+  touch-action: manipulation;
 }
 
-/* البطاقة الكبيرة فوق (Mountain View) */
+/* البطاقة الكبيرة فوق */
 .hero-card.pos-top {
   top: 0; left: 0;
   width: 100%;
   height: 59.5%;
 }
 
-/* البطاقة الصغيرة تحت على اليسار (Calm Waters) */
+/* البطاقة الصغيرة تحت على اليسار */
 .hero-card.pos-bottom-left {
   top: 60.4%; left: 0; bottom: 0;
   width: 39%;
 }
 
-/* البطاقة تحت على اليمين (Forest Journey — card-d3) */
+/* البطاقة تحت على اليمين */
 .hero-card.pos-bottom-right {
   right: 0; bottom: 0;
   width: 59.6%;
   height: 55.5%;
 }
 
-/* ✨ التوسّع عند التحويم — البطاقتين الأولى والثانية من فوق-اليسار */
+/* ✨ التوسّع عند التحويم */
 .hero-card.pos-top:hover,
 .hero-card.pos-bottom-left:hover,
 .hero-card.pos-top:active,
@@ -462,7 +450,6 @@
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* ✨ البطاقة الثالثة كتوسع من تحت-اليمين (بحال card-d3 بالضبط) */
 .hero-card.pos-bottom-right:hover,
 .hero-card.pos-bottom-right:active {
   height: 100% !important;
@@ -476,7 +463,7 @@
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* المحتوى: العنوان ديما ظاهر، الوصف كيبان غير مع hover */
+/* المحتوى: العنوان دائماً ظاهر، الوصف على hover */
 .hero-card-content {
   position: absolute;
   bottom: 0; left: 0; right: 0;
@@ -516,106 +503,11 @@
   max-height: 100px;
 }
 
-/* حالات احتياطية: منتج واحد أو جوج */
+/* حالات احتياطية: منتج واحد أو اثنان */
 .hero-cards-container.count-1 .hero-card { height: 100% !important; }
 .hero-cards-container.count-2 .pos-bottom-left { width: 100%; }
 
-/* موبايل: تصغير النصوص */
-@media (max-width: 640px) {
-  .hero-card-content { padding: 0.9rem; }
-  .hero-card-title { font-size: 0.95rem; }
-  .hero-card-description { font-size: 0.75rem; }
-}
-/* ==========================================
-   ✨ Hero Cards — تحسين الموبايل (Responsive)
-   ========================================== */
-@media (max-width: 640px) {
-  /* العناوين: أصغر + سطر واحد محسوب — ماكتغطيش الصورة */
-  .hero-card-title {
-    font-size: 0.8rem;
-    line-height: 1.25;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* السعر: صغير ومدمج تحت العنوان */
-  .hero-card-price {
-    font-size: 0.75rem;
-    margin-top: 2px;
-  }
-
-  /* المحتوى: padding أقل — نتركو الصورة تبان */
-  .hero-card-content {
-    padding: 0.6rem 0.75rem;
-  }
-
-  .hero-card:hover .hero-card-content,
-  .hero-card.is-active .hero-card-content {
-    padding-bottom: 1.5rem;
-  }
-
-  /* الوصف: نتصغير حتى هو */
-  .hero-card-description {
-    font-size: 0.7rem;
-  }
-}
-
-/* ✨ تدرج أقوى فالموبايل — العنوان يبقى مقروء فوق أي صورة */
-@media (max-width: 640px) {
-  .hero-card-content {
-    background: linear-gradient(to top, rgba(29, 30, 60, 0.92) 20%, rgba(29, 30, 60, 0.45) 55%, transparent);
-  }
-}
-/* ==========================================
-   ✨ Hero Cards — تخطيط موبايل: شبكة متساوية
-   (بدل collage مضغوط كيخنق العناوين)
-   ========================================== */
-@media (max-width: 640px) {
-  .hero-cards-container {
-    aspect-ratio: 1 / 1.15; /* مربع ممدود شوية */
-  }
-
-  /* بطاقة 1: فوق بعرض كامل */
-  .hero-card.pos-top {
-    top: 0; left: 0;
-    width: 100%;
-    height: 58%;
-  }
-
-  /* بطاقتين تحت — جنب بجوج متساويين */
-  .hero-card.pos-bottom-left {
-    top: 59%; left: 0;
-    width: 49%; height: 40%;
-  }
-
-  .hero-card.pos-bottom-right {
-    top: 59%; right: 0;
-    width: 49%; height: 40%;
-  }
-
-  /* العناوين فالشبكة الصغيرة: سطر واحد فقط + حجم مصغر */
-  .hero-card.pos-bottom-left .hero-card-title,
-  .hero-card.pos-bottom-right .hero-card-title {
-    font-size: 0.7rem;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-  }
-
-  .hero-card.pos-bottom-left .hero-card-price,
-  .hero-card.pos-bottom-right .hero-card-price {
-    font-size: 0.65rem;
-  }
-
-  .hero-card.pos-bottom-left .hero-card-content,
-  .hero-card.pos-bottom-right .hero-card-content {
-    padding: 0.5rem 0.6rem;
-  }
-}
-/* ═══ Image Beast — Hero cards: صورة حقيقية بدل CSS background ═══
-   (يحول الصورة لعنصر قابل للتحويل OSS + priority + lazy — LCP fix) */
+/* ═══ Image Beast — Hero cards: صورة حقيقية بدل CSS background ═══ */
 .hero-card-img {
   position: absolute;
   inset: 0;
@@ -627,26 +519,17 @@
 }
 
 .hero-card:hover .hero-card-img {
-  transform: scale(1.03); /* نفس روح الـ hover القديم */
+  transform: scale(1.03);
 }
 
-/* المحتوى فوق الصورة دائماً */
 .hero-card .hero-card-content {
   position: absolute;
   z-index: 2;
 }
-/* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
-.hero-card {
-  background-color: #E8E5F2;
-}
+
 /* ==========================================
    ✨ حالة النشطة (Tap-to-Expand للموبايل)
    ========================================== */
-.hero-card {
-  touch-action: manipulation; /* كيحيد التأخير ديال 300ms فاللمس */
-}
-
-/* ملي البطاقة نشيطة (مفعلة بالضغط) — كتملأ الحاوية كاملة */
 .hero-card.is-active {
   height: 100% !important;
   width: 100% !important;
@@ -690,13 +573,92 @@
   .hero-card.is-active::before { opacity: 0; }
 }
 
-/* ✨ نوقفو الأنيميشن الطاير فالموبايل باش الضغط يبقى دقيق (الهدف مايتحركش) */
+/* ✨ نوقفو الأنيميشن الطاير فالموبايل باش الضغط يبقى دقيق */
 @media (hover: none) and (max-width: 1023px) {
   .hero-cards-container.float-anim-slow {
     transform: none !important;
   }
 }
-/* ✨ أنيميشن فتح نافذة الشات */
+
+/* ═══════════════════════════════════════════════════════════
+   🐺 MOBILE — Hero Cards Unified Responsive (Round #10)
+   كل قواعد hero الموبايل في بلوك واحد — لا ازدواج
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* ── التخطيط: شبكة متساوية ── */
+  .hero-cards-container {
+    aspect-ratio: 1 / 1.15;
+  }
+
+  .hero-card.pos-top {
+    top: 0; left: 0;
+    width: 100%;
+    height: 58%;
+  }
+
+  .hero-card.pos-bottom-left {
+    top: 59%; left: 0;
+    width: 49%; height: 40%;
+  }
+
+  .hero-card.pos-bottom-right {
+    top: 59%; right: 0;
+    width: 49%; height: 40%;
+  }
+
+  /* ── المحتوى: صغير + تدرج أقوى للقراءة ── */
+  .hero-card-content {
+    padding: 0.6rem 0.75rem;
+    padding-bottom: 1.5rem;
+    background: linear-gradient(
+      to top,
+      rgba(29, 30, 60, 0.92) 20%,
+      rgba(29, 30, 60, 0.45) 55%,
+      transparent
+    );
+  }
+
+  .hero-card:hover .hero-card-content,
+  .hero-card.is-active .hero-card-content {
+    padding-bottom: 1.5rem;
+  }
+
+  /* ── العناوين ── */
+  .hero-card-title {
+    font-size: 0.8rem;
+    line-height: 1.25;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-card.pos-bottom-left .hero-card-title,
+  .hero-card.pos-bottom-right .hero-card-title {
+    font-size: 0.7rem;
+  }
+
+  /* ── السعر ── */
+  .hero-card-price {
+    font-size: 0.75rem;
+    margin-top: 2px;
+  }
+
+  .hero-card.pos-bottom-left .hero-card-price,
+  .hero-card.pos-bottom-right .hero-card-price {
+    font-size: 0.65rem;
+  }
+
+  /* ── الوصف ── */
+  .hero-card-description {
+    font-size: 0.7rem;
+  }
+}
+
+/* ==========================================
+   ✨ أنيميشن الشات
+   ========================================== */
 @keyframes chat-pop {
   0% { opacity: 0; transform: translateY(12px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -704,7 +666,7 @@
 .animate-scale {
   animation: chat-pop 0.25s cubic-bezier(0.2, 0, 0, 1) both;
 }
-/* ✨ أنيميشن احترافية للشات */
+
 @keyframes chat-slide-up {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -713,7 +675,6 @@
   animation: chat-slide-up 0.3s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-/* ✨ نبضة حلقة زر الشات */
 @keyframes fab-ring {
   0%   { transform: scale(1); opacity: 0.35; }
   100% { transform: scale(1.55); opacity: 0; }
@@ -721,14 +682,16 @@
 .animate-fab-ring {
   animation: fab-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-/* Tab strip — مؤشر سكرول رقيق (Mission #9 UX) */
+
+/* ═══ Tab strip — مؤشر سكرول رقيق (Mission #9 UX) ═══ */
 .tabstrip::-webkit-scrollbar { height: 6px; }
 .tabstrip::-webkit-scrollbar-track { background: transparent; }
 .tabstrip::-webkit-scrollbar-thumb { background: rgba(139,120,198,.4); border-radius: 999px; }
 .tabstrip { scrollbar-width: thin; scrollbar-color: rgba(139,120,198,.4) transparent; }
+
 /* ═══ Image Beast — Guard against CLS on lazy images ═══ */
 img[loading="lazy"] {
-  background-color: #f3f1f8; /* placeholder tint — brand-adjacent */
+  background-color: #f3f1f8;
 }
 img {
   content-visibility: auto;
