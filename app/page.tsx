@@ -8,6 +8,8 @@ import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
 import { IMG } from '@/lib/imageOptimizer';
 import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
+import FloatingSupport from './components/floating/FloatingSupport';
+
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -443,6 +445,7 @@ function HomeContent() {
           )}
         </div>
       </div>
+  <FloatingSupport />
 
    <GlassDock />
     </main>

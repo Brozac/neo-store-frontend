@@ -17,7 +17,6 @@ const QUICK_PROMPTS = [
 
 export default function AIChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -41,7 +40,6 @@ export default function AIChatWidget() {
     if (isOpen) {
       scrollToBottom();
       setTimeout(() => inputRef.current?.focus(), 250);
-      setHasUnread(false);
     }
   }, [messages, isOpen]);
 
@@ -52,75 +50,88 @@ export default function AIChatWidget() {
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  const handleSendMessage = useCallback(async (textToSend?: string) => {
-    const text = (textToSend || inputMessage).trim();
-    if (!text || isTyping) return;
+  // 🆕 الاستماع لحدث فتح الشات من FloatingSupport
+  useEffect(() => {
+    const openChat = () => setIsOpen(true);
+    window.addEventListener('laclarc:open-ai-chat', openChat);
+    return () => window.removeEventListener('laclarc:open-ai-chat', openChat);
+  }, []);
 
-    const userMsg: ChatMessage = {
-      id: `user_${Date.now()}`,
-      sender: 'user',
-      text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+  const handleSendMessage = useCallback(
+    async (textToSend?: string) => {
+      const text = (textToSend || inputMessage).trim();
+      if (!text || isTyping) return;
 
-    setMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInputMessage('');
-    setIsTyping(true);
+      const userMsg: ChatMessage = {
+        id: `user_${Date.now()}`,
+        sender: 'user',
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+      setMessages((prev) => [...prev, userMsg]);
+      if (!textToSend) setInputMessage('');
+      setIsTyping(true);
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history: messages.slice(-4) }),
-        signal: controller.signal,
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-      if (res.status === 429) {
-        let limitReply = "You're sending messages a bit fast! 😅 Please wait a few minutes, or reach our human team via WhatsApp.";
-        try {
-          const d = await res.json();
-          if (d?.reply) limitReply = d.reply;
-        } catch {}
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, history: messages.slice(-4) }),
+          signal: controller.signal,
+        });
+
+        if (res.status === 429) {
+          let limitReply = "You're sending messages a bit fast! 😅 Please wait a few minutes, or reach our human team via WhatsApp.";
+          try {
+            const d = await res.json();
+            if (d?.reply) limitReply = d.reply;
+          } catch {}
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `limit_${Date.now()}`,
+              sender: 'bot',
+              text: limitReply,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            },
+          ]);
+          return;
+        }
+
+        const data = await res.json();
         setMessages((prev) => [
           ...prev,
-          { id: `limit_${Date.now()}`, sender: 'bot', text: limitReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+          {
+            id: `bot_${Date.now()}`,
+            sender: 'bot',
+            text: data.reply || 'Thanks for reaching out! Feel free to ask about shipping, payments, or products.',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
         ]);
-        return;
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_${Date.now()}`,
+            sender: 'bot',
+            text: "I'm having trouble connecting right now. Our human team is on WhatsApp!",
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      } finally {
+        clearTimeout(timeoutId);
+        setIsTyping(false);
       }
-
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `bot_${Date.now()}`,
-          sender: 'bot',
-          text: data.reply || 'Thanks for reaching out! Feel free to ask about shipping, payments, or products.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err_${Date.now()}`,
-          sender: 'bot',
-          text: "I'm having trouble connecting right now. Our human team is on WhatsApp!",
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    } finally {
-      clearTimeout(timeoutId);
-      setIsTyping(false);
-    }
-  }, [inputMessage, isTyping, messages, API_BASE_URL]);
+    },
+    [inputMessage, isTyping, messages, API_BASE_URL]
+  );
 
   return (
     <>
-      {/* ============ 💬 نافذة المحادثة ============ */}
-      {/* موبايل: شاشة كاملة (Bottom-Sheet) | كمبيوتر: Floating Panel */}
       {isOpen && (
         <>
           {/* Backdrop للموبايل فقط */}
@@ -142,7 +153,7 @@ export default function AIChatWidget() {
               <div className="w-10 h-1 rounded-full bg-white/40" />
             </div>
 
-            {/* الهيدر — دائماً ظاهر */}
+            {/* الهيدر */}
             <div className="bg-gradient-to-r from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6] text-white px-4 py-3.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative w-11 h-11 rounded-full bg-white/10 border border-white/25 flex items-center justify-center shadow-inner">
@@ -233,7 +244,10 @@ export default function AIChatWidget() {
 
             {/* الإدخال — مع دعم الـ safe-area */}
             <form
-              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
               className="p-3 bg-white border-t border-gray-200 flex items-center gap-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             >
               <input
@@ -259,47 +273,6 @@ export default function AIChatWidget() {
           </div>
         </>
       )}
-
-      {/* ============ 🤖 الزر العائم ============ */}
-      {/* فوق زر الواتساب (bottom-6 + h-14 = قمة عند 80px → هادا عند 96px) */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-24 left-5 z-[60] w-14 h-14 group cursor-pointer"
-        title="Chat with Laclarc AI"
-        aria-label={isOpen ? 'Close AI assistant' : 'Open AI assistant'}
-        aria-expanded={isOpen}
-      >
-        {/* حلقة النبض — تنبيه بصري حي */}
-        {!isOpen && (
-          <span className="animate-fab-ring absolute inset-0 rounded-full bg-[#8B78C6]" />
-        )}
-
-        {/* الجسم */}
-        <span className="relative w-14 h-14 rounded-full bg-gradient-to-br from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6] shadow-2xl flex items-center justify-center border-2 border-white/25 transition-transform duration-300 group-hover:scale-110 group-active:scale-90 sm:group-hover:scale-110">
-          {isOpen ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" className="rotate-90 transition-transform">
-              <path d="m22 2-7 20-4-9-9-4Z" />
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
-            </svg>
-          )}
-
-          {/* Badge الإشعار — يدعو للضغط */}
-          {!isOpen && hasUnread && (
-            <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#FF6B9D] rounded-full border-2 border-white flex items-center justify-center">
-              <span className="text-[10px] font-black text-white">1</span>
-            </span>
-          )}
-        </span>
-
-        {/* تلميح (كمبيوتر فقط) */}
-        <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#1D1E3C] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl whitespace-nowrap hidden md:group-hover:block shadow-xl pointer-events-none border border-white/10">
-          Ask Laclarc AI 💬
-        </span>
-      </button>
     </>
   );
 }

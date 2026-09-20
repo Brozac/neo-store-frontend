@@ -1,0 +1,95 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * 📱 Floating Support Stack — Responsive Complete
+ * ═══════════════════════════════════════════════════════════════
+ * يعمل على كل الهواتف:
+ *  - وحدات نسبية (dvh/svh) لا px ثابتة
+ *  - safe-area-inset للهواتف ذات الـ notch/home-bar
+ *  - clamp() للأحجام — يتكيف مع كل الشاشات
+ *  - env() للأنظمة التي تحترم الـ system UI
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '213555000000';
+const WHATSAPP_MSG = 'Hello Laclarc Support, I have a question about an order / product.';
+
+export default function FloatingSupport() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
+
+  return (
+    <div
+      className="fixed z-[60] flex flex-col items-start gap-2.5"
+      style={{
+        // 📱 Responsive: مسافة نسبية من الأسفل + safe-area للهواتف الحديثة
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.25rem)', // 100px فوق الـ dock
+        left: 'max(0.75rem, env(safe-area-inset-left, 0px))',        // مسافة من اليسار
+      }}
+    >
+      {/* ── 🟢 WhatsApp — أصغر (w-11) ── */}
+      <a
+        href={`https://wa.me/${WHATSAPP_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(WHATSAPP_MSG)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="WhatsApp Support"
+        title="Chat with us on WhatsApp"
+        className="group relative flex h-11 w-11 items-center justify-center rounded-full
+                   bg-gradient-to-br from-[#25D366] to-[#128C7E]
+                   shadow-lg shadow-emerald-500/30
+                   border-2 border-white/25
+                   transition-transform duration-300
+                   hover:scale-110 active:scale-90
+                   cursor-pointer"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+        </svg>
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-300 border-2 border-white" />
+
+        {/* Tooltip — ديسكتوب */}
+        <span className="hidden md:block absolute left-full ml-3 top-1/2 -translate-y-1/2
+                         bg-[#1D1E3C] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
+                         whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
+                         shadow-xl pointer-events-none border border-white/10">
+          Need help? Chat with us 💬
+        </span>
+      </a>
+
+      {/* ── 🤖 AI Chat — أكبر (w-14) ── */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('laclarc:open-ai-chat'))}
+        aria-label="Open AI assistant"
+        title="Chat with Laclarc AI"
+        className="group relative flex h-14 w-14 items-center justify-center rounded-full
+                   bg-gradient-to-br from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6]
+                   shadow-2xl shadow-[#8B78C6]/30
+                   border-2 border-white/25
+                   transition-transform duration-300
+                   hover:scale-110 active:scale-90
+                   cursor-pointer"
+      >
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
+        </svg>
+
+        {/* Tooltip — ديسكتوب */}
+        <span className="hidden md:block absolute left-full ml-3 top-1/2 -translate-y-1/2
+                         bg-[#1D1E3C] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
+                         whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
+                         shadow-xl pointer-events-none border border-white/10">
+          Ask Laclarc AI 💬
+        </span>
+      </button>
+    </div>
+  );
+}

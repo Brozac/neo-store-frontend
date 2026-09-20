@@ -5,21 +5,19 @@ import { usePathname } from 'next/navigation';
 import { CartProvider } from './context/CartContext';
 import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
-import WhatsAppButton from './components/WhatsAppButton';
 import SpinWheel from './components/SpinWheel';
 import ExitIntentPopup from './components/ExitIntentPopup';
 import AIChatWidget from './components/AIChatWidget';
 import Footer from './components/Footer';
-import UtmTracker from './components/UtmTracker'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
-import GlassDock from './components/GlassDock'; // ✨ تم إضافة الاستيراد لمنع خطأ البناء
+import UtmTracker from './components/UtmTracker';
+import GlassDock from './components/GlassDock';
+import FloatingSupport from './components/floating/FloatingSupport'; // 🆕 يحتوي WhatsApp + AI FAB
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // ✨ عزل مسارات لوحة تحكم الأدمن
   const isAdminRoute = pathname?.startsWith('/admin');
 
-  // ✨ تسجيل Service Worker في بيئة الإنتاج فقط
   useEffect(() => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       const registerSW = () => {
@@ -43,25 +41,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <CartProvider>
-      {/* ✨ التقاط معلمات إعلانات فيسبوك وتيك توك تلقائياً */}
+      {/* ✨ التقاط UTM */}
       <UtmTracker />
 
-      {/* عرض الهيدر فقط للمشترين (مرة واحدة فقط) */}
+      {/* ✨ Navbar — للزبائن فقط */}
       {!isAdminRoute && <Navbar />}
 
       <div className={!isAdminRoute ? 'pb-20 md:pb-0' : ''}>
         {children}
       </div>
 
-      {/* ✨ الفوتر محمي ومعزول — يظهر فقط في صفحات المتجر للزبائن */}
+      {/* ✨ Footer — للزبائن فقط */}
       {!isAdminRoute && <Footer />}
 
-      {/* المكونات التفاعلية العائمة تظهر فقط لزبائن المتجر */}
+      {/* ✨ المكونات العائمة — للزبائن فقط */}
       {!isAdminRoute && (
         <>
           <CartWidget />
-          <WhatsAppButton />
-          <AIChatWidget />
+          {/* 🆕 FloatingSupport يحتوي WhatsApp FAB + AI Chat FAB */}
+          <FloatingSupport />
+          <AIChatWidget />       {/* نافذة الشات — بدون FAB مكرر */}
           <SpinWheel />
           <ExitIntentPopup />
           <GlassDock />

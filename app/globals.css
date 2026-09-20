@@ -707,3 +707,32 @@ img {
     display: none;
   }
 }
+/* ═══════════════════════════════════════════════════════════
+   📱 Round #11 — Responsive Floating Stack
+   يعمل على كل الهواتف: dvh + safe-area + clamp
+   ═══════════════════════════════════════════════════════════ */
+
+/* GlassDock — responsive bottom مع safe-area */
+.gdock-glass,
+.gdock-container {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem) !important;
+}
+
+/* iOS Safari — احترام الـ home bar */
+@supports (bottom: env(safe-area-inset-bottom)) {
+  .gdock-glass {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  }
+}
+
+/* 🛡️ منع أي سكرول indicators على الموبايل */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    scrollbar-width: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

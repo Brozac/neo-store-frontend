@@ -18,10 +18,10 @@
         "name": "next"
       }
     ],
-    "paths": {
+"paths": {
   "@/*": ["./*"],
-  "@/components/*": ["./components/*"],
-  "@/context/*": ["./context/*"],
+  "@/components/*": ["./app/components/*"],
+  "@/context/*": ["./app/context/*", "./context/*"],
   "@/lib/*": ["./lib/*"],
   "@/utils/*": ["./utils/*"]
 }
