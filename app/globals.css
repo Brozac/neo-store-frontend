@@ -696,3 +696,14 @@ img[loading="lazy"] {
 img {
   content-visibility: auto;
 }
+/* ═══ 🛡️ Round #11 — Mobile scroll indicator suppression ═══
+   إخفاء أي مؤشر سكرول أفقي يظهر كنقاط صغيرة تحت الحاويات
+   على الموبايل (LightningDeals / ShoppableReels / Catalog bar) */
+@media (max-width: 640px) {
+  .overflow-x-auto {
+    scrollbar-width: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+}
