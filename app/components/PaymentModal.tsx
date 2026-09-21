@@ -225,22 +225,32 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   </button>
                 )}
 
-                {isEnabled('crypto') && (
+                                {isEnabled('crypto') && (
                   <button
                     onClick={() => handlePayment('crypto')}
                     disabled={loadingGateway !== null}
-                    className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
+                    className="w-full flex items-center justify-between p-4 border-2 border-emerald-500/30 bg-emerald-50/30 rounded-temu-sm hover:border-emerald-500 transition cursor-pointer active:scale-95 text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-xs">
-                        ₿
+                      <div className="w-10 h-10 bg-emerald-500/15 text-emerald-600 rounded-xl flex items-center justify-center font-black text-base">
+                        💎
                       </div>
                       <div>
-                        <span className="font-extrabold text-temu-black text-sm block">Cryptocurrency (NowPayments)</span>
-                        <span className="text-[11px] text-temu-gray-light">USDT (TRC20), BTC, ETH</span>
+                        <span className="font-extrabold text-temu-black text-sm block">Crypto — Stablecoins</span>
+                        <span className="text-[11px] text-temu-gray-light block">
+                          USDT · USDC <span className="font-bold text-emerald-600">(TRC-20 / BEP-20)</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          Instant • ~$0.25 fee • No volatility
+                        </span>
                       </div>
                     </div>
-                    {loadingGateway === 'crypto' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
+                    {loadingGateway === 'crypto' ? (
+                      <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <span className="text-xs text-emerald-600 font-bold">&rarr;</span>
+                    )}
                   </button>
                 )}
 
