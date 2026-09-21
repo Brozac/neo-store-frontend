@@ -2,15 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useRef } from 'react';
-import {
-  Home,
-  Search,
-  ShoppingBag,
-  User,
-  PackageSearch,
-} from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
+import {
+  HomeIcon, SearchIcon, BagIcon, TrackIcon,
+  ProfileIcon, HeartIcon, AIIcon,
+} from './icons/LaclarcIcons';
 
 interface DockItem {
   href: string;
@@ -53,33 +50,49 @@ export default function GlassDock() {
       });
   };
 
-  const ITEMS: DockItem[] = [
+    const ITEMS: DockItem[] = [
     {
       href: '/',
-      icon: <Home size={22} strokeWidth={1.8} />,
+      icon: <HomeIcon size={24} active={pathname === '/'} />,
       label: 'Home',
       activeMatch: (p) => p === '/',
     },
     {
       href: '/categories',
-      icon: <Search size={22} strokeWidth={1.8} />,
+      icon: <SearchIcon size={24} active={pathname?.startsWith('/categories') || false} />,
       label: 'Browse',
       activeMatch: (p) => p.startsWith('/categories'),
     },
     {
       href: '/cart',
-      icon: <ShoppingBag size={22} strokeWidth={1.8} />,
+      icon: <BagIcon
+        size={24}
+        active={pathname === '/cart'}
+        badge={isMounted && totalItemsCount > 0}
+      />,
       label: 'Cart',
       badge: isMounted && totalItemsCount > 0 ? totalItemsCount : undefined,
     },
     {
       href: '/track-order',
-      icon: <PackageSearch size={22} strokeWidth={1.8} />,
+      icon: <TrackIcon size={24} active={pathname?.startsWith('/track') || false} />,
       label: 'Track',
+      activeMatch: (p) => p.startsWith('/track'),
+    },
+    {
+      href: '/favorites',
+      icon: <HeartIcon size={24} active={pathname?.startsWith('/favorites') || false} />,
+      label: 'Wishlist',
+      activeMatch: (p) => p.startsWith('/favorites'),
+    },
+    {
+      href: '#ai',
+      icon: <AIIcon size={24} />,
+      label: 'AI Assistant',
     },
     {
       href: '/profile',
-      icon: <User size={22} strokeWidth={1.8} />,
+      icon: <ProfileIcon size={24} active={pathname?.startsWith('/profile') || false} />,
       label: 'Profile',
       activeMatch: (p) => p.startsWith('/profile') || p.startsWith('/orders'),
     },
