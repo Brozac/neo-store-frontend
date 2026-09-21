@@ -6,7 +6,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import {
   HomeIcon, SearchIcon, BagIcon, TrackIcon,
-  ProfileIcon, HeartIcon, AIIcon,
+  ProfileIcon, HeartIcon,
 } from './icons/LaclarcIcons';
 
 interface DockItem {
@@ -85,11 +85,7 @@ export default function GlassDock() {
       label: 'Wishlist',
       activeMatch: (p) => p.startsWith('/favorites'),
     },
-    {
-      href: '#ai',
-      icon: <AIIcon size={24} />,
-      label: 'AI Assistant',
-    },
+
     {
       href: '/profile',
       icon: <ProfileIcon size={24} active={pathname?.startsWith('/profile') || false} />,
