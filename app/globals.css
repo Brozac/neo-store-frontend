@@ -712,10 +712,10 @@ img {
    يعمل على كل الهواتف: dvh + safe-area + clamp
    ═══════════════════════════════════════════════════════════ */
 
-/* GlassDock — responsive bottom مع safe-area */
+/* ═══ GlassDock — الموضع القياسي أسفل الشاشة مع احترام safe-area ═══ */
 .gdock-glass,
 .gdock-container {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem) !important;
+  bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
 /* iOS Safari — احترام الـ home bar */
