@@ -86,8 +86,7 @@ export default function GlassDock() {
   ];
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
-      <div
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none pb-[env(safe-area-inset-bottom)]">      <div
         className="pointer-events-auto gdock-glass rounded-full px-3 py-2.5 flex items-center gap-1"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}

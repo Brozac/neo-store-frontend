@@ -712,17 +712,10 @@ img {
    يعمل على كل الهواتف: dvh + safe-area + clamp
    ═══════════════════════════════════════════════════════════ */
 
-/* ═══ GlassDock — الموضع القياسي أسفل الشاشة مع احترام safe-area ═══ */
-.gdock-glass,
-.gdock-container {
+/* ═══ GlassDock — ملصق أسفل الشاشة + احترام safe-area ═══
+   موحد: safe-area فقط عند وجودها (iPhone home-bar)، وإلا صفر */
+.gdock-glass {
   bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-/* iOS Safari — احترام الـ home bar */
-@supports (bottom: env(safe-area-inset-bottom)) {
-  .gdock-glass {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
-  }
 }
 
 /* 🛡️ منع أي سكرول indicators على الموبايل */
