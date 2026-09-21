@@ -68,15 +68,15 @@ export default function FloatingSupport() {
         onClick={() => window.dispatchEvent(new CustomEvent('laclarc:open-ai-chat'))}
         aria-label="Open AI assistant"
         title="Chat with Laclarc AI"
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full
+        className="group relative flex h-11 w-11 items-center justify-center rounded-full
                    bg-gradient-to-br from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6]
-                   shadow-2xl shadow-[#8B78C6]/30
+                   shadow-xl shadow-[#8B78C6]/30
                    border-2 border-white/25
                    transition-transform duration-300
                    hover:scale-110 active:scale-90
                    cursor-pointer"
       >
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
         </svg>
 
