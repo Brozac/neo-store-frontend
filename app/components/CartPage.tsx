@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from './PaymentModal';
 import { useState, useEffect, useRef } from 'react';
+import { LockIcon, CardsIcon, ReturnsIcon } from '@/components/icons/LaclarcIcons';
+import { GlobeShippingIcon } from '@/components/icons/LaclarcIcons';
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL; // ✅ Tenet #4 — بلا hardcoded URLs
 
@@ -155,9 +158,11 @@ export default function CartPage() {
         </div>
 
         {/* Free Shipping Urgency Banner */}
-        <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-temu-sm flex items-center gap-3 text-emerald-800 text-xs font-bold">
-          <span className="text-base shrink-0">✈️</span>
-          <span>Congratulations! You qualify for <strong>FREE Insured Worldwide Shipping</strong>.</span>
+                <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-temu-sm flex items-center gap-3 text-emerald-800 text-xs font-bold">
+          <GlobeShippingIcon size={22} active />
+          <span>
+            Congratulations! You qualify for <strong>FREE Insured Worldwide Shipping</strong>.
+          </span>
         </div>
 
         {/* Items List — كارت مستقل لكل منتج */}
@@ -356,11 +361,17 @@ export default function CartPage() {
           </div>
 
           {/* 🆕 Trust strip — تحت زر الدفع، خارج قائمة المبالغ */}
-          <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400 pt-2 border-t border-dashed border-temu-gray-border">
-            <span>🔒 SSL Secure</span>
-            <span>💳 Visa · MC · Apple Pay</span>
-            <span>↩️ 30-Day Returns</span>
-          </div>
+          <div className="flex items-center justify-center gap-5 pt-2 border-t border-dashed border-temu-gray-border">
+  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+    <LockIcon size={14} active /> SSL Secure
+  </span>
+  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+    <CardsIcon size={14} active /> Visa · MC · Apple Pay
+  </span>
+  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+    <ReturnsIcon size={14} active /> 30-Day Returns
+  </span>
+</div>
         </div>
 
       </div>

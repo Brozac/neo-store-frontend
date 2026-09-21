@@ -10,6 +10,7 @@ import BuyButton from '../../components/BuyButton';
 import TiltCard from '../../components/TiltCard';
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
+import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 
 // 🆕 Phase 3 — مكونات ما تشافش في أول paint — تُحمّل عند الحاجة فقط
 const LivePurchaseNotification = dynamic(
@@ -607,10 +608,19 @@ const handleAddToCart = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center pt-2 text-[11px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
-                <div> Free Shipping</div>
-                <div> 30-Day Guarantee</div>
-                <div> Secure Checkout</div>
+                            <div className="grid grid-cols-3 gap-2 pt-2 text-[10px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
+                <div className="flex flex-col items-center gap-1">
+                  <GlobeShippingIcon size={18} active />
+                  Free Shipping
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <ReturnsIcon size={18} active />
+                  30-Day Guarantee
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <LockIcon size={18} active />
+                  Secure Checkout
+                </div>
               </div>
             </div>
           </div>

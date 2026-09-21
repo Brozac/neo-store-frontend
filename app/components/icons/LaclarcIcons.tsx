@@ -182,3 +182,80 @@ export function WhatsAppGlyph({ size = 22 }: { size?: number }) {
     </svg>
   );
 }
+// ── Function Icons Pack (الموضع الدائم) ──
+
+// 🛡️ Buyer Protection — درع بنفسجي بسلّم
+export function ShieldCheckIcon({ size = 24, active = false }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"
+        fill={active ? 'rgba(139,120,198,0.25)' : 'rgba(139,120,198,0.08)'}
+        stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" />
+      <path d="M8.5 12l2.5 2.5 4.5-5" stroke={active ? '#8B78C6' : 'currentColor'}
+        strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// 🌍 Global Shipping — كرة أرضية بمدار
+export function GlobeShippingIcon({ size = 24, active = false }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9"
+        fill={active ? 'rgba(139,120,198,0.15)' : 'transparent'}
+        stroke="currentColor" strokeWidth={1.8} />
+      <path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z"
+        stroke="currentColor" strokeWidth={1.4} opacity={0.7} />
+      <circle cx="17" cy="6" r="2" fill="#FF6B9D" />
+      <path d="M15 8l3-3" stroke="#FF6B9D" strokeWidth={1.4} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ↩️ Returns — سهم دائري
+export function ReturnsIcon({ size = 24, active = false }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M3 12a9 9 0 109-9 9 9 0 00-9 9z" opacity={0}
+        stroke="none" />
+      <path d="M9 14l-4-4 4-4" stroke="currentColor" strokeWidth={1.9}
+        strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M5 10h9a5 5 0 015 5v1" stroke="currentColor" strokeWidth={1.9}
+        strokeLinecap="round" fill="none"
+        strokeDasharray={active ? 'none' : 'none'} />
+      <circle cx="19" cy="16" r="1.5" fill={active ? '#FF6B9D' : 'rgba(139,120,198,0.4)'} />
+    </svg>
+  );
+}
+
+// 🔒 SSL Lock — قفل بـ keyhole
+export function LockIcon({ size = 24, active = false }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="10.5" width="14" height="10" rx="2.5"
+        fill={active ? 'rgba(139,120,198,0.25)' : 'rgba(139,120,198,0.08)'}
+        stroke="currentColor" strokeWidth={1.8} />
+      <path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor"
+        strokeWidth={1.8} strokeLinecap="round" />
+      <circle cx="12" cy="15" r="1.6" fill={active ? '#FF6B9D' : 'rgba(255,107,157,0.6)'} />
+      <path d="M12 16.5v2" stroke={active ? '#FF6B9D' : 'rgba(255,107,157,0.6)'}
+        strokeWidth={1.8} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// 💳 Cards — بطاقتان متراكبتان
+export function CardsIcon({ size = 24, active = false }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="6" width="15" height="10" rx="2" transform="rotate(-8 10 11)"
+        fill={active ? 'rgba(255,107,157,0.2)' : 'rgba(139,120,198,0.1)'}
+        stroke="currentColor" strokeWidth={1.6} />
+      <rect x="6" y="9" width="15" height="10" rx="2"
+        fill={active ? 'rgba(139,120,198,0.25)' : 'rgba(255,255,255,0.9)'}
+        stroke="currentColor" strokeWidth={1.8} />
+      <path d="M6 13h7" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+      <circle cx="17.5" cy="16" r="1.3" fill={active ? '#FF6B9D' : '#8B78C6'} />
+    </svg>
+  );
+}
