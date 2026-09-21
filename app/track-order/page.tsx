@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import ShipTruthJourney from '@/components/ShipTruthJourney';
 
 interface TrackedOrder {
   id: number;
@@ -308,7 +309,15 @@ function TrackOrderContent() {
                   Placed: {new Date(order.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               )}
+              {/* ✨ Ship Truth Engine — الرحلة الحية من الصين للباب */}
+              {hasTracking && (
+                <ShipTruthJourney
+                  orderId={order.id}
+                  email={email}   // ← الإيميل الذي أدخله الزبون في الفورم (state موجود أصلاً)
+                />
+              )}
             </div>
+            
           );
         })}
       </div>
