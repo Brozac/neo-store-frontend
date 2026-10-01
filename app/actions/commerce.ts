@@ -44,36 +44,45 @@ export async function validateCouponAction(
 }
 
 // ═══ 2️⃣ Exchange — الخيارات + الاختيار ═══
+export type ExchangeStatus = 'awaiting_exchange' | 'exchanged' | 'refunded' | 'invalid' | 'net';
+
+const EXCHANGE_TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getExchangeOptionsAction(
-  orderId: number
-): Promise<{ options: ExchangeOption[] }> {
+  orderId: number,
+  token: string
+): Promise<{ status: ExchangeStatus; options: ExchangeOption[] }> {
+  if (!Number.isInteger(orderId) || orderId <= 0 || !EXCHANGE_TOKEN_RE.test(token)) {
+    return { status: 'invalid', options: [] };
+  }
   try {
-    const data = await backendFetch<{ options: ExchangeOption[] }>(
-      `/api/exchange/${orderId}/options`
+    const data = await backendFetch<{ status?: ExchangeStatus; options?: ExchangeOption[] }>(
+      `/api/exchange/${orderId}/options?t=${encodeURIComponent(token)}`
     );
-    return { options: data.options || [] };
-  } catch (e) {
-    console.warn(`[Action:exchangeOptions] failed: ${(e as Error).message}`);
-    return { options: [] };
+    return { status: data.status ?? 'invalid', options: data.options || [] };
+  } catch {
+    return { status: 'net', options: [] };
   }
 }
 
 export async function pickExchangeAction(
   orderId: number,
+  token: string,
   pickProductId: number | string
 ): Promise<{ success: boolean; message: string }> {
+  if (!Number.isInteger(orderId) || orderId <= 0 || !EXCHANGE_TOKEN_RE.test(token)) {
+    return { success: false, message: 'رابط غير صالح' };
+  }
   try {
     return await backendFetch<{ success: boolean; message: string }>(
       `/api/exchange/${orderId}`,
-      { method: 'POST', body: { pick: pickProductId } }
+      { method: 'POST', body: { pick: pickProductId, token } }
     );
-  } catch (e) {
-    console.warn(`[Action:pickExchange] failed: ${(e as Error).message}`);
-    return { success: false, message: 'Exchange failed' };
+  } catch {
+    return { success: false, message: 'خطأ شبكة — حاول مجدداً' };
   }
 }
 
-// ═══ 3️⃣ System Events — الأدمن فقط (كوكي الأدمن يُمرر تلقائيًا) ═══
 export async function getSystemEventsAction(
   limit = 50,
   type?: string

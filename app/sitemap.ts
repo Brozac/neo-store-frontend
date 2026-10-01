@@ -67,25 +67,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // 3. المنتجات (غير المتوفرة stock_status=true كيرجعها الـ backend أصلاً)
-  let productPages: MetadataRoute.Sitemap = [];
+let productPages: MetadataRoute.Sitemap = [];
   try {
     const res = await fetch(`${BACKEND_URL}/api/products`, {
       next: { revalidate: 3600 }, // تحديث كل ساعة
     });
-    if (res.ok) {
-      const products = await res.json();
-      if (Array.isArray(products)) {
-        productPages = products.map((product: any) => ({
-          url: `${SITE_URL}/products/${product.id}`,
-          // ✨ التاريخ الحقيقي ديال المنتج فـ lastmod (غير متوفر؟ نرجع لليوم)
-          lastModified: product.created_at ? new Date(product.created_at) : new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.9,
-        }));
-      }
+    if (!res.ok) throw new Error(`products HTTP ${res.status}`);
+    const products = await res.json();
+    if (!Array.isArray(products) || products.length === 0) {
+      // 🛡️ fail-closed — feed فارغ/منحرف = لا مسح صامت لروابط المنتجات
+      throw new Error('sitemap: empty product feed');
     }
+    productPages = products.map((product: any) => ({
+      url: `${SITE_URL}/products/${product.id}`,
+      lastModified: product.created_at ? new Date(product.created_at) : new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    }));
   } catch (error) {
     console.error('Sitemap: Product fetch fallback', error);
+  }
+  if (productPages.length === 0) {
+    // ⛔ فشل صريح — Google تحتفظ بآخر sitemap صالح بدل قائمة مقطوعة
+    throw new Error('sitemap: no product URLs — aborting to keep last valid sitemap');
   }
 
   // ✨ منع التكرار (URL وحد مرة وحدة) — حماية رخيصة ومهمة

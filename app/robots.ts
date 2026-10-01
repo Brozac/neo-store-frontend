@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           '/orders',
           '/profile',
           '/success',
+          '/exchange',
           '/cancel',
           '/*?*session_id=*', // جلسات الدفع (غطاء إضافي فوق /success)
         ],
