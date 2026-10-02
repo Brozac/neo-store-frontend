@@ -51,7 +51,7 @@ function HomeContent() {
         setDealsProducts(dealsData);
       }
       if (Array.isArray(categoriesData)) {
-        const mainCategories = categoriesData.map((cat: any) => ({ name: cat.name, slug: cat.slug }));
+        const mainCategories = categoriesData.map((cat: any) => ({ name: cat.name, slug: cat.slug, image_url: cat.image_url }));
         setCategoryStructure([{ name: 'All', slug: 'all' }, ...mainCategories]);
       }
       if (settingsData && (settingsData as any).show_reels === false) {
@@ -210,25 +210,41 @@ function HomeContent() {
           <HeroSection trendingProducts={trendingProducts} />
         )}
 
-        {/* 2. Categories Bar */}
-        <div id="catalog" className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
+                {/* 2. Categories Bar — Temu-style circular rail with live product images */}
+        <div id="catalog" className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
           {categoryStructure.map((cat) => {
             const isActive = activeCategory === cat.name;
+            const label = cat.name === 'Shavers' ? 'Electric Grooming' : cat.name;
+            const img = cat.image_url ? IMG.thumb(cat.image_url) : null;
             return (
-              <button 
-                key={cat.name}
+              <button
+                key={cat.slug || cat.name}
                 onClick={() => {
                   setActiveCategory(cat.name);
                   setPriceRange('all');
                 }}
-                style={{ clipPath: 'polygon(8% 0, 100% 0, 92% 100%, 0% 100%)' }}
-                className={`shrink-0 px-7 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition-all duration-300 cursor-pointer border active:scale-95 ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] text-white border-transparent shadow-md scale-105' 
-                    : 'bg-white text-temu-gray-text border-temu-gray-border-light hover:bg-temu-offwhite'
-                }`}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
-                {cat.name === 'Shavers' ? 'Electric Grooming' : cat.name}
+                <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-300
+                                 ${isActive ? 'ring-[#8B78C6] shadow-md' : 'ring-transparent group-hover:ring-[#8B78C6]/40'}`}>
+                  {/* letter/emoji fallback sits BEHIND the image — shows through
+                      automatically if image is missing OR fails to load (zero state) */}
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#8B78C6]/70">
+                    {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
+                  </span>
+                  {img && (
+                    <img
+                      src={img}
+                      alt={label}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                  )}
+                </div>
+                <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
+                                  ${isActive ? 'text-[#8B78C6]' : 'text-temu-black'}`}>
+                  {label}
+                </span>
               </button>
             );
           })}
