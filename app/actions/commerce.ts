@@ -2,8 +2,9 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * ⚡ Server Actions — Mission #17 — Typed RPC فوق Backend REST
- * لا منطق مكرر — الباكند هو المصدر الوحيد (financialGate/audit/DB)
+ * ⚡ Server Actions — Mission #17 — Typed RPC over Backend REST
+ * No duplicated logic — the backend is the single source of truth
+ * (financialGate / audit / DB)
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -32,8 +33,8 @@ export async function validateCouponAction(
       method: 'POST',
       body: { code, cartTotal },
     });
-        return {
-      ok: Boolean(data.ok ?? data.applied ?? (data.discount > 0)),   // ✅ منطق مبسط بلا ?? unreachable
+    return {
+      ok: Boolean(data.ok ?? data.applied ?? (data.discount > 0)),
       discount: Number(data.discount) || 0,
       message: data.message || 'Coupon applied!',
     };
@@ -43,8 +44,14 @@ export async function validateCouponAction(
   }
 }
 
-// ═══ 2️⃣ Exchange — الخيارات + الاختيار ═══
-export type ExchangeStatus = 'awaiting_exchange' | 'exchanged' | 'refunded' | 'invalid' | 'net';
+// ═══ 2️⃣ Exchange — options + pick (token-gated — IDOR fix) ═══
+export type ExchangeStatus =
+  | 'awaiting_exchange'
+  | 'exchanged'
+  | 'refunded'
+  | 'processing'
+  | 'invalid'
+  | 'net';
 
 const EXCHANGE_TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -71,15 +78,18 @@ export async function pickExchangeAction(
   pickProductId: number | string
 ): Promise<{ success: boolean; message: string }> {
   if (!Number.isInteger(orderId) || orderId <= 0 || !EXCHANGE_TOKEN_RE.test(token)) {
-    return { success: false, message: 'رابط غير صالح' };
+    return { success: false, message: 'Invalid link' };
   }
   try {
-    return await backendFetch<{ success: boolean; message: string }>(
+    const data = await backendFetch<{ success?: boolean; message?: string }>(
       `/api/exchange/${orderId}`,
       { method: 'POST', body: { pick: pickProductId, token } }
     );
+    // 🆕 defensive: a 5xx BackendError is thrown by backendFetch — but an
+    // unexpected 2xx body (undefined success) must not read as success
+    return { success: Boolean(data.success), message: data.message || '' };
   } catch {
-    return { success: false, message: 'خطأ شبكة — حاول مجدداً' };
+    return { success: false, message: 'Network error — please try again' };
   }
 }
 
@@ -88,11 +98,12 @@ export async function getSystemEventsAction(
   type?: string
 ): Promise<{ events: Record<string, unknown>[] }> {
   try {
-    const qs = type ? `?limit=${Math.min(limit, 200)}&type=${encodeURIComponent(type)}` : `?limit=${Math.min(limit, 200)}`;
+    const qs = type
+      ? `?limit=${Math.min(limit, 200)}&type=${encodeURIComponent(type)}`
+      : `?limit=${Math.min(limit, 200)}`;
     const data = await backendFetch<{ events: Record<string, unknown>[] }>(
       `/api/admin/system-events${qs}`
     );
-    // إن رد الباكند 401/403 فسيأتي جسم خطأ — نفحصه
     if (!Array.isArray(data.events)) {
       console.warn('[Action:systemEvents] unauthorized or error response');
       return { events: [] };
