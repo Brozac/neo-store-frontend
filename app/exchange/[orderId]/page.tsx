@@ -1,8 +1,8 @@
-// app/exchange/[orderId]/page.tsx — server wrapper: يقرأ orderId + token من الرابط
+// app/exchange/[orderId]/page.tsx — server wrapper: reads orderId + token from the URL
 import { Suspense } from 'react';
 import ExchangeClient from '../ExchangeClient';
 
-export const metadata = { title: 'استبدال المنتج | Laclarc', robots: { index: false } };
+export const metadata = { title: 'Product Exchange | Laclarc', robots: { index: false } };
 
 export default async function ExchangePage({
   params,
