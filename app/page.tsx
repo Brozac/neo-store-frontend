@@ -210,7 +210,7 @@ function HomeContent() {
           <HeroSection trendingProducts={trendingProducts} />
         )}
 
-                {/* 2. Categories Bar — Temu-style circular rail with live product images */}
+      {/* 2. Categories Bar — Temu-style circular rail with live product images */}
         <div id="catalog" className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
           {categoryStructure.map((cat) => {
             const isActive = activeCategory === cat.name;
