@@ -71,6 +71,15 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
   const isEnabled = (key: string) => enabledGateways.includes(key);
   const noGatewaysAvailable = gatewaysLoaded && enabledGateways.length === 0;
 
+  // 🩹 TRUST FIX — routing map: البوابات الديناميكية → المسارات الصحيحة
+  //    stripe → /api/create-checkout-session (المسار الملك الوحيد — limiter + cancel-atomic + masked errors)
+  //    paysera/crypto → /api/payment/{method} (كما هي)
+  const PAYMENT_ROUTES: Record<string, string> = {
+    stripe: '/api/create-checkout-session',
+    paysera: '/api/payment/paysera',
+    crypto: '/api/payment/crypto',
+  };
+
   const handlePayment = async (method: string) => {
     setLoadingGateway(method);
     setError('');
@@ -82,7 +91,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
 
       const utmData = getStoredUtm(); // ✨ جلب مصدر الإعلان
 
-      const res = await fetch(`${API_BASE_URL}/api/payment/${method}`, {
+      const route = PAYMENT_ROUTES[method] || `/api/payment/${method}`;
+      const res = await fetch(`${API_BASE_URL}${route}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
