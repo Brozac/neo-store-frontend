@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getExchangeOptionsAction, pickExchangeAction } from '../actions/commerce';
 
 interface Substitute {
@@ -10,12 +10,22 @@ interface Substitute {
   image_url?: string;
 }
 
-type Phase = 'loading' | 'pick' | 'exchanged' | 'refunded' | 'processing' | 'unavailable' | 'invalid' | 'net';
+type Phase =
+  | 'loading' | 'pick' | 'confirming' | 'exchanged' | 'refunded'
+  | 'processing' | 'unavailable' | 'invalid' | 'net';
+
+// The backend answers the pick instantly and books the replacement with the supplier in the
+// background (can take a minute+). We poll the order's real state — never claim success early.
+const POLL_MS = 4000;
+const MAX_POLLS = 45;      // ~3 minutes of fast polling, then fall to slow-poll 'processing'
+const SLOW_POLL_MS = 30000; // 🩹 E1 — 'processing' keeps watching quietly, forever if needed
 
 export default function ExchangeClient({ orderId, token }: { orderId: number; token: string }) {
   const [options, setOptions] = useState<Substitute[]>([]);
   const [phase, setPhase] = useState<Phase>('loading');
   const [msg, setMsg] = useState('');
+  const [notice, setNotice] = useState('');
+  const pickingRef = useRef(false); // hard guard against double-tap before the re-render lands
 
   const load = useCallback(async () => {
     if (!orderId || !token) { setPhase('invalid'); return; }
@@ -33,11 +43,96 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Fast poll while the backend books the replacement ──
+  useEffect(() => {
+    if (phase !== 'confirming') return;
+    let cancelled = false;
+    let polls = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tick = async () => {
+      if (cancelled) return;
+      polls += 1;
+      const res = await getExchangeOptionsAction(orderId, token);
+      if (cancelled) return;
+
+      if (res.status === 'exchanged') { setPhase('exchanged'); return; }
+      if (res.status === 'refunded') { setPhase('refunded'); return; }
+      if (res.status === 'invalid') { setPhase('invalid'); return; }
+      if (res.status === 'awaiting_exchange') {
+        // supplier rejected the replacement → backend re-offered new options (+ emailed them)
+        setOptions(res.options);
+        setNotice("Sorry — that replacement can't ship to your country either. Here are new options (we also emailed them to you).");
+        setPhase(res.options.length ? 'pick' : 'unavailable');
+        return;
+      }
+      // 🩹 E2 — backend says the booking HALTED (manual) → honest screen immediately,
+      //         no 3-minute spinner pretending something is still moving
+      if (res.status === 'processing' && res.detail === 'manual') { setPhase('processing'); return; }
+      // 'processing' | 'net' → keep waiting (a transient network blip must not end the wait)
+      if (polls >= MAX_POLLS) { setPhase('processing'); return; }
+      timer = setTimeout(tick, POLL_MS);
+    };
+
+    timer = setTimeout(tick, POLL_MS);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [phase, orderId, token]);
+
+  // ── 🩹 E1 Slow poll while 'processing' — covers MAX_POLLS exhaustion, halt screens,
+  //        and any retry-after-blip: the page keeps discovering the real outcome on its own,
+  //        instead of leaving the customer on a static screen while the booking succeeds behind them.
+  useEffect(() => {
+    if (phase !== 'processing') return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tick = async () => {
+      if (cancelled) return;
+      const res = await getExchangeOptionsAction(orderId, token);
+      if (cancelled) return;
+
+      if (res.status === 'exchanged') { setPhase('exchanged'); return; }
+      if (res.status === 'refunded') { setPhase('refunded'); return; }
+      if (res.status === 'awaiting_exchange') {
+        setOptions(res.options);
+        setPhase(res.options.length ? 'pick' : 'unavailable');
+        return;
+      }
+      // 'processing' | 'net' | 'invalid'(transient shape) → keep slow-polling
+      timer = setTimeout(tick, SLOW_POLL_MS);
+    };
+
+    timer = setTimeout(tick, SLOW_POLL_MS);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [phase, orderId, token]);
+
   const handlePick = async (productId: string | number) => {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    setNotice('');
     setPhase('loading');
-    const res = await pickExchangeAction(orderId, token, productId);
-    if (res.success) setPhase('exchanged');
-    else { setMsg(res.message); setPhase('net'); } // failed pick is retryable — never a refund promise
+    try {
+      const res = await pickExchangeAction(orderId, token, productId);
+      if (res.success) { setPhase('confirming'); return; }
+
+      switch (res.code) {
+        case 'already_picked':   // double-click / second tab → the first pick is already running
+          setPhase('confirming');
+          break;
+        case 'stale_option':     // outdated list → reload the current one
+          setNotice('That option is no longer available — here is the updated list.');
+          await load();
+          break;
+        case 'invalid_link':
+          setPhase('invalid');
+          break;
+        default:                 // network / internal — retry re-reads the real state, never promises a refund
+          setMsg(res.message);
+          setPhase('net');
+      }
+    } finally {
+      pickingRef.current = false;
+    }
   };
 
   return (
@@ -47,6 +142,13 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
         {phase === 'loading' && (
           <><div className="animate-spin h-8 w-8 border-4 border-[#8B78C6] border-t-transparent rounded-full mx-auto mb-4" />
             <p className="text-sm text-gray-500">Loading...</p></>
+        )}
+
+        {phase === 'confirming' && (
+          <><div className="animate-spin h-10 w-10 border-4 border-[#8B78C6] border-t-transparent rounded-full mx-auto mb-5" />
+            <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Confirming your replacement…</h1>
+            <p className="text-sm text-gray-600 mb-2">We're booking your new item with our supplier. This can take up to a minute.</p>
+            <p className="text-xs text-gray-400">Please keep this page open — your order is safe.</p></>
         )}
 
         {phase === 'exchanged' && (
@@ -60,6 +162,9 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
           <>
             <div className="text-4xl mb-3">🔄</div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Your item can't ship to your country</h1>
+            {notice && (
+              <p role="status" className="text-xs font-bold text-[#8B78C6] bg-[#F4F1FB] rounded-lg px-3 py-2 mb-4">{notice}</p>
+            )}
             <p className="text-sm text-gray-600 mb-6">We're sorry! Pick a free replacement from the same category and we'll ship it right away — or get a full automatic refund after 72 hours.</p>
             <div className="space-y-3 text-right">
               {options.map((opt) => (
@@ -95,7 +200,8 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
         {phase === 'processing' && (
           <><div className="text-5xl mb-4">⏳</div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Your order is being processed</h1>
-            <p className="text-sm text-gray-600 mb-6">Our team is handling it right now — you'll get an email update very soon.</p></>
+            <p className="text-sm text-gray-600 mb-6">Our team is handling it right now — you'll get an email update very soon.</p>
+            <button onClick={load} className="text-[#8B78C6] font-bold text-sm cursor-pointer underline">Check status</button></>
         )}
 
         {phase === 'invalid' && (

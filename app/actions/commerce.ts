@@ -53,20 +53,34 @@ export type ExchangeStatus =
   | 'invalid'
   | 'net';
 
+// 🆕 machine-readable failure reason from the backend — the UI maps it to the right screen
+// (before: every failure landed on "Connection problem", even an expired link)
+export type ExchangeFailCode = 'invalid_link' | 'already_picked' | 'stale_option' | 'internal';
+
 const EXCHANGE_TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EXCHANGE_FAIL_CODES: readonly string[] = ['invalid_link', 'already_picked', 'stale_option', 'internal'];
+
+export interface ExchangeOptionsResult {
+  status: ExchangeStatus;
+  options: ExchangeOption[];
+  detail?: string; // 🩹 E2 — 'manual' distinguishes a halted booking from in-flight polling
+}
 
 export async function getExchangeOptionsAction(
   orderId: number,
   token: string
-): Promise<{ status: ExchangeStatus; options: ExchangeOption[] }> {
+): Promise<ExchangeOptionsResult> {
   if (!Number.isInteger(orderId) || orderId <= 0 || !EXCHANGE_TOKEN_RE.test(token)) {
     return { status: 'invalid', options: [] };
   }
   try {
-    const data = await backendFetch<{ status?: ExchangeStatus; options?: ExchangeOption[] }>(
+    const data = await backendFetch<{ status?: ExchangeStatus; options?: ExchangeOption[]; detail?: string }>(
       `/api/exchange/${orderId}/options?t=${encodeURIComponent(token)}`
     );
-    return { status: data.status ?? 'invalid', options: data.options || [] };
+    // backendFetch throws on !res.ok — a body without `status` = unexpected shape → 'net'
+    // (the backend always sends an explicit status for real answers)
+    if (!data || typeof data.status !== 'string') return { status: 'net', options: [] };
+    return { status: data.status, options: data.options || [], detail: data.detail };
   } catch {
     return { status: 'net', options: [] };
   }
@@ -76,18 +90,20 @@ export async function pickExchangeAction(
   orderId: number,
   token: string,
   pickProductId: number | string
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; code?: ExchangeFailCode }> {
   if (!Number.isInteger(orderId) || orderId <= 0 || !EXCHANGE_TOKEN_RE.test(token)) {
-    return { success: false, message: 'Invalid link' };
+    return { success: false, message: 'Invalid link', code: 'invalid_link' };
   }
   try {
-    const data = await backendFetch<{ success?: boolean; message?: string }>(
+    const data = await backendFetch<{ success?: boolean; message?: string; code?: string }>(
       `/api/exchange/${orderId}`,
       { method: 'POST', body: { pick: pickProductId, token } }
     );
-    // 🆕 defensive: a 5xx BackendError is thrown by backendFetch — but an
-    // unexpected 2xx body (undefined success) must not read as success
-    return { success: Boolean(data.success), message: data.message || '' };
+    // 🆕 defensive: an error body without `success: true` must never read as success
+    const code = data.code && EXCHANGE_FAIL_CODES.includes(data.code)
+      ? (data.code as ExchangeFailCode)
+      : undefined;
+    return { success: Boolean(data.success), message: data.message || '', code };
   } catch {
     return { success: false, message: 'Network error — please try again' };
   }
