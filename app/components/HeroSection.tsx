@@ -258,11 +258,6 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
               <span className="bg-gradient-to-r from-[#8B78C6] to-[#FF6B9D] bg-clip-text text-transparent">precision & lifestyle.</span>
             </h1>
 
-            <div className="gsap-hero flex items-center gap-2.5 text-xs font-bold text-[#1D1E3C] pt-1 justify-center lg:justify-start">
-              <span className="text-amber-400 text-sm">★★★★★</span>
-              <span>4.9/5 from 12,000+ Verified Buyers</span>
-            </div>
-
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">
               <Link
                 href="#catalog"

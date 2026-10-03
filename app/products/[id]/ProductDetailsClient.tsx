@@ -12,11 +12,8 @@ import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 
+// 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (social-problem وهمي: أسماء/مدن عشوائية)
 // 🆕 Phase 3 — مكونات ما تشافش في أول paint — تُحمّل عند الحاجة فقط
-const LivePurchaseNotification = dynamic(
-  () => import('../../components/LivePurchaseNotification'),
-  { ssr: false }
-);
 const FrequentlyBoughtTogether = dynamic(
   () => import('../../components/FrequentlyBoughtTogether'),
   {
@@ -44,6 +41,7 @@ interface Product {
   variants?: any[];
   rating?: number;
   sales_count?: number;
+  is_sourced?: boolean;      // 🩹 — flash-deal timer gating (honest edition)
   composition?: string;
   material?: string;
   chest_pad?: string;
@@ -58,14 +56,14 @@ interface Product {
   video_url?: string;
 }
 
-interface Review { 
-  id: number; 
-  author: string; 
-  rating: number; 
-  content: string; 
-  country: string; 
+interface Review {
+  id: number;
+  author: string;
+  rating: number;
+  content: string;
+  country: string;
   created_at: string;
-  images?: string[]; 
+  images?: string[];
 }
 
 const TABS = [
@@ -77,24 +75,18 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
-const STATIC_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-];
-
-export default function ProductDetailsClient({ 
-  product, 
-  initialReviews, 
-  relatedProducts 
-}: { 
-  product: Product; 
-  initialReviews: Review[]; 
+export default function ProductDetailsClient({
+  product,
+  initialReviews,
+  relatedProducts
+}: {
+  product: Product;
+  initialReviews: Review[];
   relatedProducts: Product[];
 }) {
   const router = useRouter();
   const { addToCart } = useCart();
-  
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -103,18 +95,17 @@ export default function ProductDetailsClient({
   const [activeTab, setActiveTab] = useState<TabKey>('details');
   const [reviews, setReviews] = useState(initialReviews);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [purchaseCount, setPurchaseCount] = useState(38);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
   const [mainAdded, setMainAdded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
-  
+
   const touchStartX = useRef(0);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
-  const defaultImage = '/icon-512.png'; 
+  const defaultImage = '/icon-512.png';
 
   const galleryImages = useMemo(() => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -136,8 +127,8 @@ export default function ProductDetailsClient({
   const matchedVariant = useMemo(() => {
     if (!product.variants) return null;
     try {
-      const parsedVariants = typeof product.variants === 'string' 
-        ? JSON.parse(product.variants) 
+      const parsedVariants = typeof product.variants === 'string'
+        ? JSON.parse(product.variants)
         : product.variants;
 
       if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) return null;
@@ -164,11 +155,6 @@ export default function ProductDetailsClient({
 
   useEffect(() => {
     const controller = new AbortController();
-    setPurchaseCount(Math.floor(Math.random() * 35) + 18);
-
-    const interval = setInterval(() => {
-      setPurchaseCount(prev => Math.min(120, Math.max(12, prev + (Math.floor(Math.random() * 5) - 2))));
-    }, 7000);
 
     try {
       const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -181,7 +167,6 @@ export default function ProductDetailsClient({
       .catch(() => {});
 
     return () => {
-      clearInterval(interval);
       controller.abort();
     };
   }, [product.id, API_BASE_URL]);
@@ -200,7 +185,7 @@ export default function ProductDetailsClient({
     observer.observe(target);
     return () => observer.disconnect();
   }, []);
-  
+
 
   const parsePrice = (price: any) => Number(price) || 0;
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -208,8 +193,8 @@ export default function ProductDetailsClient({
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
-  const discountPct = safeOriginalPrice > safePrice 
-    ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100) 
+  const discountPct = safeOriginalPrice > safePrice
+    ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100)
     : 0;
 
   const discountedUnitPrice = useMemo(() => {
@@ -221,36 +206,36 @@ export default function ProductDetailsClient({
   const handleToggleFavorite = (productId: string | number) => {
     const idStr = String(productId);
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    const newFavorites = favorites.includes(idStr) 
-      ? favorites.filter((f: string) => f !== idStr) 
+    const newFavorites = favorites.includes(idStr)
+      ? favorites.filter((f: string) => f !== idStr)
       : [...favorites, idStr];
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
     setFavoriteIds(newFavorites);
   };
 
-const handleAddToCart = () => {
-  const resolvedVid = matchedVariant?.vid || '';
-  
-  addToCart({
-    id: product.id,
-    title: product.title,
-    name: product.title,
-    price: parseFloat(discountedUnitPrice.toFixed(2)),
-    quantity,
-    image: mainImageSrc,
-    image_url: mainImageSrc,
-    color: selectedColor,
-    size: selectedSize,
-    vid: resolvedVid
-  }, quantity);
-  
-  // 🎯 Mission #15 — feedback فوري (نفس نمط stickyAdded الموجود)
-  setMainAdded(true);
-  setTimeout(() => setMainAdded(false), 1500);
-};
+  const handleAddToCart = () => {
+    const resolvedVid = matchedVariant?.vid || '';
 
-  const handleTouchStart = (e: React.TouchEvent) => { 
-    touchStartX.current = e.touches[0].clientX; 
+    addToCart({
+      id: product.id,
+      title: product.title,
+      name: product.title,
+      price: parseFloat(discountedUnitPrice.toFixed(2)),
+      quantity,
+      image: mainImageSrc,
+      image_url: mainImageSrc,
+      color: selectedColor,
+      size: selectedSize,
+      vid: resolvedVid
+    }, quantity);
+
+    // 🎯 Mission #15 — feedback فوري
+    setMainAdded(true);
+    setTimeout(() => setMainAdded(false), 1500);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -273,15 +258,14 @@ const handleAddToCart = () => {
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
-
   return (
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
-        
+
         {/* Breadcrumbs */}
         <div className="flex flex-col gap-2 mb-6">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer active:scale-95 w-fit"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -300,10 +284,10 @@ const handleAddToCart = () => {
 
         {/* Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
-          
+
           {/* Visual Gallery */}
           <div className="flex flex-col gap-4">
-            <div 
+            <div
               className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
@@ -312,36 +296,36 @@ const handleAddToCart = () => {
               {showVideo && product.video_url ? (
                 <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <img 
+                <img
                   src={IMG.detail(mainImageSrc)}
                   srcSet={`${IMG.card(mainImageSrc)} 400w, ${IMG.detail(mainImageSrc)} 800w`}
                   sizes="(max-width: 768px) 100vw, 50vw"
                   fetchPriority="high"
                   decoding="async"
-                  alt={product.title} 
-                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105" 
+                  alt={product.title}
+                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                 />
               )}
 
               {galleryImages.length > 1 && !showVideo && (
                 <>
-                  <button 
+                  <button
                     type="button"
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); 
-                    }} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
+                    }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Previous Image"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
-                  <button 
+                  <button
                     type="button"
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1); 
-                    }} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Next Image"
                   >
@@ -358,7 +342,7 @@ const handleAddToCart = () => {
             </div>
 
             <div className="relative w-full flex items-center group/thumbs">
-              
+
               {galleryImages.length > 4 && (
                 <button
                   type="button"
@@ -370,35 +354,34 @@ const handleAddToCart = () => {
                 </button>
               )}
 
-              <div 
+              <div
                 ref={thumbnailsRef}
                 className="flex gap-2.5 w-full overflow-x-auto p-2 scrollbar-hide touch-pan-x items-center scroll-smooth"
               >
                 {product.video_url && (
-                  <div 
-                    onClick={() => setShowVideo(true)} 
+                  <div
+                    onClick={() => setShowVideo(true)}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
                   >
                     <span className="text-white text-xl">▶</span>
                   </div>
                 )}
                 {galleryImages.map((img, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }} 
+                  <div
+                    key={idx}
+                    onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
-                      !showVideo && currentImageIndex === idx 
-                        ? 'border-[#8B78C6] shadow-md ring-2 ring-[#8B78C6]/30 scale-95' 
+                      !showVideo && currentImageIndex === idx
+                        ? 'border-[#8B78C6] shadow-md ring-2 ring-[#8B78C6]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
-                    {/* ✨ استبدال Image بـ img */}
-                    <img 
-                      src={IMG.thumb(img)} 
-                      alt="Thumbnail" 
+                    <img
+                      src={IMG.thumb(img)}
+                      alt="Thumbnail"
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-contain p-1" 
+                      className="w-full h-full object-contain p-1"
                     />
                   </div>
                 ))}
@@ -423,11 +406,23 @@ const handleAddToCart = () => {
               <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">
                 {product.title}
               </h1>
-              
+
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-temu-orange text-sm">★★★★★</span>
-                <span className="text-sm font-bold text-temu-black">4.9</span>
-                <span className="text-xs text-temu-gray-light">({reviews.length} verified ratings)</span>
+                {reviews.length > 0 ? (
+                  <>
+                    <span className="text-temu-orange text-sm">
+                      {'★'.repeat(Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length))}
+                    </span>
+                    <span className="text-sm font-bold text-temu-black">
+                      {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                    </span>
+                    <span className="text-xs text-temu-gray-light">
+                      ({reviews.length} verified rating{reviews.length > 1 ? 's' : ''})
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs font-bold text-temu-gray-text">✨ New in catalog — be the first to review</span>
+                )}
               </div>
 
               <div className="flex items-baseline gap-3 mb-6">
@@ -447,10 +442,10 @@ const handleAddToCart = () => {
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {product.colors.map((col, idx) => (
-                      <button 
-                        key={idx} 
+                      <button
+                        key={idx}
                         type="button"
-                        onClick={() => setSelectedColor(col)} 
+                        onClick={() => setSelectedColor(col)}
                         className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColor === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
                       >
                         <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/10"></span>
@@ -470,10 +465,10 @@ const handleAddToCart = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {product.sizes.map((sz) => (
-                      <button 
-                        key={sz} 
+                      <button
+                        key={sz}
                         type="button"
-                        onClick={() => setSelectedSize(sz)} 
+                        onClick={() => setSelectedSize(sz)}
                         className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${selectedSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
                       >
                         {sz}
@@ -486,7 +481,8 @@ const handleAddToCart = () => {
 
             {/* CTA Controls */}
             <div ref={mainCtaRef} className="space-y-4 pt-2 border-t border-gray-200">
-              <CountdownTimer />
+              {/* 🩹 TRUST — Flash timer فقط للعرضات الممولة الحقيقية (is_sourced) — لا إلحاح وهمي على كل منتج */}
+              {product.is_sourced === true && <CountdownTimer />}
               <DeliveryEstimator />
 
               <div className="space-y-2.5 my-6">
@@ -495,11 +491,11 @@ const handleAddToCart = () => {
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div 
+                  <div
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity === 1 
-                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      quantity === 1
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
@@ -513,11 +509,11 @@ const handleAddToCart = () => {
                     <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity === 2 
-                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      quantity === 2
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
@@ -534,16 +530,16 @@ const handleAddToCart = () => {
                     <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity >= 3 
-                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm' 
+                      quantity >= 3
+                        ? 'border-[#8B78C6] bg-purple-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                      Best Value 
+                      Best Value
                     </span>
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>
@@ -558,24 +554,24 @@ const handleAddToCart = () => {
               </div>
 
               <div className="flex gap-3">
-                <button 
-  type="button"
-  onClick={handleAddToCart} 
-  className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
-    mainAdded 
-      ? 'bg-emerald-600 shadow-emerald-600/20' 
-      : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
-  }`}
->
-  {mainAdded ? (
-    <><span>✓</span> Added to Bag — View Cart →</>
-  ) : (
-    <><span></span> Add to Cart</>
-  )}
-</button>
-                <button 
+                <button
                   type="button"
-                  onClick={() => handleToggleFavorite(product.id)} 
+                  onClick={handleAddToCart}
+                  className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
+                    mainAdded
+                      ? 'bg-emerald-600 shadow-emerald-600/20'
+                      : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
+                  }`}
+                >
+                  {mainAdded ? (
+                    <><span>✓</span> Added to Bag — View Cart →</>
+                  ) : (
+                    <><span></span> Add to Cart</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleFavorite(product.id)}
                   className={`w-14 h-14 shrink-0 flex items-center justify-center border-2 rounded-temu-sm transition cursor-pointer active:scale-90 ${isCurrentProductFavorited ? 'border-temu-error bg-temu-error text-white' : 'border-temu-gray-border bg-white text-temu-gray-text hover:text-temu-error'}`}
                   aria-label="Save to Wishlist"
                 >
@@ -583,32 +579,24 @@ const handleAddToCart = () => {
                 </button>
               </div>
 
-              <BuyButton 
-                product={{ 
-                  id: product.id, 
-                  title: product.title, 
+              <BuyButton
+                product={{
+                  id: product.id,
+                  title: product.title,
                   name: product.title,
-                  price: parseFloat(discountedUnitPrice.toFixed(2)), 
+                  price: parseFloat(discountedUnitPrice.toFixed(2)),
                   image: mainImageSrc,
                   color: selectedColor,
                   size: selectedSize,
                   quantity: quantity,
                   vid: matchedVariant?.vid || ''
-                }} 
+                }}
               />
 
-              <div className="flex items-center gap-3 bg-white p-3 rounded-temu-sm border border-temu-gray-border-light shadow-sm">
-                <div className="flex -space-x-2.5">
-                  {STATIC_AVATARS.map((av, idx) => (
-                    <img key={idx} src={av} className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm" alt="Buyer" />
-                  ))}
-                </div>
-                <p className="text-xs text-temu-gray-text font-medium">
-                  <span className="font-extrabold text-temu-black">{purchaseCount} shoppers</span> purchased this in the last 24 hours
-                </p>
-              </div>
+              {/* 🩹 TRUST — بلوك "48 shoppers" المحذوف نهائياً (كان purchaseCount عشوائي 18-120 متقلب
+                  + Static Avatars من Unsplash) — البديل الحقيقي: sold_count من DB — Backlog */}
 
-                            <div className="grid grid-cols-3 gap-2 pt-2 text-[10px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
+              <div className="grid grid-cols-3 gap-2 pt-2 text-[10px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
                 <div className="flex flex-col items-center gap-1">
                   <GlobeShippingIcon size={18} active />
                   Free Shipping
@@ -630,10 +618,10 @@ const handleAddToCart = () => {
         <div className="border-t border-temu-gray-border-light pt-8">
           <div className="flex gap-6 border-b border-temu-gray-border-light mb-6 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
-              <button 
-                key={tab.key} 
+              <button
+                key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)} 
+                onClick={() => setActiveTab(tab.key)}
                 className={`pb-3 text-xs uppercase font-extrabold whitespace-nowrap transition border-b-2 -mb-px cursor-pointer ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-black'}`}
               >
                 {tab.label}
@@ -671,9 +659,9 @@ const handleAddToCart = () => {
         </div>
 
         {relatedProducts.length > 0 && (
-          <FrequentlyBoughtTogether 
-            currentProduct={product} 
-            relatedProducts={relatedProducts} 
+          <FrequentlyBoughtTogether
+            currentProduct={product}
+            relatedProducts={relatedProducts}
           />
         )}
 
@@ -686,13 +674,12 @@ const handleAddToCart = () => {
                 <TiltCard key={p.id}>
                   <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
                     <div className="relative aspect-square overflow-hidden bg-gray-50">
-                      {/* ✨ استبدال Image بـ img */}
-                      <img 
-                        src={IMG.card(p.image_url || p.image || defaultImage)} 
+                      <img
+                        src={IMG.card(p.image_url || p.image || defaultImage)}
                         alt={p.title}
                         loading="lazy"
                         decoding="async"
-                        className="w-full h-full object-contain p-2 transition group-hover:scale-105" 
+                        className="w-full h-full object-contain p-2 transition group-hover:scale-105"
                       />
                     </div>
                     <div className="p-3 pt-2 flex flex-col justify-between flex-1">
@@ -706,11 +693,13 @@ const handleAddToCart = () => {
           </div>
         )}
 
-        {/* Customer Reviews */}
+        {/* Customer Reviews — 🩹 TRUST: مراجعات حقيقية فقط (بعد تنضيف 237,627 وهمية) */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-black text-temu-black">Customer Reviews ({reviews.length})</h2>
-            <span className="text-xs font-bold text-temu-green">Verified Worldwide Purchases ✔</span>
+            {reviews.length > 0 && (
+              <span className="text-xs font-bold text-temu-green">✓ Verified Purchases</span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -725,18 +714,17 @@ const handleAddToCart = () => {
                 {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
                   <div className="flex gap-2 pt-1">
                     {rev.images.map((photoUrl, pIdx) => (
-                      <div 
-                        key={pIdx} 
+                      <div
+                        key={pIdx}
                         className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
                         onClick={() => window.open(photoUrl, '_blank')}
                         title="Click to view full photo"
                       >
-                        {/* ✨ استبدال Image بـ img */}
-                         <img 
-                          src={IMG.thumb(photoUrl)} 
-                          alt="Buyer proof photo" 
+                        <img
+                          src={IMG.thumb(photoUrl)}
+                          alt="Buyer proof photo"
                           loading="lazy"
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     ))}
@@ -750,22 +738,21 @@ const handleAddToCart = () => {
             ))}
           </div>
 
-          <ReviewForm 
-            productId={product.id} 
+          <ReviewForm
+            productId={product.id}
             onReviewAdded={() => {
               fetch(`${API_BASE_URL}/api/reviews/${product.id}`)
                 .then(r => r.json())
                 .then(setReviews)
                 .catch(() => {});
-            }} 
+            }}
           />
         </div>
 
       </div>
-
       {/* Lightbox Modal */}
       {isLightboxOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/95 z-[200] flex flex-col justify-between p-4 sm:p-6 backdrop-blur-md animate-fade-in select-none"
           onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
         >
@@ -775,7 +762,7 @@ const handleAddToCart = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsZoomed(!isZoomed)}
                 className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-full border border-white/10 transition cursor-pointer text-xs font-bold active:scale-95 flex items-center gap-1.5"
@@ -784,7 +771,7 @@ const handleAddToCart = () => {
                 <span>🔍</span> {isZoomed ? 'Reset (1x)' : 'Zoom (2.5x)'}
               </button>
 
-              <button 
+              <button
                 type="button"
                 onClick={() => { setIsLightboxOpen(false); setIsZoomed(false); }}
                 className="bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
@@ -795,22 +782,21 @@ const handleAddToCart = () => {
             </div>
           </div>
 
-          <div 
+          <div
             className="relative flex-1 w-full max-w-5xl mx-auto flex items-center justify-center overflow-hidden my-2"
             onClick={e => e.stopPropagation()}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <div 
+            <div
               className={`relative w-full h-full flex items-center justify-center transition-transform duration-300 ${
                 isZoomed ? 'scale-175 sm:scale-225 cursor-zoom-out' : 'cursor-zoom-in'
               }`}
               onClick={() => setIsZoomed(!isZoomed)}
             >
-              {/* ✨ استبدال Image بـ img */}
-              <img 
-                src={IMG.zoom(mainImageSrc)} 
-                alt={product.title} 
+              <img
+                src={IMG.zoom(mainImageSrc)}
+                alt={product.title}
                 decoding="async"
                 className="w-full h-full object-contain"
               />
@@ -818,7 +804,7 @@ const handleAddToCart = () => {
 
             {galleryImages.length > 1 && !isZoomed && (
               <>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -829,11 +815,11 @@ const handleAddToCart = () => {
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
+                    setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev - 1);
                   }}
                   className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
                   aria-label="Next Photo"
@@ -847,19 +833,18 @@ const handleAddToCart = () => {
           <div className="w-full max-w-xl mx-auto z-20 overflow-x-auto scrollbar-hide py-1" onClick={e => e.stopPropagation()}>
             <div className="flex gap-2 justify-center">
               {galleryImages.map((img, idx) => (
-                <div 
+                <div
                   key={idx}
                   onClick={() => { setCurrentImageIndex(idx); setIsZoomed(false); }}
                   className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 transition shrink-0 ${
                     currentImageIndex === idx ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
                   }`}
                 >
-                  {/* ✨ استبدال Image بـ img */}
-                  <img 
-                    src={IMG.thumb(img)} 
-                    alt="Thumb" 
+                  <img
+                    src={IMG.thumb(img)}
+                    alt="Thumb"
                     loading="lazy"
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ))}
@@ -868,34 +853,30 @@ const handleAddToCart = () => {
         </div>
       )}
 
-      <LivePurchaseNotification 
-  productName={product.title} 
-  productImage={mainImageSrc} 
-/>
-      
+      {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
+
       {/* Sticky Buy Bar */}
-      <div 
+      <div
         className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] p-3 sm:p-4 transition-all duration-300 transform ${
           showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
         }`}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          
-          <div 
+
+          <div
             onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
             className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
             title="Tap to review choices"
           >
             <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
-              {/* ✨ استبدال Image بـ img */}
-               <img 
-                src={IMG.thumb(mainImageSrc)} 
-                alt={product.title} 
+              <img
+                src={IMG.thumb(mainImageSrc)}
+                alt={product.title}
                 loading="lazy"
-                className="w-full h-full object-contain p-1" 
+                className="w-full h-full object-contain p-1"
               />
             </div>
-            
+
             <div className="min-w-0 pr-1">
               <p className="text-xs font-black text-gray-900 truncate">{product.title}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
@@ -919,8 +900,8 @@ const handleAddToCart = () => {
                 setTimeout(() => setStickyAdded(false), 1200);
               }}
               className={`py-3 px-3.5 sm:px-4 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm ${
-                stickyAdded 
-                  ? 'bg-emerald-600 text-white' 
+                stickyAdded
+                  ? 'bg-emerald-600 text-white'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
               }`}
             >

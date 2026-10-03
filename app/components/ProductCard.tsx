@@ -59,6 +59,9 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
   };
 
   const safePrice = Number(product.price) || 0;
+
+  // 🩹 TRUST FIX — discount من original_price الحقيقي فقط (CJ) — صفر خصومات مفبركة:
+  //    النسبة تُحسب من original_price الحقيقي فقط، والشارة تظهر فقط عند خصم حقيقي معقول (1-89%)
   let displayOriginalPrice = Number(product.original_price) || 0;
   let discountText = '';
 
@@ -67,21 +70,14 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
     if (disc > 0 && disc < 90) {
       discountText = `${disc}% OFF`;
     } else {
-      displayOriginalPrice = 0; 
+      displayOriginalPrice = 0;
     }
-  }
-
-  if (!discountText && safePrice > 0) {
-    const discounts = [15, 20, 25, 30, 40, 50];
-    const fakeDiscount = discounts[Math.abs(Number(product.id) || 0) % discounts.length];
-    displayOriginalPrice = safePrice / (1 - fakeDiscount / 100);
-    discountText = `${fakeDiscount}% OFF`;
   }
 
   const imgSrc = product.image_url || product.image || '/placeholder.jpg';
 
   return (
-    <div 
+    <div
       data-product-id={String(product.id)}
       className={`product-card-wrapper product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow-md ${
         isTouched ? 'is-active' : ''
@@ -96,7 +92,7 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
             alt={product.title || 'Product'}
             className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
-           {discountText && (
+          {discountText && (
             <div className="absolute top-2 left-2 bg-temu-error text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">
               {discountText}
             </div>
@@ -126,8 +122,8 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
           type="button"
           onClick={handleAddToCart}
           className={`w-full font-bold py-2.5 px-3 rounded-temu-sm transition-all duration-200 flex items-center justify-center gap-1.5 text-xs cursor-pointer active:scale-90 shadow-sm ${
-            isAdded 
-              ? 'bg-emerald-600 text-white shadow-emerald-500/20' 
+            isAdded
+              ? 'bg-emerald-600 text-white shadow-emerald-500/20'
               : 'bg-temu-orange hover:bg-temu-orange-bright text-white'
           }`}
         >
