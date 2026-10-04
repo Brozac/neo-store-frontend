@@ -94,7 +94,7 @@ export default function CjProductPage() {
             </div>
             {product.images?.length > 1 && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {product.images.map((img, i) => (
+                {(product.images as string[]).map((img: string, i: number) => (
                   <button key={i} onClick={() => setMainImg(img)}
                     className={`w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 ${mainImg === img ? 'border-[#8B78C6]' : 'border-gray-200'}`}>
                     <img src={img} className="w-full h-full object-cover" alt="" />
