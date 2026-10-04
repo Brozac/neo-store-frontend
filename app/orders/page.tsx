@@ -8,6 +8,7 @@ interface Order {
   id: string | number;
   created_at: string;
   status: string;
+  status_label?: string;   // 🩹 M#29 — من السيرفر
   total_amount: string | number;
   shipping_address: string;
   customer_email?: string;
@@ -24,6 +25,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalOrder, setModalOrder] = useState<Order | null>(null);
@@ -39,8 +41,31 @@ export default function OrdersPage() {
       return;
     }
 
+    // 🩹 M#29 — الحصول على إيميل المستخدم لتمريره في زر Track
+    fetch(`${API_BASE_URL}/api/user/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(profile => {
+        if (profile?.email) setUserEmail(profile.email);
+      })
+      .catch(() => {});
+
     const fetchOrders = async () => {
       try {
+        // 🩹 M#29 — استعمل الكاش من Profile إذا متوفر (أسرع، بلا fetch إضافي)
+        const cached = sessionStorage.getItem('my_orders_cache');
+        if (cached) {
+          try {
+            const cachedOrders = JSON.parse(cached);
+            if (Array.isArray(cachedOrders) && cachedOrders.length > 0) {
+              setOrders(cachedOrders);
+              setLoading(false);
+              // ✨ نكمل fetch حياً في الخلفية لتحديث الحالات — لا نعرض loading مرة ثانية
+            }
+          } catch { /* cache تالف — نتجاهله */ }
+        }
+
         const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -58,6 +83,8 @@ export default function OrdersPage() {
         const data = await ordersRes.json();
         if (Array.isArray(data)) {
           setOrders(data);
+          // ✨ حدّث الكاش للزيارة القادمة
+          sessionStorage.setItem('my_orders_cache', JSON.stringify(data));
         }
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -69,16 +96,40 @@ export default function OrdersPage() {
     fetchOrders();
   }, [router, API_BASE_URL]);
 
-  // ✨ إضافة حالة 'completed' لشارات النجاح الرسمية
+  // 🩹 M#29 — عرض status_label إن وجد (من الباكند) وإلا الحالة الخام
+  const getStatusLabel = (order: Order): string => {
+    if (order.status_label) return order.status_label;   // من السيرفر
+    // fallback محلي — نفس الخريطة (تناسق مع server.js getStatusLabel)
+    const MAP: Record<string, string> = {
+      'pending':           '⏳ Awaiting Payment',
+      'paid':              '✅ Payment Confirmed',
+      'awaiting_exchange': '📦 Alternative Offered — Check Email',
+      'processing':        '⏳ Processing',
+      'manual':            '⏳ Under Review',
+      'fulfilled':         '🚚 Shipped',
+      'completed':         '✅ Delivered',
+      'refunded':          '💰 Refunded',
+      'cancelled':         '❌ Cancelled',
+      'expired':           '⏱ Expired',
+      'archived':          '📦 Archived',
+    };
+    return MAP[String(order.status || '').toLowerCase()] || String(order.status || '');
+  };
+
+  // 🩹 M#29 — لون البادج يتبع نفس نظام getStatusStyle الحالي
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'fulfilled':
       case 'paid':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-200'; 
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'awaiting_exchange':   // 🩹 جديد — لون مميز للبديل المعروض
       case 'reconciling':
+      case 'processing':
       case 'pending':
-        return 'bg-amber-50 text-amber-700 border border-amber-200';
+        return 'bg-purple-50 text-purple-700 border border-purple-200';
+      case 'refunded':            // 🩹 جديد — لون مميز للمسترد
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
       case 'manual':
       case 'cancelled':
       case 'expired':
@@ -89,7 +140,7 @@ export default function OrdersPage() {
   };
 
   const formatAddress = (address: string) => {
-    if (!address) return 'N/A';
+    if (!address) return '🌍 International shipping';
     try {
       const parsed = JSON.parse(address);
       return [parsed.line1, parsed.city, parsed.state, parsed.postal_code, parsed.country].filter(Boolean).join(', ');
@@ -110,7 +161,7 @@ export default function OrdersPage() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/items`, { headers });
-      
+
       if (!res.ok) {
         throw new Error('Failed to load details');
       }
@@ -120,11 +171,11 @@ export default function OrdersPage() {
         setOrderItems(data);
       }
     } catch (err) {
-      setOrderItems([{ 
-        title: 'Could not load items. Details will sync automatically.', 
-        image_url: '', 
-        quantity: 0, 
-        price_at_purchase: 0 
+      setOrderItems([{
+        title: 'Could not load items. Details will sync automatically.',
+        image_url: '',
+        quantity: 0,
+        price_at_purchase: 0
       }]);
     } finally {
       setLoadingDetails(false);
@@ -142,10 +193,9 @@ export default function OrdersPage() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
-        
-        {/* Navigation */}
-        <button 
-          onClick={() => router.push('/profile')} 
+
+        <button
+          onClick={() => router.push('/profile')}
           className="flex items-center gap-2 text-gray-500 hover:text-black font-bold text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 w-fit"
         >
           &larr; Back to Profile
@@ -168,8 +218,8 @@ export default function OrdersPage() {
             </div>
             <h3 className="text-base font-bold text-gray-800">No Orders Found Yet</h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
-            <button 
-              onClick={() => router.push('/')} 
+            <button
+              onClick={() => router.push('/')}
               className="bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Start Shopping &rarr;
@@ -186,8 +236,9 @@ export default function OrdersPage() {
                       {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
+                  {/* 🩹 M#29 — status_label الودي من الباكند */}
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusStyle(order.status)}`}>
-                    {order.status}
+                    {getStatusLabel(order)}
                   </span>
                 </div>
 
@@ -206,17 +257,17 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* ✨ تمرير رقم الطلب مباشرة لصفحة التتبع */}
-                    <button 
-                      onClick={() => router.push(`/track-order?orderId=${order.id}`)} 
+                    {/* 🩹 M#29 — مرر الإيميل لصفحة التتبع (نفس عقد track/:identifier) */}
+                    <button
+                      onClick={() => router.push(`/track-order?orderId=${order.id}&email=${encodeURIComponent(order.customer_email || userEmail)}`)}
                       className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5"
                     >
                       <span>🚚</span>
                       <span>Track Shipment</span>
                     </button>
-                    
-                    <button 
-                      onClick={() => handleViewDetails(order)} 
+
+                    <button
+                      onClick={() => handleViewDetails(order)}
                       className="px-4 py-2 bg-[#8B78C6] hover:bg-[#7A67B5] text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm"
                     >
                       View Items
@@ -233,13 +284,13 @@ export default function OrdersPage() {
       {isModalOpen && modalOrder && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Modal Header */}
+
             <div className="p-5 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h3 className="font-black text-gray-900 text-base">Order #{modalOrder.id} Details</h3>
+                {/* 🩹 M#29 — status_label في الـ modal أيضاً */}
                 <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${getStatusStyle(modalOrder.status)}`}>
-                  {modalOrder.status}
+                  {getStatusLabel(modalOrder)}
                 </span>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black p-1 text-sm font-bold">
@@ -247,7 +298,6 @@ export default function OrdersPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-5 space-y-3 overflow-y-auto flex-1">
               {loadingDetails ? (
                 <div className="flex justify-center py-10">
@@ -257,12 +307,12 @@ export default function OrdersPage() {
                 orderItems.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border border-gray-200 shrink-0 relative">
-                      <Image 
-                        src={item.image_url || '/placeholder.jpg'} 
-                        alt={item.title} 
+                      <Image
+                        src={item.image_url || '/placeholder.jpg'}
+                        alt={item.title}
                         fill
                         sizes="56px"
-                        className="object-cover" 
+                        className="object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -279,7 +329,6 @@ export default function OrdersPage() {
               )}
             </div>
 
-            {/* Modal Footer */}
             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-600">Total Settled</span>
               <span className="text-lg font-black text-[#FF6B9D]">${Number(modalOrder.total_amount).toFixed(2)}</span>

@@ -26,18 +26,32 @@ interface TrackingEvent {
 // الحالات الداخلية التقنية → لغة ودية + تلوين + مرحلة الـ Stepper
 type Tone = 'good' | 'warn' | 'bad' | 'info';
 const STATUS_MAP: Record<string, { label: string; tone: Tone; step: number }> = {
-  pending:     { label: 'Awaiting Payment',     tone: 'warn', step: 0 },
-  reconciling: { label: 'Finalizing Payment',   tone: 'warn', step: 1 },
-  paid:        { label: 'Payment Confirmed',    tone: 'good', step: 1 },
-  manual:      { label: 'Under Review',         tone: 'warn', step: 1 },
-  completed:   { label: 'In Production',        tone: 'good', step: 2 },
-  fulfilled:   { label: 'Shipped — In Transit', tone: 'good', step: 3 },
-  expired:     { label: 'Expired',              tone: 'bad',  step: 0 },
-  cancelled:   { label: 'Cancelled',            tone: 'bad',  step: 0 },
+  pending:            { label: 'Awaiting Payment',     tone: 'warn', step: 0 },
+  reconciling:        { label: 'Finalizing Payment',   tone: 'warn', step: 1 },
+  paid:               { label: 'Payment Confirmed',    tone: 'good', step: 1 },
+  manual:             { label: 'Under Review',         tone: 'warn', step: 1 },
+  processing:         { label: 'Processing',           tone: 'info', step: 1 },  // 🩹
+  awaiting_exchange:  { label: 'Alternative Offered — Check Email', tone: 'info', step: 1 },  // 🩹
+  refunded:           { label: 'Refunded',             tone: 'info', step: 0 },  // 🩹
+  archived:           { label: 'Archived',             tone: 'info', step: 0 },  // 🩹
+  completed:          { label: 'In Production',        tone: 'good', step: 2 },
+  fulfilled:          { label: 'Shipped — In Transit', tone: 'good', step: 3 },
+  expired:            { label: 'Expired',              tone: 'bad',  step: 0 },
+  cancelled:          { label: 'Cancelled',            tone: 'bad',  step: 0 },
 };
 
-const getStatusInfo = (status?: string) => {
+// ✨ وعدّل الدالة لتستقبل الـ label الجاهز:
+const getStatusInfo = (status?: string, serverLabel?: string) => {
   const key = (status || 'pending').toLowerCase();
+  // 🩹 M#29 — الباكند أرسل status_label جاهزاً → استعمله مباشرة (مصدر الحقيقة)
+  if (serverLabel) {
+    // استنتج اللون من محتوى الـ label (رموز تعرفها)
+    const tone: Tone = serverLabel.includes('💰') ? 'info'
+                     : serverLabel.includes('⏳') ? 'warn'
+                     : serverLabel.includes('❌') || serverLabel.includes('⏱') ? 'bad'
+                     : 'good';
+    return { label: serverLabel, tone, step: key === 'awaiting_exchange' ? 1 : STATUS_MAP[key]?.step ?? 1 };
+  }
   return STATUS_MAP[key] || { label: (status || 'Processing'), tone: 'info' as Tone, step: 1 };
 };
 
@@ -220,7 +234,10 @@ function TrackOrderContent() {
       <div className="space-y-4">
         {orders.map((order) => {
           const safeTotal = Number(order.total_amount) || 0;
-          const statusInfo = getStatusInfo(order.status);
+          const statusInfo = getStatusInfo(
+            order.status,
+            (order as any).status_label   // 🩹 M#29 — يأتي من الباكند
+          );          
           const hasTracking = !!order.tracking_number && order.tracking_number.trim().length > 3;
           const events = liveEvents[order.id];
 
