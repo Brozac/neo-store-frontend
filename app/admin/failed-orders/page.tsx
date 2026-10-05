@@ -15,6 +15,13 @@ interface Order {
   customer_phone?: string;
   shipping_address?: string;
   created_at: string;
+  halt_details?: {                  // 🩹 إضافة — سبب توقف CJ الرسمي
+    reason: string;
+    number?: string;
+    probeStatus?: string;
+    probeOrderNum?: string;
+    probeMatched?: boolean;
+  };
 }
 
 interface OrderItem {
@@ -212,6 +219,25 @@ export default function FailedOrdersAdmin() {
                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Gateway:</span> <span className="font-mono font-bold text-[#8B78C6]">{order.payment_method}</span></p>
                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Total Paid:</span> <span className="text-temu-error font-black text-sm">${Number(order.total_amount).toFixed(2)}</span></p>
                   </div>
+                                    {/* 🩹 M#31 — halt_details: سبب توقف CJ الرسمي (يظهر فقط للطلبات الموقوفة) */}
+                  {order.halt_details && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-2 space-y-1">
+                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider">🛑 CJ Halt Reason:</p>
+                      <p className="text-[11px] text-amber-800 font-bold">
+                        {order.halt_details.reason} — {order.halt_details.number || ''}
+                      </p>
+                      {order.halt_details.probeStatus && (
+                        <p className="text-[10px] text-amber-600 font-mono">
+                          CJ probe status: {order.halt_details.probeStatus}
+                        </p>
+                      )}
+                      {order.halt_details.probeOrderNum && (
+                        <p className="text-[10px] text-amber-600 font-mono">
+                          CJ order: {order.halt_details.probeOrderNum}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {order.shipping_address && (
                     <div className="bg-temu-offwhite p-3 rounded-xl border border-gray-100 text-xs text-gray-500 mt-2">
