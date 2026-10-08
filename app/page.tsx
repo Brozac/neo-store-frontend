@@ -39,7 +39,7 @@ function HomeContent() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`${API_URL}/api/products`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_URL}/api/products?limit=200`).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/categories`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/settings`).then(r => r.ok ? r.json() : {}).catch(() => ({}))

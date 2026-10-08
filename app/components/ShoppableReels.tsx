@@ -85,7 +85,12 @@ const CURATED_DEMO_REELS: Product[] = [
 export default function ShoppableReels({ products = [] }: { products?: Product[] }) {
   // ✨ فلترة المنتجات التي تحتوي على فيديو، واختيار أول 8 فقط لمنع تكدس الصفحة
   const videoProducts = products.filter(p => p.video_url && p.video_url.trim().length > 0).slice(0, 8);
-  const activeReels: Product[] = videoProducts.length > 0 ? videoProducts : CURATED_DEMO_REELS;
+  // ✨ القسم يظهر فقط بفيديوهات حقيقية من DB — الديمو للتطوير فقط (Tenet #26)
+  const DEMO_ALLOWED = process.env.NODE_ENV === 'development'; // inline وقت البناء — صفر runtime cost
+  const activeReels: Product[] =
+    videoProducts.length > 0 ? videoProducts
+    : DEMO_ALLOWED ? CURATED_DEMO_REELS
+    : [];
 
   const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(true);

@@ -69,7 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 3. المنتجات (غير المتوفرة stock_status=true كيرجعها الـ backend أصلاً)
 let productPages: MetadataRoute.Sitemap = [];
   try {
-    const res = await fetch(`${BACKEND_URL}/api/products`, {
+    const res = await fetch(`${BACKEND_URL}/api/products?minimal=1`, {
       next: { revalidate: 3600 }, // تحديث كل ساعة
     });
     if (!res.ok) throw new Error(`products HTTP ${res.status}`);

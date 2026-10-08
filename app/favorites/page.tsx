@@ -24,19 +24,19 @@ export default function FavoritesPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/products`);
+      // 🆕 by-ids — غير المفضلة (كان: الكاتالوغ كامل ~26MB كيتفلتر client-side)
+      const ids = favs.map((x: any) => parseInt(x, 10))
+        .filter((nn: number) => Number.isInteger(nn) && nn > 0).slice(0, 100);
+      if (ids.length === 0) { setFavoriteProducts([]); setLoading(false); return; }
+
+      const res = await fetch(`${API_BASE_URL}/api/products/by-ids?ids=${ids.join(',')}`);
       if (!res.ok) {
         setFavoriteProducts([]);
         return;
       }
 
       const data = await res.json();
-      if (Array.isArray(data)) {
-        const filtered = data.filter((product: any) => favs.includes(String(product.id)));
-        setFavoriteProducts(filtered);
-      } else {
-        setFavoriteProducts([]);
-      }
+      setFavoriteProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching favorites:', err);
       setFavoriteProducts([]);

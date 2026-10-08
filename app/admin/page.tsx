@@ -14,8 +14,8 @@ interface CategoryNode {
 interface TelemetryState {
   backendStatus: 'healthy' | 'checking' | 'offline';
   backendPing: number;
-  pendingBaridiCount: number;
-  failedOrdersCount: number;
+  pendingBaridiCount: number | null;   // null = مجهول — لا نكذب بـ 0
+  failedOrdersCount: number | null;
   lastChecked: string;
 }
 
@@ -36,14 +36,17 @@ function SystemEventsPanel() {
   const [events, setEvents] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const load = async (t?: string) => {
     setLoading(true);
     try {
       const res = await adminApi.get(`/admin/system-events?limit=50${t ? `&type=${t}` : ''}`);
       setEvents(res.data.events || []);
+      setFetchError(false);
     } catch (e) {
       console.error('system-events fetch failed', e);
+      setFetchError(true);
     } finally { setLoading(false); }
   };
 
@@ -60,6 +63,12 @@ function SystemEventsPanel() {
     'SELFHEAL_PAYBALANCE', 'SELFHEAL_MANUALIZED', 'DISPUTE_FOUND', 'WALLET_EMPTY',
   ];
 
+  // الموثقة في system_events (DRS §5) — عين M#31 كتخدم هنا
+  const EVENT_TYPES_V2 = ['CJ_ORDER_HALTED', 'WEBHOOK_SPOOF_REJECTED', 'CJ_NUMBER_BURNED',
+    'SHIPPING_BLOCKED_FLAG', 'CRYPTO_NO_ADDRESS', 'PAYSERA_AMOUNT_MISMATCH',
+    'CJ_INTERCEPT_REASON', 'VERIFIED_REVIEW_SUBMITTED', 'TOPSELLERS_IMPORT'];
+  // دمج بلا تكرار — القديمة + الجديدة
+  for (const t of EVENT_TYPES_V2) if (!EVENT_TYPES.includes(t)) EVENT_TYPES.push(t);
   return (
     <div className="bg-white text-temu-black rounded-2xl p-5 border border-temu-gray-border-light space-y-4">
       <div className="flex items-center justify-between">
@@ -82,6 +91,11 @@ function SystemEventsPanel() {
 
       {loading ? (
         <div className="text-xs text-gray-400 py-6 text-center">⏳ Loading...</div>
+      ) : fetchError ? (
+        <div className="text-xs text-red-500 py-6 text-center border border-red-200 bg-red-50 rounded-xl">
+          ⚠️ Fetch failed — status unknown, NOT quiet.{' '}
+          <button onClick={() => load(filter)} className="underline font-bold cursor-pointer">Retry</button>
+        </div>
       ) : events.length === 0 ? (
         <div className="text-xs text-gray-500 py-6 text-center">🟢 No events — system quiet and fully operational</div>
       ) : (
@@ -155,8 +169,8 @@ export default function AdminDashboard() {
   const [telemetry, setTelemetry] = useState<TelemetryState>({
     backendStatus: 'checking',
     backendPing: 0,
-    pendingBaridiCount: 0,
-    failedOrdersCount: 0,
+    pendingBaridiCount: null,
+    failedOrdersCount: null,
     lastChecked: '--',
   });
 
@@ -170,22 +184,19 @@ export default function AdminDashboard() {
     try {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
 
+      // null = مجهول — الفشل ما يترجمش لصفر كاذب
       const [manualOrdersRes, failedOrdersRes] = await Promise.all([
-        adminApi.get('/admin/manual-orders').catch(() => ({ data: [] })),
-        adminApi.get('/admin/failed-orders').catch(() => ({ data: [] }))
+        adminApi.get('/admin/manual-orders').then(r => r.data).catch(() => null),
+        adminApi.get('/admin/failed-orders').then(r => r.data).catch(() => null),
       ]);
-
-      const ping = Date.now() - startTime;
-      const pendingBaridi = Array.isArray(manualOrdersRes.data)
-        ? manualOrdersRes.data.filter((o: any) => o.status === 'pending').length
-        : 0;
-      const failedCount = Array.isArray(failedOrdersRes.data) ? failedOrdersRes.data.length : 0;
 
       setTelemetry({
         backendStatus: 'healthy',
-        backendPing: ping,
-        pendingBaridiCount: pendingBaridi,
-        failedOrdersCount: failedCount,
+        backendPing: Date.now() - startTime,
+        pendingBaridiCount: Array.isArray(manualOrdersRes)
+          ? manualOrdersRes.filter((o: any) => o.status === 'pending').length
+          : null,
+        failedOrdersCount: Array.isArray(failedOrdersRes) ? failedOrdersRes.length : null,
         lastChecked: new Date().toLocaleTimeString(),
       });
     } catch (err: any) {
@@ -201,17 +212,16 @@ export default function AdminDashboard() {
   const fetchVideoProducts = async () => {
     setLoadingVideos(true);
     try {
-      adminApi.get('/settings')
+      adminApi.get('/admin/settings')
         .then(res => {
-          if (typeof res.data.show_reels === 'boolean') setShowReels(res.data.show_reels);
+          const v = res.data?.show_reels ?? res.data?.value?.show_reels;
+          if (typeof v === 'boolean') setShowReels(v);
         })
-        .catch(() => {});
+        .catch(e => console.error('[admin] settings load failed:', e.message));
 
-      const productsRes = await adminApi.get('/products');
-      if (Array.isArray(productsRes.data)) {
-        const vids = productsRes.data.filter((p: any) => p.video_url && String(p.video_url).trim().length > 3);
-        setVideoProducts(vids);
-      }
+      // P1-1: server-side filter — لا ننزل الكاتالوغ كاملاً للبراوزر
+      const productsRes = await adminApi.get('/admin/videos');
+      if (Array.isArray(productsRes.data)) setVideoProducts(productsRes.data);
     } catch (err) {
       console.error('Error fetching reels data:', err);
     } finally {
@@ -485,22 +495,22 @@ export default function AdminDashboard() {
               Neon DB
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-temu-black">Connected</span>
-              <span className="text-[11px] font-mono text-emerald-500">Pool Active</span>
+              <span className="text-base font-black text-temu-black">{telemetry.backendStatus === 'healthy' ? 'Connected' : telemetry.backendStatus === 'checking' ? 'Checking…' : 'Unreachable'}</span>
+              <span className="text-[11px] font-mono text-emerald-500">{telemetry.backendStatus === 'healthy' ? 'Pool Active' : '—'}</span>
             </div>
           </div>
 
           <div
             onClick={() => router.push('/admin/baridimob')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
-              telemetry.pendingBaridiCount > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
+              (telemetry.pendingBaridiCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#FF6B9D]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               🏦 BaridiMob Review
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-temu-black">{telemetry.pendingBaridiCount}</span>
+              <span className="text-base font-black text-temu-black">{telemetry.pendingBaridiCount === null ? <span className="text-gray-400">—</span> : telemetry.pendingBaridiCount}</span>
               <span className="text-[11px] text-[#FF6B9D] font-bold">Action Needed &rarr;</span>
             </div>
           </div>
@@ -508,14 +518,14 @@ export default function AdminDashboard() {
           <div
             onClick={() => router.push('/admin/failed-orders')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
-              telemetry.failedOrdersCount > 0 ? 'bg-linear-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
+              (telemetry.failedOrdersCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-red-50 border-red-400' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
               ⚠️ Failed in CJ
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-temu-black">{telemetry.failedOrdersCount}</span>
+              <span className="text-base font-black text-temu-black">{telemetry.failedOrdersCount === null ? <span className="text-gray-400">—</span> : telemetry.failedOrdersCount}</span>
               <span className="text-[11px] text-red-500 font-bold">Resolve Queue &rarr;</span>
             </div>
           </div>
