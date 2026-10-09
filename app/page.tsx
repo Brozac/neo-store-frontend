@@ -39,7 +39,11 @@ function HomeContent() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch(`${API_URL}/api/products?limit=200`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(
+  activeCategory && activeCategory !== 'All'
+    ? `${API_URL}/api/products?category=${encodeURIComponent(categoryStructure.find(c => c.name === activeCategory)?.slug || activeCategory)}`
+    : `${API_URL}/api/products?limit=200`
+).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/categories`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`${API_URL}/api/settings`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
@@ -52,7 +56,17 @@ function HomeContent() {
       }
       if (Array.isArray(categoriesData)) {
         const mainCategories = categoriesData.map((cat: any) => ({ name: cat.name, slug: cat.slug, image_url: cat.image_url }));
-        setCategoryStructure([{ name: 'All', slug: 'all' }, ...mainCategories]);
+        // 🆕 Rail v4: L1 (بالصور) + L2 (بمسارات slug كاملة) — Temu-style depth
+const allRailCats: any[] = [...(mainCategories || [])];
+const walkRail = (nodes: any[], parentPath: string, depth: number) => (nodes || []).forEach((n: any) => {
+  const fullPath = parentPath ? `${parentPath}/${n.slug}` : n.slug;
+  if (depth === 1 && n.name && !allRailCats.some((x: any) => x.name === n.name)) {
+    allRailCats.push({ name: n.name, slug: fullPath, image_url: n.image_url });
+  }
+  if (n.children?.length) walkRail(n.children, fullPath, depth + 1);
+});
+walkRail(mainCategories, '', 0);
+setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
       }
       if (settingsData && (settingsData as any).show_reels === false) {
         setShowReels(false);
@@ -60,7 +74,7 @@ function HomeContent() {
     }).finally(() => {
       setLoading(false);
     });
-  }, [API_URL]);
+  }, [activeCategory, API_URL]);
 
   useEffect(() => {
     if (categoryQuery) setActiveCategory(categoryQuery);
