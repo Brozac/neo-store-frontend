@@ -1,10 +1,13 @@
 'use client';
 
+import { useId } from 'react';
+
 /**
  * ═══════════════════════════════════════════════════════════
- * 🎨 Laclarc Duotone Icons — مخصص للمتجر
+ * 🎨 Laclarc Duotone Icons — مخصص للمتجر (v1.1)
  * أسلوب: filled + accent layer (طبقتان) — يتفاعل مع النشاط
  * كل أيقونة تقبل active state وتضيء بطبقة بنفسجية/وردية
+ * v1.1: useId لكل gradient — تضارب SVG IDs محسوم (P1)
  * ═══════════════════════════════════════════════════════════
  */
 
@@ -15,12 +18,13 @@ interface IconProps {
 
 // 🏠 Home — بيت بأساس مملوء
 export function HomeIcon({ size = 24, active = false }: IconProps) {
+  const gradId = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* الطبقة المملوءة — تظهر عند النشط */}
       <path
         d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1v-9.5z"
-        fill={active ? 'url(#homeGrad)' : 'transparent'}
+        fill={active ? `url(#${gradId})` : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 0 : 1.8}
         strokeLinecap="round"
@@ -29,7 +33,7 @@ export function HomeIcon({ size = 24, active = false }: IconProps) {
       />
       {active && (
         <defs>
-          <linearGradient id="homeGrad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
             <stop stopColor="#8B78C6" />
             <stop offset="100%" stopColor="#FF6B9D" />
           </linearGradient>
@@ -39,7 +43,7 @@ export function HomeIcon({ size = 24, active = false }: IconProps) {
   );
 }
 
-// 🔍 Search — عدسة بلمعة
+// 🔍 Search — عدسة بلمعة (rgba مباشر — النمط بلا gradients)
 export function SearchIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -56,12 +60,13 @@ export function SearchIcon({ size = 24, active = false }: IconProps) {
 }
 
 // 🛍️ ShoppingBag — حقيبة كاملة بقلب
-export function BagIcon({ size = 24, active = false, badge = false }: IconProps & { badge?: boolean }) {
+export function BagIcon({ size = 24, active = false }: IconProps & { badge?: boolean }) {
+  const gradId = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path
         d="M5 8h14l-1.2 12a1.5 1.5 0 01-1.5 1.35H7.7a1.5 1.5 0 01-1.49-1.35L5 8z"
-        fill={active ? 'url(#bagGrad)' : 'transparent'}
+        fill={active ? `url(#${gradId})` : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 0 : 1.8}
         strokeLinejoin="round"
@@ -78,12 +83,14 @@ export function BagIcon({ size = 24, active = false, badge = false }: IconProps 
         d="M12 13.2c.6-.9 2-.9 2.3.2.2.8-.4 1.5-2.3 2.6-1.9-1.1-2.5-1.8-2.3-2.6.3-1.1 1.7-1.1 2.3-.2z"
         fill={active ? '#fff' : 'rgba(255,107,157,0.5)'}
       />
-      <defs>
-        <linearGradient id="bagGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#FF6B9D" />
-          <stop offset="100%" stopColor="#8B78C6" />
-        </linearGradient>
-      </defs>
+      {active && (
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="#FF6B9D" />
+            <stop offset="100%" stopColor="#8B78C6" />
+          </linearGradient>
+        </defs>
+      )}
     </svg>
   );
 }
@@ -130,32 +137,36 @@ export function ProfileIcon({ size = 24, active = false }: IconProps) {
 
 // ❤️ Wishlist — قلب ممتلئ مع نبضة
 export function HeartIcon({ size = 24, active = false }: IconProps) {
+  const gradId = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={active ? 'animate-fab-ring-once' : ''}>
       <path
         d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"
-        fill={active ? 'url(#heartGrad)' : 'transparent'}
+        fill={active ? `url(#${gradId})` : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 0 : 1.8}
         strokeLinejoin="round"
       />
-      <defs>
-        <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#FF6B9D" />
-          <stop offset="100%" stopColor="#8B78C6" />
-        </linearGradient>
-      </defs>
+      {active && (
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="#FF6B9D" />
+            <stop offset="100%" stopColor="#8B78C6" />
+          </linearGradient>
+        </defs>
+      )}
     </svg>
   );
 }
 
 // ✨ AI — Sparkles متوهج (الوحيد الثلاثي النجوم)
 export function AIIcon({ size = 24, active = false }: IconProps) {
+  const gradId = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path
         d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"
-        fill={active ? 'url(#aiGrad)' : 'rgba(139,120,198,0.35)'}
+        fill={active ? `url(#${gradId})` : 'rgba(139,120,198,0.35)'}
         stroke={active ? 'none' : 'currentColor'}
         strokeWidth={1.6}
         strokeLinejoin="round"
@@ -164,12 +175,14 @@ export function AIIcon({ size = 24, active = false }: IconProps) {
         fill={active ? '#FF6B9D' : 'rgba(255,107,157,0.5)'} />
       <path d="M5.5 16l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6.6-1.6z"
         fill={active ? '#8B78C6' : 'rgba(139,120,198,0.5)'} />
-      <defs>
-        <linearGradient id="aiGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#FF6B9D" />
-          <stop offset="100%" stopColor="#8B78C6" />
-        </linearGradient>
-      </defs>
+      {active && (
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="#FF6B9D" />
+            <stop offset="100%" stopColor="#8B78C6" />
+          </linearGradient>
+        </defs>
+      )}
     </svg>
   );
 }
@@ -212,17 +225,14 @@ export function GlobeShippingIcon({ size = 24, active = false }: IconProps) {
   );
 }
 
-// ↩️ Returns — سهم دائري
+// ↩️ Returns — سهم دائري (v1.1: العنصر الميت حيد + ternary المكرر صلح)
 export function ReturnsIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path d="M3 12a9 9 0 109-9 9 9 0 00-9 9z" opacity={0}
-        stroke="none" />
       <path d="M9 14l-4-4 4-4" stroke="currentColor" strokeWidth={1.9}
         strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d="M5 10h9a5 5 0 015 5v1" stroke="currentColor" strokeWidth={1.9}
-        strokeLinecap="round" fill="none"
-        strokeDasharray={active ? 'none' : 'none'} />
+        strokeLinecap="round" fill="none" />
       <circle cx="19" cy="16" r="1.5" fill={active ? '#FF6B9D' : 'rgba(139,120,198,0.4)'} />
     </svg>
   );
