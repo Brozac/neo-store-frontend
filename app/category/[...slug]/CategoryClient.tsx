@@ -1,7 +1,7 @@
-// app/category/[...slug]/CategoryClient.tsx - Client Logic
+// app/category/[...slug]/CategoryClient.tsx - Client Logic (v2 — infinite scroll)
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
@@ -16,6 +16,8 @@ interface Product {
   [key: string]: any;
 }
 
+const PER_PAGE = 24;
+
 export default function CategoryClient() {
   const params = useParams();
   const router = useRouter();
@@ -25,8 +27,14 @@ export default function CategoryClient() {
   const slug = slugArray[slugArray.length - 1];
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(true);        // أول صفحة — شاشة كاملة
+  const [loadingMore, setLoadingMore] = useState(false); // الصفحات التالية — spinner صغير
   const [error, setError] = useState('');
+  const sentinel = useRef<HTMLDivElement>(null);
+  const busy = useRef(false);       // 🛡️ double-fire guard (الـ observer كيطلق جوج مرات على الموبايل)
+  const totalCount = useRef(0);
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
@@ -35,38 +43,64 @@ export default function CategoryClient() {
   // ✨ Tenet #4 — بلا hardcoded URLs
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // ✨ الفلترة فالسيرفر (ILIKE prefix) + AbortController ضد Race Condition
+  // ── العدّاد (مستقل وخفيف — للـ header) ──
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.count) totalCount.current = d.count; })
+      .catch(() => {}); // تجميلي — الصفحة ما تعتمدش عليه، والصمت هنا مقصود وموثق
+  }, [slugPath, API_BASE_URL]);
+
+  // ── الصفحة الأولى (AbortController ضد race عند تغيير الفئة) ──
   useEffect(() => {
     const controller = new AbortController();
-
-    setLoading(true);
-    setError('');
-    setProducts([]);
+    setLoading(true); setError(''); setProducts([]); setDone(false); setPage(1);
 
     (async () => {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}`,
+          `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=1`,
           { cache: 'no-store', signal: controller.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setProducts(Array.isArray(data) ? data : []);
+        const arr = Array.isArray(data) ? data : [];
+        setProducts(arr);
+        if (arr.length < PER_PAGE) setDone(true);
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
           console.error('Error fetching category products:', err);
           setError('Unable to load products right now. Please check your connection.');
         }
       } finally {
-        // ✨ منع setState بعد unmount إلا دار abort (نمط آمن 100%)
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     })();
 
     return () => controller.abort();
   }, [slugPath, API_BASE_URL]);
+
+  // ── Infinite scroll — BL-CAT-SCROLL: فئات كبار (3,528+) بلا سقف ──
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || done || error) return;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting || busy.current) return;
+      busy.current = true;
+      setLoadingMore(true);
+      fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`)
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((data: Product[]) => {
+          setProducts(prev => [...prev, ...data]);
+          if (!Array.isArray(data) || data.length < PER_PAGE) setDone(true);
+          else setPage(p => p + 1);
+        })
+        .catch(e => console.error('[category-scroll]', e)) // 🩹 Tenet #14: fail of append ≠ blank page — يبقى ما جاب، والمستخدم يعاود
+        .finally(() => { busy.current = false; setLoadingMore(false); });
+    }, { rootMargin: '600px' }); // تحميل استباقي — بلا spinner محسوس
+    io.observe(el);
+    return () => io.disconnect();
+  }, [page, done, error, slugPath, API_BASE_URL]);
 
   if (loading) {
     return (
@@ -89,7 +123,14 @@ export default function CategoryClient() {
           All Categories
         </button>
 
-        <h1 className="text-3xl font-extrabold text-temu-black mb-6 capitalize">{categoryName}</h1>
+        <div className="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
+          <h1 className="text-3xl font-extrabold text-temu-black capitalize">{categoryName}</h1>
+          {totalCount.current > 0 && (
+            <span className="text-xs font-bold text-gray-400">
+              {totalCount.current.toLocaleString()} products
+            </span>
+          )}
+        </div>
 
         {/* حالة الخطأ منفصلة — ماكتلبسش على "لا يوجد منتجات" */}
         {error && (
@@ -121,31 +162,48 @@ export default function CategoryClient() {
             </Link>
           </div>
         ) : (
-          <div
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-            onTouchMove={(e) => {
-              const touch = e.touches[0];
-              if (touch) {
-                const el = document.elementFromPoint(touch.clientX, touch.clientY);
-                const card = el?.closest('.product-card-wrapper');
-                if (card) {
-                  const id = card.getAttribute('data-product-id');
-                  setTouchedProductId(id);
-                } else {
-                  setTouchedProductId(null);
+          <>
+            <div
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              onTouchMove={(e) => {
+                const touch = e.touches[0];
+                if (touch) {
+                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                  const card = el?.closest('.product-card-wrapper');
+                  if (card) {
+                    const id = card.getAttribute('data-product-id');
+                    setTouchedProductId(id);
+                  } else {
+                    setTouchedProductId(null);
+                  }
                 }
-              }
-            }}
-            onTouchEnd={() => setTouchedProductId(null)}
-          >
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                isTouched={touchedProductId === String(product.id)}
-              />
-            ))}
-          </div>
+              }}
+              onTouchEnd={() => setTouchedProductId(null)}
+            >
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isTouched={touchedProductId === String(product.id)}
+                />
+              ))}
+            </div>
+
+            {/* Sentinel + infinite-scroll states */}
+            <div ref={sentinel} className="h-10" />
+            {loadingMore && (
+              <div className="text-center py-6">
+                <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
+            )}
+            {done && products.length > 0 && (
+              <p className="text-center text-xs text-gray-400 py-8">
+                🏁 {totalCount.current > 0
+                  ? `${totalCount.current.toLocaleString()} products in this category`
+                  : `${products.length} products`}
+              </p>
+            )}
+          </>
         )}
       </div>
     </main>
