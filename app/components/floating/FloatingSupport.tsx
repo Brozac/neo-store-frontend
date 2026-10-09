@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
  * ═══════════════════════════════════════════════════════════════
  */
 
-const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '213555000000';
+const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '').replace(/\D/g, '');
 const WHATSAPP_MSG = 'Hello Laclarc Support, I have a question about an order / product.';
 
 export default function FloatingSupport() {
@@ -29,11 +29,12 @@ export default function FloatingSupport() {
   return (
     <div
       className="fixed z-[60] flex flex-col items-start gap-2.5
-                 bottom-[8.5rem] left-4
-                 md:bottom-6 md:left-5"
+                 bottom-[calc(8.5rem+env(safe-area-inset-bottom))] left-4
+                 md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] md:left-5"
       aria-label="Customer Support Channels"
     >
-      {/* ── 🟢 WhatsApp ── */}
+      {/* ── 🟢 WhatsApp — يظهر فقط برقم حقيقي (no fake fallback) ── */}
+      {WHATSAPP_PHONE && (
       <a
         href={`https://wa.me/${WHATSAPP_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(WHATSAPP_MSG)}`}
         target="_blank"
@@ -41,7 +42,7 @@ export default function FloatingSupport() {
         aria-label="WhatsApp Support"
         title="Chat with us on WhatsApp"
         className="group relative flex h-11 w-11 items-center justify-center rounded-full
-                   bg-gradient-to-br from-[#25D366] to-[#128C7E]
+                   bg-linear-to-br from-[#25D366] to-[#128C7E]
                    shadow-lg shadow-emerald-500/30
                    border-2 border-white/25
                    transition-transform duration-300
@@ -61,6 +62,7 @@ export default function FloatingSupport() {
           Need help? Chat with us 💬
         </span>
       </a>
+      )}
 
       {/* ── 🤖 AI Chat ── */}
       <button
@@ -69,7 +71,7 @@ export default function FloatingSupport() {
         aria-label="Open AI assistant"
         title="Chat with Laclarc AI"
         className="group relative flex h-11 w-11 items-center justify-center rounded-full
-                   bg-gradient-to-br from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6]
+                   bg-linear-to-br from-[#1D1E3C] via-[#2D2E5C] to-[#8B78C6]
                    shadow-xl shadow-[#8B78C6]/30
                    border-2 border-white/25
                    transition-transform duration-300

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createCheckoutSession } from '../../lib/checkout';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { getStoredUtm } from '../components/UtmTracker';
@@ -12,19 +13,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const utmData = getStoredUtm();
 
-
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     setLoading(true);
     setError('');
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
       // تجهيز العناصر بدقة متوافقة مع دالة prepareSecureItems في السيرفر
       const items = cart.map(item => ({
         id: item.id,
@@ -35,29 +29,18 @@ export default function CheckoutPage() {
         vid: item.vid || null
       }));
 
-      const response = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          items: items,
-          origin: window.location.origin,
+      const url = await createCheckoutSession(
+        items,
+        {
+          token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
           wheelDiscount: wheelDiscount || 0,
-          utm: utmData
-        }),
-      });
+          utm: utmData,
+        }
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create payment session.');
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned from payment server.');
-      }
-
+      if (!url) throw new Error('No checkout URL returned from payment server.');
+      window.location.href = url;
+      // 🔒 no finally — success keeps button locked until redirect
     } catch (err: any) {
       console.error('Checkout Error:', err);
       setError(err.message || 'An error occurred during checkout. Please try again.');

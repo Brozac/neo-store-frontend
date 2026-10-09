@@ -23,6 +23,7 @@ export default function AllProducts() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [retryable, setRetryable] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const sentinel = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false); // 🛡️ double-fire guard — IntersectionObserver fires twice on mobile
 
@@ -70,6 +71,15 @@ export default function AllProducts() {
     io.observe(el);
     return () => io.disconnect();
   }, [page, done, retryable, loadMore]);
+  
+
+  // effect (مرة عند الـ mount):
+  useEffect(() => {
+    fetch(`${API}/api/products?count=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setTotalCount(d?.count || 0))
+      .catch(() => {});
+  }, [API]);
 
   return (
     <main className="min-h-screen bg-temu-offwhite">

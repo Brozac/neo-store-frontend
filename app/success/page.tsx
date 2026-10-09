@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import { createCheckoutSession } from '../../lib/checkout';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
@@ -203,25 +204,16 @@ function SuccessContent() {
     setIsUpsellProcessing(true);
     try {
       // فتح جلسة دفع Stripe سريعة مخصصة لمنتج الـ Upsell بالسعر المخفض (9.99$)
-      const res = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: [{
-            id: UPSELL_PRODUCT.id,
-            title: `[ADD-ON UPSELL] ${UPSELL_PRODUCT.title}`,
-            price: UPSELL_PRODUCT.dealPrice,
-            image_url: UPSELL_PRODUCT.image_url,
-            quantity: 1
-          }],
-          origin: window.location.origin
-        })
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      const url = await createCheckoutSession(
+        [{
+          id: UPSELL_PRODUCT.id,
+          title: `[ADD-ON UPSELL] ${UPSELL_PRODUCT.title}`,
+          price: UPSELL_PRODUCT.dealPrice,
+          image_url: UPSELL_PRODUCT.image_url,
+          quantity: 1,
+        }]
+      );
+      window.location.href = url;
     } catch (err) {
       alert('Could not initiate add-on checkout. Your main order is still safe.');
     } finally {

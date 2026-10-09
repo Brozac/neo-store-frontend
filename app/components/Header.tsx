@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { createCheckoutSession } from '../../lib/checkout';
 
 export default function Header({ showBack = false }: { showBack?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { cart, finalTotal, cartTotal, totalItemsCount, isMounted } = useCart();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => { setIsOpen(false); }, [pathname]);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
 
@@ -22,43 +26,22 @@ export default function Header({ showBack = false }: { showBack?: boolean }) {
     setCheckoutError('');
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      // تجهيز البيانات وفق المعيار المحصن في السيرفر
-      const formattedItems = cart.map(item => ({
-        id: item.id,
-        title: item.displayTitle || item.title || item.name || 'Product',
-        price: Number(item.price),
-        image_url: item.displayImage || item.image_url || item.image || '',
-        quantity: item.quantity,
-        vid: item.vid || null
-      }));
-
-      const res = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-          items: formattedItems,
-          origin: window.location.origin
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to initialize checkout session.');
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned.');
-      }
+      const url = await createCheckoutSession(
+        cart.map((item: any) => ({
+          id: item.id,
+          title: item.displayTitle || item.title || item.name || 'Product',
+          price: Number(item.price),
+          image_url: item.displayImage || item.image_url || item.image || '',
+          quantity: item.quantity,
+          vid: item.vid || null,
+        })),
+        { token: typeof window !== 'undefined' ? localStorage.getItem('token') : null }
+      );
+      window.location.href = url;
+      // 🔒 no finally — success keeps button locked until redirect
     } catch (error: any) {
       console.error('Checkout error:', error);
       setCheckoutError(error.message || 'Payment initiation failed. Please try again.');
-    } finally {
       setLoadingCheckout(false);
     }
   };
@@ -175,7 +158,7 @@ export default function Header({ showBack = false }: { showBack?: boolean }) {
                     <button 
                       onClick={handleCheckout}
                       disabled={loadingCheckout}
-                      className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md transition cursor-pointer active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                      className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md transition cursor-pointer active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
                     >
                       {loadingCheckout ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
