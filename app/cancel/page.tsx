@@ -33,7 +33,7 @@ export default function CancelPage() {
         <div className="space-y-2.5 pt-2">
           <Link 
             href="/cart" 
-            className="block w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#8B78C6]/20 active:scale-95"
+            className="block w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#8B78C6]/20 active:scale-95"
           >
             Review Cart & Try Again &rarr;
           </Link>

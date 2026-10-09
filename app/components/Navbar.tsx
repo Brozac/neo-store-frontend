@@ -32,7 +32,7 @@ export default function Navbar() {
       </div>
 
       {/* شريط التنقل الأساسي */}
-      <nav className="bg-gradient-to-r from-[#1D1E3C] via-[#8B78C6] to-[#1D1E3C] text-white px-4 py-3 sm:py-3.5 border-b border-white/10">
+      <nav className="bg-linear-to-r from-[#1D1E3C] via-[#8B78C6] to-[#1D1E3C] text-white px-4 py-3 sm:py-3.5 border-b border-white/10">
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4 sm:gap-8">
 
           {/* Logo */}

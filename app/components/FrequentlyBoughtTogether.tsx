@@ -168,7 +168,7 @@ export default function FrequentlyBoughtTogether({
             className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer ${
               addedSuccess
                 ? 'bg-emerald-600 text-white'
-                : 'bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white shadow-[#8B78C6]/20'
+                : 'bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white shadow-[#8B78C6]/20'
             }`}
           >
             {addedSuccess ? (

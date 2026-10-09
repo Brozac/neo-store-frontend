@@ -227,7 +227,7 @@ export default function ProfilePage() {
         {/* User Card */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
 
-          <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#8B78C6] to-[#FF6B9D] mb-4 shadow-md">
+          <div className="relative p-1 rounded-full bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
               {user?.profile_picture ? (
                 <img
@@ -386,7 +386,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={updating}
-                className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+                className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
               >
                 {updating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Profile Changes'}
               </button>

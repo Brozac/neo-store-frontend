@@ -101,7 +101,7 @@ export default function FavoritesPage() {
             <div className="pt-2">
               <Link 
                 href="/" 
-                className="inline-block bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 shadow-md"
+                className="inline-block bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 shadow-md"
               >
                 Explore Trending Catalog &rarr;
               </Link>

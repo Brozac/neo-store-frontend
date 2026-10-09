@@ -155,7 +155,7 @@ export default function MultiStepRegister() {
             
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-3">
               <div 
-                className="bg-gradient-to-r from-[#8B78C6] to-[#FF6B9D] h-full rounded-full transition-all duration-500 ease-out" 
+                className="bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] h-full rounded-full transition-all duration-500 ease-out" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
@@ -324,7 +324,7 @@ export default function MultiStepRegister() {
                 type="button" 
                 onClick={handleComplete} 
                 disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-[#8B78C6] to-[#FF6B9D] hover:brightness-110 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-lg disabled:opacity-50 flex items-center gap-2"
+                className="px-8 py-3 bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] hover:brightness-110 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-lg disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Create Laclarc Account'}
               </button>

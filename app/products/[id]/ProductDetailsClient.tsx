@@ -517,7 +517,7 @@ export default function ProductDetailsClient({
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
                       Popular 🔥
                     </span>
                     <div className="flex justify-between items-center mb-1">
@@ -538,7 +538,7 @@ export default function ProductDetailsClient({
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-linear-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
                       Best Value
                     </span>
                     <div className="flex justify-between items-center mb-1">
@@ -926,7 +926,7 @@ export default function ProductDetailsClient({
                 }, quantity);
                 router.push('/cart');
               }}
-              className="bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <span>⚡</span> Buy Now
             </button>

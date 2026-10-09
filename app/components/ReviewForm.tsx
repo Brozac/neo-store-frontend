@@ -255,7 +255,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
         <button 
           type="submit" 
           disabled={submitting || uploadingPhotos} 
-          className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 active:scale-95 shadow-md flex items-center justify-center gap-2"
+          className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 active:scale-95 shadow-md flex items-center justify-center gap-2"
         >
           {submitting ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

@@ -255,7 +255,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
             <h1 className="gsap-hero text-3xl sm:text-4xl lg:text-6xl font-black text-[#1D1E3C] tracking-tight leading-[1.1]">
               Engineered for <br />
-              <span className="bg-gradient-to-r from-[#8B78C6] to-[#FF6B9D] bg-clip-text text-transparent">precision & lifestyle.</span>
+              <span className="bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] bg-clip-text text-transparent">precision & lifestyle.</span>
             </h1>
 
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">

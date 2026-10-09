@@ -258,7 +258,7 @@ function SuccessContent() {
             🔥 عرض الـ 1-Click Upsell الذكي (ينبثق بحواف نيون وعد تنازلي)
            ========================================================================= */}
         {!upsellDismissed && (
-          <div className="bg-gradient-to-br from-[#1D1E3C] to-[#2D2E5C] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#8B78C6] relative overflow-hidden space-y-4 animate-scale">
+          <div className="bg-linear-to-br from-[#1D1E3C] to-[#2D2E5C] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#8B78C6] relative overflow-hidden space-y-4 animate-scale">
             
             {/* مؤقت الـ 5 دقائق المتناقص */}
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -307,7 +307,7 @@ function SuccessContent() {
                 type="button"
                 onClick={handleClaimUpsell}
                 disabled={isUpsellProcessing}
-                className="w-full bg-gradient-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isUpsellProcessing ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

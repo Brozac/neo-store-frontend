@@ -147,7 +147,7 @@ function AuthContent() {
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+              className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
             >
               {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Dispatch Reset Email'}
             </button>
@@ -249,7 +249,7 @@ function AuthContent() {
           <button 
             type="submit" 
             disabled={loading} 
-            className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-lg shadow-[#8B78C6]/20 text-xs uppercase tracking-wider"
+            className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-lg shadow-[#8B78C6]/20 text-xs uppercase tracking-wider"
           >
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Sign In & Access Account'}
           </button>

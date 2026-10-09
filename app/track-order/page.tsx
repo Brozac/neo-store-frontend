@@ -214,7 +214,7 @@ function TrackOrderContent() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer mt-1 touch-manipulation"
+          className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer mt-1 touch-manipulation"
         >
           {loading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -264,7 +264,7 @@ function TrackOrderContent() {
                     className={`h-full rounded-full transition-all duration-700 ${
                       statusInfo.tone === 'bad'
                         ? 'bg-rose-300'
-                        : 'bg-gradient-to-r from-[#8B78C6] to-emerald-500'
+                        : 'bg-linear-to-r from-[#8B78C6] to-emerald-500'
                     }`}
                     style={{ width: statusInfo.tone === 'bad' ? '8%' : STEP_WIDTH[statusInfo.step] }}
                   ></div>
@@ -273,7 +273,7 @@ function TrackOrderContent() {
 
               {/* ✨ رقم التتبع — بطاقة بارزة مع النسخ والأحداث الحية */}
               {hasTracking && (
-                <div className="bg-gradient-to-br from-[#F9F8FC] to-purple-50 border border-[#8B78C6]/25 rounded-xl p-3.5">
+                <div className="bg-linear-to-br from-[#F9F8FC] to-purple-50 border border-[#8B78C6]/25 rounded-xl p-3.5">
                   <div className="flex justify-between items-center gap-2">
                     <div className="min-w-0">
                       <span className="text-[10px] font-black uppercase text-[#8B78C6] block">Tracking Number</span>

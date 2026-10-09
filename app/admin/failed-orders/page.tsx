@@ -264,7 +264,7 @@ export default function FailedOrdersAdmin() {
                     type="button"
                     onClick={() => handleApprove(order.id)}
                     disabled={actionLoading === order.id}
-                    className="flex-1 lg:flex-none bg-gradient-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#8B78C6]/20"
+                    className="flex-1 lg:flex-none bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#8B78C6]/20"
                   >
                     {actionLoading === order.id ? (
                       <>

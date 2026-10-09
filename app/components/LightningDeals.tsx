@@ -120,7 +120,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                       className="object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
                     />
                     {discount > 0 && (
-                      <span className="absolute top-2 left-2 bg-gradient-to-r from-red-600 to-[#FF6B9D] text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                      <span className="absolute top-2 left-2 bg-linear-to-r from-red-600 to-[#FF6B9D] text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
                         -{discount}%
                       </span>
                     )}

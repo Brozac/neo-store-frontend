@@ -118,7 +118,7 @@ export default function CartWidget() {
       {/* Floating Trigger Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-[#1D1E3C] to-[#8B78C6] text-white p-3.5 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition flex items-center justify-center cursor-pointer relative active:scale-90 border-2 border-white/20"
+        className="bg-linear-to-r from-[#1D1E3C] to-[#8B78C6] text-white p-3.5 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition flex items-center justify-center cursor-pointer relative active:scale-90 border-2 border-white/20"
         aria-label="Toggle Shopping Bag"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

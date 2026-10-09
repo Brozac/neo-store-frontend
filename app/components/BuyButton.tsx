@@ -44,7 +44,7 @@ export default function BuyButton({ product }: BuyButtonProps) {
       <button 
         type="button"
         onClick={() => setIsModalOpen(true)}
-        className="w-full bg-gradient-to-r from-red-600 via-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-4 px-6 rounded-temu-sm transition shadow-lg shadow-red-500/20 flex justify-center items-center gap-2.5 cursor-pointer active:scale-95 touch-manipulation text-base uppercase tracking-wide"
+        className="w-full bg-linear-to-r from-red-600 via-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-4 px-6 rounded-temu-sm transition shadow-lg shadow-red-500/20 flex justify-center items-center gap-2.5 cursor-pointer active:scale-95 touch-manipulation text-base uppercase tracking-wide"
       >
         <span></span>
         <span>Buy Now &bull; ${(totalAmount).toFixed(2)}</span>
