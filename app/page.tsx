@@ -1,6 +1,6 @@
-'use client'; 
+'use client';
 
-import { useEffect, useState, Suspense, useMemo } from 'react';
+import { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import LightningDeals from './components/LightningDeals';
@@ -8,9 +8,29 @@ import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
 import { IMG } from '@/lib/imageOptimizer';
 
-
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
+
+const PER_PAGE = 24;
+
+// ✨ Per-page shuffle: deterministic per (seed, page) — session freshness,
+//    stable appends (loaded pages never re-order — Temu-style scroll stability)
+function shufflePage(arr: any[], pageNum: number, seed: number | null) {
+  if (!seed || arr.length < 2) return arr;
+  const list = [...arr];
+  let s = (seed + pageNum * 7919) | 0;
+  const rand = () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
 
 function HomeContent() {
   const router = useRouter();
@@ -18,213 +38,256 @@ function HomeContent() {
   const searchQuery = searchParams.get('search') || '';
   const categoryQuery = searchParams.get('category') || '';
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-  
+
   const [products, setProducts] = useState<any[]>([]);
   const [dealsProducts, setDealsProducts] = useState<any[]>([]);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
   const [loading, setLoading] = useState(true);
-  
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
-  const [visibleCount, setVisibleCount] = useState(20);
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
   const [showReels, setShowReels] = useState(true);
-  const [shuffleSeed, setShuffleSeed] = useState<number | null>(null);
 
-  // ✨ حالات الفرز والتصفية الذكية
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [priceRange, setPriceRange] = useState<PriceRangeOption>('all');
 
-  // ✨ جلب البيانات المتوازي الصحيح (يشمل settings لحل مشكلة التكرار اللانهائي)
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch(
-  activeCategory && activeCategory !== 'All'
-    ? `${API_URL}/api/products?category=${encodeURIComponent(categoryStructure.find(c => c.name === activeCategory)?.slug || activeCategory)}`
-    : `${API_URL}/api/products?limit=200`
-).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${API_URL}/api/categories`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${API_URL}/api/settings`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
-    ]).then(([productsData, dealsData, categoriesData, settingsData]) => {
-      if (Array.isArray(productsData)) {
-        setProducts(productsData);
-      }
-      if (Array.isArray(dealsData)) {
-        setDealsProducts(dealsData);
-      }
-      if (Array.isArray(categoriesData)) {
-        const mainCategories = categoriesData.map((cat: any) => ({ name: cat.name, slug: cat.slug, image_url: cat.image_url }));
-        // 🆕 Rail v4: L1 (بالصور) + L2 (بمسارات slug كاملة) — Temu-style depth
-const allRailCats: any[] = [...(mainCategories || [])];
-const walkRail = (nodes: any[], parentPath: string, depth: number) => (nodes || []).forEach((n: any) => {
-  const fullPath = parentPath ? `${parentPath}/${n.slug}` : n.slug;
-  if (depth === 1 && n.name && !allRailCats.some((x: any) => x.name === n.name)) {
-    allRailCats.push({ name: n.name, slug: fullPath, image_url: n.image_url });
-  }
-  if (n.children?.length) walkRail(n.children, fullPath, depth + 1);
-});
-walkRail(mainCategories, '', 0);
-setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
-      }
-      if (settingsData && (settingsData as any).show_reels === false) {
-        setShowReels(false);
-      }
-    }).finally(() => {
-      setLoading(false);
-    });
-  }, [activeCategory, API_URL]);
+  // ═══ Temu-style feed state ═══
+  const [page, setPage] = useState(1);            // next page to fetch
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const busy = useRef(false);                     // 🛡️ double-fire guard
+  const genRef = useRef(0);                       // 🛡️ stale-append guard (rapid category clicks)
 
-  useEffect(() => {
-    if (categoryQuery) setActiveCategory(categoryQuery);
-    else setActiveCategory('All');
-  }, [categoryQuery]);
-
-  useEffect(() => {
-    setVisibleCount(20);
-  }, [activeCategory, searchQuery, sortBy, priceRange]);
-
-  useEffect(() => {
-    // بعد الـ mount فقط (Tenet #2 — SSR آمن)
+  // ✨ Session seed — lazy init (SSR-safe: typeof window guard, Tenet #2)
+  const [shuffleSeed] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return 1;
     try {
       const saved = sessionStorage.getItem('catalog_seed');
-      if (saved) {
-        setShuffleSeed(Number(saved));
-      } else {
-        const seed = Math.floor(Math.random() * 1_000_000);
-        sessionStorage.setItem('catalog_seed', String(seed));
-        setShuffleSeed(seed);
-      }
+      if (saved) return Number(saved);
+      const seed = Math.floor(Math.random() * 1_000_000);
+      sessionStorage.setItem('catalog_seed', String(seed));
+      return seed;
     } catch {
-      setShuffleSeed(1); // sessionStorage محظور — seed ثابت (بدون دوّار)
+      return 1;
     }
-  }, []);
+  });
 
-  // ✨ اختيار منتجات الـ Trending (آلات الحلاقة أولاً، مع Fallback ذكي)
+  const categoriesReady = categoryStructure.length > 1;
+  const isBrowsing = !searchQuery; // browse feed vs server search results
+
+  // ── Categories (rail v4) + Deals + Settings — مرة وحدة ──
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API_URL}/api/products/deals`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_URL}/api/categories`, { cache: 'no-store' }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_URL}/api/settings`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    ]).then(([dealsData, categoriesData, settingsData]) => {
+      if (Array.isArray(dealsData)) setDealsProducts(dealsData);
+      if (Array.isArray(categoriesData)) {
+        const mainCategories = categoriesData.map((cat: any) => ({ name: cat.name, slug: cat.slug, image_url: cat.image_url }));
+        // Rail v4: L1 (بالصور) + L2 (بمسارات slug كاملة) — Temu-style depth
+        const allRailCats: any[] = [...(mainCategories || [])];
+        const walkRail = (nodes: any[], parentPath: string, depth: number) => (nodes || []).forEach((n: any) => {
+          const fullPath = parentPath ? `${parentPath}/${n.slug}` : n.slug;
+          if (depth === 1 && n.name && !allRailCats.some((x: any) => x.name === n.name)) {
+            allRailCats.push({ name: n.name, slug: fullPath, image_url: n.image_url });
+          }
+          if (n.children?.length) walkRail(n.children, fullPath, depth + 1);
+        });
+        walkRail(mainCategories, '', 0);
+        setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
+      }
+      if (settingsData && (settingsData as any).show_reels === false) setShowReels(false);
+    });
+  }, [API_URL]);
+
+  useEffect(() => {
+    setActiveCategory(categoryQuery || 'All');
+  }, [categoryQuery]);
+
+  // ═══ الصفحة الأولى — browse feed (All أو category — كلاهما 24 من السيرفر) ═══
+  useEffect(() => {
+    if (!isBrowsing) return;                                    // search effect يملك الـ feed
+    if (activeCategory !== 'All' && !categoriesReady) return;   // نستنى slug map (race kill)
+
+    const gen = ++genRef.current;
+    const controller = new AbortController();
+    setLoading(true); setProducts([]); setPage(1); setHasMore(true); setTotalCount(0);
+
+    const slug = categoryStructure.find(c => c.name === activeCategory)?.slug;
+    const url = activeCategory !== 'All'
+      ? `${API_URL}/api/products?category=${encodeURIComponent(slug || activeCategory)}&page=1`
+      : `${API_URL}/api/products?page=1`;
+
+    (async () => {
+      try {
+        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (gen !== genRef.current) return;
+        const arr = Array.isArray(data) ? data : [];
+        setProducts(shufflePage(arr, 1, shuffleSeed));
+        setHasMore(arr.length >= PER_PAGE);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.error('[home-feed]', err);
+      } finally {
+        if (gen === genRef.current) setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBrowsing, activeCategory, categoriesReady, searchQuery, API_URL]);
+
+  // ═══ البحث — server-side (فرع search الحي — حتى 200 نتيجة) ═══
+  useEffect(() => {
+    if (!searchQuery) return;
+    const gen = ++genRef.current;
+    const controller = new AbortController();
+    setLoading(true); setProducts([]); setHasMore(false);
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products?search=${encodeURIComponent(searchQuery)}`, { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (gen !== genRef.current) return;
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.error('[home-search]', err);
+      } finally {
+        if (gen === genRef.current) setLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [searchQuery, API_URL]);
+
+  // ═══ عدّاد الحقيقة — "of 27,126" / "of 3,528" ═══
+  useEffect(() => {
+    if (!isBrowsing) { setTotalCount(0); return; }
+    if (activeCategory !== 'All' && !categoriesReady) return;
+    const cat = activeCategory !== 'All'
+      ? `&category=${encodeURIComponent(categoryStructure.find(c => c.name === activeCategory)?.slug || activeCategory)}`
+      : '';
+    fetch(`${API_URL}/api/products?count=1${cat}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setTotalCount(d?.count || 0))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBrowsing, activeCategory, categoriesReady, API_URL]);
+
+  // ═══ Infinite scroll — القلب (Temu signature) ═══
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !isBrowsing || !hasMore || loading) return;
+    const myGen = genRef.current;
+
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting || busy.current) return;
+      busy.current = true;
+      setLoadingMore(true);
+
+      const slug = categoryStructure.find(c => c.name === activeCategory)?.slug;
+      const url = activeCategory !== 'All'
+        ? `${API_URL}/api/products?category=${encodeURIComponent(slug || activeCategory)}&page=${page}`
+        : `${API_URL}/api/products?page=${page}`;
+
+      fetch(url, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+        .then((data: any[]) => {
+          if (genRef.current !== myGen) return; // context تبدل في نص الطيران — تجاهل
+          const arr = Array.isArray(data) ? data : [];
+          setProducts(prev => [...prev, ...shufflePage(arr, page, shuffleSeed)]);
+          setHasMore(arr.length >= PER_PAGE);
+          setPage(p => p + 1);
+        })
+        .catch(e => console.error('[home-scroll]', e))
+        .finally(() => { busy.current = false; setLoadingMore(false); });
+    }, { rootMargin: '800px' }); // تحميل استباقي — بلا spinner محسوس
+
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, hasMore, loading, activeCategory, isBrowsing, categoryStructure, shuffleSeed, API_URL]);
+
+  // ✨ Trending (آلات الحلاقة أولاً + Fallback)
   const trendingProducts = useMemo(() => {
     if (products.length === 0) return [];
-
-    const shavers = products.filter(p => 
-      p.category?.startsWith('shavers') || 
-      p.title?.toLowerCase().includes('shaver') || 
+    const shavers = products.filter(p =>
+      p.category?.startsWith('shavers') ||
+      p.title?.toLowerCase().includes('shaver') ||
       p.title?.toLowerCase().includes('clipper') ||
       p.title?.toLowerCase().includes('trimmer')
     );
-
     if (shavers.length > 0) return shavers.slice(0, 5);
     return products.slice(0, 5);
   }, [products]);
 
-  // ✨ 1. تصفية الكتالوج (البحث + الأقسام + نطاق السعر)
+  // ✨ فلترة client-side المتبقية: price فقط (+ category safety net — السيرفر فلتر أصلاً)
+  //    ⚠️ matchesSearch تحيدت: البحث ولّى server-side (والـ SELECT ما فيهش description —
+  //    الفلتر client كان كيحذف نتائج صحيحة مطابقة بالوصف — bug صامت مقفول)
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch = q === '' || 
-                            product.title?.toLowerCase().includes(q) || 
-                            product.description?.toLowerCase().includes(q);
-      if (!matchesSearch) return false;
-
-            // فلترة الأقسام مع دعم التصنيفات الفرعية
       let matchesCategory = true;
       if (activeCategory !== 'All') {
         const pCat = (product.category || '').toLowerCase();
         const activeCatObj = categoryStructure.find(c => c.name === activeCategory);
-        if (activeCatObj && activeCatObj.slug) {
-          const targetSlug = activeCatObj.slug.toLowerCase();
-          matchesCategory = pCat === targetSlug || pCat.startsWith(targetSlug + '-') || pCat.startsWith(targetSlug + '/');
-        } else {
-          // ✨ fallback: الرابط ممكن يكون slug فرعي (مشاركة/ريلز) ماشي فالشريط العلوي
-          // نطابقو بالـ raw slug مباشرة بدل ما نخبيو الكتالوغ كامل
-          const rawSlug = activeCategory.toLowerCase();
-          matchesCategory = pCat === rawSlug || pCat.startsWith(rawSlug + '-') || pCat.startsWith(rawSlug + '/');
-        }
+        const targetSlug = (activeCatObj?.slug || activeCategory).toLowerCase();
+        matchesCategory = pCat === targetSlug || pCat.startsWith(targetSlug + '-') || pCat.startsWith(targetSlug + '/');
       }
       if (!matchesCategory) return false;
-
-      // تصفية السعر المباشرة (Price Range Filter)
       const price = Number(product.price) || 0;
       if (priceRange === 'under15') return price < 15;
       if (priceRange === '15to35') return price >= 15 && price <= 35;
       if (priceRange === 'above35') return price > 35;
-
       return true;
     });
-  }, [products, searchQuery, activeCategory, categoryStructure, priceRange]);
+  }, [products, activeCategory, categoryStructure, priceRange]);
 
-  // ✨ 2. فرز وترتيب المنتجات لحظياً (Sorting Engine)
+  // ✨ Sorting Engine (client — على المحمّل)
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];
-
-    if (sortBy === 'price-asc') {
-      return list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
-    }
-    if (sortBy === 'price-desc') {
-      return list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
-    }
+    if (sortBy === 'price-asc') return list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    if (sortBy === 'price-desc') return list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
     if (sortBy === 'discount') {
       return list.sort((a, b) => {
-        const discA = Number(a.original_price) > Number(a.price) 
-          ? (Number(a.original_price) - Number(a.price)) / Number(a.original_price) 
-          : 0;
-        const discB = Number(b.original_price) > Number(b.price) 
-          ? (Number(b.original_price) - Number(b.price)) / Number(b.original_price) 
-          : 0;
+        const discA = Number(a.original_price) > Number(a.price)
+          ? (Number(a.original_price) - Number(a.price)) / Number(a.original_price) : 0;
+        const discB = Number(b.original_price) > Number(b.price)
+          ? (Number(b.original_price) - Number(b.price)) / Number(b.original_price) : 0;
         return discB - discA;
       });
     }
-    if (sortBy === 'newest') {
-      return list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
-    }
-
+    if (sortBy === 'newest') return list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
     return list;
   }, [filteredProducts, sortBy]);
 
-    // ✨ Seeded Fisher-Yates — ترتيب عشوائي لكن حتمي (deterministic) لنفس الـ seed
-  // نفس الـ seed = نفس الترتيب → Load More والتنقل يستقر، جلسة جديدة = ترتيب جديد
-  const rotatedProducts = useMemo(() => {
-    if (shuffleSeed === null) return sortedProducts; // أول render (SSR): الترتيب الأصلي
-
-    const list = [...sortedProducts];
-    let seed = shuffleSeed;
-    // mulberry32 — PRNG خفيف وحتمي
-    const rand = () => {
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
-    return list;
-  }, [sortedProducts, shuffleSeed]);
-
-  // استبعاد الـ Trending + الدوار (فقط فالـ default feed — الفرز والفلترة يبقاو منطقيين)
+  // ✨ العرض: default feed = accumulated (بلا trending) · الفرز = sorted — بلا slice
   const displayProducts = useMemo(() => {
-    const isDefaultFeed = activeCategory === 'All' && searchQuery === '' && sortBy === 'default' && priceRange === 'all';
-    if (!isDefaultFeed) {
-      return sortedProducts.slice(0, visibleCount);
+    const isDefaultFeed = activeCategory === 'All' && !searchQuery && sortBy === 'default' && priceRange === 'all';
+    if (isDefaultFeed) {
+      const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
+      return products.filter(p => !trendingIdSet.has(String(p.id)));
     }
-
-    const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
-    const source = rotatedProducts.filter(p => !trendingIdSet.has(String(p.id)));  // ✨ rotated
-    return source.slice(0, visibleCount);
-  }, [sortedProducts, rotatedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange, visibleCount]);
+    return sortedProducts;
+  }, [products, sortedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange]);
 
   const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
 
   return (
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
       <div className="max-w-7xl mx-auto px-4">
-        
+
         {/* 1. Hero Section */}
         {activeCategory === 'All' && searchQuery === '' && (
           <HeroSection trendingProducts={trendingProducts} />
         )}
 
-      {/* 2. Categories Bar — Temu-style circular rail with live product images */}
+        {/* 2. Categories Bar — Temu-style rail */}
         <div id="catalog" className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
           {categoryStructure.map((cat) => {
             const isActive = activeCategory === cat.name;
@@ -241,8 +304,6 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
               >
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-300
                                  ${isActive ? 'ring-[#8B78C6] shadow-md' : 'ring-transparent group-hover:ring-[#8B78C6]/40'}`}>
-                  {/* letter/emoji fallback sits BEHIND the image — shows through
-                      automatically if image is missing OR fails to load (zero state) */}
                   <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#8B78C6]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
@@ -270,15 +331,15 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
             <LightningDeals products={dealsProducts} />
           </div>
         )}
-        
-        {/* 4. Shoppable Reels Feed (تظهر فقط إذا كان خيار showReels مفعلاً) */}
+
+        {/* 4. Shoppable Reels */}
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && showReels && (
           <div className="mb-8 mt-6">
             <ShoppableReels products={products} />
           </div>
         )}
 
-        {/* 5. Trending Now Section */}
+        {/* 5. Trending Now */}
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
           <div className="mb-8 mt-6">
             <div className="flex justify-between items-center mb-3">
@@ -289,8 +350,8 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
                 Top Picks
               </span>
             </div>
-            
-            <div 
+
+            <div
               className="t-accordion-container"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
@@ -306,10 +367,9 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
               }}
               onTouchEnd={() => setActiveTrendingId(null)}
             >
-                            {trendingProducts.map((product) => {
+              {trendingProducts.map((product) => {
                 const safePrice = Number(product.price) || 0;
-                const img = IMG.card(product.image_url || product.image || '/icon-512.png');   // 🆕
-                // ✨ Tenet #9 — title غير قابل لـ null أبداً
+                const img = IMG.card(product.image_url || product.image || '/icon-512.png');
                 const safeTitle = product.title || 'Laclarc Product';
                 const truncatedTitle = safeTitle.length > 22 ? safeTitle.substring(0, 22) + '...' : safeTitle;
 
@@ -333,9 +393,7 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
           </div>
         )}
 
-        {/* =========================================================================
-            🧭 شريط الفرز والفلترة الذكي (Smart Sorting & Price Filter Toolbar)
-           ========================================================================= */}
+        {/* 🧭 شريط الفرز والفلترة */}
         <div className="bg-white p-4 rounded-2xl border border-temu-gray-border-light shadow-xs mb-6 space-y-3.5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
@@ -343,15 +401,15 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
                 {searchQuery ? `Results for "${searchQuery}"` : (activeCategory === 'All' ? 'Popular Essentials' : activeCategory)}
               </h2>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
-                Showing <strong className="text-temu-black">{displayProducts.length}</strong> of {filteredProducts.length} items
+                Showing <strong className="text-temu-black">{displayProducts.length}</strong> of{' '}
+                {(isBrowsing && totalCount) ? totalCount.toLocaleString() : filteredProducts.length} items
               </p>
             </div>
 
-            {/* قائمة خيارات الترتيب */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="text-xs font-bold text-gray-500 whitespace-nowrap">Sort By:</span>
-              <select 
-                value={sortBy} 
+              <select
+                value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                 className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#8B78C6] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
@@ -364,13 +422,11 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
             </div>
           </div>
 
-          {/* أزرار ميزانيات الأسعار السريعة */}
           <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mr-1 hidden sm:inline">
                 Budget:
               </span>
-              
               {[
                 { id: 'all', label: 'All Prices' },
                 { id: 'under15', label: 'Under $15' },
@@ -392,7 +448,6 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
               ))}
             </div>
 
-            {/* زر تصفير الفلاتر */}
             {hasActiveFilters && (
               <button
                 type="button"
@@ -408,14 +463,14 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
           </div>
         </div>
 
-        {/* 6. شبكة المنتجات (Products Grid) */}
+        {/* 6. شبكة المنتجات */}
         <div className="mb-4">
           {loading ? (
             <div className="flex justify-center py-16">
               <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : displayProducts.length > 0 ? (
-            <div 
+            <div
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
@@ -432,10 +487,10 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
               onTouchEnd={() => setTouchedProductId(null)}
             >
               {displayProducts.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  isTouched={touchedProductId === String(product.id)} 
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isTouched={touchedProductId === String(product.id)}
                 />
               ))}
             </div>
@@ -444,14 +499,14 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
               <span className="text-3xl">🔍</span>
               <p className="text-temu-gray-text font-bold text-sm">No products found matching these filters.</p>
               <p className="text-xs text-gray-400">Try adjusting your price range or sorting criteria.</p>
-              <button 
+              <button
                 type="button"
-                onClick={() => { 
+                onClick={() => {
                   setSortBy('default');
                   setPriceRange('all');
-                  setActiveCategory('All'); 
-                  router.push('/'); 
-                }} 
+                  setActiveCategory('All');
+                  router.push('/');
+                }}
                 className="bg-temu-orange hover:bg-temu-orange-bright text-white px-5 py-2.5 rounded-full font-bold text-xs transition active:scale-95 shadow-md"
               >
                 Clear All Filters
@@ -459,17 +514,17 @@ setCategoryStructure([{ name: 'All', slug: 'all' }, ...allRailCats]);
             </div>
           )}
 
-          {/* زر تحميل المزيد */}
-          {!loading && displayProducts.length > 0 && filteredProducts.length > visibleCount && (
-            <div className="flex justify-center mt-10">
-              <button 
-                type="button"
-                onClick={() => setVisibleCount(prev => prev + 20)} 
-                className="flex items-center gap-2 bg-linear-to-r from-temu-orange to-temu-orange-bright text-white font-extrabold py-3.5 px-10 rounded-full hover:brightness-110 transition shadow-lg text-xs uppercase tracking-wider cursor-pointer active:scale-95"
-              >
-                Load More Products ({filteredProducts.length - visibleCount} remaining)
-              </button>
+          {/* 🎯 Sentinel — Temu-style infinite feed (بدل زر Load More) */}
+          <div ref={sentinelRef} className="h-10" />
+          {loadingMore && (
+            <div className="flex justify-center py-6">
+              <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
+          )}
+          {isBrowsing && !hasMore && !loading && products.length > 0 && (
+            <p className="text-center text-xs text-gray-400 py-8">
+              🏁 You&apos;ve reached the end — {displayProducts.length.toLocaleString()} products
+            </p>
           )}
         </div>
       </div>
