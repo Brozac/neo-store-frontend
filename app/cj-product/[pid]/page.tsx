@@ -4,12 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 
-interface CjVariant {
-  vid: string;
-  variantKey?: string;
-  variantSellPrice?: string | number;
-}
-
 export default function CjProductPage() {
   const { pid } = useParams() as { pid: string };
   const router = useRouter();
@@ -35,21 +29,23 @@ export default function CjProductPage() {
       .catch(() => { setError('Product not available'); setLoading(false); });
   }, [pid, API_BASE_URL]);
 
-  const sellPrice = Number(product?.sellPrice) || 0;
-  const sellOriginal = sellPrice * 1.5;
+  // 💰 v3.1 — السعر الرسمي من المحرك (سيرفر-side · هامش 35% محمي · floor $9.99)
+  const sellPrice = Number(product?.laclarcPrice) || 0;
 
   const handleAddToCart = () => {
     if (!product) return;
-    const firstVid = product.variants?.[0]?.vid || '';
+    // 💰 سعر الـ variant الفعلي من المحرك — متطابق مع اللي غادي يتفلترة
+    const v0 = product.variants?.[0] || {};
+    const variantPrice = Number(v0.laclarcVariantPrice) || sellPrice;
     addToCart({
       id: pid,
       title: product.title,
       name: product.title,
-      price: sellPrice,
+      price: variantPrice,
       quantity: 1,
       image: mainImg,
       image_url: mainImg,
-      vid: firstVid,
+      vid: v0.vid || '',
       live_pid: pid,    // 🩹 M#25 — العلامة الحاسمة: منتج CJ حي
     }, 1);
     setAdded(true);
@@ -110,12 +106,14 @@ export default function CjProductPage() {
 
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-black text-temu-error">${sellPrice.toFixed(2)}</span>
-              <span className="text-lg text-temu-gray-light line-through">${sellOriginal.toFixed(2)}</span>
+              {/* ✨ Tenet #26 — بلا strikethrough مولّد (قرار 1) */}
             </div>
 
-            <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-xl p-3 text-xs font-bold text-[#8B78C6]">
-              ✓ Ships worldwide via CJ — 7 to 15 business days
-            </div>
+            {Number(product.estimatedShipUsd) > 0 && (
+              <div className="bg-white border border-temu-gray-border-light rounded-xl p-3 text-xs font-bold text-temu-gray-text">
+                🚚 Estimated shipping from ~${Number(product.estimatedShipUsd).toFixed(2)} — ships worldwide via CJ, 7–15 business days
+              </div>
+            )}
 
             <button
               onClick={handleAddToCart}
@@ -127,6 +125,7 @@ export default function CjProductPage() {
               {added ? <><span>✓</span> Added — Opening Cart…</> : <><span>🛒</span> Add to Cart</>}
             </button>
 
+            {/* 🔒 XSS-safe — description منقّى في السيرفر (sanitizeDescription) */}
             <div className="border-t border-temu-gray-border-light pt-4 text-sm text-temu-gray-text leading-relaxed"
                  dangerouslySetInnerHTML={{ __html: product.description || '' }} />
           </div>
