@@ -25,7 +25,7 @@ export async function GET() {
   const urls = [
     `${SITE_URL}/sitemap-static.xml`,
     `${SITE_URL}/sitemap-categories.xml`,
-    ...Array.from({ length: productChunks }, (_, i) => `${SITE_URL}/products/sitemap/${i}.xml`),
+    ...Array.from({ length: productChunks }, (_, i) => `${SITE_URL}/products-sitemap/${i}.xml`),  // ← المسار الجديد
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
