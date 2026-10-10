@@ -67,24 +67,50 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn('Sitemap: Category fetch fallback');
   }
 
-  // 3. المنتجات (غير المتوفرة stock_status=true كيرجعها الـ backend أصلاً)
-let productPages: MetadataRoute.Sitemap = [];
+  // 3. المنتجات — 🆕 chunked minimal (20k/chunk · يدعم 100k+ · سقف cache مُقفل دائماً)
+  let productPages: MetadataRoute.Sitemap = [];
   try {
-    const res = await fetch(`${BACKEND_URL}/api/products?minimal=1`, {
-      next: { revalidate: 3600 }, // تحديث كل ساعة
-    });
-    if (!res.ok) throw new Error(`products HTTP ${res.status}`);
-    const products = await res.json();
-    if (!Array.isArray(products) || products.length === 0) {
-      // 🛡️ fail-closed — feed فارغ/منحرف = لا مسح صامت لروابط المنتجات
-      throw new Error('sitemap: empty product feed');
+    const CHUNK = 20000;
+    let page = 1;
+    let keepFetching = true;
+
+    while (keepFetching) {
+      const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=${page}`, {
+        next: { revalidate: 3600 }, // كاش ساعة لكل chunk
+      });
+      if (!res.ok) throw new Error(`products HTTP ${res.status}`);
+
+      const data = await res.json();
+      const chunk = Array.isArray(data?.products) ? data.products : [];
+
+      if (chunk.length === 0) {
+        // أول صفحة خاوية = feed فارغ كلياً → fail-closed (نفس القديم)
+        if (page === 1) throw new Error('sitemap: empty product feed');
+        keepFetching = false;
+        break;
+      }
+
+      for (const product of chunk) {
+        productPages.push({
+          url: `${SITE_URL}/products/${product.id}`,
+          lastModified: product.created_at ? new Date(product.created_at) : new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.9,
+        });
+      }
+
+      // chunk غير ممتلئ = آخر واحد
+      if (chunk.length < data.chunkSize || chunk.length < CHUNK) {
+        keepFetching = false;
+      } else {
+        page++;
+        // 🛡️ حارس صامت — سقف أمان 15 chunk = 300k منتج (تكفي لسنوات)
+        if (page > 15) {
+          console.warn('Sitemap: max chunks reached (300k products cap)');
+          keepFetching = false;
+        }
+      }
     }
-    productPages = products.map((product: any) => ({
-      url: `${SITE_URL}/products/${product.id}`,
-      lastModified: product.created_at ? new Date(product.created_at) : new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    }));
   } catch (error) {
     console.error('Sitemap: Product fetch fallback', error);
   }
