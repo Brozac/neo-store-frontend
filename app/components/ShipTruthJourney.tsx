@@ -58,7 +58,8 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
     const controller = new AbortController();
     setLoading(true);
 
-    fetch(`/api/tracking/${orderId}/journey?email=${encodeURIComponent(email)}`, {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+    fetch(`${API_URL}/api/tracking/${orderId}/journey?email=${encodeURIComponent(email)}`, {
       signal: controller.signal,
     })
       .then(r => r.ok ? r.json() : null)
@@ -72,8 +73,9 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
   // Auto-refresh كل 5 دقائق للطلبات النشطة — Truth دائمًا حي
   useEffect(() => {
     if (!journey || journey.currentStage === 'DELIVERED') return;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
     const interval = setInterval(() => {
-      fetch(`/api/tracking/${orderId}/journey?email=${encodeURIComponent(email)}`)
+      fetch(`${API_URL}/api/tracking/${orderId}/journey?email=${encodeURIComponent(email)}`)
         .then(r => r.ok ? r.json() : null)
         .then(data => { if (data) setJourney(data); })
         .catch(() => {});

@@ -14,8 +14,12 @@ export default function CartPage() {
   const [couponMessage, setCouponMessage] = useState('');
   const [discount, setDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
+
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+
 
   useEffect(() => {
     setIsLoaded(true);
@@ -42,6 +46,7 @@ export default function CartPage() {
       if (res.ok) {
         setDiscount(Number(data.discount));
         setCouponApplied(true);
+        setAppliedCouponCode(couponCode.trim().toUpperCase());
         setCouponMessage(data.message);
       } else {
         setDiscount(0);
@@ -208,6 +213,7 @@ export default function CartPage() {
         onClose={() => setIsModalOpen(false)}
         cartItems={itemsForCheckout}
         totalAmount={finalTotalNumber}
+        couponCode={appliedCouponCode}
       />
     </main>
   );

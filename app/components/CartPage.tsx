@@ -6,9 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from './PaymentModal';
 import { useState, useEffect, useRef } from 'react';
-import { LockIcon, CardsIcon, ReturnsIcon } from '@/components/icons/LaclarcIcons';
-import { GlobeShippingIcon } from '@/components/icons/LaclarcIcons';
-
+import { LockIcon, CardsIcon, ReturnsIcon, GlobeShippingIcon } from '@/components/icons/LaclarcIcons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL; // ✅ Tenet #4 — بلا hardcoded URLs
 
@@ -27,19 +25,14 @@ export default function CartPage() {
   const [validating, setValidating] = useState(false);
   const skipRevalidate = useRef(false);
 
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
+  // ✨ محسوب قبل الـ effects — كيستعملوهم في الـ deps
   const payableTotal = finalTotal > 0 ? finalTotal : cartTotal;
+
+  // ═══ Hooks كاملين — قبل أي early return (قواعد React) ═══
 
   // ✨ إعادة التصادق تلقائياً ملي كيتبدل المجموع (تبديل الكمية/الحذف) — debounced
   useEffect(() => {
-    if (!couponCode) return;
+    if (!isMounted || !couponCode) return;
     if (skipRevalidate.current) {
       skipRevalidate.current = false;
       return;
@@ -63,20 +56,21 @@ export default function CartPage() {
           setCouponError('Your coupon is no longer valid for this cart.');
         }
       } catch {
-        // شبكة معطلة — كانخليو الكوبون القديم مؤقتاً
+        // شبكة معطلة — كانخليو الكوبون القديم مؤقتاً (بلا صمت خطأ — حالة مؤقتة فقط)
       } finally {
         setValidating(false);
       }
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [couponCode, payableTotal]);
-    // ✨ استرجاع كوبون Exit-Intent تلقائياً — تجربة بضغطة وحدة
+  }, [couponCode, payableTotal, isMounted]);
+
+  // ✨ استرجاع كوبون Exit-Intent تلقائياً — تجربة بضغطة وحدة
   useEffect(() => {
+    if (!isMounted) return;
     const saved = sessionStorage.getItem('laclarc_coupon');
     if (saved && !couponCode) {
       setCouponInput(saved);
-      // تطبيق مباشر عبر نفس مسار التصادق الموحد
       const apply = async () => {
         try {
           const res = await fetch(`${API_URL}/api/validate-coupon`, {
@@ -89,18 +83,27 @@ export default function CartPage() {
             setCouponCode(saved);
             setCouponInfo({ discount: Number(data.discount) || 0, message: data.message });
           }
-        } catch {}
+        } catch {
+          // شبكة معطلة — المستخدم يعاود يدوياً
+        }
       };
       apply();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMounted]);
+
+  // ═══ Derived values ═══
+  const couponDiscount = couponInfo
+    ? Math.min(couponInfo.discount, payableTotal)
+    : 0;
+  const grandTotal = parseFloat((payableTotal - couponDiscount).toFixed(2));
+  const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const applyCoupon = () => {
     const trimmed = couponInput.trim().toUpperCase();
     if (!trimmed || validating) return;
     skipRevalidate.current = false;
-    setCouponCode(trimmed);   // ✨ الـ effect هو اللي كيصادق — مسار واحد للكود
+    setCouponCode(trimmed);
     setCouponInfo(null);
     setCouponError(null);
   };
@@ -113,11 +116,14 @@ export default function CartPage() {
     setCouponInput('');
   };
 
-  // ✨ الخصم النهائي — كنحسبو على payableTotal (بعد خصم العجلة) مع سقف أمان
-  const couponDiscount = couponInfo
-    ? Math.min(couponInfo.discount, payableTotal)
-    : 0;
-  const grandTotal = parseFloat((payableTotal - couponDiscount).toFixed(2));
+  // ═══ Early returns — بعد الـ hooks (قواعد React) ═══
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -136,8 +142,6 @@ export default function CartPage() {
       </div>
     );
   }
-
-  const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-temu-offwhite p-4 sm:p-8 pb-36 sm:pb-32 font-sans">
@@ -158,7 +162,7 @@ export default function CartPage() {
         </div>
 
         {/* Free Shipping Urgency Banner */}
-                <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-temu-sm flex items-center gap-3 text-emerald-800 text-xs font-bold">
+        <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-temu-sm flex items-center gap-3 text-emerald-800 text-xs font-bold">
           <GlobeShippingIcon size={22} active />
           <span>
             Congratulations! You qualify for <strong>FREE Insured Worldwide Shipping</strong>.
@@ -275,7 +279,6 @@ export default function CartPage() {
             <h2 className="text-sm font-black text-temu-black">Have a coupon?</h2>
           </div>
 
-          {/* ✅ flex + min-w-0 + shrink-0 = الزر ماكيخرجش برا أبداً */}
           <div className="flex gap-2">
             <input
               value={couponInput}
@@ -303,7 +306,6 @@ export default function CartPage() {
             )}
           </div>
 
-          {/* رسائل الحالة */}
           {couponError && (
             <p className="text-[11px] font-bold text-temu-error mt-2.5">❌ {couponError}</p>
           )}
@@ -317,9 +319,8 @@ export default function CartPage() {
           )}
         </div>
 
-                {/* Total & Checkout Section */}
+        {/* Total & Checkout Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-temu-gray-border-light p-5 sm:p-6 space-y-4">
-          {/* قائمة المبالغ — نظيفة فقط */}
           <div className="space-y-2 text-xs text-temu-gray-text border-b border-dashed border-temu-gray-border pb-4">
             <div className="flex justify-between">
               <span>Bag Subtotal:</span>
@@ -360,18 +361,18 @@ export default function CartPage() {
             </button>
           </div>
 
-          {/* 🆕 Trust strip — تحت زر الدفع، خارج قائمة المبالغ */}
+          {/* Trust strip */}
           <div className="flex items-center justify-center gap-5 pt-2 border-t border-dashed border-temu-gray-border">
-  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
-    <LockIcon size={14} active /> SSL Secure
-  </span>
-  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
-    <CardsIcon size={14} active /> Visa · MC · Apple Pay
-  </span>
-  <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
-    <ReturnsIcon size={14} active /> 30-Day Returns
-  </span>
-</div>
+            <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+              <LockIcon size={14} active /> SSL Secure
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+              <CardsIcon size={14} active /> Visa · MC · Apple Pay
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] font-bold text-temu-gray-text">
+              <ReturnsIcon size={14} active /> 30-Day Returns
+            </span>
+          </div>
         </div>
 
       </div>
@@ -381,7 +382,7 @@ export default function CartPage() {
         onClose={() => setIsModalOpen(false)}
         cartItems={cart}
         totalAmount={grandTotal}
-        couponCode={couponCode || undefined}   // ✨ كنصيفطو الكود للسيرفر باش يتصادق مرة أخرى
+        couponCode={couponCode || undefined}   // ✨ الكود للسيرفر — يتصادق مرة ثانية fail-closed
       />
     </div>
   );

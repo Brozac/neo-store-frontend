@@ -18,6 +18,20 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const [shuffleSeed, setShuffleSeed] = useState<number | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
+  // ✨ v2: صفحة الـ hero — session-scoped (نفس الجلسة = نفس البطاقات · جلسة جديدة = mix جديد)
+  const [heroPage] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1; // SSR-safe (Tenet #2)
+    try {
+      const saved = sessionStorage.getItem('hero_page');
+      if (saved) return Number(saved) || 1;
+      const p = Math.ceil(Math.random() * 50);
+      sessionStorage.setItem('hero_page', String(p));
+      return p;
+    } catch {
+      return 1; // sessionStorage محظور — ثابت
+    }
+  });
+
   useEffect(() => {
     setIsMounted(true);
     const updateTime = () => {
@@ -55,8 +69,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     const controller = new AbortController();
     const fetchProducts = async () => {
       try {
-        // ✨ limit=12 — الدوار كيختار 3 من 12 (ماشي ديما نفس الثلاثة الأولين)
-        const res = await fetch(`${API_URL}/api/products?limit=12`, { signal: controller.signal });
+        // ✨ v2: mosaic page من الجلسة — 12 منتج من فئات متنوعة · ثابت داخل الجلسة
+        const res = await fetch(`${API_URL}/api/products?page=${heroPage}&limit=12`, { signal: controller.signal });
         if (!res.ok) return;
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.products || data.items || data.data || [];
@@ -67,7 +81,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     };
     fetchProducts();
     return () => controller.abort();
-  }, []);
+  }, [heroPage, API_URL]);
 
   // ✨ كيسدّ البطاقة الموسعة ملي كنضغطو خارجها
   useEffect(() => {
@@ -106,8 +120,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     }
   };
 
-  // ✨ Seeded Fisher-Yates — ترتيب حتمي لنفس الـ seed (Tenet #2 آمن: بلا Math.random فالـ render الأول)
-  // كيخدم على المنتجات المجوّدة، ولا fallback على trendingProducts
+  // ✨ Seeded Fisher-Yates — ترتيب حتمي لنفس الـ seed
   const rotated = useMemo(() => {
     const pool = products.length > 0 ? products : (trendingProducts || []);
     if (shuffleSeed === null || pool.length <= 3) return pool.slice(0, 3);
@@ -127,14 +140,13 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return list.slice(0, 3);
   }, [products, trendingProducts, shuffleSeed]);
 
-  // ✨ Fallback: rotated (أو trending إلا الـ API طايح)
   const cards = rotated.length > 0 ? rotated : [];
 
   const positions = ['pos-top', 'pos-bottom-left', 'pos-bottom-right'];
   const countClass = cards.length === 1 ? 'count-1' : cards.length === 2 ? 'count-2' : '';
 
   const getImage = (p: any) => IMG.card(p?.image_url || p?.image || p?.thumbnail || '/icon-192.png');
-    const formatPrice = (p: any) => {
+  const formatPrice = (p: any) => {
     const val = Number(p?.price);
     return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
   };
@@ -149,6 +161,15 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     }
   };
 
+  // ✨ v2: وصف صادق من DB (category حقيقي) — بلا "limited stock" مزيف
+  const getHonestDescription = (p: any) => {
+    if (p?.category) {
+      const leaf = String(p.category).split('/').pop()?.replace(/-/g, ' ');
+      if (leaf) return `${leaf} — ships FREE worldwide`;
+    }
+    return 'Curated quality — free worldwide shipping';
+  };
+
   return (
     <div className="w-full font-sans text-[#1D1E3C] overflow-hidden bg-[#F9F8FC] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" />
@@ -160,7 +181,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           LACLARC
         </div>
 
-        {/* رأس الصفحة — مضغوط ومحكم */}
+        {/* رأس الصفحة */}
         <div className="relative z-20 flex justify-between items-center w-full gap-2">
           <div className="float-anim gsap-hero flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 rounded-full border-2 border-[#FF6B9D] overflow-hidden shrink-0 shadow-lg shadow-[#FF6B9D]/25">
@@ -179,7 +200,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             </div>
           </div>
 
-          {/* الساعة — nowrap + tabular-nums، عمرها ماكتبسر */}
+          {/* الساعة */}
           <div className="gsap-hero shrink-0 bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-600 text-[10px] font-mono font-bold flex items-center gap-1.5 whitespace-nowrap tabular-nums">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
             {isMounted ? liveTime : 'Live'}
@@ -189,7 +210,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
 
-                    {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
+          {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
             <div
               ref={cardsRef}
@@ -204,7 +225,6 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                     onClick={(e) => handleCardTap(e, index)}
                     aria-expanded={activeCard === index}
                   >
-                    {/* 🆕 صورة حقيقية — تحويل OSS + أولوية للكبيرة */}
                     <img
                       src={index === 0 ? IMG.detail(getImage(product)) : IMG.card(getImage(product))}
                       alt=""
@@ -221,7 +241,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                         <div className="hero-card-price">{formatPrice(product)}</div>
                       )}
                       <div className="hero-card-description">
-                        {product?.description || 'Exclusive premium quality — limited stock available.'}
+                        {getHonestDescription(product)}
                       </div>
                     </div>
                   </Link>
@@ -229,11 +249,11 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
               ) : (
                 <div
                   className="hero-card pos-top"
-                  style={{ 
-                    backgroundImage: 'url(/icon-192.png)', 
-                    backgroundSize: 'contain', 
-                    backgroundRepeat: 'no-repeat', 
-                    backgroundColor: 'white' 
+                  style={{
+                    backgroundImage: 'url(/icon-192.png)',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundColor: 'white'
                   }}
                 >
                   <div className="hero-card-content">
