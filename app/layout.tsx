@@ -34,14 +34,8 @@ export const metadata: Metadata = {
     description: 'Explore the latest trending gear and lifestyle essentials with free worldwide delivery.',
     url: SITE_URL,
     siteName: 'Laclarc',
-    images: [
-      {
-        url: '/hero-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Laclarc Global Flagship Store',
-      },
-    ],
+    // 🆕 الصورة الديناميكية — app/opengraph-image.tsx كيرجعها تلقائياً (Next convention)
+    // (لا hero-image.jpg — كان غايب من public، والـ dynamic كيولد بلا صيانة)
     locale: 'en_US',
     type: 'website',
   },
@@ -49,7 +43,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Laclarc | Premium Lifestyle Store',
     description: 'Explore curated trending items with Free Worldwide Express Shipping.',
-    images: ['/hero-image.jpg'],
+    // 🆕 كيورث من opengraph-image تلقائياً — بلا تكرار
   },
 };
 
