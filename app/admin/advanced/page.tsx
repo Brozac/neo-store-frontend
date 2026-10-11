@@ -71,14 +71,26 @@ export default function AdvancedDashboard() {
     }
   };
 
-  // ✨ إرسال طلب الدمج الفعلي لـ CJ لتوفير تكلفة الشحن
+  // ✨ v1.1 — إرسال طلب الدمج بتأكيد حي كامل (نفس منهج BaridiMob verification)
   const handleSubmitMerge = async (group: any, idx: number) => {
-    if (!confirm(`Submit Order Merge for Group #${idx + 1}? CJ will consolidate these items into a single shipment.`)) return;
+    const shopOrders = group.mergeShopOrderVOList || [];
+    const shopCount = shopOrders.length;
+
+    const confirmMessage =
+      `⚡ SUBMIT MERGE TO CJ — Group #${idx + 1}\n\n` +
+      `Orders to consolidate: ${shopCount}\n` +
+      `Carrier: ${group.logisticName || 'Standard'}\n\n` +
+      `Shop Order IDs:\n` +
+      shopOrders.map((s: any) => `  • ${s.shopOrderId}`).join('\n') +
+      `\n\n⚠️ This action is submitted to CJ arbitration and cannot be reversed from this panel.\n\nProceed?`;
+
+    if (!window.confirm(confirmMessage)) return;
+
     setSubmittingMergeIdx(idx);
     try {
-      const payload = group.mergeShopOrderVOList || [group];
+      const payload = shopOrders.length > 0 ? shopOrders : [group];
       const res = await adminApi.post('/admin/merge/submit', payload);
-      if (res.data?.code === 200) {
+      if (res.data?.code === 200 || res.data?.code === 0) {
         alert('✅ Orders merged successfully on CJ!');
         fetchMergeList();
       } else {
@@ -268,7 +280,7 @@ export default function AdvancedDashboard() {
                         <span className="text-xs text-gray-500 block font-mono">Carrier: {group.logisticName || 'Standard'}</span>
                       </div>
                       
-                      {/* ✨ زر تنفيذ الدمج المباشر */}
+                      {/* ✨ v1.1 — Submit Merge بتأكيد حي كامل */}
                       <button
                         onClick={() => handleSubmitMerge(group, idx)}
                         disabled={submittingMergeIdx === idx}

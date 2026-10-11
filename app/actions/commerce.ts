@@ -5,9 +5,12 @@
  * ⚡ Server Actions — Mission #17 — Typed RPC over Backend REST
  * No duplicated logic — the backend is the single source of truth
  * (financialGate / audit / DB)
+ * v1.1: admin fast-fail gate on admin-surface actions (backend remains
+ * the real guard — this is a cheap proxy-cost + info-leak filter)
  * ═══════════════════════════════════════════════════════════════
  */
 
+import { cookies } from 'next/headers';
 import { backendFetch } from '@/lib/backend-server';
 
 export interface CouponResult {
@@ -23,7 +26,18 @@ export interface ExchangeOption {
   image_url?: string;
 }
 
-// ═══ 1️⃣ Validate Coupon ═══
+// 🆕 v1.1 — fast-fail gate: إلا ما كاينش admin session cookie → لا نداء backend أصلاً
+// (الـ backend يبقى الحارس الحقيقي — هادي طبقة توفير proxy-cost + إخفاء shape)
+async function hasAdminSession(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    return Boolean(cookieStore.get('admin_token')?.value || cookieStore.get('token')?.value);
+  } catch {
+    return false;
+  }
+}
+
+// ═══ 1️⃣ Validate Coupon ═══ (public-by-design — زبائن)
 export async function validateCouponAction(
   code: string,
   cartTotal: number
@@ -53,8 +67,6 @@ export type ExchangeStatus =
   | 'invalid'
   | 'net';
 
-// 🆕 machine-readable failure reason from the backend — the UI maps it to the right screen
-// (before: every failure landed on "Connection problem", even an expired link)
 export type ExchangeFailCode = 'invalid_link' | 'already_picked' | 'stale_option' | 'internal';
 
 const EXCHANGE_TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,7 +75,7 @@ const EXCHANGE_FAIL_CODES: readonly string[] = ['invalid_link', 'already_picked'
 export interface ExchangeOptionsResult {
   status: ExchangeStatus;
   options: ExchangeOption[];
-  detail?: string; // 🩹 E2 — 'manual' distinguishes a halted booking from in-flight polling
+  detail?: string;
 }
 
 export async function getExchangeOptionsAction(
@@ -77,8 +89,6 @@ export async function getExchangeOptionsAction(
     const data = await backendFetch<{ status?: ExchangeStatus; options?: ExchangeOption[]; detail?: string }>(
       `/api/exchange/${orderId}/options?t=${encodeURIComponent(token)}`
     );
-    // backendFetch throws on !res.ok — a body without `status` = unexpected shape → 'net'
-    // (the backend always sends an explicit status for real answers)
     if (!data || typeof data.status !== 'string') return { status: 'net', options: [] };
     return { status: data.status, options: data.options || [], detail: data.detail };
   } catch {
@@ -99,7 +109,6 @@ export async function pickExchangeAction(
       `/api/exchange/${orderId}`,
       { method: 'POST', body: { pick: pickProductId, token } }
     );
-    // 🆕 defensive: an error body without `success: true` must never read as success
     const code = data.code && EXCHANGE_FAIL_CODES.includes(data.code)
       ? (data.code as ExchangeFailCode)
       : undefined;
@@ -109,10 +118,15 @@ export async function pickExchangeAction(
   }
 }
 
+// ═══ 3️⃣ System Events — 🆕 v1.1: admin fast-fail gate ═══
 export async function getSystemEventsAction(
   limit = 50,
   type?: string
 ): Promise<{ events: Record<string, unknown>[] }> {
+  // 🛡️ gate: بلا admin session → لا proxy-cost ولا info-leak (الـ backend يبقى الحارس الحقيقي)
+  if (!(await hasAdminSession())) {
+    return { events: [] };
+  }
   try {
     const qs = type
       ? `?limit=${Math.min(limit, 200)}&type=${encodeURIComponent(type)}`

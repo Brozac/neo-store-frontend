@@ -376,25 +376,39 @@ export default function AdminDashboard() {
     finally { setScraping(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+
+    // 🛡️ v1.1 — نفس حراس manage (السيرفر هو الحكم — هادو UX)
+    const parsedPrice = Number(formData.price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 9.99) {
+      setLoading(false);
+      return setMessage('❌ Price floor is $9.99 (v3.1) — cannot publish below this.');
+    }
+    if (!formData.title.trim()) { setLoading(false); return setMessage('❌ Title is required.'); }
+    const parsedOriginal = formData.original_price ? Number(formData.original_price) : null;
+    if (parsedOriginal !== null && (!Number.isFinite(parsedOriginal) || parsedOriginal <= parsedPrice)) {
+      setLoading(false);
+      return setMessage('❌ Original price must be higher than the selling price (or leave empty).');
+    }
+
     try {
       const payload = {
-        title: formData.title,
-        price: Number(formData.price),
-        original_price: Number(formData.original_price),
+        title: formData.title.trim(),
+        price: parsedPrice,
+        original_price: parsedOriginal,          // 🩹 null — قرار 1 (بلا 0)
         image_url: formData.image_url,
         images: formData.images.split(',').map(img => img.trim()).filter(Boolean),
         description: formData.description,
-        material: formData.material,
+        material: formData.material || '',       // 🩹 قرار 2 — بلا شعار مجاني
         colors: formData.colors.split(',').map(col => col.trim()).filter(Boolean),
         sizes: formData.sizes.split(',').map(sz => sz.trim()).filter(Boolean),
         category: formData.category
       };
       await adminApi.post('/admin/add-product', payload);
-      setMessage('✅ Product published successfully with auto-pricing!');
+      setMessage('✅ Product published successfully!');
       setFormData({ title: '', price: '', original_price: '', image_url: '', images: '', description: '', material: '', colors: '', sizes: '', category: 'other' });
       setScrapeUrl('');
     } catch (err: any) { setMessage(`❌ Error: ${err.response?.data?.error || 'Failed to save product.'}`); }

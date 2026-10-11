@@ -178,21 +178,39 @@ function ManageProductsContent() {
     setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
   };
 
-  const handleSaveEdit = async (e: React.FormEvent) => {
+   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editProduct) return;
+
+    // 🛡️ v1.1 — Client-side financial guards (السيرفر هو الحكم — هادو UX)
+    const parsedPrice = Number(editProduct.price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 9.99) {
+      alert(`❌ Price floor is $9.99 (v3.1) — cannot save $${editProduct.price}.`);
+      return;
+    }
+    if (!editProduct.title?.trim()) {
+      alert('❌ Title is required.');
+      return;
+    }
+    const parsedOriginal = editProduct.original_price ? Number(editProduct.original_price) : null;
+    if (parsedOriginal !== null && (!Number.isFinite(parsedOriginal) || parsedOriginal <= parsedPrice)) {
+      alert('❌ Original price must be higher than the selling price (or leave it empty).');
+      return;
+    }
+
     setSavingEdit(true);
     try {
       const resolvedImageUrl = editProduct.image_url || editProduct.image || '';
-      
+
+      // 🆕 v1.1 — original_price: null قرار 1 (بلا 0 مزيف) · material: '' قرار 2 (بلا شعار مزيف)
       const payload = {
         title: editProduct.title.trim(),
-        price: Number(editProduct.price) || 0,
-        original_price: Number(editProduct.original_price) || 0,
+        price: parsedPrice,
+        original_price: parsedOriginal,                      // null أو رقم صالح — ماشي 0
         image_url: resolvedImageUrl,
         images: pickImages(editProduct.images, resolvedImageUrl),
         description: editProduct.description || '',
-        material: editProduct.material || 'Premium Quality',
+        material: editProduct.material || '',                // قرار 2 — بلا 'Premium Quality' بلا مصدر
         colors: Array.isArray(editProduct.colors) ? editProduct.colors : [],
         sizes: Array.isArray(editProduct.sizes) ? editProduct.sizes : [],
         category: editProduct.category || 'other'
@@ -202,10 +220,10 @@ function ManageProductsContent() {
       alert('✅ Product updated and cache refreshed!');
       setIsEditModalOpen(false);
       fetchProducts();
-    } catch (err: any) { 
-      alert(`❌ Save failed: ${err.response?.data?.error || err.message}`); 
-    } finally { 
-      setSavingEdit(false); 
+    } catch (err: any) {
+      alert(`❌ Save failed: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -491,7 +509,7 @@ function ManageProductsContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Original Price ($)</label>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Original Price ($) — optional · shown as strikethrough</label>
                   <input 
                     type="number" 
                     step="0.01" 
