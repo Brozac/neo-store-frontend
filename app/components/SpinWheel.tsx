@@ -57,7 +57,7 @@ export default function SpinWheel() {
     const targetAngle = 360 * 5 + (360 - (segmentIndex * segmentAngle)) - (segmentAngle / 2);
     setRotation(prev => prev + targetAngle);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsSpinning(false);
       setResult(selectedSegment.text);
       try {
