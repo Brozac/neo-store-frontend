@@ -9,6 +9,12 @@ interface UserProfile {
   profile_picture?: string;
 }
 
+// 🆕 v1.1 — HTML-error-page guard (Render 502 etc.) — نمط checkout.ts الموحد
+const safeJson = async (res: Response): Promise<any> => {
+  const raw = await res.text();
+  try { return raw ? JSON.parse(raw) : {}; } catch { return {}; }
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -46,10 +52,10 @@ export default function ProfilePage() {
           }
           return null;
         }
-        return res.json();
+        return safeJson(res);
       })
       .then((data) => {
-        if (data) {
+        if (data && data.email) {
           setUser(data);
           setEditName(data.name || '');
         }
@@ -93,7 +99,7 @@ export default function ProfilePage() {
         },
         body: formData,
       });
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (res.ok && data.urls && data.urls.length > 0) {
         const newImageUrl = data.urls[0];
@@ -107,7 +113,7 @@ export default function ProfilePage() {
           body: JSON.stringify({ name: user.name, profilePicture: newImageUrl })
         });
 
-        const updatedUser = await updateRes.json();
+        const updatedUser = await safeJson(updateRes);
         if (updateRes.ok) {
           setUser(updatedUser);
         } else {
@@ -147,12 +153,12 @@ export default function ProfilePage() {
         })
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
       if (res.ok) {
         setUser(data);
         setIsEditOpen(false);
       } else {
-        setEditError(data.message || 'Failed to update profile.');
+        setEditError(data.message || data.error || 'Failed to update profile.');
       }
     } catch (err) {
       setEditError('Connection error updating name.');
@@ -190,7 +196,7 @@ export default function ProfilePage() {
       const res = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       // ✨ حفظ الطلبات في sessionStorage لنستعملها في صفحة /orders مع status_label
       if (Array.isArray(data)) {
         sessionStorage.setItem('my_orders_cache', JSON.stringify(data));
@@ -356,15 +362,23 @@ export default function ProfilePage() {
             </div>
 
             {editError && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold">
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold" role="alert">
                 ⚠️ {editError}
+              </div>
+            )}
+
+            {/* 🆕 v1.1 — uploadError داخل المودال أيضاً (كان خارجاً فقط — الزبون ما يشوفش) */}
+            {uploadError && (
+              <div className="p-3 bg-red-50 text-rose-600 rounded-xl text-xs font-bold" role="alert">
+                ⚠️ {uploadError}
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Full Name *</label>
+                <label htmlFor="profile-name" className="block text-gray-700 text-xs font-bold uppercase mb-1">Full Name *</label>
                 <input
+                  id="profile-name"
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
@@ -373,8 +387,9 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Account Email Address</label>
+                <label htmlFor="profile-email" className="block text-gray-700 text-xs font-bold uppercase mb-1">Account Email Address</label>
                 <input
+                  id="profile-email"
                   type="email"
                   value={user.email || ''}
                   disabled

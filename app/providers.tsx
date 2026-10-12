@@ -61,7 +61,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {/* 🆕 FloatingSupport يحتوي WhatsApp FAB + AI Chat FAB */}
           <FloatingSupport />
           <AIChatWidget />       {/* نافذة الشات — بدون FAB مكرر */}
-          <SpinWheel />
+          {/* 🩹 WHEEL_MOUNT_GATE — مؤقتاً مقفول: العجلة كتوعد بخصم ما كانش كيتنفذ (M#47 probe).
+              يتفعل بعد بناء wheel-token integration كامل + أول بيانات حملة.
+              Backend /api/wheel/claim جاهز — غير رد هاد السطر. */}
+          {/* <SpinWheel /> */}
           <ExitIntentPopup />
           <GlassDock />
         </>

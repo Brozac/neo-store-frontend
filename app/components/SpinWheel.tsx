@@ -66,7 +66,17 @@ export default function SpinWheel() {
 
       // تطبيق الخصم الحقيقي في CartContext بأمان
       if (selectedSegment.value > 0) {
-        applyWheelDiscount(selectedSegment.value);
+        // 🩹 WHEEL_V1 — claim token موقّع من السيرفر (النسبة العارية ما تتصادقش)
+    try {
+      const claimRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'}/api/wheel/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pct: selectedSegment.value })
+      });
+      const claimData = await claimRes.json();
+      if (claimData.wheelToken) sessionStorage.setItem('wheel_token', claimData.wheelToken);
+    } catch (e) { /* claim فاشل = خصم بلا token — السيرفر كيرفضو بأمان */ }
+    applyWheelDiscount(selectedSegment.value);
       }
     }, 4000);
   };

@@ -164,7 +164,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (color !== undefined || size !== undefined) {
         return !(item.id === itemKeyOrId && item.color === color && item.size === size);
       }
-      return getCartItemKey(item) !== String(itemKeyOrId) && item.id !== itemKeyOrId;
+      // 🩹 WHEEL_SAFE_V1 — variant-safe: إلا الـ key فيه VID → مطابقة بالـ key فقط
+      //    (الشرط القديم item.id === itemKeyOrId كان كيحذف كل variants المنتج معاً)
+      if (String(itemKeyOrId).includes('_VID_')) {
+        return getCartItemKey(item) !== String(itemKeyOrId);
+      }
+      return getCartItemKey(item) !== String(itemKeyOrId) && String(item.id) !== String(itemKeyOrId);
     }));
   }, []);
 
@@ -192,6 +197,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart([]);
     try {
       localStorage.removeItem('cart');
+      // 🩹 WHEEL_SAFE_V1 — العجلة كتموت مع الطلب (لا خصم يورث للسلة الجاية)
+      localStorage.removeItem('wheelDiscount');
+      sessionStorage.removeItem('wheel_token');
+      setWheelDiscount(0);
     } catch (e) {}
   }, []);
 
