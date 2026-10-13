@@ -10,7 +10,7 @@ interface JourneyEvent {
 }
 
 interface Journey {
-  order: { id: number; status: string; tracking: string; destination: string };
+  order: { id: number; order_number?: string; status: string; tracking: string; destination: string };
   currentStage: string;
   events: JourneyEvent[];
   eta: { predictedDays: number; confidence: string; message: string };
@@ -114,7 +114,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
             </div>
             <h2 className="text-xl font-black">{t[lang]}</h2>
             <p className="text-xs text-gray-300 mt-1">
-              {journey.order.destination} • Order #{journey.order.id}
+              {journey.order.destination} • Order {journey.order.order_number || `#${journey.order.id}`}
             </p>
           </div>
           <span className="text-4xl">{STAGE_ICONS[journey.currentStage] || '📦'}</span>

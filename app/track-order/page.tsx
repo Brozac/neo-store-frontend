@@ -13,6 +13,7 @@ interface TrackedOrder {
   status: string;
   created_at?: string;
   tracking_number?: string;
+  order_number?: string;
 }
 
 interface TrackingEvent {
@@ -258,7 +259,7 @@ function TrackOrderContent() {
             <div key={order.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
 
               <div className="flex justify-between items-center border-b border-gray-100 pb-3 gap-2">
-                <span className="text-xs font-black text-gray-900">Order #{order.id}</span>
+                <span className="text-xs font-black text-gray-900">Order {(order as any).order_number || `#${order.id}`}</span>
                 {/* ✨ لغة ودية بدل الحالات التقنية الخام */}
                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${TONE_CLASSES[statusInfo.tone]}`}>
                   {statusInfo.label}
