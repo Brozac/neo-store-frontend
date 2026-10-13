@@ -33,11 +33,12 @@ export default function MultiStepRegister() {
     setFormData({ ...formData, password: value });
     setError('');
 
-    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
-    const mediumRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})/;
+    // 🩹 v1.1 — مطابق لـ backend: 8+ = مقبول · التركيبة = قوة إضافية
+    const hasMixed = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value);
+    const valid = value.length >= 8;
 
-    if (strongRegex.test(value)) setPasswordStrength('strong');
-    else if (mediumRegex.test(value)) setPasswordStrength('medium');
+    if (valid && hasMixed) setPasswordStrength('strong');
+    else if (valid) setPasswordStrength('medium');
     else if (value.length > 0) setPasswordStrength('weak');
     else setPasswordStrength('');
   };
@@ -72,8 +73,9 @@ export default function MultiStepRegister() {
     }
 
     if (step === 2) {
-      if (!formData.password || formData.password.length < 6) {
-        setError('Password must be at least 6 characters long.');
+      // 🩹 v1.1 — مطابق لـ assertStrongPassword (server.js:65): length >= 8 فقط
+      if (!formData.password || formData.password.length < 8) {
+        setError('Password must be at least 8 characters long.');
         return;
       }
     }
@@ -227,7 +229,7 @@ export default function MultiStepRegister() {
                     type={togglePassword ? 'text' : 'password'} 
                     value={formData.password} 
                     onChange={(e) => handlePasswordChange(e.target.value)} 
-                    placeholder="Minimum 6 characters with mixed symbols..." 
+                    placeholder="Minimum 8 characters..." 
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 pr-12 focus:outline-none focus:border-[#8B78C6] transition" 
                   />
                   <button 
