@@ -12,6 +12,8 @@ import Footer from './components/Footer';
 import UtmTracker from './components/UtmTracker';
 import GlassDock from './components/GlassDock';
 import FloatingSupport from './components/floating/FloatingSupport'; // 🆕 يحتوي WhatsApp + AI FAB
+import SessionBridge from './components/SessionBridge';
+
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +45,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <CartProvider>
       {/* ✨ التقاط UTM */}
       <UtmTracker />
+      <SessionBridge />
 
       {/* ✨ Navbar — للزبائن فقط */}
       {!isAdminRoute && <Navbar />}
