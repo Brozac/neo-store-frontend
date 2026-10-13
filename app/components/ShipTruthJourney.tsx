@@ -181,7 +181,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
         {/* شارة الحقيقة */}
         <div className="mt-2 bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4 text-center">
           <p className="text-xs font-black text-emerald-700 flex items-center justify-center gap-1.5">
-            ✅ {lang === 'ar' ? 'بيانات حية مباشرة من مستودعات CJ' : 'Live data directly from CJ warehouses'}
+            ✅ {lang === 'ar' ? 'بيانات حية مباشرة من مستودعات CJ' : 'Live data directly from warehouses'}
           </p>
           <p className="text-[10px] text-gray-400 mt-1">
             {lang === 'ar' ? 'لا تقديرات — الحقيقة فقط' : 'No estimates — only truth'}
