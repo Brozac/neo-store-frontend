@@ -28,7 +28,7 @@ type Tone = 'good' | 'warn' | 'bad' | 'info';
 const STATUS_MAP: Record<string, { label: string; tone: Tone; step: number }> = {
   pending:            { label: 'Awaiting Payment',     tone: 'warn', step: 0 },
   reconciling:        { label: 'Finalizing Payment',   tone: 'warn', step: 1 },
-  paid:               { label: 'Payment Confirmed',    tone: 'good', step: 1 },
+  paid:               { label: 'Payment Confirmed',    tone: 'good', step: 2 },   // 🩹 v1.1 — 75% صادق (الدفع مكتمل — الباقي CJ)
   manual:             { label: 'Under Review',         tone: 'warn', step: 1 },
   processing:         { label: 'Processing',           tone: 'info', step: 1 },  // 🩹
   awaiting_exchange:  { label: 'Alternative Offered — Check Email', tone: 'info', step: 1 },  // 🩹
@@ -100,6 +100,7 @@ function TrackOrderContent() {
 
       if (res.ok) {
         if (Array.isArray(data) && data.length > 0) {
+          try { sessionStorage.setItem('laclarc_last_track_email', targetEmail.trim().toLowerCase()); } catch {}
           setOrders(data);
         } else {
           setError('No orders found matching this Order ID and Email combination.');
@@ -120,6 +121,18 @@ function TrackOrderContent() {
       executeTrack(initialOrderId, initialEmail);
     }
   }, [initialOrderId, initialEmail, executeTrack]);
+
+  // 🩹 v1.1 — auto-fill email من الحساب المسجل (أو last used)
+  useEffect(() => {
+    if (!email) {
+      try {
+        const saved = localStorage.getItem('laclarc_user_email') ||
+                      sessionStorage.getItem('laclarc_last_track_email');
+        if (saved) setEmail(saved);
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ✨ جلب الأحداث الحية تلقائياً لكل طلب عندو رقم تتبع
   useEffect(() => {
@@ -327,10 +340,11 @@ function TrackOrderContent() {
                 </p>
               )}
               {/* ✨ Ship Truth Engine — الرحلة الحية من الصين للباب */}
-              {hasTracking && (
+              {/* 🩹 v1.1 — Ship Truth حتى قبل الشحن: PROCESSING + ETA صادقون (Trust أعلى) */}
+              {(hasTracking || order.status === 'paid') && (
                 <ShipTruthJourney
                   orderId={order.id}
-                  email={email}   // ← الإيميل الذي أدخله الزبون في الفورم (state موجود أصلاً)
+                  email={email}
                 />
               )}
             </div>
