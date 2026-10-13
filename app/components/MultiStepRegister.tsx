@@ -17,8 +17,8 @@ export default function MultiStepRegister() {
     gender: 'Male',
     profession: ''
   });
-
-  const [image, setImage] = useState<string>('/placeholder.jpg');
+  
+  const [image, setImage] = useState<string>('/icon-512.png');
   const [togglePassword, setTogglePassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
 
