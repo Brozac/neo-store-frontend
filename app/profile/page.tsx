@@ -69,7 +69,8 @@ export default function ProfilePage() {
   }, [API_BASE_URL]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.clear();           // 🩹 كحل كل شيء (token + cart + wheel)
+    sessionStorage.clear();         // 🩹 كحل my_orders_cache
     setUser(null);
     router.push('/auth');
   };
