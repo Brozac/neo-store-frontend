@@ -106,6 +106,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       const data = await res.json();
 
       if (data.url) {
+        // 🩹 M#52 — احفظ order_number للعرض في صفحة الشكر
+        if (data.orderNumber) sessionStorage.setItem('last_order_number', data.orderNumber);
         window.location.href = data.url;
       } else {
         setError(data.error || `Failed to initiate ${method} payment.`);
@@ -163,6 +165,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.orderNumber) sessionStorage.setItem('last_order_number', data.orderNumber);
         setReceiptUploaded(true);
         clearCart();
       } else {

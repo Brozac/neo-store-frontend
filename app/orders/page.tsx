@@ -231,7 +231,7 @@ export default function OrdersPage() {
               <div key={order.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
                 <div className="flex justify-between items-start pb-4 border-b border-gray-100 flex-wrap gap-2">
                   <div>
-                    <h3 className="font-black text-gray-900 text-base">Order #{order.id}</h3>
+                    <h3 className="font-black text-gray-900 text-base">Order {(order as any).order_number || `#${order.id}`}</h3>
                     <p className="text-[11px] text-gray-400 mt-0.5 font-medium">
                       {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
@@ -287,7 +287,7 @@ export default function OrdersPage() {
 
             <div className="p-5 border-b border-gray-100 flex justify-between items-center">
               <div>
-                <h3 className="font-black text-gray-900 text-base">Order #{modalOrder.id} Details</h3>
+                <h3 className="font-black text-gray-900 text-base">Order {(modalOrder as any).order_number || `#${modalOrder.id}`} Details</h3>
                 {/* 🩹 M#29 — status_label في الـ modal أيضاً */}
                 <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${getStatusStyle(modalOrder.status)}`}>
                   {getStatusLabel(modalOrder)}
