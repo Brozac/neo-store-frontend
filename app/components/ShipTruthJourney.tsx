@@ -165,7 +165,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
                       <span className="font-black text-xs text-temu-black">
                         {STAGE_LABELS[ev.type]?.[lang] || ev.type}
                       </span>
-                      <span className="text-[10px] text-gray-400 font-mono">
+                      <span suppressHydrationWarning className="text-[10px] text-gray-400 font-mono">
                         {new Date(ev.time).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </div>

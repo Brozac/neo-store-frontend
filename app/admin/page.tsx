@@ -499,7 +499,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <span className="text-base font-black text-temu-black">
                 {telemetry.backendStatus === 'healthy' ? 'Operational' : 'Checking'}
               </span>
-              <span className="text-[11px] font-mono text-gray-500">{telemetry.backendPing}ms</span>
+              <span suppressHydrationWarning className="text-[11px] font-mono text-gray-500">{telemetry.backendPing}ms</span>
             </div>
           </div>
 
@@ -595,7 +595,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   onClick={runDiagnostics}
                   className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer"
                 >
-                  🔄 Refresh Status ({telemetry.lastChecked})
+                  <span suppressHydrationWarning>🔄 Refresh Status ({telemetry.lastChecked})</span>
                 </button>
               </div>
 

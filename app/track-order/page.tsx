@@ -336,7 +336,7 @@ function TrackOrderContent() {
               </div>
 
               {order.created_at && (
-                <p className="text-[10px] text-gray-400 text-center font-mono">
+                <p suppressHydrationWarning className="text-[10px] text-gray-400 text-center font-mono">
                   Placed: {new Date(order.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               )}
