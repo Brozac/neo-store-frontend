@@ -1,10 +1,94 @@
-* text=auto eol=lf
-*.bat text eol=crlf
-*.ps1 text eol=crlf
+# ═══════════════════════════════════════════════════════
+# Laclarc — .gitattributes v3 (Bulletproof — بلا أي مخاطرة)
+# المبدأ: نصوص = normalize آمن · Binary = لا تلمس أبداً
+# ═══════════════════════════════════════════════════════
+
+# ─── Binary — محمي بالحرف (لا تلمس أبداً) ───
 *.png binary
 *.jpg binary
 *.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
 *.ico binary
+*.icns binary
 *.pdf binary
 *.woff binary
 *.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp4 binary
+*.mp3 binary
+*.webm binary
+*.wav binary
+*.ogg binary
+*.mov binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.rar binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.wasm binary
+*.bin binary
+*.dat binary
+
+# ─── Source code — LF في الـ repo ───
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.mjs text
+*.cjs text
+*.json text
+*.css text
+*.html text
+*.md text
+*.yml text
+*.yaml text
+*.xml text
+*.svg text
+*.graphql text
+*.prisma text
+*.d.ts text
+
+# ─── Config — LF ───
+*.config.js text
+*.config.ts text
+*.config.mjs text
+.eslintrc text
+.prettierrc text
+.npmrc text
+
+# ─── Lock files — LF موحد ───
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+pnpm-lock.yaml text eol=lf
+
+# ─── 🔴 Shell scripts — LF صارم (bash يكسر بـ CRLF) ───
+*.sh text eol=lf
+*.bash text eol=lf
+
+# ─── Python — LF ───
+*.py text eol=lf
+
+# ─── SQL — LF ───
+*.sql text eol=lf
+
+# ─── Env — LF ───
+.env text
+.env.* text
+
+# ─── Windows scripts — CRLF (cmd/PowerShell) ───
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# ─── Documentation ───
+*.md text
+*.txt text
+LICENSE text
