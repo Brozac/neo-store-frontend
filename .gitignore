@@ -1,6 +1,9 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ═══════════════════════════════════════════════════════
+# Laclarc Frontend — .gitignore v2
+# المبدأ: لا build artifacts · لا backups · لا runtime state
+# ═══════════════════════════════════════════════════════
 
-# dependencies
+# ─── Dependencies ───
 /node_modules
 /.pnp
 .pnp.*
@@ -9,35 +12,107 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/.yarn/install-state.gz
 
-# testing
+# ─── Testing ───
 /coverage
 
-# next.js
+# ─── Next.js ───
 /.next/
 /out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
 next-env.d.ts
 
+# ─── Production ───
+/build
+
+# ─── 🔐 Secrets (حتى باسم مختلف) ───
+.env*
+!.env.example
+!.env.oauth_template
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials*.json
+serviceAccountKey*.json
+
+# ─── Misc (v1) ───
+.DS_Store
 *.bak-xchg
+
+# ─── 🩹 v2 — Backups (laclarc جراحة المحتوى ×10) ───
+*.bak
+*.bak2
+*.bak_*
+*.bak-*
+*.bak-xchg
+*.orig
+*~
+
+# ─── 🩹 v2 — Temp / Cache (python-inject · debug) ───
+*.tmp
+*.swp
+*.swo
+*.swn
+.cache/
+.eslintcache
+.tmp/
+
+# ─── 🩹 v2 — Local diagnostic scripts (same as backend pattern) ───
+test_*.tsx
+fix_*.tsx
+probe_*.tsx
+*_probe.tsx
+debug_*.tsx
+category_report*.tsx
+
+# ─── 🩹 v2 — Runtime state (sessionStorage mirrors) ───
+*.state.json
+*.state.json.tmp
+
+# ─── 🩹 v2 — Reports (local diagnostics) ───
+*report*.json
+*report*.txt
+*report*.log
+
+# ─── 🩹 v2 — OS junk (إضافات) ───
+Thumbs.db
+desktop.ini
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# ─── 🩹 v2 — Editors (إضافات) ───
+.idea/
+.vscode/
+.vs/
+*.swp
+*.swo
+*.swn
+.idea.xml
+
+# ─── 🩹 v2 — Vercel (إضافات) ───
+.vercel
+.vercel/*
+!.vercel/README.md
+.vercel/project.json
+
+# ─── 🩹 v2 — Node internals (إضافات) ───
+.npm/
+.node_repl_history
+.node_repl_history.*
+.eslintcache
+
+# ─── 🩹 v2 — Storybook (إن وجد) ───
+storybook-static/
+
+# ─── 🩹 v2 — Next.js misc (إضافات) ───
+next-env.d.ts.bak
+.npmrc
+*.tsbuildinfo
+
+# ─── 🩹 v2 — Sentry (إن كان مفعلاً) ───
+.sentryclirc
