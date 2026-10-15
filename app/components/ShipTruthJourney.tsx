@@ -166,7 +166,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
                         {STAGE_LABELS[ev.type]?.[lang] || ev.type}
                       </span>
                       <span className="text-[10px] text-gray-400 font-mono">
-                        {new Date(ev.time).toLocaleDateString()}
+                        {new Date(ev.time).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </div>
                     {ev.location && <p className="text-[11px] text-temu-gray-text mt-0.5">📍 {ev.location}</p>}
