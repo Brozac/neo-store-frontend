@@ -1,4 +1,3 @@
-// app/category/[...slug]/CategoryClient.tsx - Client Logic (v2 — infinite scroll)
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -34,7 +33,8 @@ export default function CategoryClient() {
   const [error, setError] = useState('');
   const sentinel = useRef<HTMLDivElement>(null);
   const busy = useRef(false);       // 🛡️ double-fire guard (الـ observer كيطلق جوج مرات على الموبايل)
-  const totalCount = useRef(0);
+  // 🆕 v1.2 — totalCount بـ useState (مؤكد العرض الحي — useRef ما كان كيحدّثش الواجهة)
+  const [totalCount, setTotalCount] = useState(0);
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
@@ -44,10 +44,11 @@ export default function CategoryClient() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   // ── العدّاد (مستقل وخفيف — للـ header) ──
+  // 🆕 v1.2 — useState: العدّاد كيحدّث الواجهة فعلياً عند وصول القيمة
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`)
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.count) totalCount.current = d.count; })
+      .then(d => { if (d?.count) setTotalCount(d.count); })
       .catch(() => {}); // تجميلي — الصفحة ما تعتمدش عليه، والصمت هنا مقصود وموثق
   }, [slugPath, API_BASE_URL]);
 
@@ -125,9 +126,9 @@ export default function CategoryClient() {
 
         <div className="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
           <h1 className="text-3xl font-extrabold text-temu-black capitalize">{categoryName}</h1>
-          {totalCount.current > 0 && (
+          {totalCount > 0 && (
             <span className="text-xs font-bold text-gray-400">
-              {totalCount.current.toLocaleString()} products
+              {totalCount.toLocaleString()} products
             </span>
           )}
         </div>
@@ -198,8 +199,8 @@ export default function CategoryClient() {
             )}
             {done && products.length > 0 && (
               <p className="text-center text-xs text-gray-400 py-8">
-                🏁 {totalCount.current > 0
-                  ? `${totalCount.current.toLocaleString()} products in this category`
+                🏁 {totalCount > 0
+                  ? `${totalCount.toLocaleString()} products in this category`
                   : `${products.length} products`}
               </p>
             )}
