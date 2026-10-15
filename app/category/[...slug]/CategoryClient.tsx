@@ -28,12 +28,10 @@ export default function CategoryClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(true);        // أول صفحة — شاشة كاملة
-  const [loadingMore, setLoadingMore] = useState(false); // الصفحات التالية — spinner صغير
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const sentinel = useRef<HTMLDivElement>(null);
-  const busy = useRef(false);       // 🛡️ double-fire guard (الـ observer كيطلق جوج مرات على الموبايل)
-  // 🆕 v1.2 — totalCount بـ useState (مؤكد العرض الحي — useRef ما كان كيحدّثش الواجهة)
+  // 🩹 v1.3 — totalCount بـ useState (يُحدّث الواجهة فعلياً)
   const [totalCount, setTotalCount] = useState(0);
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
@@ -44,7 +42,7 @@ export default function CategoryClient() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   // ── العدّاد (مستقل وخفيف — للـ header) ──
-  // 🆕 v1.2 — useState: العدّاد كيحدّث الواجهة فعلياً عند وصول القيمة
+  // 🆕 v1.3 — useState: العدّاد كيحدّث الواجهة فعلياً عند وصول القيمة
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`)
       .then(r => (r.ok ? r.json() : null))
@@ -81,13 +79,39 @@ export default function CategoryClient() {
     return () => controller.abort();
   }, [slugPath, API_BASE_URL]);
 
-  // ── Infinite scroll — BL-CAT-SCROLL: فئات كبار (3,528+) بلا سقف ──
+  // ── 🩹 v1.3 — Load More مضمون (بلا IntersectionObserver حساسية) ──
+  const loadMore = async () => {
+    if (loadingMore || done) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const arr = Array.isArray(data) ? data : [];
+      setProducts(prev => [...prev, ...arr]);
+      if (arr.length < PER_PAGE) setDone(true);
+      else setPage(p => p + 1);
+    } catch (err: any) {
+      console.error('[category-loadmore]', err);
+      setError('Failed to load more products. Please try again.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // ── Infinite scroll — 🩹 v1.3 — مدمج كخيار تلقائي (كيعمل، مع Load More كاحتياطي) ──
+  const sentinel = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);   // 🛡️ double-fire guard
+
   useEffect(() => {
     const el = sentinel.current;
     if (!el || done || error) return;
     const io = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting || busy.current) return;
-      busy.current = true;
+      if (!entries[0].isIntersecting || loadingRef.current) return;
+      loadingRef.current = true;
       setLoadingMore(true);
       fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`)
         .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -96,9 +120,9 @@ export default function CategoryClient() {
           if (!Array.isArray(data) || data.length < PER_PAGE) setDone(true);
           else setPage(p => p + 1);
         })
-        .catch(e => console.error('[category-scroll]', e)) // 🩹 Tenet #14: fail of append ≠ blank page — يبقى ما جاب، والمستخدم يعاود
-        .finally(() => { busy.current = false; setLoadingMore(false); });
-    }, { rootMargin: '600px' }); // تحميل استباقي — بلا spinner محسوس
+        .catch(e => console.error('[category-scroll]', e))
+        .finally(() => { loadingRef.current = false; setLoadingMore(false); });
+    }, { rootMargin: '600px' });
     io.observe(el);
     return () => io.disconnect();
   }, [page, done, error, slugPath, API_BASE_URL]);
@@ -190,13 +214,28 @@ export default function CategoryClient() {
               ))}
             </div>
 
-            {/* Sentinel + infinite-scroll states */}
+            {/* 🩹 v1.3 — Sentinel (infinite scroll) + Load More button (مضمون) */}
             <div ref={sentinel} className="h-10" />
+
             {loadingMore && (
               <div className="text-center py-6">
                 <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             )}
+
+            {/* ✨ v1.3 — Load More صريح — مضمون 100% بلا IntersectionObserver حساسية */}
+            {!done && !loadingMore && products.length > 0 && (
+              <div className="flex justify-center py-6">
+                <button
+                  onClick={loadMore}
+                  className="bg-temu-orange hover:bg-temu-orange-bright text-white font-extrabold py-3.5 px-10 rounded-temu-sm transition cursor-pointer active:scale-95 shadow-md text-sm gap-2 flex items-center touch-manipulation"
+                >
+                  Load More ({products.length} / {totalCount > 0 ? totalCount.toLocaleString() : '∞'})
+                </button>
+              </div>
+            )}
+
+            {/* ✨ v1.3 — End state */}
             {done && products.length > 0 && (
               <p className="text-center text-xs text-gray-400 py-8">
                 🏁 {totalCount > 0
