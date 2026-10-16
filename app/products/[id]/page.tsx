@@ -9,6 +9,34 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.on
 // المراجعات: client-side حية (ProductDetailsClient useEffect)
 export const revalidate = 3600;
 
+// ═══ v2.1 (Task 15) — الفروق على v2.0 ═══
+// FIX-SITEURL  — https://laclarc.com كانت مكتوبة بيدك ×7 (canonical · og:url · fallback · JSON-LD)
+//                → مصدر واحد SITE_URL بنفس نمط layout.tsx (Task 13): env-driven + بلا trailing slash
+// FIX-OGHTTPS  — DB فيها http:// URLs قديمة ديال CJ — WhatsApp كيرفض og:image بلا https
+//                (المعاينة كتخرج خاوية) → ترقية للـ CDNs المعروفين قبل ما تمشي لأي وسم
+// DOC-PRIORITY — توثيق مثبت بالبرهان الحي للتفاعل مع opengraph-image.tsx ديال الجذر + تحذير الحيد
+// locale       — og:locale كان غايب من صفحات المنتوجات (shallow-merge كيبدل الـ openGraph كامل)
+
+// ✨ FIX-SITEURL — مصدر واحد للدومين (اتساق مع layout.tsx Task 13)
+const SITE_URL = (process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com').replace(/\/+$/, '');
+
+// ✨ FIX-OGHTTPS — mirror ديال imageOptimizer FIX-HTTP (Task 10) للـ server-side OG.
+//    imageOptimizer كيدير الترقية داخل IMG builders ديال الكلاينت — هنا نفس القائمة للسيرفر.
+//    Backlog (Tenet #31): استخراج lib/imageUrl.ts مشترك كيتقسم بيناتهم.
+const OG_HTTPS_HOSTS = /(^|\.)cjdropshipping\.com$/i;
+function httpsify(u: unknown): string {
+  const s = String(u ?? '');
+  try {
+    const parsed = new URL(s);
+    if (parsed.protocol === 'http:' && OG_HTTPS_HOSTS.test(parsed.hostname)) {
+      return s.replace(/^http:\/\//i, 'https://');
+    }
+  } catch {
+    // ماشي URL صالح — كيرجعو كما هو (نفس السلوك ديال قبل، الفيلترة كتتم فالمسار ديال الـ fallback)
+  }
+  return s;
+}
+
 // ⚡ pre-generate أول 100 منتج وقت الـ build — الباقي on-demand
 // ℹ️ الترتيب من السيرفر (غير موثق كـ "أحدث") — تحسين مستقبلي: ?minimal=1 (chunk خفيف ids فقط)
 export async function generateStaticParams() {
@@ -69,20 +97,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!product) return { title: 'Product Not Found | Laclarc' };
 
   const cleanDescription = product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160) || 'Buy premium quality products at Laclarc Store with Worldwide Shipping.';
-  const primaryImage = product.image_url || product.image || 'https://laclarc.com/icon-512.png';
+  const primaryImage = httpsify(product.image_url || product.image || `${SITE_URL}/icon-512.png`);
 
   return {
     // 🩹 title.absolute — اتساق مع wrapper الفئة (تحياد template double-branding)
     title: { absolute: `${product.title} | Laclarc` },
     description: cleanDescription,
     // ✨ canonical — 73,597 صفحة منتج بلا canonical = duplicate-content risk
-    alternates: { canonical: `https://laclarc.com/products/${product.id}` },
+    alternates: { canonical: `${SITE_URL}/products/${product.id}` },
+    // ═══ DOC-PRIORITY (Task 15) — التفاعل مع opengraph-image.tsx ديال الجذر (Task 13) ═══
+    // مثبت حي (2026-10-16 بـ UA ديال facebookexternalhit — بوت WhatsApp/Facebook):
+    //   · صفحة منتج: og:image = صورة المنتج الحقيقية ← هاد الـ config كيربح file-convention ديال الجذر
+    //   · الهوم: og:image = opengraph-image (البراند 1200×630) حيت ما كاينش config images فهاد الصفحة
+    // 🚨 ما تحيدش ولا واحد من الجوج:
+    //    حيدت هاد الـ images → 73,597 شير كيرجعو للصورة البراندية العامة
+    //    حيدت ملف الجذر → باقي الصفحات (الهوم/الفئات/غ...) بلا صورة OG
     openGraph: {
       title: `${product.title} | Laclarc`,
       description: cleanDescription,
-      url: `https://laclarc.com/products/${product.id}`,
+      url: `${SITE_URL}/products/${product.id}`,
       siteName: 'Laclarc',
+      // ✨ اتساق مع الهوم — shallow-merge كيبدل الـ openGraph كامل (DOC-INHERIT Task 13)
+      locale: 'en_US',
       images: [{ url: primaryImage, width: 800, height: 800, alt: product.title }],
+      // ℹ️ P3 موثقة: 'product' كان كيسمح بـ og:price... ولكن كيتطلب meta إضافية
+      //    برا الأنواع المدعومة فـ Next — WhatsApp/FB خدامين مزيان بـ website
       type: 'website',
     },
     twitter: {
@@ -106,7 +145,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  // ⚡ ISR-strict: المراجعات حية عبر client fetch (ProductDetailsClient useEffect 
+  // ⚡ ISR-strict: المراجعات حية عبر client fetch (ProductDetailsClient useEffect
   //    يضرب /api/reviews/{id} أصلاً) — أي fetch no-store هنا كان يقتل الـ ISR
   const initialReviews: { id: number; author: string; rating: number; content: string; country: string; created_at: string; images?: string[] }[] = [];
 
@@ -123,8 +162,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     ? product.images.filter((i: unknown): i is string => typeof i === 'string' && i.length > 0)
     : [];
   const productImages = Array.from(new Set([
-    product.image_url || product.image || 'https://laclarc.com/icon-512.png',
-    ...gallery,
+    httpsify(product.image_url || product.image || `${SITE_URL}/icon-512.png`),
+    ...gallery.map(httpsify),
   ])) as string[];
   // 🩹 Tenet #38-aware: product.category = مسار كامل (l1/l2/l3) —Breadcrumb متدرج عليه
   const categorySegments = String(product.category || '').split('/').filter(Boolean);
@@ -143,19 +182,19 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           priceCurrency: 'USD',
           price: product.price,
           availability: product.stock_status !== false ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          url: `https://laclarc.com/products/${product.id}`,
+          url: `${SITE_URL}/products/${product.id}`,
           seller: { '@type': 'Organization', name: 'Laclarc' },
         },
       },
       ...(categorySegments.length > 0 ? [{
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://laclarc.com/' },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
           ...categorySegments.map((seg: string, i: number) => ({
             '@type': 'ListItem',
             position: i + 2,
             name: seg.replace(/-/g, ' '),
-            item: `https://laclarc.com/category/${categorySegments.slice(0, i + 1).join('/')}`,
+            item: `${SITE_URL}/category/${categorySegments.slice(0, i + 1).join('/')}`,
           })),
           // الصفحة الحالية — بلا item (Google pattern للصفحة النهائية)
           { '@type': 'ListItem', position: categorySegments.length + 2, name: product.title },
