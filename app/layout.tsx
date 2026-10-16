@@ -3,8 +3,21 @@ import { Providers } from './providers';
 import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 
+// ═══════════════════════════════════════════════════════════════════
+// 🩹 AUDIT v2.0 — Task 13 (app/layout.tsx)
+// FIX-SLASH   — SITE_URL بلا trailing slash → og:url / JSON-LD ما فيهمش // مزدوجة
+// FIX-ESCAPE  — JSON-LD كيتحرس < → إغلاق </script> مستحيل (حماية مستقبلية)
+// FIX-SEARCH  — SearchAction تحيّد مؤقتاً (target ما متحققش منه + Google حيّدو
+//               من 2024) — طريقة الرجوع موثقة فـ README-layout-og-fix.md #2
+// DOC-INHERIT — openGraph/twitter كيمرجو shallow — كل صفحة خاصها url ديالها
+// ═══════════════════════════════════════════════════════════════════
+
 // ✨ Tenet #4 — مصدر واحد للحقيقة (متسق مع sitemap.ts و robots.ts)
-const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
+// 🩹 FIX-SLASH — إلا env جات فيها "/" فالآخر → metadataBase والـ JSON-LD
+//    كانوا يولّدو example.com//icon-512.png (URL مزدوج = canonical مشوش)
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com'
+).replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -38,12 +51,18 @@ export const metadata: Metadata = {
     // (لا hero-image.jpg — كان غايب من public، والـ dynamic كيولد بلا صيانة)
     locale: 'en_US',
     type: 'website',
+    // 📋 DOC-INHERIT (Task 13) — هاد الـ block كيتورث بـ shallow-merge لكل الصفحات:
+    // أي صفحة كتعرّف openGraph ديالها وما كتحددش `url` → غادي تاخد SITE_URL (الهوم)!
+    // ⚠️ صفحات المنتوجات خاصها openGraph.url + openGraph.images ديالها
+    //    (المشاركة فـ WhatsApp/فيسبوك بلا هادشي = كارت الهوم العام — README #4)
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Laclarc | Premium Lifestyle Store',
     description: 'Explore curated trending items with Free Worldwide Express Shipping.',
     // 🆕 كيورث من opengraph-image تلقائياً — بلا تكرار
+    // 📋 DOC-INHERIT — نفس المنطق: الصفحة اللي كتحدد twitter خاصها تحدد الحقول ديالها
+    // (اختياري: site: '@handle' — إلا عندك حساب رسمي — README #5)
   },
 };
 
@@ -55,12 +74,21 @@ const jsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/icon-512.png`,
   description: 'Curated lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: `${SITE_URL}/?search={search_term_string}`,
-    'query-input': 'required name=search_term_string',
-  },
+  // 🩹 FIX-SEARCH (Task 13) — potentialAction تحيّد مؤقتاً، جوج أسباب:
+  //   (1) الـ target `/?search=` ما متحققش منه بلي كيفتّر فعلاً (السيلكتد ما كيقراش searchParams)
+  //   (2) Google حيّد Sitelinks Search Box نهائياً (2024) — القيمة SEO دابا ≈ 0 (Bing فقط)
+  // الرجوع بعد التحقق من الـ deep-link (الخطوات فـ README #2):
+  // potentialAction: {
+  //   '@type': 'SearchAction',
+  //   target: `${SITE_URL}/?search={search_term_string}`,
+  //   'query-input': 'required name=search_term_string',
+  // },
 };
+
+// 🩹 FIX-ESCAPE (Task 13) — < → \u003c : JSONLD ولى محروس حتى لو فـ المستقبل
+//    تدخل فيه داتا ديناميكية — حدا ما يقدر يسدّ </script> ويحقن كود
+//    (الـ ld+json كيتبلع كـ JSON عادي و \u003c كترجع < عند المحلّل)
+const jsonLdString = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
 // ✨ zoom متاح — WCAG accessibility
 export const viewport: Viewport = {
@@ -79,10 +107,10 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
 
-        {/* ✨ JSON-LD Structured Data */}
+        {/* ✨ JSON-LD Structured Data (FIX-ESCAPE مطبق) */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdString }}
         />
 
         <Providers>
@@ -90,6 +118,7 @@ export default function RootLayout({
         </Providers>
 
         {/* Meta Pixel — ⚡ Phase 3: lazyOnload — التتبع لا يزاحم تفاعل الزبون الأول (INP) */}
+        {/* ✓ Task 13: الـ ID منقّى بأرقام فقط [^\d] — ما فيهاش XSS */}
         {process.env.NEXT_PUBLIC_META_PIXEL_ID && (
           <Script id="meta-pixel" strategy="lazyOnload">
             {`
@@ -108,11 +137,12 @@ export default function RootLayout({
         )}
 
         {/* TikTok Pixel — ⚡ Phase 3: lazyOnload (نفس المبدأ) — مجمد فعلياً بلا env */}
+        {/* ✓ Task 13: الـ ID منقّى بـ [\w-] — ما فيهاش XSS */}
         {process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID && (
           <Script id="tiktok-pixel" strategy="lazyOnload">
             {`
               !function (w, d, t) {
-                w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+                w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._t[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
                 ttq.load('${String(process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID).replace(/[^\w-]/g, '')}');
                 ttq.page();
               }(window, document, 'ttq');

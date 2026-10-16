@@ -1,5 +1,15 @@
 import { ImageResponse } from 'next/og';
 
+// ═══════════════════════════════════════════════════════════════════
+// 🩹 AUDIT v2.0 — Task 13 (app/opengraph-image.tsx)
+// DECISION-EDGE — runtime='edge' بقى كما هو: المحتوى ثابت، Next كيعطي URL
+//                 مُهشّم + cache immutable → كلفة ≈ 0. البديل (توليد عند build)
+//                 موثق فـ README-layout-og-fix.md #6 — ما تبدلش بلا سبب
+// VERIFY-EMOJI  — 🌍🔒 next/og فيه دعم إيموجي مدمج، ولكن تأكد مرة وحدة (README #3)
+//                 إلا خرجو مربعات خاوية → بدّل بلوك الشارات بالنسخة النصية
+//                 الآمنة المحفوظة تحت كتعليق (التبديل = 30 ثانية)
+// ═══════════════════════════════════════════════════════════════════
+
 // 🆕 OG image ديناميكي — يولد عند أول طلب ويُخزن (بلا صيانة)
 // يُستخدم تلقائياً من layout.tsx (يستبدل /hero-image.jpg الغائب)
 export const runtime = 'edge';
@@ -68,7 +78,7 @@ export default function OGImage() {
           Curated Lifestyle · Electric Grooming · Trending Essentials
         </div>
 
-        {/* شارات الثقة */}
+        {/* شارات الثقة — 🩹 VERIFY-EMOJI: إلا 🌍🔒 خرجو مربعات، بدّل هاد البلوك باللي تحته */}
         <div style={{ display: 'flex', gap: 24, fontSize: 24, color: 'rgba(255,255,255,0.75)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             🌍 Free Worldwide Shipping
@@ -77,6 +87,20 @@ export default function OGImage() {
             🔒 Bank-Grade Secure
           </div>
         </div>
+
+        {/* ── النسخة النصية الآمنة (بلا إيموجي — كتترسم 100% فأي بيئة) ──
+        <div style={{ display: 'flex', gap: 24, fontSize: 24, color: 'rgba(255,255,255,0.75)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Free Worldwide Shipping
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+            ·
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Bank-Grade Secure
+          </div>
+        </div>
+        */}
 
         {/* خط سفلي accent */}
         <div
