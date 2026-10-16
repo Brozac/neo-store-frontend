@@ -7,6 +7,7 @@ import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
 import ShoppableReels from './components/ShoppableReels';
 import { IMG } from '@/lib/imageOptimizer';
+import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -39,11 +40,8 @@ function HomeContent() {
   const categoryQuery = searchParams.get('category') || '';
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  const [products, setProducts] = useState<any[]>([]);
   const [dealsProducts, setDealsProducts] = useState<any[]>([]);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const [activeCategory, setActiveCategory] = useState(categoryQuery || 'All');
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
@@ -53,13 +51,10 @@ function HomeContent() {
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [priceRange, setPriceRange] = useState<PriceRangeOption>('all');
 
-  // ═══ Temu-style feed state ═══
-  const [page, setPage] = useState(1);            // next page to fetch
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const busy = useRef(false);                     // 🛡️ double-fire guard
-  const genRef = useRef(0);                       // 🛡️ stale-append guard (rapid category clicks)
+  // ═══ Search branch state (البحث خارج الـ hook — نتائج حتى 200 بلا pagination) ═══
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchGenRef = useRef(0);                 // 🛡️ سباقات البحث السريعة (gen محلي — الـ hook عندو gen ديالو)
 
   // ✨ Session seed — lazy init (SSR-safe: typeof window guard, Tenet #2)
   const [shuffleSeed] = useState<number | null>(() => {
@@ -77,6 +72,36 @@ function HomeContent() {
 
   const categoriesReady = categoryStructure.length > 1;
   const isBrowsing = !searchQuery; // browse feed vs server search results
+
+  // ═══ v5.1 — الكاتب الوحيد للـ browse feed (Tenet #31) ═══
+  // أول صفحة · infinite scroll · dedup · mutex · gen · عدّاد — كلهم في lib/useInfiniteFeed.ts
+  // الباغات المكتشفة (تكرار page=1 · observer الميت · السباقات) عالجة مرة وحدة في الكاتب.
+  const feed = useInfiniteFeed<any>(
+    `${activeCategory}|${categoriesReady}`,
+    isBrowsing && (activeCategory === 'All' || categoriesReady),
+    {
+      buildPageUrl: (page: number) => {
+        const slug = categoryStructure.find(c => c.name === activeCategory)?.slug;
+        return activeCategory !== 'All'
+          ? `${API_URL}/api/products?category=${encodeURIComponent(slug || activeCategory)}&page=${page}`
+          : `${API_URL}/api/products?page=${page}`;
+      },
+      buildCountUrl: () => {
+        if (activeCategory !== 'All' && !categoriesReady) return '';   // نستنى slug map (race kill)
+        const cat = activeCategory !== 'All'
+          ? `&category=${encodeURIComponent(categoryStructure.find(c => c.name === activeCategory)?.slug || activeCategory)}`
+          : '';
+        return `${API_URL}/api/products?count=1${cat}`;
+      },
+      perPage: PER_PAGE,
+      rootMargin: '800px',                                          // نفس السلوك الاستباقي ديال v5
+      shuffle: (arr, pageNum) => shufflePage(arr, pageNum, shuffleSeed),
+    }
+  );
+
+  // مصدر العرض الموحد — browse من الكاتب الوحيد · search من الفرع المحلي
+  const products = isBrowsing ? feed.products : searchResults;
+  const loading = isBrowsing ? feed.loading : searchLoading;
 
   // ── Categories (rail v4) + Deals + Settings — مرة وحدة ──
   useEffect(() => {
@@ -108,111 +133,30 @@ function HomeContent() {
     setActiveCategory(categoryQuery || 'All');
   }, [categoryQuery]);
 
-  // ═══ الصفحة الأولى — browse feed (All أو category — كلاهما 24 من السيرفر) ═══
-  useEffect(() => {
-    if (!isBrowsing) return;                                    // search effect يملك الـ feed
-    if (activeCategory !== 'All' && !categoriesReady) return;   // نستنى slug map (race kill)
-
-    const gen = ++genRef.current;
-    const controller = new AbortController();
-    setLoading(true); setProducts([]); setPage(1); setHasMore(true); setTotalCount(0);
-
-    const slug = categoryStructure.find(c => c.name === activeCategory)?.slug;
-    const url = activeCategory !== 'All'
-      ? `${API_URL}/api/products?category=${encodeURIComponent(slug || activeCategory)}&page=1`
-      : `${API_URL}/api/products?page=1`;
-
-    (async () => {
-      try {
-        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (gen !== genRef.current) return;
-        const arr = Array.isArray(data) ? data : [];
-        setProducts(shufflePage(arr, 1, shuffleSeed));
-        setHasMore(arr.length >= PER_PAGE);
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') console.error('[home-feed]', err);
-      } finally {
-        if (gen === genRef.current) setLoading(false);
-      }
-    })();
-
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBrowsing, activeCategory, categoriesReady, searchQuery, API_URL]);
-
   // ═══ البحث — server-side (فرع search الحي — حتى 200 نتيجة) ═══
+  // 🩹 v5.1: كيب لـ searchResults (الـ hook مجمد حينما disabled) + gen محلي مستقل
   useEffect(() => {
     if (!searchQuery) return;
-    const gen = ++genRef.current;
+    const gen = ++searchGenRef.current;
     const controller = new AbortController();
-    setLoading(true); setProducts([]); setHasMore(false);
+    setSearchLoading(true);
 
     (async () => {
       try {
         const res = await fetch(`${API_URL}/api/products?search=${encodeURIComponent(searchQuery)}`, { cache: 'no-store', signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (gen !== genRef.current) return;
-        setProducts(Array.isArray(data) ? data : []);
+        if (gen !== searchGenRef.current) return;
+        setSearchResults(Array.isArray(data) ? data : []);
       } catch (err: any) {
         if (err?.name !== 'AbortError') console.error('[home-search]', err);
       } finally {
-        if (gen === genRef.current) setLoading(false);
+        if (gen === searchGenRef.current) setSearchLoading(false);
       }
     })();
 
     return () => controller.abort();
   }, [searchQuery, API_URL]);
-
-  // ═══ عدّاد الحقيقة — "of 27,126" / "of 3,528" ═══
-  useEffect(() => {
-    if (!isBrowsing) { setTotalCount(0); return; }
-    if (activeCategory !== 'All' && !categoriesReady) return;
-    const cat = activeCategory !== 'All'
-      ? `&category=${encodeURIComponent(categoryStructure.find(c => c.name === activeCategory)?.slug || activeCategory)}`
-      : '';
-    fetch(`${API_URL}/api/products?count=1${cat}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setTotalCount(d?.count || 0))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBrowsing, activeCategory, categoriesReady, API_URL]);
-
-  // ═══ Infinite scroll — القلب (Temu signature) ═══
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !isBrowsing || !hasMore || loading) return;
-    const myGen = genRef.current;
-
-    const io = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting || busy.current) return;
-      busy.current = true;
-      setLoadingMore(true);
-
-      const slug = categoryStructure.find(c => c.name === activeCategory)?.slug;
-      const url = activeCategory !== 'All'
-        ? `${API_URL}/api/products?category=${encodeURIComponent(slug || activeCategory)}&page=${page}`
-        : `${API_URL}/api/products?page=${page}`;
-
-      fetch(url, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-        .then((data: any[]) => {
-          if (genRef.current !== myGen) return; // context تبدل في نص الطيران — تجاهل
-          const arr = Array.isArray(data) ? data : [];
-          setProducts(prev => [...prev, ...shufflePage(arr, page, shuffleSeed)]);
-          setHasMore(arr.length >= PER_PAGE);
-          setPage(p => p + 1);
-        })
-        .catch(e => console.error('[home-scroll]', e))
-        .finally(() => { busy.current = false; setLoadingMore(false); });
-    }, { rootMargin: '800px' }); // تحميل استباقي — بلا spinner محسوس
-
-    io.observe(el);
-    return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, hasMore, loading, activeCategory, isBrowsing, categoryStructure, shuffleSeed, API_URL]);
 
   // ✨ Trending (آلات الحلاقة أولاً + Fallback)
   const trendingProducts = useMemo(() => {
@@ -402,7 +346,7 @@ function HomeContent() {
               </h2>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
                 Showing <strong className="text-temu-black">{displayProducts.length}</strong> of{' '}
-                {(isBrowsing && totalCount) ? totalCount.toLocaleString() : filteredProducts.length} items
+                {(isBrowsing && feed.totalCount) ? feed.totalCount.toLocaleString() : filteredProducts.length} items
               </p>
             </div>
 
@@ -465,6 +409,19 @@ function HomeContent() {
 
         {/* 6. شبكة المنتجات */}
         <div className="mb-4">
+          {/* 🩹 v5.1 — خطأ أول الصفحة (قاتل) — retry داخلي بلا reload */}
+          {!loading && feed.error && (
+            <div className="bg-white p-8 rounded-2xl border border-temu-gray-border-light shadow-xs text-center mb-4 space-y-3">
+              <p className="text-temu-black font-bold text-sm">⚠️ {feed.error}</p>
+              <button
+                type="button"
+                onClick={feed.retry}
+                className="bg-temu-orange hover:bg-temu-orange-bright text-white px-5 py-2.5 rounded-full font-bold text-xs transition active:scale-95 shadow-md"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
           {loading ? (
             <div className="flex justify-center py-16">
               <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
@@ -494,7 +451,7 @@ function HomeContent() {
                 />
               ))}
             </div>
-          ) : (
+          ) : !feed.error ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-temu-gray-border-light shadow-sm space-y-3">
               <span className="text-3xl">🔍</span>
               <p className="text-temu-gray-text font-bold text-sm">No products found matching these filters.</p>
@@ -512,16 +469,16 @@ function HomeContent() {
                 Clear All Filters
               </button>
             </div>
-          )}
+          ) : null}
 
           {/* 🎯 Sentinel — Temu-style infinite feed (بدل زر Load More) */}
-          <div ref={sentinelRef} className="h-10" />
-          {loadingMore && (
+          <div ref={feed.sentinelRef} className="h-10" />
+          {feed.loadingMore && (
             <div className="flex justify-center py-6">
               <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
-          {isBrowsing && !hasMore && !loading && products.length > 0 && (
+          {isBrowsing && feed.done && !loading && products.length > 0 && (
             <p className="text-center text-xs text-gray-400 py-8">
               🏁 You&apos;ve reached the end — {displayProducts.length.toLocaleString()} products
             </p>

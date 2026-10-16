@@ -1,9 +1,29 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+// ═══════════════════════════════════════════════════════════════════
+// all-products v2.0 — مهاجر للكاتب الوحيد (Tenet #31) — الباب الثالث والأخير
+// ═══════════════════════════════════════════════════════════════════
+// تقييم صادق: هذا كان أنظف النسخ الثلاثة — أول دفعة كانت كتمر عبر loadMore(1)
+// نفسها = تقدم الصفحة صحيح (ماكانش عندو باغ تكرار page=1) + حرس واحد لكل
+// المسارات. ولكن كان النسخة الثالثة من نفس المنطق.
+//
+// اللي عطاه الـ hook مجاناً:
+//   🛡️ dedup بالـ id — OFFSET-shift (massSync كيدخل منتجات بين صفحتين) مات
+//   🛡️ حرس Array.isArray موحد (كان spread بلا حارس)
+//   🩹 error/moreError منفصلين — فشل أول صفحة ≠ فشل صفحة زيادة
+//      · moreError: الـ grid كيبقى كامل + auto-recovery بالسكرول أو الزر
+//   🩹 retry داخلي بلا تجميد الحالة
+//   🆕 🆕 العدّاد totalCount ولّى معروض فعلاً — الباكلوج الموثق "سطران" تسدّ
+//      (كان كيتجاب من السيرفر وعمرو ما كيتعرض — dead code)
+//   ✨ spinner من أول paint (كان loading=false = أول جلب بلا مؤشر)
+//
+// اللي تحافظ عليه: retry UX (Tenet #14) · prefetch 600px · end states · كل الـ JSX
+// ═══════════════════════════════════════════════════════════════════
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { IMG } from '@/lib/imageOptimizer';
+import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 
 interface P {
   id: number;
@@ -18,68 +38,24 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrend
 const PER_PAGE = 24;
 
 export default function AllProducts() {
-  const [items, setItems] = useState<P[]>([]);
-  const [page, setPage] = useState(1);
-  const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [retryable, setRetryable] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const sentinel = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false); // 🛡️ double-fire guard — IntersectionObserver fires twice on mobile
+  // ═══ الكاتب الوحيد — التوصيل فقط ═══
+  const feed = useInfiniteFeed<P>('all-products', true, {
+    buildPageUrl: (page) => `${API}/api/products?page=${page}`,
+    buildCountUrl: () => `${API}/api/products?count=1`,
+    perPage: PER_PAGE,
+  });
 
-  const loadMore = useCallback(async (p: number) => {
-    if (loadingRef.current || done) return;
-    loadingRef.current = true;
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/api/products?page=${p}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: P[] = await res.json();
-      setItems((prev) => [...prev, ...data]);
-      if (data.length < PER_PAGE) setDone(true);
-      else setPage(p + 1);
-    } catch (e) {
-      console.error('[all-products]', e);
-      setRetryable(true); // 🩹 Tenet #14: network failure ≠ silent end — retry button below
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
-    }
-  }, [done]);
-
-  const retry = useCallback(() => {
-    setRetryable(false);
-    loadMore(page);
-  }, [page, loadMore]);
-
-  // first batch
-  useEffect(() => {
-    loadMore(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // observer — appends one page each time the sentinel enters the viewport
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!el || done || retryable) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore(page);
-      },
-      { rootMargin: '600px' } // prefetch before reaching the edge — no visible spinner
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [page, done, retryable, loadMore]);
-  
-
-  // effect (مرة عند الـ mount):
-  useEffect(() => {
-    fetch(`${API}/api/products?count=1`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setTotalCount(d?.count || 0))
-      .catch(() => {});
-  }, [API]);
+  const {
+    products: items,   // alias — الـ JSX كيبقى كما هو
+    loading,
+    error,
+    moreError,
+    done,
+    totalCount,
+    sentinelRef,
+    loadMore,
+    retry,
+  } = feed;
 
   return (
     <main className="min-h-screen bg-temu-offwhite">
@@ -90,7 +66,9 @@ export default function AllProducts() {
             <h1 className="text-xl font-black text-temu-black tracking-tight">🛍️ All Products</h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Browse the full catalog — {items.length}
-              {done ? ' products' : '+'}
+              {done
+                ? ' products'
+                : (totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : '+')}
             </p>
           </div>
           <Link
@@ -139,14 +117,18 @@ export default function AllProducts() {
         </div>
 
         {/* Sentinel + states */}
-        <div ref={sentinel} className="h-10" />
-        {loading && !retryable && (
+        <div ref={sentinelRef} className="h-10" />
+
+        {loading && (
           <div className="text-center py-6">
             <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         )}
-        {retryable && !done && (
-          <div className="text-center py-6">
+
+        {/* 🩹 v2.0 — فشل أول صفحة (قاتل) — retry داخلي */}
+        {error && !loading && (
+          <div className="text-center py-6 space-y-3">
+            <p className="text-xs font-bold text-temu-black">⚠️ {error}</p>
             <button
               onClick={retry}
               className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
@@ -155,12 +137,27 @@ export default function AllProducts() {
             </button>
           </div>
         )}
+
+        {/* 🩹 v2.0 — فشل صفحة زيادة (غير قاتل): الـ grid كامل قدامك —
+            الـ retry بالزر أو غير كمّل سكرول (الـ observer حي وكيأكد أوتوماتيك) */}
+        {moreError && !loading && !error && (
+          <div className="text-center py-6 space-y-3">
+            <p className="text-xs font-bold text-temu-black">⚠️ {moreError}</p>
+            <button
+              onClick={loadMore}
+              className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
+            >
+              ↻ Retry
+            </button>
+          </div>
+        )}
+
         {done && items.length > 0 && (
           <p className="text-center text-xs text-gray-400 py-8">
             🏁 You&apos;ve reached the end — {items.length} products
           </p>
         )}
-        {done && items.length === 0 && (
+        {done && items.length === 0 && !error && (
           <p className="text-center text-sm text-gray-500 py-16">
             No products available right now.
           </p>

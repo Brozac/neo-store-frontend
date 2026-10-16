@@ -1,9 +1,27 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+// ═══════════════════════════════════════════════════════════════════
+// CategoryClient v2.0 — مهاجر للكاتب الوحيد (Tenet #31)
+// ═══════════════════════════════════════════════════════════════════
+// كل منطق الـ feed (أول صفحة · observer · Load More · dedup · mutex · gen
+// · عدّاد · retry) عايش في lib/useInfiniteFeed.ts — هنا غير التوصيل والعرض.
+//
+// الباغات اللي عالجها الـ hook بلا مكان لهذا الملف:
+//   🩹 تكرار page=1 عند أول scroll/click (نفس باغ الهوم — setPage(2))
+//   🩹 FIX-DEAD: الـ observer ميت على cold load (loading خارج الـ deps)
+//      — التشخيص الحقيقي ديال "حساس على بعض المتصفحات" تاع M#58
+//   🛡️ سباق الزر/observer (حراس منفصلين → mutex واحد)
+//   🛡️ تلوث cross-category (genRef في كل المسارات)
+//   🩹 الخطأ اليتيم (نجاح loadMore كيمسح error) + الخطأ غير القاتل ولّى
+//      inline (moreError) — ماكيمسحش الـ grid
+//   🩹 retry داخلي — window.location.reload مات (لا مسح للجلسة والسكرول)
+// ═══════════════════════════════════════════════════════════════════
+
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
+import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 
 interface Product {
   id: string | number;
@@ -25,107 +43,34 @@ export default function CategoryClient() {
   const slugPath = slugArray.join('/');
   const slug = slugArray[slugArray.length - 1];
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [page, setPage] = useState(1);
-  const [done, setDone] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState('');
-  // 🩹 v1.3 — totalCount بـ useState (يُحدّث الواجهة فعلياً)
-  const [totalCount, setTotalCount] = useState(0);
-
-  const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
-
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   // ✨ Tenet #4 — بلا hardcoded URLs
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-  // ── العدّاد (مستقل وخفيف — للـ header) ──
-  // 🆕 v1.3 — useState: العدّاد كيحدّث الواجهة فعلياً عند وصول القيمة
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`)
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.count) setTotalCount(d.count); })
-      .catch(() => {}); // تجميلي — الصفحة ما تعتمدش عليه، والصمت هنا مقصود وموثق
-  }, [slugPath, API_BASE_URL]);
+  // ═══ الكاتب الوحيد — التوصيل فقط ═══
+  const feed = useInfiniteFeed<Product>(slugPath, true, {
+    buildPageUrl: (page) =>
+      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`,
+    buildCountUrl: () =>
+      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`,
+    perPage: PER_PAGE,
+  });
 
-  // ── الصفحة الأولى (AbortController ضد race عند تغيير الفئة) ──
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true); setError(''); setProducts([]); setDone(false); setPage(1);
+  const {
+    products,
+    loading,
+    loadingMore,
+    error,
+    moreError,
+    done,
+    totalCount,
+    sentinelRef,
+    loadMore,
+    retry,
+  } = feed;
 
-    (async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=1`,
-          { cache: 'no-store', signal: controller.signal }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const arr = Array.isArray(data) ? data : [];
-        setProducts(arr);
-        if (arr.length < PER_PAGE) setDone(true);
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') {
-          console.error('Error fetching category products:', err);
-          setError('Unable to load products right now. Please check your connection.');
-        }
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [slugPath, API_BASE_URL]);
-
-  // ── 🩹 v1.3 — Load More مضمون (بلا IntersectionObserver حساسية) ──
-  const loadMore = async () => {
-    if (loadingMore || done) return;
-    setLoadingMore(true);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const arr = Array.isArray(data) ? data : [];
-      setProducts(prev => [...prev, ...arr]);
-      if (arr.length < PER_PAGE) setDone(true);
-      else setPage(p => p + 1);
-    } catch (err: any) {
-      console.error('[category-loadmore]', err);
-      setError('Failed to load more products. Please try again.');
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  // ── Infinite scroll — 🩹 v1.3 — مدمج كخيار تلقائي (كيعمل، مع Load More كاحتياطي) ──
-  const sentinel = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false);   // 🛡️ double-fire guard
-
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!el || done || error) return;
-    const io = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting || loadingRef.current) return;
-      loadingRef.current = true;
-      setLoadingMore(true);
-      fetch(`${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`)
-        .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((data: Product[]) => {
-          setProducts(prev => [...prev, ...data]);
-          if (!Array.isArray(data) || data.length < PER_PAGE) setDone(true);
-          else setPage(p => p + 1);
-        })
-        .catch(e => console.error('[category-scroll]', e))
-        .finally(() => { loadingRef.current = false; setLoadingMore(false); });
-    }, { rootMargin: '600px' });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [page, done, error, slugPath, API_BASE_URL]);
+  const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -157,12 +102,12 @@ export default function CategoryClient() {
           )}
         </div>
 
-        {/* حالة الخطأ منفصلة — ماكتلبسش على "لا يوجد منتجات" */}
+        {/* حالة الخطأ القاتل منفصلة — retry داخلي (بلا reload — الجلسة والسكرول كيبقاو) */}
         {error && (
           <div className="bg-white p-10 rounded-temu-sm shadow-sm text-center border border-temu-gray-border-light">
             <p className="text-temu-black font-semibold mb-2">⚠️ {error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={retry}
               className="inline-block bg-temu-orange text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
             >
               Try Again
@@ -214,8 +159,8 @@ export default function CategoryClient() {
               ))}
             </div>
 
-            {/* 🩹 v1.3 — Sentinel (infinite scroll) + Load More button (مضمون) */}
-            <div ref={sentinel} className="h-10" />
+            {/* Sentinel (infinite scroll) — الـ observer كيتصاوب فعلاً (FIX-DEAD مغروز في الـ hook) */}
+            <div ref={sentinelRef} className="h-10" />
 
             {loadingMore && (
               <div className="text-center py-6">
@@ -223,7 +168,14 @@ export default function CategoryClient() {
               </div>
             )}
 
-            {/* ✨ v1.3 — Load More صريح — مضمون 100% بلا IntersectionObserver حساسية */}
+            {/* 🩹 v2.0 — moreError غير قاتل: inline — الـ grid كيبقى كامل والزر هو الـ retry */}
+            {moreError && products.length > 0 && !loadingMore && (
+              <p className="text-center text-xs font-bold text-temu-black pb-2">
+                ⚠️ {moreError} Press Load More to retry.
+              </p>
+            )}
+
+            {/* Load More صريح — dual mode (observer تلقائي + زر مضمون 100%) */}
             {!done && !loadingMore && products.length > 0 && (
               <div className="flex justify-center py-6">
                 <button
@@ -235,7 +187,7 @@ export default function CategoryClient() {
               </div>
             )}
 
-            {/* ✨ v1.3 — End state */}
+            {/* End state */}
             {done && products.length > 0 && (
               <p className="text-center text-xs text-gray-400 py-8">
                 🏁 {totalCount > 0
