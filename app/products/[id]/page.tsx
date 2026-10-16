@@ -17,6 +17,13 @@ export const revalidate = 3600;
 // DOC-PRIORITY — توثيق مثبت بالبرهان الحي للتفاعل مع opengraph-image.tsx ديال الجذر + تحذير الحيد
 // locale       — og:locale كان غايب من صفحات المنتوجات (shallow-merge كيبدل الـ openGraph كامل)
 
+// ═══ v2.2 (Task 15-b) — الإضافة ═══
+// FIX-OGWS     — أوصاف CJ متعددة الأسطر ('\n <p><br></p>\n'...) كانت كتوصل للوسوم كتبدا
+//                بـ '\n Features:\n \n' (مثبت حي 2026-10-17: og:description ديال 78299/77003)
+//                → التطبيع ديال whitespace قبل substring: 160 حرف كاملين مفيدين
+//                فمعاينة الشار (WhatsApp/FB) و snippet ديال جوجل نقي بلا أسطر خاوية
+//                + كيرجع وصف فقط-مسافات للـ fallback إلا كان الوصف كولشي HTML خاوي
+
 // ✨ FIX-SITEURL — مصدر واحد للدومين (اتساق مع layout.tsx Task 13)
 const SITE_URL = (process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com').replace(/\/+$/, '');
 
@@ -96,7 +103,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!product) return { title: 'Product Not Found | Laclarc' };
 
-  const cleanDescription = product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160) || 'Buy premium quality products at Laclarc Store with Worldwide Shipping.';
+  // ✨ FIX-OGWS (v2.2): تطبيع whitespace قبل substring — الأوصاف متعددة الأسطر ما كياكلوش الميزانية
+  const cleanDescription = product.description?.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 160) || 'Buy premium quality products at Laclarc Store with Worldwide Shipping.';
   const primaryImage = httpsify(product.image_url || product.image || `${SITE_URL}/icon-512.png`);
 
   return {
@@ -156,7 +164,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   //    جوجل كيعاقب review markup بلا مراجعات معروضة — manual action محتمل على الموقع كامل.
   //    الترقية الحقيقية (Backlog): aggregate من /api/reviews server-side — يتضمن فقط
   //    إلا كانت مراجعات حقيقية معروضة فنفس الـ ISR render.
-  const cleanDesc = product.description?.replace(/<[^>]*>?/gm, '').substring(0, 200)
+  // ✨ FIX-OGWS (v2.2): نفس التطبيع للـ JSON-LD description
+  const cleanDesc = product.description?.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 200)
     || 'Buy premium quality products at Laclarc with FREE Worldwide Shipping.';
   const gallery: string[] = Array.isArray(product.images)
     ? product.images.filter((i: unknown): i is string => typeof i === 'string' && i.length > 0)
