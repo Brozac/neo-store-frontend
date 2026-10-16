@@ -12,6 +12,21 @@ import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 
+// ════════════════════════════════════════════════════════════════
+// ProductDetailsClient v1.1 — مراجعة عميقة سطر بسطر (Task 9)
+//
+// 🩹 P0 مالي: tiers الخصم (15%/25%) كانوا client-only — prepareSecureItems كيجيب
+//    الأسعار من DB (client price مهمل كلياً — Bank-Grade) → السلة كتعرض خصم
+//    والـ checkout كيحسب كامل = mismatch مالي. نفس فئة M#15 (applyWheelDiscount
+//    المحذوف — "تسرب مالي ميت"). دابا: الكمية فقط · السعر دايماً DB.
+//    الخصم الحقيقي = توسعة سيرفر-side (Backlog: qty-tier pricing فـ prepareSecureItems).
+// 🩹 P0 Trust×Google: aggregateRating المزيف (4.9/38) من page.tsx محذوف — Google spam policy.
+// 🛡️ P1: reviews بلا Array.isArray guard كان يكسر الصفحة البيضاء على error shape
+// 🛡️ P2: regex-escape للحجم · parse-safe للمفضلة + cap 100 · noopener · أبواب صامتة
+// 🧹: spans خاويين حيدو (نفس نمط HeroSection — إيموجيات طايحة)
+// ⚠️ M#45 موثق (ما تبدلش — قرار المالك): "insured delivery" · "30-Day Guarantee"
+// ════════════════════════════════════════════════════════════════
+
 // 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (social-problem وهمي: أسماء/مدن عشوائية)
 // 🆕 Phase 3 — مكونات ما تشافش في أول paint — تُحمّل عند الحاجة فقط
 const FrequentlyBoughtTogether = dynamic(
@@ -133,17 +148,22 @@ export default function ProductDetailsClient({
 
       if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) return null;
 
+      // 🛡️ escape regex — حجم فيه رموز خاص ("S/M", "4 (Kids)") كان يرمي → variant null → vid فاضي
+      const sizeRx = selectedSize
+        ? new RegExp(`\\b${selectedSize.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+        : null;
+
       const exactMatch = parsedVariants.find((v: any) => {
         const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
         const matchesColor = selectedColor ? name.includes(selectedColor.toLowerCase()) : true;
-        const matchesSize = selectedSize ? new RegExp(`\\b${selectedSize}\\b`, 'i').test(name) : true;
+        const matchesSize = sizeRx ? sizeRx.test(name) : true;
         return matchesColor && matchesSize;
       });
       if (exactMatch) return exactMatch;
 
       const sizeMatch = parsedVariants.find((v: any) => {
         const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
-        return selectedSize ? new RegExp(`\\b${selectedSize}\\b`, 'i').test(name) : false;
+        return sizeRx ? sizeRx.test(name) : false;
       });
       if (sizeMatch) return sizeMatch;
 
@@ -153,18 +173,27 @@ export default function ProductDetailsClient({
     }
   }, [product.variants, selectedColor, selectedSize]);
 
+  // 🛡️ parse-safe للمفضلة — localStorage فاسد ما يكسرش الزر (نفس نمط CartContext v1.1)
+  //    + cap 100 = مطابق لـ by-ids LIMIT 100 (API)
+  const parseFavorites = (): string[] => {
+    try {
+      const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+      return Array.isArray(favs) ? favs.map(String).slice(0, 100) : [];
+    } catch (e) {
+      console.warn('favorites: corrupted localStorage — reset', e);
+      return [];
+    }
+  };
+
   useEffect(() => {
     const controller = new AbortController();
 
-    try {
-      const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
-      setFavoriteIds(favs);
-    } catch (e) {}
+    setFavoriteIds(parseFavorites());
 
     fetch(`${API_BASE_URL}/api/reviews/${product.id}`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data) setReviews(data); })
-      .catch(() => {});
+      .then(data => { setReviews(Array.isArray(data) ? data : []); }) // 🛡️ error shape غير-array كان يكسر الصفحة كاملة
+      .catch((err) => { if (err?.name !== 'AbortError') console.warn('reviews: fetch failed', err); });
 
     return () => {
       controller.abort();
@@ -197,19 +226,16 @@ export default function ProductDetailsClient({
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100)
     : 0;
 
-  const discountedUnitPrice = useMemo(() => {
-    if (quantity >= 3) return safePrice * 0.75;
-    if (quantity === 2) return safePrice * 0.85;
-    return safePrice;
-  }, [quantity, safePrice]);
+  // 🩹 P0 مالي: discountedUnitPrice (×0.85/×0.75) محذوف — خصم client-only ما كيتطبقش
+  //    فالـ checkout (prepareSecureItems من DB) — تفاصيل فالهيدر. Backlog: qty-tier سيرفر-side.
 
   const handleToggleFavorite = (productId: string | number) => {
     const idStr = String(productId);
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = parseFavorites();
     const newFavorites = favorites.includes(idStr)
       ? favorites.filter((f: string) => f !== idStr)
       : [...favorites, idStr];
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    localStorage.setItem('favorites', JSON.stringify(newFavorites.slice(0, 100)));
     setFavoriteIds(newFavorites);
   };
 
@@ -220,7 +246,7 @@ export default function ProductDetailsClient({
       id: product.id,
       title: product.title,
       name: product.title,
-      price: parseFloat(discountedUnitPrice.toFixed(2)),
+      price: safePrice, // 🩹 P0: السعر الحقيقي من DB — السلة والـ checkout كيتلاقاو
       quantity,
       image: mainImageSrc,
       image_url: mainImageSrc,
@@ -336,7 +362,7 @@ export default function ProductDetailsClient({
 
               {!showVideo && (
                 <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
-                  <span></span> Tap to Zoom
+                  Tap to Zoom
                 </div>
               )}
             </div>
@@ -486,8 +512,9 @@ export default function ProductDetailsClient({
               <DeliveryEstimator />
 
               <div className="space-y-2.5 my-6">
+                {/* 🩹 P0 مالي: "Bundle Savings" كان خصم وهمي — كيتعرض فالسلة ويختفى فالـ checkout */}
                 <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
-                  ⚡ Exclusive Bundle Savings:
+                  ⚡ Quantity:
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -517,17 +544,14 @@ export default function ProductDetailsClient({
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                      Popular 🔥
-                    </span>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#8B78C6]">Save 15%</span>
+                      <span className="font-extrabold text-xs text-[#8B78C6]">Duo</span>
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 0.85 * 2).toFixed(2)}</span>
+                    <span className="text-sm font-black text-[#FF6B9D] mt-1">${(safePrice * 2).toFixed(2)}</span>
                   </div>
 
                   <div
@@ -538,17 +562,14 @@ export default function ProductDetailsClient({
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-linear-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow">
-                      Best Value
-                    </span>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-emerald-600">Save 25%</span>
+                      <span className="font-extrabold text-xs text-emerald-600">Trio</span>
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#8B78C6] bg-[#8B78C6]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 0.75 * 3).toFixed(2)}</span>
+                    <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -566,7 +587,7 @@ export default function ProductDetailsClient({
                   {mainAdded ? (
                     <><span>✓</span> Added to Bag — View Cart →</>
                   ) : (
-                    <><span></span> Add to Cart</>
+                    <>Add to Cart</>
                   )}
                 </button>
                 <button
@@ -584,7 +605,7 @@ export default function ProductDetailsClient({
                   id: product.id,
                   title: product.title,
                   name: product.title,
-                  price: parseFloat(discountedUnitPrice.toFixed(2)),
+                  price: safePrice, // 🩹 P0: DB-true — السيرفر هو الحكم (prepareSecureItems)
                   image: mainImageSrc,
                   color: selectedColor,
                   size: selectedSize,
@@ -632,7 +653,7 @@ export default function ProductDetailsClient({
           <div className="text-sm text-temu-gray-text leading-relaxed">
             {activeTab === 'details' && (
               <div>
-                <p className="mb-4">{stripHtml(product.description) || 'High quality craft with strict manufacturing standards.'}</p>
+                <p className="mb-4">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
                 {detailBullets.length > 0 && (
                   <ul className="space-y-1.5 list-disc list-inside">
                     {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
@@ -641,8 +662,9 @@ export default function ProductDetailsClient({
               </div>
             )}
 
+            {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
             {activeTab === 'materials' && (
-              <p>{product.material || 'Engineered with durable, high-grade hypoallergenic materials.'}</p>
+              <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
             )}
 
             {activeTab === 'size' && (
@@ -651,6 +673,8 @@ export default function ProductDetailsClient({
 
             {activeTab === 'shipping' && (
               <div className="space-y-2">
+                {/* ⚠️ M#45 backlog (توثيق — قرار المالك): "insured" بلا سند + "24–48h"
+                    خاصو يتقاطع مع predictDelivery الحقيقي (shipTruth median) */}
                 <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
                 <p className="text-xs text-temu-gray-light">Typical transit time: 7–15 business days depending on destination country.</p>
               </div>
@@ -717,7 +741,7 @@ export default function ProductDetailsClient({
                       <div
                         key={pIdx}
                         className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
-                        onClick={() => window.open(photoUrl, '_blank')}
+                        onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
                         title="Click to view full photo"
                       >
                         <img
@@ -911,19 +935,8 @@ export default function ProductDetailsClient({
             <button
               type="button"
               onClick={() => {
-                const resolvedVid = matchedVariant?.vid || '';
-                addToCart({
-                  id: product.id,
-                  title: product.title,
-                  name: product.title,
-                  price: parseFloat(discountedUnitPrice.toFixed(2)),
-                  quantity,
-                  image: mainImageSrc,
-                  image_url: mainImageSrc,
-                  color: selectedColor,
-                  size: selectedSize,
-                  vid: resolvedVid
-                }, quantity);
+                // 🩹 Tenet #31: كاتب واحد للإلحاق — كان نسخة مكررة ديال handleAddToCart (طبقة divergence جاهزة)
+                handleAddToCart();
                 router.push('/cart');
               }}
               className="bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"

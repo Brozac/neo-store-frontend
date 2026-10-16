@@ -1,8 +1,42 @@
 'use client';
 
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * Laclarc ProductCard — v2.0 (Task 10 Review)
+ * ═══════════════════════════════════════════════════════════════
+ * 🔴 FIX-IMG (الاكتشاف الكبير) — Image Beast كان مبنيًا وغير موصول بشيء.
+ *    الكارت كان يخدم الصورة الخام من CJ CDN (قياسكم الموثق: 259,677B)
+ *    بدل transform الخاص بـ OSS (→ 15,696B، −94%).
+ *    الآن: IMG.card() على كل صورة كارت —
+ *    صفحة feed فيها 30 كارت: ~7.8MB صور → ~0.5MB.
+ * 🩹 FIX-LAZY — loading="lazy" + decoding="async": الـ feed اللانهائي
+ *    لا يجب أن يحمّل كل الصور دفعة واحدة. eager?: boolean اختياري
+ *    (أول 4 كروت في أول صفحة = مرشحو LCP — تمررها من الـ feeds:
+ *    <ProductCard product={p} eager={i < 4} />)
+ * 🩹 FIX-LINK — <Link> حقيقي حول الصورة + العنوان + السعر:
+ *    · middle-click / فتح في تبويب جديد يخدم (كان مستحيلاً على div onClick)
+ *    · keyboard: Tab + Enter (div كان غير قابل للتركيز أصلاً)
+ *    · الروابط ظاهرة للزواحف (crawlable)
+ *    · prefetch={false}: feed فيه عشرات الكروت لا يسبق عشرات صفحات المنتج
+ * 🩹 FIX-SILENT — catch الفارغ ({}) ممنوع (Tenet: silence in catch forbidden)
+ *    → console.error ينجو من removeConsole (exclude: ['error']) في production
+ * 🩹 FIX-ZERO — سعر مفقود كان يعرض "$0.00" = قاتل ثقة → الصف يختفي
+ * ───────────────────────────────────────────────────────────────
+ * محفوظ كما هو: TRUST FIX (خصم من original_price الحقيقي فقط، 1–89%)
+ * · isTouched/is-active · quick-add مع defaultVid · stopPropagation الزر
+ * · aspect-square الحاوية = صفر CLS (كان صحيحاً من قبل)
+ * ───────────────────────────────────────────────────────────────
+ * ⚠️ تذكير أمني (خارج نطاق هذا الملف لكن حياتي): السعر هنا للعرض/السلة فقط.
+ *    إعادة التسعير server-side إلزامية في checkout (server.js) قبل أي
+ *    PaymentIntent — لا تثق أبداً في سعر قادم من العميل.
+ * ═══════════════════════════════════════════════════════════════
+ */
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useCart } from '../context/CartContext';
+import { IMG } from '../../lib/imageOptimizer';
 
 interface Product {
   id: string | number;
@@ -21,9 +55,11 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   isTouched?: boolean;
+  /** 🩹 FIX-LAZY: true = eager للصورة (أول كروت أول شاشة — مرشحو LCP) */
+  eager?: boolean;
 }
 
-export default function ProductCard({ product, isTouched }: ProductCardProps) {
+export default function ProductCard({ product, isTouched, eager = false }: ProductCardProps) {
   const router = useRouter();
   const { addToCart } = useCart();
   const [isAdded, setIsAdded] = useState(false);
@@ -41,7 +77,10 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
       try {
         const v = typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants;
         if (Array.isArray(v) && v[0]?.vid) defaultVid = v[0].vid;
-      } catch (e) {}
+      } catch (err) {
+        // 🩹 FIX-SILENT — Tenet: catch بلا صوت ممنوع. error-level ينجو من removeConsole
+        console.error(`[ProductCard] variants JSON parse failed (product ${product.id})`, err);
+      }
     }
 
     addToCart({
@@ -74,7 +113,12 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
     }
   }
 
-  const imgSrc = product.image_url || product.image || '/placeholder.jpg';
+  // 🩹 FIX-IMG — كانت الصورة الخام تُقدَّم مباشرة (259KB) — الآن OSS transform 400w (~15KB)
+  //    ملاحظة: IMG.card يقبل null ويرجع fallback داخلي؛ نمرر placeholder.jpg كي نحافظ
+  //    على نفس الـ fallback القديم بالحرف (local paths تمر عبر getOptimizedImage بلا تغيير)
+  const imgSrc = IMG.card(product.image_url || product.image || '/placeholder.jpg');
+
+  const productUrl = `/products/${product.id}`;
 
   return (
     <div
@@ -84,12 +128,21 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
       }`}
       onClick={handleCardClick}
     >
-      <div>
+      {/* 🩹 FIX-LINK — Link حقيقي (كان div فقط): new-tab / keyboard / SEO.
+          stopPropagation يمنع التنفيذ المزدوج (Link يتكفل بالتنقل + div onClick) */}
+      <Link
+        href={productUrl}
+        prefetch={false}
+        onClick={(e) => e.stopPropagation()}
+        className="block"
+      >
         <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
-          {/* ✨ استبدال Image بـ img */}
+          {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري) */}
           <img
             src={imgSrc}
             alt={product.title || 'Product'}
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
             className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
           {discountText && (
@@ -104,18 +157,21 @@ export default function ProductCard({ product, isTouched }: ProductCardProps) {
             {product.title}
           </h3>
 
-          <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-            <span className="text-base font-black text-temu-error">
-              ${safePrice.toFixed(2)}
-            </span>
-            {displayOriginalPrice > safePrice && (
-              <span className="text-[11px] text-temu-gray-light line-through font-medium">
-                ${displayOriginalPrice.toFixed(2)}
+          {/* 🩹 FIX-ZERO — بلا سعر حقيقي ما كاينش "$0.00" */}
+          {safePrice > 0 && (
+            <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+              <span className="text-base font-black text-temu-error">
+                ${safePrice.toFixed(2)}
               </span>
-            )}
-          </div>
+              {displayOriginalPrice > safePrice && (
+                <span className="text-[11px] text-temu-gray-light line-through font-medium">
+                  ${displayOriginalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      </Link>
 
       <div className="p-3 pt-0">
         <button

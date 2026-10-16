@@ -18,6 +18,15 @@
 //   ✨ spinner من أول paint (كان loading=false = أول جلب بلا مؤشر)
 //
 // اللي تحافظ عليه: retry UX (Tenet #14) · prefetch 600px · end states · كل الـ JSX
+//
+// 🩹 v2.1 — Task 11 (تطبيق قرار eager + توحيد قواعد الثقة مع ProductCard):
+//   FIX-EAGER — loading كان lazy على الكل حتى أول 4 كروت. هذه الصفحة بلا hero:
+//               أول كارت هنا هو مرشح LCP رقم واحد → loading={i < 4 ? 'eager' : 'lazy'}
+//               (i مطلق في المصفوفة المتراكمة — دفعات السكرول المضافة تلقائياً lazy)
+//   FIX-TRUST — strikethrough كان بلا سقف: original_price مزيف من CJ (anchor pricing)
+//               كان يعرض خصومات 9x% — الآن نفس قاعدة ProductCard بالحرف: يظهر فقط 1–89%
+//   FIX-ZERO  — $0.00 على سعر مفقود كان قاتل ثقة — الصف يختفي (نفس ProductCard)
+//   ملاحظة موثقة: مع unoptimized:true لا يوجد srcset → sizes معطلة اليوم، وتخدم يوم الـ flip
 // ═══════════════════════════════════════════════════════════════════
 
 import Image from 'next/image';
@@ -81,7 +90,13 @@ export default function AllProducts() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {items.map((p) => (
+          {items.map((p, i) => {
+            // 🩹 FIX-TRUST + FIX-ZERO — نفس قواعد ProductCard بالحرف (قاعدة واحدة في الموقع كله)
+            const price = Number(p.price) || 0;
+            const orig = Number(p.original_price) || 0;
+            const disc = orig > price ? Math.round(((orig - price) / orig) * 100) : 0;
+            const showOrig = disc > 0 && disc < 90;
+            return (
             <Link
               key={p.id}
               href={`/products/${p.id}`}
@@ -92,28 +107,33 @@ export default function AllProducts() {
                   src={IMG.card(p.image_url)}
                   alt={p.title}
                   fill
+                  // مع unoptimized:true لا srcset — sizes معطلة اليوم وتخدم يوم الـ flip
                   sizes="(max-width:640px) 50vw, 20vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
+                  loading={i < 4 ? 'eager' : 'lazy'}
                 />
               </div>
               <div className="p-2.5">
                 <p className="text-xs font-bold text-temu-black line-clamp-2 leading-tight">
                   {p.title}
                 </p>
-                <div className="flex items-baseline gap-1.5 mt-1.5">
-                  <span className="text-sm font-black text-[#FF6B9D]">
-                    ${Number(p.price).toFixed(2)}
-                  </span>
-                  {Number(p.original_price) > Number(p.price) && (
-                    <span className="text-[10px] text-gray-400 line-through">
-                      ${Number(p.original_price).toFixed(2)}
+                {/* 🩹 FIX-ZERO + FIX-TRUST — بلا سعر = بلا صف · بلا سقف 90% = بلا anchor مزيف */}
+                {price > 0 && (
+                  <div className="flex items-baseline gap-1.5 mt-1.5">
+                    <span className="text-sm font-black text-[#FF6B9D]">
+                      ${price.toFixed(2)}
                     </span>
-                  )}
-                </div>
+                    {showOrig && (
+                      <span className="text-[10px] text-gray-400 line-through">
+                        ${orig.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
 
         {/* Sentinel + states */}

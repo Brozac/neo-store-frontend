@@ -150,12 +150,8 @@ export default function CategoryClient() {
               }}
               onTouchEnd={() => setTouchedProductId(null)}
             >
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isTouched={touchedProductId === String(product.id)}
-                />
+              {products.map((p, i) => (
+                <ProductCard key={p.id} product={p} eager={i < 4} />
               ))}
             </div>
 
