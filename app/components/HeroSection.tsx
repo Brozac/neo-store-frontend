@@ -6,6 +6,30 @@ import Image from 'next/image';
 import Script from 'next/script';
 import { IMG } from '@/lib/imageOptimizer';
 
+// ══════════════════════════════════════════════════════════════════
+// HeroSection v2.1 — مراجعة عميقة (Task 7)
+//
+// 🛡️ FIX-RACE (gsap): السكريبتات async — ما عندهمش ترتيب تنفيذ مضمون.
+//    ScrollTrigger يقدر ينفذ قبل gsap → initGSAP كان يخرج بصمت = صفر
+//    أنيميشن للأبد (نفس عائلة "الموت الصامت"). دابا: poll ≤5s لـ gsap
+//    + ScrollTrigger اختياري بتعلّق متأخر ≤10s + حرس عالمي ضد التكرار.
+// 🛡️ FIX-EDGE: Math.ceil(random*50) يقدر يعطي 0 → page=0 → floor+1.
+// 🛡️ FIX-SILENT: !res.ok ما بقاش صامت — console.warn بالـ status.
+// 🛡️ FIX-GUARD: Array.isArray على كل فرع من فروع استخراج الـ list.
+// 🧹 تم حذف 4 spans خاويين (كانو كيرندرو والو) — الإيموجي ⚡ بقا.
+//
+// ⚠️ M#45 — ادعاءات تجارية بلا سند موثق (قرار المالك، ما تبدلتش):
+//    "Insured Worldwide Shipping" · "real-time live tracking" ·
+//    "ships FREE worldwide" · "100% Buyer Protection"
+//    → توثيق أو تخفيف، نفس ملف القرار ديال wrapper الفئة.
+//
+// 📐 Backlog معماري (موثق، ما نفذش): lib/sessionSeed.ts موحد —
+//    getCatalogSeed() + mulberry32 + shufflePage (Tenet #31 للعشوائية).
+//    ملاحظة: الهيرو كيستعمل seed خام، الكتالوغ كيمزج بـ pageNum*7919 —
+//    الجوج deterministic وجلسة-مستقرة، ولكن "نفس الترتيب فينما بانو"
+//    حرفيًا غير محقق بين السطوح (المجموعات مختلفة أصلاً).
+// ══════════════════════════════════════════════════════════════════
+
 interface HeroSectionProps {
   trendingProducts?: any[];
 }
@@ -19,12 +43,14 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const cardsRef = useRef<HTMLDivElement>(null);
 
   // ✨ v2: صفحة الـ hero — session-scoped (نفس الجلسة = نفس البطاقات · جلسة جديدة = mix جديد)
+  // 🛡️ FIX-EDGE: floor+1 = مدى 1..50 مضمون (ceil كان يعطي 0 عند random()===0)
+  // ملاحظة هشاشة: لا تعرض heroPage في JSX — القيمة تختلف SSR(1) عن العميل بعد hydration
   const [heroPage] = useState<number>(() => {
     if (typeof window === 'undefined') return 1; // SSR-safe (Tenet #2)
     try {
       const saved = sessionStorage.getItem('hero_page');
       if (saved) return Number(saved) || 1;
-      const p = Math.ceil(Math.random() * 50);
+      const p = Math.floor(Math.random() * 50) + 1;
       sessionStorage.setItem('hero_page', String(p));
       return p;
     } catch {
@@ -47,7 +73,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
-  // ✨ Seed مشترك مع الكتالوغ — نفس الجلسة = نفس الترتيب فينما بانو المنتجات
+  // ✨ Seed مشترك مع الكتالوغ — نفس الجلسة = ترتيب deterministic فينما بانو المنتجات
+  // (init بـ effect ماشي lazy-init: مقصود — التغيير بعد hydration باش ما يوقعش mismatch)
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem('catalog_seed');
@@ -71,9 +98,18 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
       try {
         // ✨ v2: mosaic page من الجلسة — 12 منتج من فئات متنوعة · ثابت داخل الجلسة
         const res = await fetch(`${API_URL}/api/products?page=${heroPage}&limit=12`, { signal: controller.signal });
-        if (!res.ok) return;
+        if (!res.ok) {
+          // 🛡️ FIX-SILENT: الفشل كيتسجل — "catch بلا صمت" (فلسفة المشروع)
+          console.warn('HeroSection: HTTP', res.status, '— fallback to trending');
+          return;
+        }
         const data = await res.json();
-        const list = Array.isArray(data) ? data : data.products || data.items || data.data || [];
+        // 🛡️ FIX-GUARD: كل فرع متحقق من نوعه — truthy غير-array كان يطيح فـ .slice بصمت
+        const list = Array.isArray(data) ? data
+          : Array.isArray(data?.products) ? data.products
+          : Array.isArray(data?.items) ? data.items
+          : Array.isArray(data?.data) ? data.data
+          : [];
         if (list.length > 0) setProducts(list.slice(0, 12));
       } catch (err: any) {
         if (err?.name !== 'AbortError') console.warn('HeroSection: fetch failed', err);
@@ -99,28 +135,64 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     };
   }, [activeCard]);
 
+  // 🛡️ FIX-RACE (gsap) — النسخة المكففة:
+  //   1) حرس عالمي: StrictMode/remount = init واحد فقط (كانو جوج tweens لانهائيين كيتحاربو)
+  //   2) gsap حرج: poll ≤5s — السيناريو "ScrollTrigger وصل قبل gsap" ما عاد كيقتل الأنيميشن
+  //   3) ScrollTrigger اختياري: إلا ما وصلش مع الأولى، تعلّق متأخر ≤10s وكيزيد غير الـ scroll-fade
+  //   4) بلا gsap نهائيًا (CDN محجوب): المحتوى كامل ظاهر بلا أنيميشن — تدهور رشيق
   const initGSAP = () => {
-    if (typeof window === 'undefined' || !(window as any).gsap) return;
-    const gsap = (window as any).gsap;
-    const ScrollTrigger = (window as any).ScrollTrigger;
-    if (ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+    if (typeof window === 'undefined') return;
+    const w = window as any;
+    if (w.__laclarcHeroGsap) return;
+    w.__laclarcHeroGsap = true; // الحرس أول حاجة — هذا كيحمي حتى من الاستدعاءات المتوازية
 
-    const tl = gsap.timeline();
-    tl.from(".gsap-hero", { y: 25, opacity: 0, duration: 0.8, stagger: 0.1, ease: "power3.out" })
-      .from(".gsap-parallax-img", { scale: 0.9, opacity: 0, duration: 1.2, ease: "power2.out" }, "-=0.5");
+    let gsapTries = 0;
+    const tryInit = () => {
+      if (!w.gsap) {
+        if (++gsapTries < 50) setTimeout(tryInit, 100); // أقصى ~5s
+        // انتهى المهلة بلا gsap — المحتوى ظاهر، ما كاين ما يتدار (تدهور رشيق موثق)
+        return;
+      }
 
-    gsap.to(".float-anim-slow", { y: "-=12", duration: 3.5, repeat: -1, yoyo: true, ease: "sine.inOut" });
-    gsap.to(".float-anim", { y: "-=8", duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      const tl = w.gsap.timeline();
+      tl.from('.gsap-hero', { y: 25, opacity: 0, duration: 0.8, stagger: 0.1, ease: 'power3.out' })
+        .from('.gsap-parallax-img', { scale: 0.9, opacity: 0, duration: 1.2, ease: 'power2.out' }, '-=0.5');
 
-    if (ScrollTrigger) {
-      gsap.to(".hero-container", {
-        opacity: 0.3, scale: 0.98, ease: "none",
-        scrollTrigger: { trigger: ".hero-container", start: "top top", end: "bottom top", scrub: 1 }
-      });
-    }
+      w.gsap.to('.float-anim-slow', { y: '-=12', duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      w.gsap.to('.float-anim', { y: '-=8', duration: 2.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+
+      attachScrollFade();
+    };
+
+    const attachScrollFade = () => {
+      if (w.ScrollTrigger) {
+        w.gsap.registerPlugin(w.ScrollTrigger);
+        w.gsap.to('.hero-container', {
+          opacity: 0.3, scale: 0.98, ease: 'none',
+          scrollTrigger: { trigger: '.hero-container', start: 'top top', end: 'bottom top', scrub: 1 },
+        });
+        return;
+      }
+      // ScrollTrigger مازال ما وصل — تعلّق متأخر بحدود 10s (33 محاولة × 300ms)
+      let stTries = 0;
+      const late = setInterval(() => {
+        if (w.ScrollTrigger && w.gsap) {
+          clearInterval(late);
+          w.gsap.registerPlugin(w.ScrollTrigger);
+          w.gsap.to('.hero-container', {
+            opacity: 0.3, scale: 0.98, ease: 'none',
+            scrollTrigger: { trigger: '.hero-container', start: 'top top', end: 'bottom top', scrub: 1 },
+          });
+        } else if (++stTries > 33) {
+          clearInterval(late); // ScrollTrigger ما جاش — الأنيميشن الأساسي خدام بلا الـ scroll-fade
+        }
+      }, 300);
+    };
+
+    tryInit();
   };
 
-  // ✨ Seeded Fisher-Yates — ترتيب حتمي لنفس الـ seed
+  // ✨ Seeded Fisher-Yates (mulberry32 — نفس PRNG ديال الكتالوغ) — ترتيب حتمي لنفس الـ seed
   const rotated = useMemo(() => {
     const pool = products.length > 0 ? products : (trendingProducts || []);
     if (shuffleSeed === null || pool.length <= 3) return pool.slice(0, 3);
@@ -172,7 +244,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
   return (
     <div className="w-full font-sans text-[#1D1E3C] overflow-hidden bg-[#F9F8FC] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" />
+      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" onLoad={initGSAP} />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP} />
 
       <section className="hero-container relative min-h-[90vh] md:min-h-[85vh] lg:min-h-[92vh] w-full flex flex-col justify-between p-6 sm:p-12 lg:p-16 overflow-hidden">
@@ -270,12 +342,12 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           {/* النصوص والأزرار */}
           <div className="max-w-xl space-y-6 text-center lg:text-left z-20 lg:w-1/2 order-2 lg:order-1">
             <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8B78C6]/15 border border-[#8B78C6]/30 text-[#8B78C6] text-[10px] font-black uppercase tracking-wider">
-              <span></span> Exclusive Premium Deals
+              Exclusive Premium Deals
             </div>
 
             <h1 className="gsap-hero text-3xl sm:text-4xl lg:text-6xl font-black text-[#1D1E3C] tracking-tight leading-[1.1]">
               Engineered for <br />
-              <span className="bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] bg-clip-text text-transparent">precision & lifestyle.</span>
+              <span className="bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] bg-clip-text text-transparent">precision &amp; lifestyle.</span>
             </h1>
 
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">
@@ -297,16 +369,16 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           </div>
         </div>
 
-        {/* الشريط السفلي */}
+        {/* الشريط السفلي — 🧹 3 spans خاويين تحيدو (كانو كيرندرو والو) */}
         <div className="relative z-20 w-full pt-8 pb-4 border-t border-gray-200/60 flex justify-between items-center text-[10px] font-bold text-gray-400 flex-wrap gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="text-emerald-500"></span> 100% Buyer Protection
+            100% Buyer Protection
           </span>
           <span className="hidden sm:flex items-center gap-1.5">
-            <span className="text-[#8B78C6]"></span> Direct Automated Logistics
+            Direct Automated Logistics
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-[#FF6B9D]"></span> Bank-Grade Security
+            Bank-Grade Security
           </span>
         </div>
       </section>
