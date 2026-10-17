@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 /**
@@ -108,4 +109,17 @@ const nextConfig: NextConfig = {
    */
 };
 
-export default nextConfig;
+// ──── [LACLARC::SENTRY-NEXTCONFIG] v1 (Task 16) ────
+// withSentryConfig — sourcemaps كيرفعو غير إلا كان SENTRY_AUTH_TOKEN فالبيئة
+// (Vercel: SENTRY_ORG + SENTRY_PROJECT + SENTRY_AUTH_TOKEN — اختياريين فالمرحلة 1)
+export default withSentryConfig(
+  nextConfig,
+  {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+    disableLogger: true,
+  }
+);
+// ──── [/LACLARC::SENTRY-NEXTCONFIG] ────
