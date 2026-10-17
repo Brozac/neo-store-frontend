@@ -49,7 +49,7 @@ serviceAccountKey*.json
 *.bak-xchg
 *.orig
 *~
-
+*.bak-*
 # ─── 🩹 v2 — Temp / Cache (python-inject · debug) ───
 *.tmp
 *.swp
