@@ -109,8 +109,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   return {
     // 🩹 title.absolute — اتساق مع wrapper الفئة (تحياد template double-branding)
-    title: { absolute: `${product.title} | Laclarc` },
-    description: cleanDescription,
+    title: { absolute: product.seo_title || `${product.title} | Laclarc` },
+    description: product.seo_meta_description || cleanDescription,
     // ✨ canonical — 73,597 صفحة منتج بلا canonical = duplicate-content risk
     alternates: { canonical: `${SITE_URL}/products/${product.id}` },
     // ═══ DOC-PRIORITY (Task 15) — التفاعل مع opengraph-image.tsx ديال الجذر (Task 13) ═══
@@ -121,8 +121,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     //    حيدت هاد الـ images → 73,597 شير كيرجعو للصورة البراندية العامة
     //    حيدت ملف الجذر → باقي الصفحات (الهوم/الفئات/غ...) بلا صورة OG
     openGraph: {
-      title: `${product.title} | Laclarc`,
-      description: cleanDescription,
+      title: product.seo_title || `${product.title} | Laclarc`,
+      description: product.seo_meta_description || cleanDescription,
       url: `${SITE_URL}/products/${product.id}`,
       siteName: 'Laclarc',
       // ✨ اتساق مع الهوم — shallow-merge كيبدل الـ openGraph كامل (DOC-INHERIT Task 13)
@@ -135,7 +135,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     twitter: {
       card: 'summary_large_image',
       title: product.title,
-      description: cleanDescription,
+      description: product.seo_meta_description || cleanDescription,
       images: [primaryImage],
     },
   };
