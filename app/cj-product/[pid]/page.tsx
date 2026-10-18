@@ -32,6 +32,22 @@ export default function CjProductPage() {
   // 💰 v3.1 — السعر الرسمي من المحرك (سيرفر-side · هامش 35% محمي · floor $9.99)
   const sellPrice = Number(product?.laclarcPrice) || 0;
 
+  // 🔒 FIX-XSS (Task 20) — sanitizeDescription كاينة فعلاً دابا (كان التعليق كاذب!)
+  // وصف CJ = HTML من أطراف ثالثة غير موثوقة — كنحوّلو لنص عادي آمن 100%:
+  // 1) <br>/</p>/</li>/</div>/</h1-6> → سطر جديد (نحافظو على القراءة)
+  // 2) أي وسوم أخرى → مسافة (نفس stripHtml ديال ProductDetailsClient)
+  // 3) مسافات متكررة → واحدة
+  const sanitizeDescription = (html?: string): string => {
+    if (!html) return '';
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|li|div|h[1-6])>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
     // 💰 سعر الـ variant الفعلي من المحرك — متطابق مع اللي غادي يتفلترة
@@ -125,9 +141,11 @@ export default function CjProductPage() {
               {added ? <><span>✓</span> Added — Opening Cart…</> : <><span>🛒</span> Add to Cart</>}
             </button>
 
-            {/* 🔒 XSS-safe — description منقّى في السيرفر (sanitizeDescription) */}
-            <div className="border-t border-temu-gray-border-light pt-4 text-sm text-temu-gray-text leading-relaxed"
-                 dangerouslySetInnerHTML={{ __html: product.description || '' }} />
+            {/* 🔒 XSS-safe (FIX Task 20) — description كتنعرض كنص عادي منقّى
+                بـ sanitizeDescription (الدالة كاينة فوق فعلاً دابا) — صفر HTML خام */}
+            <div className="border-t border-temu-gray-border-light pt-4 text-sm text-temu-gray-text leading-relaxed whitespace-pre-line">
+              {sanitizeDescription(product.description) || 'Full specifications available — contact support for any question.'}
+            </div>
           </div>
         </div>
       </div>

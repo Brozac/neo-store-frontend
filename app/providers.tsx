@@ -2,17 +2,25 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { CartProvider } from './context/CartContext';
 import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
-import SpinWheel from './components/SpinWheel';
-import ExitIntentPopup from './components/ExitIntentPopup';
-import AIChatWidget from './components/AIChatWidget';
 import Footer from './components/Footer';
 import UtmTracker from './components/UtmTracker';
-import GlassDock from './components/GlassDock';
-import FloatingSupport from './components/floating/FloatingSupport'; // 🆕 يحتوي WhatsApp + AI FAB
 import SessionBridge from './components/SessionBridge';
+
+// 🚀 PERF (Task 20) — الويدجت العائمة الثقيلة ولّاو lazy (dynamic + ssr:false):
+// كانو static imports فالـ providers = JS ديالهم كيتحمل فـ **كل صفحة** (حتى admin/auth).
+// دابا كيتحمّلو غير ملي المتصفح يحتاجهم — صفر تكلفة فأول paint (ما كيبانوش فالـ SSR أصلاً).
+const ExitIntentPopup = dynamic(() => import('./components/ExitIntentPopup'), { ssr: false });
+const AIChatWidget = dynamic(() => import('./components/AIChatWidget'), { ssr: false });
+const GlassDock = dynamic(() => import('./components/GlassDock'), { ssr: false });
+const FloatingSupport = dynamic(() => import('./components/floating/FloatingSupport'), { ssr: false }); // 🆕 يحتوي WhatsApp + AI FAB
+
+// 🎡 WHEEL_MOUNT_GATE — import dynamic جاهز: ملي تكامل wheel-token يكمل،
+// شعل غير سطر <SpinWheel /> تحت — وماش حتاج تبدل الـ import.
+const SpinWheel = dynamic(() => import('./components/SpinWheel'), { ssr: false });
 
 
 export function Providers({ children }: { children: React.ReactNode }) {

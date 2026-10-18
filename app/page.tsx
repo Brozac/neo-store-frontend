@@ -5,7 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import LightningDeals from './components/LightningDeals';
 import HeroSection from './components/HeroSection';
-import ShoppableReels from './components/ShoppableReels';
+import dynamic from 'next/dynamic';
+
+// 🚀 PERF (Task 20) — Reels تحتها الـ fold = lazy (كيتحمّل غير ملي يوصلو الزائر)
+const ShoppableReels = dynamic(() => import('./components/ShoppableReels'), {
+  loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-2xl" />,
+});
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 
