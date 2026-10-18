@@ -66,23 +66,37 @@ export const metadata: Metadata = {
   },
 };
 
-// ✨ Schema.org JSON-LD
+// ✨ Schema.org JSON-LD — S3 (Task 22): @graph [OnlineStore + WebSite/SearchAction]
+// 🩹 S3 — SearchAction رجع للخدمة: شرط الرجوع ديال README-layout-og-fix #2 تحقق:
+//    (1) الـ deep-link `/?search=` ولّى حقيقي — SearchBar.tsx كيدير push ليه
+//        وpage.tsx كيقرا searchParams.get('search') ويفتّر server-side (v5.1)
+//    (2) Google حيّد Sitelinks Search Box (2024) — القيمة دابا Bing/Yandex،
+//        لكنها صادقة 100% (الـ target كيدير بالضبط اللي كيقول) ومجانية
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'OnlineStore',
-  name: 'Laclarc',
-  url: SITE_URL,
-  logo: `${SITE_URL}/icon-512.png`,
-  description: 'Curated lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
-  // 🩹 FIX-SEARCH (Task 13) — potentialAction تحيّد مؤقتاً، جوج أسباب:
-  //   (1) الـ target `/?search=` ما متحققش منه بلي كيفتّر فعلاً (السيلكتد ما كيقراش searchParams)
-  //   (2) Google حيّد Sitelinks Search Box نهائياً (2024) — القيمة SEO دابا ≈ 0 (Bing فقط)
-  // الرجوع بعد التحقق من الـ deep-link (الخطوات فـ README #2):
-  // potentialAction: {
-  //   '@type': 'SearchAction',
-  //   target: `${SITE_URL}/?search={search_term_string}`,
-  //   'query-input': 'required name=search_term_string',
-  // },
+  '@graph': [
+    {
+      '@type': 'OnlineStore',
+      name: 'Laclarc',
+      url: SITE_URL,
+      logo: `${SITE_URL}/icon-512.png`,
+      description: 'Curated lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
+      // 🔒 sameAs عمداً خاوي: ما كايناش حسابات اجتماعية رسمية موثقة — قاعدة الصدق DRS
+    },
+    {
+      '@type': 'WebSite',
+      name: 'Laclarc',
+      url: SITE_URL,
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/?search={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
 };
 
 // 🩹 FIX-ESCAPE (Task 13) — < → \u003c : JSONLD ولى محروس حتى لو فـ المستقبل
