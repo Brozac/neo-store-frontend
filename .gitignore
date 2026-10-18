@@ -50,6 +50,7 @@ serviceAccountKey*.json
 *.orig
 *~
 *.bak-*
+*.patch
 # ─── 🩹 v2 — Temp / Cache (python-inject · debug) ───
 *.tmp
 *.swp
