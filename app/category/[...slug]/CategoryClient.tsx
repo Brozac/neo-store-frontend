@@ -76,6 +76,9 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        {/* 🎯 SEO (Task 21-f): h1 حقيقي فالـ SSR HTML حتى فحالة التحميل —
+            كيتبدل بالمرئي (نفس النص) من بعد ما الـ feed يجي — h1 واحد فأي لحظة */}
+        {h1Text && <h1 className="sr-only">{h1Text}</h1>}
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
