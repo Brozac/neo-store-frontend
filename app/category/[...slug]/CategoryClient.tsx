@@ -35,7 +35,8 @@ interface Product {
 
 const PER_PAGE = 24;
 
-export default function CategoryClient() {
+// ✨ Task 21-e: h1Text كيجي من القاعدة (seo_h1) عبر الـ Server Wrapper — fallback: categoryName
+export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const params = useParams();
   const router = useRouter();
 
@@ -94,7 +95,7 @@ export default function CategoryClient() {
         </button>
 
         <div className="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
-          <h1 className="text-3xl font-extrabold text-temu-black capitalize">{categoryName}</h1>
+          <h1 className="text-3xl font-extrabold text-temu-black capitalize">{h1Text || categoryName}</h1>
           {totalCount > 0 && (
             <span className="text-xs font-bold text-gray-400">
               {totalCount.toLocaleString()} products
