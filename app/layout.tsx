@@ -66,44 +66,6 @@ export const metadata: Metadata = {
   },
 };
 
-// ✨ Schema.org JSON-LD — S3 (Task 22): @graph [OnlineStore + WebSite/SearchAction]
-// 🩹 S3 — SearchAction رجع للخدمة: شرط الرجوع ديال README-layout-og-fix #2 تحقق:
-//    (1) الـ deep-link `/?search=` ولّى حقيقي — SearchBar.tsx كيدير push ليه
-//        وpage.tsx كيقرا searchParams.get('search') ويفتّر server-side (v5.1)
-//    (2) Google حيّد Sitelinks Search Box (2024) — القيمة دابا Bing/Yandex،
-//        لكنها صادقة 100% (الـ target كيدير بالضبط اللي كيقول) ومجانية
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'OnlineStore',
-      name: 'Laclarc',
-      url: SITE_URL,
-      logo: `${SITE_URL}/icon-512.png`,
-      description: 'Curated lifestyle gear, electric grooming innovations, and daily essentials with free worldwide delivery.',
-      // 🔒 sameAs عمداً خاوي: ما كايناش حسابات اجتماعية رسمية موثقة — قاعدة الصدق DRS
-    },
-    {
-      '@type': 'WebSite',
-      name: 'Laclarc',
-      url: SITE_URL,
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: {
-          '@type': 'EntryPoint',
-          urlTemplate: `${SITE_URL}/?search={search_term_string}`,
-        },
-        'query-input': 'required name=search_term_string',
-      },
-    },
-  ],
-};
-
-// 🩹 FIX-ESCAPE (Task 13) — < → \u003c : JSONLD ولى محروس حتى لو فـ المستقبل
-//    تدخل فيه داتا ديناميكية — حدا ما يقدر يسدّ </script> ويحقن كود
-//    (الـ ld+json كيتبلع كـ JSON عادي و \u003c كترجع < عند المحلّل)
-const jsonLdString = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
-
 // ✨ zoom متاح — WCAG accessibility
 export const viewport: Viewport = {
   width: 'device-width',
@@ -122,10 +84,6 @@ export default function RootLayout({
       <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
 
         {/* ✨ JSON-LD Structured Data (FIX-ESCAPE مطبق) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLdString }}
-        />
 
         <Providers>
           {children}

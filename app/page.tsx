@@ -13,6 +13,8 @@ const ShoppableReels = dynamic(() => import('./components/ShoppableReels'), {
 });
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import SiteJsonLd from '@/components/site-jsonld';
+
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -492,6 +494,8 @@ function HomeContent() {
 
 export default function Home() {
   return (
+    <>
+    <SiteJsonLd />
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-temu-offwhite">
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
@@ -499,5 +503,6 @@ export default function Home() {
     }>
       <HomeContent />
     </Suspense>
+    </>
   );
 }
