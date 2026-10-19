@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-verify_jsonld_fix.py — Laclarc Section 3 HOTFIX verifier (SSR-level)
+verify_jsonld_fix.py v2 — Laclarc Section 3 verifier (SSR-level + payload-aware)
 
 شنو كيفحص:
-  [HOME]  https://laclarc.com/
+  [HOME]  https://laclarc.com/  (ولا --file محلي)
     [1] HTTP 200
-    [2] بلوكات ld+json = 1 بالضبط (التكرار فالمصدر = FAIL)
+    [2] عناصر ld+json فالـ DOM = 1 — التكرار الحقيقي = FAIL
+        ⚠ v2: النسخ المسلسلة داخل strings ديال الـ RSC payload
+          (self.__next_f.push) ما كيتحسبوش عناصر — Google ما كيشوفهمش
+          كـ <script> فالـ DOM. كيتّذكرو بـ note، ماشي FAIL.
     [3] الأنواع: OnlineStore + WebSite + SearchAction
     [4] urlTemplate = https://laclarc.com/?search={search_term_string}
   [PRODUCT] https://laclarc.com/products/36545 (أي منتج)
     [5] HTTP 200
-    [6] تسريب الـ store graph: بلوكات فيها OnlineStore/WebSite = 0
+    [6] تسريب الـ store graph: عناصر فيها OnlineStore/WebSite = 0
         (Product/BreadcrumbList مسموحين — هادو ديال الصفحة)
 
-⚠️ الحدود: هادا فاحص SSR (view-source). التكرار لي كان Google شافو
-   كيجي من الـ RSC payload — ما كيتشافش فهاد المستوى. الحكم النهائي
-   ديما = Rich Results Test من بعد الـ deploy.
+جديد v2:
+  --dump   يطبع لكل match: offset · واش داخل payload/template · السياق
+           اللي قبل · بداية ونهاية المحتوى — للتشخيص ملي [2] كيعطي عدد غريب
 
 الاستعمال:
   python verify_jsonld_fix.py                       # حي على laclarc.com
   python verify_jsonld_fix.py --home <url> --product <url>
-  python verify_jsonld_fix.py --file <local.html>   # فحص ملف محلي (HOME checks)
+  python verify_jsonld_fix.py --file <local.html>
+  python verify_jsonld_fix.py --file <local.html> --dump
 
 Exit: 0 = PASS · 1 = FAIL
 """
@@ -40,6 +44,9 @@ SCRIPT_RE = re.compile(
     r"<script[^>]*type=[\"']application/ld\+json[\"'][^>]*>(.*?)</script>",
     re.S | re.I,
 )
+OPEN_SCRIPT_RE = re.compile(r"<script\b", re.I)
+CLOSE_SCRIPT_RE = re.compile(r"</script\s*>", re.I)
+TEMPLATE_SPAN_RE = re.compile(r"<template\b", re.I)
 
 
 def get_source(src):
@@ -51,12 +58,46 @@ def get_source(src):
         return f.read().decode("utf-8", "replace"), None
 
 
-def parse_blocks(html):
+# ─── v2: تحليل match-by-match ───────────────────────────────────────────
+def _spans_of(html, open_re, close_pat):
+    out = []
+    for m in open_re.finditer(html):
+        gt = html.find(">", m.start())
+        if gt < 0:
+            continue
+        cm = close_pat.search(html, gt)
+        if cm:
+            out.append((m.start(), cm.end()))
+    return out
+
+
+def analyze_matches(html):
+    """لكل match ديال SCRIPT_RE: فين كاين؟ (top-level DOM / جوّا payload /
+    جوّا template) + السياق اللي قبل."""
+    script_spans = _spans_of(html, OPEN_SCRIPT_RE, CLOSE_SCRIPT_RE)
+    template_spans = _spans_of(html, TEMPLATE_SPAN_RE, re.compile(r"</template\s*>", re.I))
     out = []
     for m in SCRIPT_RE.finditer(html):
-        raw = m.group(1).strip()
+        in_payload = any(s < m.start() < e for s, e in script_spans)
+        in_template = any(s < m.start() < e for s, e in template_spans)
+        out.append(
+            {
+                "start": m.start(),
+                "end": m.end(),
+                "content": m.group(1).strip(),
+                "in_payload": in_payload,
+                "in_template": in_template,
+                "ctx_before": html[max(0, m.start() - 140):m.start()],
+            }
+        )
+    return out
+
+
+def parse_blocks(matches):
+    out = []
+    for x in matches:
         try:
-            out.append(json.loads(raw))
+            out.append(json.loads(x["content"]))
         except Exception as e:
             out.append({"_parse_error": str(e)})
     return out
@@ -78,7 +119,6 @@ def collect_types(node, acc):
 
 
 def find_url_template(node):
-    """كل قيم urlTemplate فالبلوك."""
     found = []
 
     def walk(n):
@@ -96,13 +136,35 @@ def find_url_template(node):
     return found
 
 
-def check_home(src, ok_flags):
+def dump_matches(matches):
+    print("   " + "─" * 54)
+    for i, x in enumerate(matches, start=1):
+        where = []
+        if x["in_payload"]:
+            where.append("داخل RSC payload (string — ماشي عنصر DOM)")
+        if x["in_template"]:
+            where.append("داخل <template>")
+        if not where:
+            where.append("TOP-LEVEL DOM (عنصر حقيقي)")
+        print("   match #%d @ offset %d · %d حرف" % (i, x["start"], x["end"] - x["start"]))
+        print("      المكان: %s" % " · ".join(where))
+        print("      قبل: %r" % x["ctx_before"][-110:])
+        head = x["content"][:150]
+        tail = x["content"][-80:] if len(x["content"]) > 150 else ""
+        print("      محتوى[بداية]: %r" % head)
+        if tail:
+            print("      محتوى[نهاية]: %r" % tail)
+    print("   " + "─" * 54)
+
+
+def check_home(src, ok_flags, dump=False):
     print("─" * 60)
     print("[HOME] %s" % src)
     try:
         html, status = get_source(src)
     except Exception as e:
         print("   [FAIL] fetch: %s" % e)
+        ok_flags["home"] = False
         return False
     ok = True
     if status is not None:
@@ -112,16 +174,42 @@ def check_home(src, ok_flags):
     else:
         print("   [OK] [1] ملف محلي | bytes=%d" % len(html))
 
-    blocks = parse_blocks(html)
-    p2 = len(blocks) == 1
-    ok &= p2
-    print("   [%s] [2] بلوكات ld+json = %d (متوقع 1)" % ("OK" if p2 else "FAIL", len(blocks)))
-    if len(blocks) > 1:
-        canon = {json.dumps(b, sort_keys=True, ensure_ascii=False) for b in blocks}
+    # ─── [2] v2: كنعدو غير عناصر DOM ───
+    matches = analyze_matches(html)
+    dom_matches = [x for x in matches if not x["in_payload"] and not x["in_template"]]
+    payload_n = len(matches) - len(dom_matches)
+
+    if len(matches) == 0:
+        p2 = False
+        ok = False
+        print("   [FAIL] [2] حتى بلوك ld+json ما تلقى!")
+    elif len(dom_matches) == 1:
+        p2 = True
+        if payload_n:
+            print(
+                "   [OK] [2] عناصر ld+json فالـ DOM = 1 ✓ (raw matches=%d — منهم %d داخل strings ديال الـ payload، Google ما كيشوفهمش كعناصر)"
+                % (len(matches), payload_n)
+            )
+        else:
+            print("   [OK] [2] عناصر ld+json فالـ DOM = 1 (متوقع 1)")
+    else:
+        p2 = False
+        ok = False
+        print(
+            "   [FAIL] [2] عناصر ld+json فالـ DOM = %d (متوقع 1) · raw=%d · payload=%d"
+            % (len(dom_matches), len(matches), payload_n)
+        )
+
+    blocks = parse_blocks(dom_matches if dom_matches else matches)
+    if len(dom_matches) > 1:
+        canon = {json.dumps(b, sort_keys=True, ensure_ascii=False) for b in blocks if "_parse_error" not in b}
         if len(canon) == 1:
-            print("        → كاملين متطابقين: نفس الكائن متكرر (duplicate)")
+            print("        → عناصر DOM متطابقين: نفس الكائن متكرر (duplicate حقيقي)")
         types_per = [sorted(collect_types(b, set())) for b in blocks]
-        print("        → الأنواع لكل بلوك: %s" % types_per)
+        print("        → الأنواع لكل عنصر DOM: %s" % types_per)
+
+    if dump:
+        dump_matches(matches)
 
     types = set()
     for b in blocks:
@@ -131,9 +219,10 @@ def check_home(src, ok_flags):
         ok &= p
         print("   [%s] [3] %s" % ("OK" if p else "FAIL", want))
 
+    real_blocks = [b for b in blocks if "_parse_error" not in b]
     tpl_ok = False
-    if blocks and "_parse_error" not in blocks[0]:
-        tpls = find_url_template(blocks[0])
+    if real_blocks:
+        tpls = find_url_template(real_blocks[0])
         want_tpl = SITE + "/?search={search_term_string}"
         tpl_ok = want_tpl in tpls
         if tpls:
@@ -147,7 +236,7 @@ def check_home(src, ok_flags):
     return ok
 
 
-def check_product(src, ok_flags):
+def check_product(src, ok_flags, dump=False):
     print("─" * 60)
     print("[PRODUCT] %s" % src)
     try:
@@ -162,7 +251,11 @@ def check_product(src, ok_flags):
         ok &= p
         print("   [%s] [5] HTTP %s" % ("OK" if p else "FAIL", status))
 
-    blocks = parse_blocks(html)
+    matches = analyze_matches(html)
+    dom_matches = [x for x in matches if not x["in_payload"] and not x["in_template"]]
+    if dump:
+        dump_matches(matches)
+    blocks = parse_blocks(dom_matches)
     leak_blocks = 0
     for b in blocks:
         t = collect_types(b, set())
@@ -171,7 +264,7 @@ def check_product(src, ok_flags):
     p6 = leak_blocks == 0
     ok &= p6
     print(
-        "   [%s] [6] تسريب store graph = %d (متوقع 0 — Product/Breadcrumb مسموحين)"
+        "   [%s] [6] تسريب store graph (DOM) = %d (متوقع 0 — Product/Breadcrumb مسموحين)"
         % ("OK" if p6 else "FAIL", leak_blocks)
     )
     types = set()
@@ -185,37 +278,43 @@ def check_product(src, ok_flags):
 
 def main():
     args = sys.argv[1:]
+    dump = "--dump" in args
     home = SITE + "/"
     product = SITE + "/products/36545"
     file_mode = None
     i = 0
     while i < len(args):
+        if args[i] == "--file" and i + 1 < len(args):
+            file_mode = args[i + 1]
+            i += 2
+            continue
         if args[i] == "--home" and i + 1 < len(args):
             home = args[i + 1]
             i += 2
-        elif args[i] == "--product" and i + 1 < len(args):
+            continue
+        if args[i] == "--product" and i + 1 < len(args):
             product = args[i + 1]
             i += 2
-        elif args[i] == "--file" and i + 1 < len(args):
-            file_mode = args[i + 1]
-            i += 2
-        else:
-            i += 1
-
-    print("🔍 LACLARC SECTION 3 HOTFIX — JSON-LD VERIFIER")
-    ok_flags = {}
-    if file_mode:
-        check_home(file_mode, ok_flags)
-    else:
-        check_home(home, ok_flags)
-        check_product(product, ok_flags)
+            continue
+        i += 1
 
     print("═" * 60)
-    verdict = "✅ PASS" if ok_flags and all(ok_flags.values()) else "❌ FAIL"
-    print("RESULT: %s" % verdict)
-    if verdict.endswith("FAIL") and not file_mode:
-        print("→ ما تنساش: من بعد أي إصلاح خاص الـ deploy يعبر قبل الفحص الحي")
-    return 0 if verdict.endswith("PASS") else 1
+    print("🔍 LACLARC SECTION 3 — JSON-LD VERIFIER v2 (payload-aware)")
+    print("═" * 60)
+
+    ok_flags = {"home": False, "product": False}
+    if file_mode:
+        check_home(file_mode, ok_flags, dump=dump)
+    else:
+        check_home(home, ok_flags, dump=dump)
+        check_product(product, ok_flags, dump=dump)
+
+    print("═" * 60)
+    verdict = all(ok_flags.values()) and (file_mode is not None or ok_flags["product"])
+    if file_mode:
+        verdict = ok_flags["home"]
+    print("RESULT: %s" % ("✅ PASS" if verdict else "❌ FAIL"))
+    return 0 if verdict else 1
 
 
 if __name__ == "__main__":

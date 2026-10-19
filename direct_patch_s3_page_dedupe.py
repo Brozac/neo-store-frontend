@@ -49,6 +49,12 @@ IMPORT_RE = re.compile(
     r"import\s+SiteJsonLd\s+from\s+['\"]@/components/site-jsonld['\"]\s*;?"
 )
 USAGE_RE = re.compile(r"<SiteJsonLd\b[^<>]*?/?>")
+SITEJSONLD_WORD_RE = re.compile(r"\bSiteJsonLd\b")
+IMPORT_LINE_RE = re.compile(
+    r"^\s*import\s+SiteJsonLd\s+from\s+['\"]@/components/site-jsonld['\"]\s*;?\s*$"
+)
+COMPONENT_BASENAME = "site-jsonld.tsx"
+LAYOUT_PATH_RE = re.compile(r"layout\.(ts|tsx)$", re.I)
 
 
 # ─── I/O (BOM + CRLF safe — نفس العائلة ديال الباتشرات السابقين) ───────
@@ -234,8 +240,17 @@ def statement_end(text, start):
 
 
 def remove_spans(text, spans):
-    """spans = [(start,end,label,line)] مرتبين تنازلياً — كيحيد وكيطيح الأسطر الخاويين المتجاورين."""
+    """spans = [(start,end,label,line)] مرتبين تنازلياً — كيحيد وكيطيح الأسطر الخاويين المتجاورين.
+    إلا كان البلوك وحيد فوحدو فالسطر → كيمتص السطر كامل (بلا سطر خاوي خربان)."""
     for start, end, label, line in sorted(spans, key=lambda s: -s[0]):
+        # امتص whitespace ديال بداية السطر (إلا البلوك فبدايته)
+        while start > 0 and text[start - 1] in " \t":
+            start -= 1
+        # إلا ولّى فبداية سطر حقيقي والنهاية سالات السطر → بلع الـ newline
+        if end < len(text) and text[end] == "\n" and (
+            start == 0 or text[start - 1] == "\n"
+        ):
+            end += 1
         # حيد الأسطر الخاوية اللي مورا البلوك إلا كانت ملاصقة
         while end < len(text) and text[end] == "\n" and (
             end + 1 >= len(text) or text[end + 1] == "\n"
@@ -431,6 +446,99 @@ def scan_repo():
     return hits
 
 
+# ─── USAGES: فين كيترندر SiteJsonLd؟ ──────────────────────────────────
+def scan_usages():
+    """الملفات اللي فيها SiteJsonLd (import / usage / ذكر).
+    كيستثني المكون نفسو. ترجع [(path, {"import": [ln], "use": [ln], "other": [ln]})]."""
+    out = []
+    for base in SCAN_DIRS:
+        if not os.path.isdir(base):
+            continue
+        for root, dirs, files in os.walk(base):
+            dirs[:] = [d for d in dirs if d not in SCAN_SKIP]
+            for fn in files:
+                if not fn.endswith(SCAN_EXTS):
+                    continue
+                if fn == COMPONENT_BASENAME:
+                    continue  # المكون نفسو — معروف فين
+                p = os.path.join(root, fn)
+                try:
+                    with open(p, "rb") as f:
+                        t = f.read().decode("utf-8", "replace")
+                except OSError:
+                    continue
+                if not SITEJSONLD_WORD_RE.search(t):
+                    continue
+                kinds = {"import": [], "use": [], "other": []}
+                for i, ln in enumerate(t.split("\n"), start=1):
+                    if not SITEJSONLD_WORD_RE.search(ln):
+                        continue
+                    if IMPORT_LINE_RE.match(ln):
+                        kinds["import"].append(i)
+                    elif USAGE_RE.search(ln):
+                        kinds["use"].append(i)
+                    else:
+                        kinds["other"].append(i)
+                out.append((p.replace("\\", "/"), kinds))
+    return out
+
+
+def clean_extra_file(path):
+    """تنظيف ملف layout: مسح import + <SiteJsonLd/> + التعليقات اللي فوقها.
+    ترجع (cleaned, report, errors)."""
+    text, bom, crlf = load_text(path)
+    report, errors = [], []
+    orig = text
+
+    # 1) usages (برا النصوص)
+    mask = compute_string_mask(text)
+    uses = [u for u in USAGE_RE.finditer(text) if not in_mask(mask, u.start(), u.end())]
+    spans = []
+    for u in uses:
+        line = text.count("\n", 0, u.start()) + 1
+        report.append("   مسح: <SiteJsonLd /> — سطر %d" % line)
+        # التعليقات اللي فوق السطر
+        lines = text.split("\n")
+        idx = line - 1
+        new_first = strip_comment_lines_above(lines, idx)
+        span_start = len("\n".join(lines[:new_first])) + (1 if new_first > 0 else 0)
+        spans.append((span_start, u.end()))
+    if spans:
+        text = remove_spans(text, [(s, e, "", 0) for s, e in spans])
+        text = collapse_blank_lines(text)
+
+    # 2) import line (إلا ولا بلا usage)
+    mask = compute_string_mask(text)
+    still_used = [u for u in USAGE_RE.finditer(text) if not in_mask(mask, u.start(), u.end())]
+    if not still_used:
+        m = IMPORT_RE.search(text)
+        if m:
+            line = text.count("\n", 0, m.start()) + 1
+            report.append("   مسح: import SiteJsonLd — سطر %d" % line)
+            lines = text.split("\n")
+            idx = line - 1
+            del lines[idx]
+            text = "\n".join(lines)
+            text = collapse_blank_lines(text)
+
+    # 3) guards
+    mask = compute_string_mask(text)
+    ob = sum(1 for i, ch in enumerate(text) if ch == "{" and not mask[i])
+    cb = sum(1 for i, ch in enumerate(text) if ch == "}" and not mask[i])
+    if ob != cb:
+        errors.append("GUARD فـ %s: الأقواس ماشي متوازنين (%d/%d)" % (path, ob, cb))
+    code_no_comments = "\n".join(
+        ln for ln in text.split("\n")
+        if not ln.strip().startswith("//")
+    )
+    if SITEJSONLD_WORD_RE.search(code_no_comments):
+        report.append("   ⚠ بقا ذكر SiteJsonLd (تعليق/نص) — راجعو يدوياً إلا بغيتي")
+
+    if text == orig and not errors:
+        return text, ["   [OK] ما تبدل والو"], []
+    return text, report, errors
+
+
 # ─── main ───────────────────────────────────────────────────────────────
 def main():
     args = sys.argv[1:]
@@ -455,6 +563,25 @@ def main():
         print("   · %s — أسطر %s%s" % (p, lines, marker))
     print()
 
+    usages = scan_usages()
+    print("[USAGES] فين كيترندر <SiteJsonLd /> (بلا المكون نفسو):")
+    if not usages:
+        print("   (حتى واحد غير components/site-jsonld.tsx)")
+    extras = []  # (path, is_layout)
+    for p, kinds in usages:
+        is_target = p.replace("/", os.sep) == target
+        is_layout = bool(LAYOUT_PATH_RE.search(p))
+        tag = " ← target (خاصو يبقى — واحد فقط)" if is_target else (
+            " ← LAYOUT! خاصو يتحيد (كيبان فكول الصفحات)" if is_layout and kinds["use"] else ""
+        )
+        print(
+            "   · %s — import %s · usage %s · آخر %s%s"
+            % (p, kinds["import"], kinds["use"], kinds["other"], tag)
+        )
+        if kinds["use"] and not is_target:
+            extras.append((p, is_layout))
+    print()
+
     if scan_only:
         return 0
 
@@ -462,8 +589,23 @@ def main():
         print("[ERROR] ملف ما كاينش: %s — شغّلو من جذر الفرونت" % target)
         return 1
 
+    # ─── خطة التغيير: target + layouts ───
+    jobs = []  # (path, cleaned, report)
+    errors = []
+
     text, bom, crlf = load_text(target)
-    cleaned, report, errors = build_cleaned(text, force=force)
+    cleaned, report, errs = build_cleaned(text, force=force)
+    errors += ["%s: %s" % (target, e) for e in errs]
+    jobs.append((target, cleaned, report))
+
+    for p, is_layout in extras:
+        if not is_layout:
+            print("[NOTE] %s فيه usage ديال SiteJsonLd — ماشي layout: ما تمسش." % p)
+            print("       إلا هادا هو مصدر التكرار، قرر يدوياً (ولا صيفط لي التقرير).")
+            continue
+        cleaned2, report2, errs2 = clean_extra_file(p)
+        errors += ["%s: %s" % (p, e) for e in errs2]
+        jobs.append((p, cleaned2, report2))
 
     if errors:
         print("[ERROR] ما كتب والو:")
@@ -471,25 +613,36 @@ def main():
             print("   " + e)
         return 2
 
-    idempotent = any("idempotent" in r for r in report)
-    print("[PLAN] %s" % target)
-    for r in report:
-        print(r)
-    if idempotent:
+    changed = []
+    for p, cleaned3, rep in jobs:
+        if rep and not any(
+            "idempotent" in r or "ما كاين حتى" in r or "ما تبدل والو" in r for r in rep
+        ):
+            changed.append((p, cleaned3, rep))
+
+    if not changed:
+        print("[OK] idempotent — page.tsx نقي + حتى layout ما كيرندرش SiteJsonLd")
         print()
-        print("[NEXT] إلا التقرير ديال [SCAN] ورّى ملفات أخرى فيها ld+json —")
-        print("       صيفط لي التقرير كامل قبل أي خطوة.")
+        print("[NEXT] الهدف محقق فالمصدر. rebuild + verify --file، وإلا بقا FAIL")
+        print("       → صيفط ليا [SCAN]+[USAGES] كاملين.")
         return 0
+
+    for p, _c, rep in changed:
+        print("[PLAN] %s" % p)
+        for r in rep:
+            print(r)
     if not apply:
         print()
         print("[DRY-RUN] ما كتب والو — عاود بـ --apply (+backup %s)" % BACKUP_SUFFIX)
         return 0
 
-    backup = target + BACKUP_SUFFIX
-    shutil.copyfile(target, backup)
-    save_text(target, cleaned, bom, crlf)
     print()
-    print("[APPLIED] ✓ backup: %s" % backup)
+    for p, cleaned3, _rep in changed:
+        _t, bom3, crlf3 = load_text(p)  # الحالة ديال الأصل (قبل الكتابة)
+        backup = p + BACKUP_SUFFIX
+        shutil.copyfile(p, backup)
+        save_text(p, cleaned3, bom3, crlf3)
+        print("[APPLIED] ✓ %s (backup: %s)" % (p, backup))
     print("[NEXT] npm run build → verify_jsonld_fix.py --file .next\\server\\app\\index.html")
     return 0
 
