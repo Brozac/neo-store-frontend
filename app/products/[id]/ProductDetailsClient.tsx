@@ -509,7 +509,7 @@ export default function ProductDetailsClient({
             <div ref={mainCtaRef} className="space-y-4 pt-2 border-t border-gray-200">
               {/* 🩹 TRUST — Flash timer فقط للعرضات الممولة الحقيقية (is_sourced) — لا إلحاح وهمي على كل منتج */}
               {product.is_sourced === true && <CountdownTimer />}
-              <DeliveryEstimator />
+              <DeliveryEstimator productId={product.id} />
 
               <div className="space-y-2.5 my-6">
                 {/* 🩹 P0 مالي: "Bundle Savings" كان خصم وهمي — كيتعرض فالسلة ويختفى فالـ checkout */}
