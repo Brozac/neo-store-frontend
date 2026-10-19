@@ -12,7 +12,9 @@ export async function GET() {
     { url: `${SITE_URL}/terms`, priority: '0.4', freq: 'yearly' },
     { url: `${SITE_URL}/refund`, priority: '0.4', freq: 'yearly' },
   ];
-  const now = new Date().toISOString();
+  // 🩹 SECTION 5 — lastmod مثبت: كان new Date() فكل طلب = lastmod وهمي كيتبدل يومياً،
+  //    وجوجل كيوقف الثقة فالتواريخ اللي كتزور دائماً. بدّل يدوياً ملي كيتبدل المحتوى فعلاً.
+  const now = '2026-10-19T00:00:00.000Z';
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

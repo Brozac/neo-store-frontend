@@ -1,3 +1,24 @@
+import type { Metadata } from 'next';
+
+// ═══════════════════════════════════════════════════════════════════
+// 🩹 SECTION 5 — static pages SEO
+// قبل: العشرة صفحات الثابتة كلهم كيشاركو title الهوم + og:url ديال الهوم
+//      = 10 صفحات "مكررة" بعيني جوجل. دابا: title/desc/canonical خاصين بكل صفحة.
+// DOC-INHERIT (Task 13): openGraph.url خاصو يكون ديال الصفحة — إلا لا كيورث الهوم!
+// ═══════════════════════════════════════════════════════════════════
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description:
+    'The terms and conditions for using Laclarc.com: ordering, pricing, fulfillment by global suppliers, liability limits, and governing law.',
+  alternates: { canonical: '/terms' },
+  openGraph: {
+    title: 'Terms of Service | Laclarc',
+    description:
+      'The terms and conditions for using Laclarc.com: ordering, pricing, fulfillment by global suppliers, liability limits, and governing law.',
+    url: '/terms',
+  },
+};
+
 export default function TermsOfService() {
   return (
     <main className="min-h-screen bg-temu-offwhite py-12">

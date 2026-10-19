@@ -1,3 +1,19 @@
+import type { Metadata } from 'next';
+
+// 🩹 SECTION 5 — metadata خاصة (كانت كتورث title الهوم + og:url الهوم — see terms/page.tsx)
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description:
+    'How Laclarc collects, uses, and protects your personal information — order data, secure Stripe payments, cookies, and how to contact us.',
+  alternates: { canonical: '/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | Laclarc',
+    description:
+      'How Laclarc collects, uses, and protects your personal information — order data, secure Stripe payments, cookies, and how to contact us.',
+    url: '/privacy',
+  },
+};
+
 export default function PrivacyPolicy() {
   return (
     <main className="min-h-screen bg-temu-offwhite py-12">

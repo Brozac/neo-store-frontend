@@ -1,3 +1,19 @@
+import type { Metadata } from 'next';
+
+// 🩹 SECTION 5 — metadata خاصة (كانت كتورث title الهوم + og:url الهوم — see terms/page.tsx)
+export const metadata: Metadata = {
+  title: 'Refund & Return Policy',
+  description:
+    'Laclarc return and refund policy: 30-day returns, damaged or defective items, the return process, refund timing, and order cancellation.',
+  alternates: { canonical: '/refund' },
+  openGraph: {
+    title: 'Refund & Return Policy | Laclarc',
+    description:
+      'Laclarc return and refund policy: 30-day returns, damaged or defective items, the return process, refund timing, and order cancellation.',
+    url: '/refund',
+  },
+};
+
 export default function RefundPolicy() {
   return (
     <main className="min-h-screen bg-temu-offwhite py-12">
