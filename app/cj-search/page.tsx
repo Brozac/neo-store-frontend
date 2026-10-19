@@ -14,6 +14,13 @@ function SearchContent() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [geoInfo, setGeoInfo] = useState<{ country: string; name: string; supported: boolean } | null>(null);
+
+  // 🌍 Geo Flow — علم البلد من الاستجابة نفسها (كشف تلقائي بلا أي إعداد)
+  const flag = (cc?: string) =>
+    cc && /^[A-Z]{2}$/.test(cc)
+      ? cc.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt(0)))
+      : '🌍';
 
   useEffect(() => {
     if (!q || q.length < 2) { setProducts([]); setLoading(false); return; }
@@ -24,6 +31,7 @@ function SearchContent() {
         const arr = data.products || [];
         setProducts(arr);
         setHasMore(arr.length >= 20);
+        if (data.geo?.country) setGeoInfo(data.geo);
         setLoading(false);
       })
       .catch(() => { setLoading(false); });
@@ -36,6 +44,13 @@ function SearchContent() {
         <h1 className="text-2xl font-black text-temu-black my-4">
           🌍 Global Results for: <span className="text-temu-orange">{q}</span>
         </h1>
+
+        {geoInfo?.country && (
+          <p className="text-xs font-bold text-temu-gray-text mb-3">
+            {flag(geoInfo.country)} Delivering to {geoInfo.name}
+            {!geoInfo.supported && ' — worldwide shipping mode'}
+          </p>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-16">

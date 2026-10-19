@@ -16,6 +16,12 @@ export default function CjProductPage() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
+  // 🌍 Geo Flow — علم البلد من كود ISO-2 (الاستجابة فيها geo أصلاً)
+  const flagOf = (cc?: string) =>
+    cc && /^[A-Z]{2}$/.test(cc)
+      ? cc.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt(0)))
+      : '🌍';
+
   useEffect(() => {
     if (!pid) return;
     setLoading(true);
@@ -125,11 +131,23 @@ export default function CjProductPage() {
               {/* ✨ Tenet #26 — بلا strikethrough مولّد (قرار 1) */}
             </div>
 
-            {Number(product.estimatedShipUsd) > 0 && (
+            {product.shipping?.source === 'cj-live' ? (
+              /* 🚚 Geo Flow v3.0 — الثمن المباشر من freightCalculateTip (عرض حقيقي) */
+              <div className="bg-white border border-temu-gray-border-light rounded-xl p-3 text-xs font-bold text-temu-gray-text space-y-1">
+                <p>
+                  🚚 Shipping to {flagOf(product.geo?.country)} {product.geo?.name || 'you'}:
+                  <span className="text-temu-black"> ${Number(product.shipping.amount).toFixed(2)}</span>
+                  {product.shipping.channelName && <span className="text-temu-gray-light font-medium"> · {product.shipping.channelName}</span>}
+                </p>
+                {product.shipping.arrivalTime && (
+                  <p className="text-temu-gray-light font-medium">⏱️ Estimated arrival: {product.shipping.arrivalTime} days · live CJ quote</p>
+                )}
+              </div>
+            ) : Number(product.estimatedShipUsd) > 0 ? (
               <div className="bg-white border border-temu-gray-border-light rounded-xl p-3 text-xs font-bold text-temu-gray-text">
                 🚚 Estimated shipping from ~${Number(product.estimatedShipUsd).toFixed(2)} — ships worldwide via CJ, 7–15 business days
               </div>
-            )}
+            ) : null}
 
             <button
               onClick={handleAddToCart}
