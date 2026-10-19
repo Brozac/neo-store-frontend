@@ -12,8 +12,12 @@ Usage:
   [3] الـ titles كاملين مختلفين (قاتل التكرار)
   [4] sitemap-static.xml: lastmod مثبت
   [5] الهوم ما تبدلش (regression guard)
+
+🩹 v1.1 (25-b): html.unescape قبل المقارنة — &amp; فـ <title> ترميز HTML صحيح،
+   ماشي فشل (false positive على /refund فالنسخة الأولى)
 """
 import argparse
+import html
 import re
 import sys
 import urllib.request
@@ -57,13 +61,13 @@ def fetch(url: str, timeout: int = 30):
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", "replace")
 
-def grab(html: str, pattern: str) -> str:
-    m = re.search(pattern, html, re.I | re.S)
+def grab(page_html: str, pattern: str) -> str:
+    m = re.search(pattern, page_html, re.I | re.S)
     return re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
 
-def head_of(html: str) -> str:
-    m = re.search(r"<head.*?</head>", html, re.I | re.S)
-    return m.group(0) if m else html[:20000]
+def head_of(page_html: str) -> str:
+    m = re.search(r"<head.*?</head>", page_html, re.I | re.S)
+    return m.group(0) if m else page_html[:20000]
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -81,16 +85,18 @@ def main() -> int:
     for path, want_title, want_canon in INDEXABLE:
         print(f"\n▸ {path}  (indexable)")
         try:
-            html = fetch(base + path)
+            page_html = fetch(base + path)
         except Exception as e:
             fail(f"{path} fetch", str(e))
             continue
-        head = head_of(html)
-        title = grab(head, r"<title[^>]*>(.*?)</title>")
-        titles_seen[path] = re.sub(r"&amp;", "&", title)
+        head = head_of(page_html)
+        # 🩹 25-b — entities كيرجعو لنصهم قبل المقارنة (&amp; → &):
+        # <title>Refund &amp; Return Policy</title> = الترميز الصحيح ديال HTML، ماشي فشل
+        title = html.unescape(grab(head, r"<title[^>]*>(.*?)</title>"))
+        titles_seen[path] = title
         desc = grab(head, r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']*)["\']')
-        canon = grab(head, r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']')
-        og_url = grab(head, r'<meta\s+property=["\']og:url["\']\s+content=["\']([^"\']+)["\']')
+        canon = html.unescape(grab(head, r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']'))
+        og_url = html.unescape(grab(head, r'<meta\s+property=["\']og:url["\']\s+content=["\']([^"\']+)["\']'))
         robots = grab(head, r'<meta\s+name=["\']robots["\']\s+content=["\']([^"\']+)["\']')
 
         if title == want_title: ok(f"title = '{want_title}'")
@@ -112,16 +118,16 @@ def main() -> int:
     for path in NOINDEX:
         print(f"\n▸ {path}  (noindex)")
         try:
-            html = fetch(base + path)
+            page_html = fetch(base + path)
         except urllib.error.HTTPError as e:
             warn(f"{path} fetch", f"HTTP {e.code} — لا تحقق يدوي")
             continue
         except Exception as e:
             warn(f"{path} fetch", str(e))
             continue
-        head = head_of(html)
+        head = head_of(page_html)
         robots = grab(head, r'<meta\s+name=["\']robots["\']\s+content=["\']([^"\']+)["\']')
-        titles_seen[path] = grab(head, r"<title[^>]*>(.*?)</title>")
+        titles_seen[path] = html.unescape(grab(head, r"<title[^>]*>(.*?)</title>"))
         if "noindex" in robots.lower(): ok(f"robots = '{robots}'")
         else: fail("noindex", f"meta robots مازال '{robots or '—'}'")
 
@@ -149,7 +155,7 @@ def main() -> int:
     print("\n▸ / (regression guard)")
     try:
         home = fetch(base + "/")
-        h_title = re.sub(r"&amp;", "&", grab(head_of(home), r"<title[^>]*>(.*?)</title>"))
+        h_title = html.unescape(grab(head_of(home), r"<title[^>]*>(.*?)</title>"))
         if "Laclarc | Curated Lifestyle" in h_title: ok("title الهوم ما تبداش")
         else: warn("title الهوم", f"تغير لـ '{h_title}' — راجع يدوياً")
         h_canon = grab(head_of(home), r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']')

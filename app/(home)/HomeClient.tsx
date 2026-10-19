@@ -2,19 +2,17 @@
 
 import { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ProductCard from './components/ProductCard';
-import LightningDeals from './components/LightningDeals';
-import HeroSection from './components/HeroSection';
+import ProductCard from '../components/ProductCard';
+import LightningDeals from '../components/LightningDeals';
+import HeroSection from '../components/HeroSection';
 import dynamic from 'next/dynamic';
 
 // 🚀 PERF (Task 20) — Reels تحتها الـ fold = lazy (كيتحمّل غير ملي يوصلو الزائر)
-const ShoppableReels = dynamic(() => import('./components/ShoppableReels'), {
+const ShoppableReels = dynamic(() => import('../components/ShoppableReels'), {
   loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-2xl" />,
 });
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
-import SiteJsonLd from '@/components/site-jsonld';
-
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -494,8 +492,6 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <>
-    <SiteJsonLd />
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-temu-offwhite">
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
@@ -503,6 +499,5 @@ export default function Home() {
     }>
       <HomeContent />
     </Suspense>
-    </>
   );
 }
