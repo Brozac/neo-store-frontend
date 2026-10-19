@@ -8,11 +8,17 @@ interface CategoryNode {
   children?: CategoryNode[];
 }
 
-function flattenCategoryTree(nodes: CategoryNode[], out: string[] = []): string[] {
-  for (const node of nodes) {
-    if (node?.slug) out.push(node.slug);
+// 🩹 S4 FIX — كان كيدفع slug مبسط (سمية العقدة برك): /category/automobiles-sensors
+//    هاد الروابط (667 من 681) كيشيرو لصفحات بـ 0 منتج — المسار الحقيقي هو
+//    المسار الكامل من الجذر: /category/automobiles-and-motorcycles/auto-replacement-parts/automobiles-sensors
+//    (مُثبت حياً: full=91 منتج · flat=0 — probe ديال 2026-10-19)
+function collectFullPaths(nodes: CategoryNode[], prefix = '', out: string[] = []): string[] {
+  for (const node of nodes || []) {
+    if (!node?.slug) continue;
+    const path = prefix ? `${prefix}/${node.slug}` : node.slug;
+    out.push(path);
     if (Array.isArray(node?.children) && node.children.length > 0) {
-      flattenCategoryTree(node.children, out);
+      collectFullPaths(node.children, path, out);
     }
   }
   return out;
@@ -20,7 +26,7 @@ function flattenCategoryTree(nodes: CategoryNode[], out: string[] = []): string[
 
 export async function GET() {
   const now = new Date().toISOString();
-  let slugs: string[] = [];
+  let paths: string[] = [];
   try {
     const res = await fetch(`${BACKEND_URL}/api/categories`, { next: { revalidate: 86400 } });
     if (res.ok) {
@@ -30,7 +36,7 @@ export async function GET() {
         : Array.isArray(data?.children)
           ? data.children
           : [];
-      slugs = flattenCategoryTree(tree);
+      paths = collectFullPaths(tree);
     }
   } catch {
     // fail → urlset خاوي (الفهرس يبقى صالح)
@@ -38,7 +44,7 @@ export async function GET() {
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
- ${slugs.map((slug) => `  <url>\n    <loc>${SITE_URL}/category/${slug}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`).join('\n')}
+ ${paths.map((path) => `  <url>\n    <loc>${SITE_URL}/category/${path}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`).join('\n')}
 </urlset>`;
 
   return new NextResponse(xml, {

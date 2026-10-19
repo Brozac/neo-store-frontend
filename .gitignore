@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════
-# Laclarc Frontend — .gitignore v2 (Node.js + Next.js + Python)
+# Laclarc Frontend — .gitignore v2
 # المبدأ: لا build artifacts · لا backups · لا runtime state
 # ═══════════════════════════════════════════════════════
 
@@ -49,8 +49,8 @@ serviceAccountKey*.json
 *.bak-xchg
 *.orig
 *~
+*.bak-*
 *.patch
-
 # ─── 🩹 v2 — Temp / Cache (python-inject · debug) ───
 *.tmp
 *.swp
@@ -60,70 +60,13 @@ serviceAccountKey*.json
 .eslintcache
 .tmp/
 
-# ─── 🩹 v2 — Local diagnostic scripts (TSX & Python) ───
+# ─── 🩹 v2 — Local diagnostic scripts (same as backend pattern) ───
 test_*.tsx
 fix_*.tsx
 probe_*.tsx
 *_probe.tsx
 debug_*.tsx
 category_report*.tsx
-test_*.py
-fix_*.py
-probe_*.py
-*_probe.py
-debug_*.py
-category_report*.py
-
-# ─── 🐍 Python Rules (تجاهل ملفات وبيئات بايثون) ───
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# CPython / Distribution artifacts
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environments
-.venv/
-venv/
-ENV/
-env/
-venv.*/
-.env/
-
-# Python Testing & Linters cache
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.tox/
-.nox/
-.coverage
-.coverage.*
-htmlcov/
-.hypothesis/
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Python Local DBs / State
-*.sqlite3
-*.db
-*.log
 
 # ─── 🩹 v2 — Runtime state (sessionStorage mirrors) ───
 *.state.json

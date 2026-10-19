@@ -1,47 +1,135 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+// app/categories/page.tsx — Section 4: Hub ديال الأقسام (SEO)
+//
+// قبل (baseline 2026-10-19 على laclarc.com/categories):
+//   'use client' + fetch فالـ mount → الـ SSR كان كيخرج spinner برك:
+//   0 رابط قسم · 0 h1 · بلا canonical · بلا JSON-LD · عنوان افتراضي عام
+//   → Google كان كيشوف صفحة خاوية (لجنة الفهرسة ما عندها ما تأكل).
+//
+// دابا:
+//   • Server Component + ISR (revalidate 21600 = 6 سوايع)
+//   • 681 رابط قسم كاملين فالـ HTML الأول (روابط داخلية — هدف القسم 4)
+//   • counts حقيقية من DB (نفس سيمانتيك العدّاد الحي) — بلا counts إلا الباكند
+//     رجع الشجرة العادية (سُلّم fallback فـ lib/categoriesHub.ts)
+//   • generateMetadata كاملة (title + description + canonical + OG)
+//   • CollectionPage JSON-LD (client component — الدرس M#60)
+//   • فشل كامل؟ → CategoriesClient (السلوك القديم — الطوارئ)
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import CategoriesClient from './CategoriesClient';
+import CategoriesJsonLd from './CategoriesJsonLd';
+import { fetchCategoriesHub, type HubNode } from '@/lib/categoriesHub';
 
-interface CategoryNode {
-  id: number;
-  name: string;
-  slug: string;
-  children?: CategoryNode[];
+// ISR — الأقسام كيتبدلو نادراً؛ 6 سوايع = توازن بين الطزاجة وحمل Render
+export const revalidate = 21600;
+
+export async function generateMetadata(): Promise<Metadata> {
+  // أعداد حقيقية معروفة غير بعد الـ fetch — العنوان/الوصف ثابتين وخايبين
+  // على أي حالة (بلا وعود بالأرقام — قاعدة الصدق DRS)
+  const title = 'Browse All Categories — Laclarc';
+  const description =
+    'Browse every Laclarc department in one place — electronics, home, beauty, sports and more. Pick a category and start shopping.';
+  return {
+    // ✨ absolute = كيتجاوز template '%s | Laclarc' — بلا علامة مزدوجة
+    title: { absolute: title },
+    description,
+    alternates: { canonical: '/categories' },
+    openGraph: { title, description, type: 'website' },
+  };
 }
 
-export default function CategoriesPage() {
-  const [tree, setTree] = useState<CategoryNode[]>([]);
-  const [loading, setLoading] = useState(true);
+function fmt(n: number): string {
+  return n.toLocaleString('en-US');
+}
 
-  useEffect(() => {
-    // ✨ إضافة { cache: 'no-store' } لمنع الكاش وجلب أحدث الفئات دائماً
-    fetch('https://neo-store-backend.onrender.com/api/categories', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        setTree(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching categories:', err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+function RootSection({ node }: { node: HubNode }) {
+  return (
+    <section className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
+      <div className="flex items-center gap-4 mb-4">
+        {node.image_url && (
+          // صورة تمثيلية من الباكند (نفس نمط /api/categories) — below the fold → lazy
+          <img
+            src={node.image_url}
+            alt={node.name}
+            loading="lazy"
+            width={56}
+            height={56}
+            className="w-14 h-14 rounded-temu-sm object-cover bg-temu-offwhite flex-shrink-0"
+          />
+        )}
+        <div>
+          <Link
+            href={`/category/${node.slugPath}`}
+            className="text-2xl font-extrabold text-temu-black hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation inline-block w-fit"
+          >
+            {node.name}
+          </Link>
+          {node.count !== null && (
+            <p className="text-temu-gray-light text-xs mt-0.5">
+              {fmt(node.count)} products
+            </p>
+          )}
+        </div>
       </div>
-    );
+
+      {node.children.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {node.children.map((sub) => (
+            <div key={sub.id || sub.slug} className="flex flex-col">
+              <Link
+                href={`/category/${sub.slugPath}`}
+                className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
+              >
+                {sub.name}
+              </Link>
+
+              {sub.children.length > 0 && (
+                <div className="space-y-1">
+                  {sub.children.map((leaf) => (
+                    <Link
+                      key={leaf.id || leaf.slug}
+                      href={`/category/${leaf.slugPath}`}
+                      className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
+                    >
+                      {leaf.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default async function CategoriesPage() {
+  const hub = await fetchCategoriesHub();
+
+  // سُلّم fallback وصل لقاعه — السلوك القديم أحسن من صفحة خاوية
+  if (!hub) {
+    return <CategoriesClient />;
   }
+
+  // عدد الأقسام: من الباكند إلا جا، وإلا الحساب من الشجرة (نفس النتيجة)
+  const totalCategories =
+    hub.totals?.categories ??
+    hub.nodes.reduce(
+      (sum, root) =>
+        sum +
+        1 +
+        root.children.length +
+        root.children.reduce((a, b) => a + b.children.length, 0),
+      0
+    );
+  const totalProducts = hub.totals?.products ?? null;
 
   return (
     <main className="min-h-screen bg-temu-offwhite pb-24 font-sans">
       <div className="max-w-7xl mx-auto p-6">
-        
-        <Link 
-          href="/" 
+
+        <Link
+          href="/"
           className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -51,67 +139,26 @@ export default function CategoriesPage() {
         </Link>
 
         <div className="text-center mb-10 mt-4">
-          <h1 className="text-4xl font-extrabold text-temu-black mb-2">Explore Categories</h1>
-          <p className="text-temu-gray-light text-sm">Find exactly what you're looking for</p>
-        </div>
-
-        <div className="relative bg-linear-to-br from-temu-black to-temu-orange rounded-3xl p-8 mb-12 overflow-hidden shadow-lg">
-          <div className="relative z-10">
-            <p className="text-temu-error text-xs font-bold uppercase tracking-widest mb-1">New Collection</p>
-            <h2 className="text-white text-3xl font-extrabold leading-tight mb-4">NEO FALL<br/>STAY FASHION</h2>
-            <Link 
-              href="/" 
-              className="bg-white text-temu-black text-xs font-extrabold py-3 px-6 rounded-full hover:bg-temu-offwhite transition shadow-md cursor-pointer inline-block active:scale-95 touch-manipulation"
-            >
-              Shop Now
-            </Link>
-          </div>
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full"></div>
-          <div className="absolute right-12 top-4 w-24 h-24 bg-white/10 rounded-full"></div>
+          <h1 className="text-4xl font-extrabold text-temu-black mb-2">Browse All Categories</h1>
+          <p className="text-temu-gray-light text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
+          {totalProducts !== null && (
+            <p className="text-temu-dark text-xs font-bold mt-2">
+              {fmt(totalCategories)} departments · {fmt(totalProducts)} products in stock
+            </p>
+          )}
         </div>
 
         <div className="space-y-8">
-          {tree.map((mainCat) => (
-            <div key={mainCat.id} className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
-              <Link 
-                href={`/category/${mainCat.slug}`}
-                className="text-2xl font-extrabold text-temu-black mb-4 inline-block hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation"
-              >
-                {mainCat.name}
-              </Link>
-
-              {mainCat.children && mainCat.children.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-4">
-                  {mainCat.children.map((subCat) => (
-                    <div key={subCat.id} className="flex flex-col">
-                      <Link 
-                        href={`/category/${mainCat.slug}/${subCat.slug}`}
-                        className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
-                      >
-                        {subCat.name}
-                      </Link>
-
-                      {subCat.children && subCat.children.length > 0 && (
-                        <div className="space-y-1">
-                          {subCat.children.slice(0, 5).map((leaf) => ( 
-                            <Link 
-                              key={leaf.id} 
-                              href={`/category/${mainCat.slug}/${subCat.slug}/${leaf.slug}`}
-                              className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
-                            >
-                              {leaf.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {hub.nodes.map((node) => (
+            <RootSection key={node.id || node.slug} node={node} />
           ))}
         </div>
       </div>
+
+      {/* JSON-LD — client component (M#60) · props صغار: 14 جذر برك */}
+      <CategoriesJsonLd
+        items={hub.nodes.map((n) => ({ name: n.name, href: `/category/${n.slugPath}` }))}
+      />
     </main>
   );
 }
