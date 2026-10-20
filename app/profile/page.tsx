@@ -2,6 +2,7 @@
 
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface UserProfile {
   name: string;
@@ -277,7 +278,7 @@ export default function ProfilePage() {
               onClick={() => { setEditName(user.name); setEditError(''); setIsEditOpen(true); }}
               className="inline-flex items-center gap-1.5 text-[#8B78C6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
             >
-              <span>✏️</span> Edit Profile Details
+              <span><GlassIcon ch="✏️" size="xs" /></span> Edit Profile Details
             </button>
           )}
         </div>
@@ -291,7 +292,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#FF6B9D]">❤️</span>
+                  <span className="text-base text-[#FF6B9D]"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -303,7 +304,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#8B78C6]">📦</span>
+                  <span className="text-base text-[#8B78C6]"><GlassIcon ch="📦" size="xs" /></span>
                   Order History & Invoices
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -314,7 +315,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-emerald-600">🚚</span>
+                  <span className="text-base text-emerald-600"><GlassIcon ch="🚚" size="xs" /></span>
                   Track Live Shipment
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -325,7 +326,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-rose-50 rounded-xl transition text-rose-600 cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-3">
-                  <span className="text-base">🔒</span>
+                  <span className="text-base"><GlassIcon ch="🔒" size="xs" /></span>
                   Sign Out of Laclarc
                 </span>
                 <span className="text-xs">&rarr;</span>
@@ -358,20 +359,20 @@ export default function ProfilePage() {
                 onClick={() => setIsEditOpen(false)}
                 className="text-gray-400 hover:text-black p-1 text-sm font-bold"
               >
-                ✕
+                <GlassIcon i="x" size="xs" />
               </button>
             </div>
 
             {editError && (
               <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold" role="alert">
-                ⚠️ {editError}
+                <GlassIcon ch="⚠️" size="xs" /> {editError}
               </div>
             )}
 
             {/* 🆕 v1.1 — uploadError داخل المودال أيضاً (كان خارجاً فقط — الزبون ما يشوفش) */}
             {uploadError && (
               <div className="p-3 bg-red-50 text-rose-600 rounded-xl text-xs font-bold" role="alert">
-                ⚠️ {uploadError}
+                <GlassIcon ch="⚠️" size="xs" /> {uploadError}
               </div>
             )}
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface JourneyEvent {
   type: string;
@@ -117,7 +118,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
               {journey.order.destination} • Order {journey.order.order_number || `#${journey.order.id}`}
             </p>
           </div>
-          <span className="text-4xl">{STAGE_ICONS[journey.currentStage] || '📦'}</span>
+          <span className="text-4xl"><GlassIcon ch={STAGE_ICONS[journey.currentStage] || '📦'} size="lg" /></span>
         </div>
 
         {journey.eta && (
@@ -145,7 +146,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
       <div className="p-6">
         {journey.events.length === 0 ? (
           <div className="text-center py-8 text-gray-400 text-sm">
-            🏭 {lang === 'ar' ? 'طلبك يُجهز في المستودع — تحديثات حية قادمة قريبًا' : 'Your order is being prepared at the warehouse — live updates coming soon'}
+            <GlassIcon ch="🏭" size="xs" /> {lang === 'ar' ? 'طلبك يُجهز في المستودع — تحديثات حية قادمة قريبًا' : 'Your order is being prepared at the warehouse — live updates coming soon'}
           </div>
         ) : (
           <div className="relative">
@@ -158,7 +159,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
                   )}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 shadow-md text-sm ${
                     isLast ? 'bg-[#8B78C6] text-white ring-4 ring-[#8B78C6]/20' : 'bg-gray-100 text-gray-400'}`}>
-                    {STAGE_ICONS[ev.type] || '📍'}
+                    <GlassIcon ch={STAGE_ICONS[ev.type] || '📍'} size="sm" />
                   </div>
                   <div className="flex-1 min-w-0 pt-1">
                     <div className="flex justify-between items-start gap-2 flex-wrap">
@@ -169,7 +170,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
                         {new Date(ev.time).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </div>
-                    {ev.location && <p className="text-[11px] text-temu-gray-text mt-0.5">📍 {ev.location}</p>}
+                    {ev.location && <p className="text-[11px] text-temu-gray-text mt-0.5"><GlassIcon ch="📍" size="xs" /> {ev.location}</p>}
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">{ev.description}</p>
                   </div>
                 </div>
@@ -181,7 +182,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
         {/* شارة الحقيقة */}
         <div className="mt-2 bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4 text-center">
           <p className="text-xs font-black text-emerald-700 flex items-center justify-center gap-1.5">
-            ✅ {lang === 'ar' ? 'بيانات حية مباشرة من مستودعات CJ' : 'Live data directly from warehouses'}
+            <GlassIcon ch="✅" size="xs" /> {lang === 'ar' ? 'بيانات حية مباشرة من مستودعات CJ' : 'Live data directly from warehouses'}
           </p>
           <p className="text-[10px] text-gray-400 mt-1">
             {lang === 'ar' ? 'لا تقديرات — الحقيقة فقط' : 'No estimates — only truth'}

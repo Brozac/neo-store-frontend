@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -40,9 +41,9 @@ function SearchContent() {
   return (
     <main className="min-h-screen bg-temu-offwhite p-6">
       <div className="max-w-7xl mx-auto">
-        <Link href="/" className="text-temu-orange font-bold text-sm">← Back</Link>
+        <Link href="/" className="text-temu-orange font-bold text-sm"><GlassIcon i="arrowLeft" size="xs" /> Back</Link>
         <h1 className="text-2xl font-black text-temu-black my-4">
-          🌍 Global Results for: <span className="text-temu-orange">{q}</span>
+          <GlassIcon ch="🌍" size="xs" /> Global Results for: <span className="text-temu-orange">{q}</span>
         </h1>
 
         {geoInfo?.country && (
@@ -70,7 +71,7 @@ function SearchContent() {
                   <div className="p-3">
                     <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1">{p.title}</h3>
                     <p className="text-sm font-black text-temu-error">${Number(p.laclarcPrice || p.price).toFixed(2)}</p>
-                    {p.ordersCount > 0 && <p className="text-[10px] text-temu-gray-light mt-0.5">🔥 {p.ordersCount} sold on CJ</p>}
+                    {p.ordersCount > 0 && <p className="text-[10px] text-temu-gray-light mt-0.5"><GlassIcon ch="🔥" size="xs" /> {p.ordersCount} sold on CJ</p>}
                   </div>
                 </a>
               ))}
@@ -78,12 +79,12 @@ function SearchContent() {
 
             {page > 1 && (
               <button onClick={() => setPage(p => Math.max(1, p - 1))} className="mt-6 mr-2 px-4 py-2 rounded-temu-sm border text-xs font-bold">
-                ← Previous
+                <GlassIcon i="arrowLeft" size="xs" /> Previous
               </button>
             )}
             {hasMore && (
             <button onClick={() => setPage(p => p + 1)} className="mt-6 px-4 py-2 rounded-temu-sm border text-xs font-bold">
-              Next →
+              Next <GlassIcon i="arrowRight" size="xs" />
             </button>
             )}
           </>

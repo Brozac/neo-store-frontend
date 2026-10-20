@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface Product { 
   id: number; 
@@ -77,7 +78,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
           <div className="lightning-content-top flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <div className="lightning-glass-badge inline-flex items-center gap-1.5 mb-1">
-                <span>⚡</span> Exclusive Sourced Drops
+                <span><GlassIcon i="zap" size="xs" /></span> Exclusive Sourced Drops
               </div>
               <h2 className="lightning-title text-xl sm:text-2xl font-black tracking-wider">
                 LIGHTNING DEALS
@@ -139,7 +140,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[10px] font-black text-amber-400">
-                      <span>⚡ Flash Left: {stockLeft}</span>
+                      <span><GlassIcon i="zap" size="xs" /> Flash Left: {stockLeft}</span>
                       <span className="text-[9px] text-gray-400 font-normal">Claim &rarr;</span>
                     </div>
                   </div>

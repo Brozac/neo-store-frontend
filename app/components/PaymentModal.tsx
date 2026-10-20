@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { getStoredUtm } from './UtmTracker'; // ✨ استيراد دالة التتبع
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -189,7 +190,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                 <h2 className="text-lg font-black text-temu-black">Select Payment Gateway</h2>
                 <p className="text-xs text-temu-gray-light">Instant automated fulfillment upon confirmation</p>
               </div>
-              <button onClick={onClose} className="text-temu-gray-light hover:text-temu-black p-1 text-sm font-bold">✕</button>
+              <button onClick={onClose} className="text-temu-gray-light hover:text-temu-black p-1 text-sm font-bold"><GlassIcon i="x" size="xs" /></button>
             </div>
 
             {error && <div className="bg-red-50 text-temu-error p-3 rounded-temu-sm mb-4 text-xs font-bold text-center">{error}</div>}
@@ -208,7 +209,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-[#635BFF]/10 text-[#635BFF] rounded-xl flex items-center justify-center font-black text-xs">
-                        💳
+                        <GlassIcon ch="💳" size="xs" />
                       </div>
                       <div>
                         <span className="font-extrabold text-temu-black text-sm block">Credit &amp; Debit Cards</span>
@@ -246,7 +247,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-emerald-500/15 text-emerald-600 rounded-xl flex items-center justify-center font-black text-base">
-                        💎
+                        <GlassIcon ch="💎" size="xs" />
                       </div>
                       <div>
                         <span className="font-extrabold text-temu-black text-sm block">Crypto — Stablecoins</span>
@@ -417,7 +418,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
             ) : (
               <div className="text-center py-6 space-y-3">
                 <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
-                  ✓
+                  <GlassIcon i="check" size="xs" />
                 </div>
                 <h2 className="text-lg font-black text-temu-black">تم استلام طلبك بنجاح!</h2>
                 <p className="text-xs text-temu-gray-text leading-relaxed">

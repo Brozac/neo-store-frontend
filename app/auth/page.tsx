@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import MultiStepRegister from '../components/MultiStepRegister';
 import Image from 'next/image';
+import GlassIcon from '@/components/ui/GlassIcon';
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -112,7 +113,7 @@ function AuthContent() {
           
           <div className="text-center mb-6">
             <div className="w-14 h-14 bg-purple-50 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
-              🔑
+              <GlassIcon ch="🔑" size="xs" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">Reset Password</h1>
             <p className="text-gray-500 text-xs mt-1">Enter your account email to receive an instant recovery link.</p>
@@ -120,13 +121,13 @@ function AuthContent() {
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl mb-4 text-xs font-bold text-center">
-              ⚠️ {error}
+              <GlassIcon ch="⚠️" size="xs" /> {error}
             </div>
           )}
 
           {infoMessage && (
             <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3.5 rounded-xl mb-4 text-xs font-bold text-center">
-              ✓ {infoMessage}
+              <GlassIcon i="check" size="xs" /> {infoMessage}
             </div>
           )}
 
@@ -188,13 +189,13 @@ function AuthContent() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl mb-4 text-xs font-bold text-center">
-            ⚠️ {error}
+            <GlassIcon ch="⚠️" size="xs" /> {error}
           </div>
         )}
 
         {serverWaking && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl mb-4 text-xs font-medium text-center animate-pulse">
-            ⏳ Connecting to secure cloud authentication... Please wait.
+            <GlassIcon ch="⏳" size="xs" /> Connecting to secure cloud authentication... Please wait.
           </div>
         )}
 

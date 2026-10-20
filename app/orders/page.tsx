@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import GlassIcon, { GlassInline } from '@/components/ui/GlassIcon';
 
 interface Order {
   id: string | number;
@@ -214,7 +215,7 @@ export default function OrdersPage() {
         {orders.length === 0 ? (
           <div className="bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-sm space-y-4">
             <div className="w-16 h-16 bg-purple-50 text-[#8B78C6] rounded-full flex items-center justify-center text-2xl mx-auto">
-              📦
+              <GlassIcon ch="📦" size="xs" />
             </div>
             <h3 className="text-base font-bold text-gray-800">No Orders Found Yet</h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
@@ -238,12 +239,12 @@ export default function OrdersPage() {
                   </div>
                   {/* 🩹 M#29 — status_label الودي من الباكند */}
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusStyle(order.status)}`}>
-                    {getStatusLabel(order)}
+                    <GlassInline text={getStatusLabel(order)} />
                   </span>
                 </div>
 
                 <div className="py-3 text-xs text-gray-600 flex items-start gap-2.5">
-                  <span className="text-base">📍</span>
+                  <span className="text-base"><GlassIcon ch="📍" size="xs" /></span>
                   <div className="min-w-0">
                     <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Delivery Destination</span>
                     <p className="font-medium text-gray-800 truncate">{formatAddress(order.shipping_address)}</p>
@@ -262,7 +263,7 @@ export default function OrdersPage() {
                       onClick={() => router.push(`/track-order?orderId=${order.id}&email=${encodeURIComponent(order.customer_email || userEmail)}`)}
                       className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5"
                     >
-                      <span>🚚</span>
+                      <span><GlassIcon ch="🚚" size="xs" /></span>
                       <span>Track Shipment</span>
                     </button>
 
@@ -290,11 +291,11 @@ export default function OrdersPage() {
                 <h3 className="font-black text-gray-900 text-base">Order {(modalOrder as any).order_number || `#${modalOrder.id}`} Details</h3>
                 {/* 🩹 M#29 — status_label في الـ modal أيضاً */}
                 <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${getStatusStyle(modalOrder.status)}`}>
-                  {getStatusLabel(modalOrder)}
+                  <GlassInline text={getStatusLabel(modalOrder)} />
                 </span>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black p-1 text-sm font-bold">
-                ✕
+                <GlassIcon i="x" size="xs" />
               </button>
             </div>
 

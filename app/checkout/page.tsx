@@ -5,6 +5,7 @@ import { createCheckoutSession } from '../../lib/checkout';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { getStoredUtm } from '../components/UtmTracker';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center p-6 text-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 text-2xl">
-          🛒
+          <GlassIcon ch="🛒" size="xs" />
         </div>
         <h1 className="text-2xl font-extrabold text-temu-black mb-2">Your Cart is Empty</h1>
         <p className="text-temu-gray-light text-sm mb-6">Discover trending deals with worldwide shipping</p>
@@ -95,7 +96,7 @@ export default function CheckoutPage() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-temu-error p-4 rounded-temu-sm mb-6 text-sm font-medium">
-            ⚠️ {error}
+            <GlassIcon ch="⚠️" size="xs" /> {error}
           </div>
         )}
 
@@ -171,7 +172,7 @@ export default function CheckoutPage() {
 
           <div className="pt-6 mt-6 border-t border-temu-gray-border-light text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-temu-green text-xs font-bold">
-              <span>🔒</span>
+              <span><GlassIcon ch="🔒" size="xs" /></span>
               <span>256-Bit Bank-Grade Encrypted Transaction</span>
             </div>
             <p className="text-[11px] text-temu-gray-light leading-relaxed">

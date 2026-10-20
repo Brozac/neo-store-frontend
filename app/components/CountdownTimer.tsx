@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 /**
  * ⚡ Flash Deal Timer — v2.1 (Honest Edition + TS-safe)
@@ -57,7 +58,7 @@ export default function CountdownTimer({ hoursLeft = 0 }: { hoursLeft?: number }
 
     return (
       <div className="flex items-center justify-between bg-linear-to-r from-[#FFEFF5] to-[#FFE0F0] border border-[#FF6B9D]/30 p-3.5 rounded-xl my-4 shadow-sm">
-        <span className="text-xs font-black text-[#FF6B9D] uppercase tracking-wider">⚡ Flash Deal — Today Only (ends 00:00 UTC)</span>
+        <span className="text-xs font-black text-[#FF6B9D] uppercase tracking-wider"><GlassIcon i="zap" size="xs" /> Flash Deal — Today Only (ends 00:00 UTC)</span>
       </div>
     );
   }
@@ -67,7 +68,7 @@ export default function CountdownTimer({ hoursLeft = 0 }: { hoursLeft?: number }
     <div className="flex items-center justify-between bg-linear-to-r from-[#FFEFF5] to-[#FFE0F0] border border-[#FF6B9D]/30 p-3.5 rounded-xl my-4 shadow-sm">
 
       <div className="flex items-center gap-2">
-        <span className="text-base animate-bounce">⚡</span>
+        <span className="text-base animate-bounce"><GlassIcon i="zap" size="xs" /></span>
         <span className="text-xs font-black text-[#FF6B9D] uppercase tracking-wider">
           Flash Deal Ends in:
         </span>

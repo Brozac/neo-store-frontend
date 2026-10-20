@@ -33,6 +33,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface P {
   id: number;
@@ -72,7 +73,7 @@ export default function AllProducts() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-black text-temu-black tracking-tight">🛍️ All Products</h1>
+            <h1 className="text-xl font-black text-temu-black tracking-tight"><GlassIcon ch="🛍️" size="xs" /> All Products</h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Browse the full catalog — {items.length}
               {done
@@ -84,7 +85,7 @@ export default function AllProducts() {
             href="/"
             className="text-xs font-bold text-[#8B78C6] hover:underline"
           >
-            ← Home
+            <GlassIcon i="arrowLeft" size="xs" /> Home
           </Link>
         </div>
 
@@ -148,12 +149,12 @@ export default function AllProducts() {
         {/* 🩹 v2.0 — فشل أول صفحة (قاتل) — retry داخلي */}
         {error && !loading && (
           <div className="text-center py-6 space-y-3">
-            <p className="text-xs font-bold text-temu-black">⚠️ {error}</p>
+            <p className="text-xs font-bold text-temu-black"><GlassIcon ch="⚠️" size="xs" /> {error}</p>
             <button
               onClick={retry}
               className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
             >
-              ↻ Retry
+              <GlassIcon i="refresh" size="xs" /> Retry
             </button>
           </div>
         )}
@@ -162,19 +163,19 @@ export default function AllProducts() {
             الـ retry بالزر أو غير كمّل سكرول (الـ observer حي وكيأكد أوتوماتيك) */}
         {moreError && !loading && !error && (
           <div className="text-center py-6 space-y-3">
-            <p className="text-xs font-bold text-temu-black">⚠️ {moreError}</p>
+            <p className="text-xs font-bold text-temu-black"><GlassIcon ch="⚠️" size="xs" /> {moreError}</p>
             <button
               onClick={loadMore}
               className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
             >
-              ↻ Retry
+              <GlassIcon i="refresh" size="xs" /> Retry
             </button>
           </div>
         )}
 
         {done && items.length > 0 && (
           <p className="text-center text-xs text-gray-400 py-8">
-            🏁 You&apos;ve reached the end — {items.length} products
+            <GlassIcon ch="🏁" size="xs" /> You&apos;ve reached the end — {items.length} products
           </p>
         )}
         {done && items.length === 0 && !error && (

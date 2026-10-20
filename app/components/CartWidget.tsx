@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from './PaymentModal';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CartWidget() {
   const { cart, removeFromCart, updateQuantity, finalTotal, wheelDiscount, totalItemsCount, isMounted } = useCart();
@@ -55,7 +56,7 @@ export default function CartWidget() {
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-black p-1 transition active:scale-90 text-sm"
               >
-                ✕
+                <GlassIcon i="x" size="xs" />
               </button>
             </div>
 
@@ -104,7 +105,7 @@ export default function CartWidget() {
                         className="text-gray-300 hover:text-temu-error transition text-xs"
                         aria-label="Remove item"
                       >
-                        ✕
+                        <GlassIcon i="x" size="xs" />
                       </button>
                       <span className="text-xs font-black text-temu-error">
                         ${(Number(item.price) * item.quantity).toFixed(2)}
@@ -120,12 +121,12 @@ export default function CartWidget() {
           <div className="border-t border-gray-100 pt-3 mt-3">
             {wheelDiscount > 0 && (
               <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold p-1.5 rounded mb-2 text-center">
-                🎉 Reward Applied: {wheelDiscount}% OFF
+                <GlassIcon ch="🎉" size="xs" /> Reward Applied: {wheelDiscount}% OFF
               </div>
             )}
             {couponCode && (
               <div className="bg-purple-50 text-[#8B78C6] text-[10px] font-bold p-1.5 rounded mb-2 text-center">
-                🎟️ Coupon: {couponCode}
+                <GlassIcon ch="🎟️" size="xs" /> Coupon: {couponCode}
               </div>
             )}
 

@@ -5,6 +5,7 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import StarRating from './StarRating';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface ReviewFormProps {
   productId: string | number;
@@ -224,7 +225,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
                   onClick={() => removePhoto(idx)}
                   className="absolute top-1 right-1 bg-black/60 hover:bg-black text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
                 >
-                  ✕
+                  <GlassIcon i="x" size="xs" />
                 </button>
               </div>
             ))}
@@ -235,7 +236,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
                   <div className="w-4 h-4 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <span className="text-lg text-gray-400">📷</span>
+                    <span className="text-lg text-gray-400"><GlassIcon ch="📷" size="xs" /></span>
                     <span className="text-[9px] font-bold text-gray-500">Upload</span>
                   </>
                 )}

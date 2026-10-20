@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ShipTruthJourney from '@/components/ShipTruthJourney';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface TrackedOrder {
   id: number;
@@ -193,7 +194,7 @@ function TrackOrderContent() {
       {/* Header */}
       <div className="text-center mb-6 pt-4">
         <div className="w-14 h-14 bg-purple-100 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
-          📦
+          <GlassIcon ch="📦" size="xs" />
         </div>
         <h1 className="text-2xl font-black text-gray-900 tracking-tight">Track Your Shipment</h1>
         <p className="text-xs text-gray-500 mt-1">Enter your Order ID and the Email used during checkout</p>
@@ -240,7 +241,7 @@ function TrackOrderContent() {
 
       {error && (
         <div className="text-rose-700 text-xs font-bold mb-6 bg-rose-50 border border-rose-200 p-3.5 rounded-xl text-center">
-          ⚠️ {error}
+          <GlassIcon ch="⚠️" size="xs" /> {error}
         </div>
       )}
 
@@ -307,7 +308,7 @@ function TrackOrderContent() {
 
                   {/* الأحداث الحية من CJ */}
                   {eventsLoading === order.id && (
-                    <p className="text-[10px] text-gray-400 mt-2.5 animate-pulse">📡 Loading live carrier events...</p>
+                    <p className="text-[10px] text-gray-400 mt-2.5 animate-pulse"><GlassIcon ch="📡" size="xs" /> Loading live carrier events...</p>
                   )}
                   {events && events.length > 0 && (
                     <div className="mt-3 space-y-2 max-h-48 overflow-y-auto scrollbar-hide">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -59,7 +60,7 @@ export default function FloatingSupport() {
                          bg-[#1D1E3C] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
                          whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
                          shadow-xl pointer-events-none border border-white/10">
-          Need help? Chat with us 💬
+          Need help? Chat with us <GlassIcon ch="💬" size="xs" />
         </span>
       </a>
       )}
@@ -87,7 +88,7 @@ export default function FloatingSupport() {
                          bg-[#1D1E3C] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
                          whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
                          shadow-xl pointer-events-none border border-white/10">
-          Ask Laclarc AI 💬
+          Ask Laclarc AI <GlassIcon ch="💬" size="xs" />
         </span>
       </button>
     </div>

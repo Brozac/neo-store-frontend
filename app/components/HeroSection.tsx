@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
 import { IMG } from '@/lib/imageOptimizer';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 // ══════════════════════════════════════════════════════════════════
 // HeroSection v2.1 — مراجعة عميقة (Task 7)
@@ -90,7 +91,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     }
   }, []);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'; // ✨ Tenet #4 + fallback
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'; // <GlassIcon ch="✨" size="xs" /> Tenet #4 + fallback
 
   useEffect(() => {
     const controller = new AbortController();
@@ -356,7 +357,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                 className="bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-xl shadow-[#1D1E3C]/20 active:scale-95 flex items-center gap-2 border border-white/10"
               >
                 Shop Trending Deals
-                <span className="w-5 h-5 bg-[#FF6B9D] rounded-full flex items-center justify-center text-[10px] text-white">⚡</span>
+                <span className="w-5 h-5 bg-[#FF6B9D] rounded-full flex items-center justify-center text-[10px] text-white"><GlassIcon i="zap" size="xs" /></span>
               </Link>
 
               <Link

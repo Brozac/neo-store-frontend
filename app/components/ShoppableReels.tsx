@@ -6,6 +6,7 @@ import Link from 'next/link';
 import PaymentModal from './PaymentModal';
 import { useRouter } from 'next/navigation';
 import { IMG } from '@/lib/imageOptimizer';
+import GlassIcon, { GlassInline } from '@/components/ui/GlassIcon';
 
 
 interface Product {
@@ -169,7 +170,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
       {/* Header */}
       <div className="flex justify-between items-center mb-4 px-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl animate-pulse">🎬</span>
+          <span className="text-xl animate-pulse"><GlassIcon ch="🎬" size="xs" /></span>
           <div>
             <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
               Watch & Shop <span className="text-[#FF6B9D]">&bull; Reels</span>
@@ -212,7 +213,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
               </div>
 
               <span className="absolute top-3 right-3 bg-[#FF6B9D] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
-                {reel.badge || 'Live Drop'}
+                <GlassInline text={reel.badge || 'Live Drop'} />
               </span>
 
               <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -229,7 +230,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
       </div>
 
       {/* =========================================================================
-          ✨ مشغل الريلز السينمائي ملء الشاشة (TikTok Style Full-Screen Player)
+          <GlassIcon ch="✨" size="xs" /> مشغل الريلز السينمائي ملء الشاشة (TikTok Style Full-Screen Player)
          ========================================================================= */}
       {selectedReelIndex !== null && currentReel && (
         <div 
@@ -278,7 +279,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm border border-white/20 active:scale-90 transition"
                   title={isMuted ? "Unmute" : "Mute"}
                 >
-                  {isMuted ? '🔇' : '🔊'}
+                  {isMuted ? <GlassIcon i="volumeX" bare size="sm" /> : <GlassIcon i="volume2" bare size="sm" />}
                 </button>
 
                 <button
@@ -286,7 +287,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   onClick={() => setSelectedReelIndex(null)}
                   className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border border-white/20 active:scale-90 transition"
                 >
-                  ✕
+                  <GlassIcon i="x" size="xs" />
                 </button>
               </div>
             </div>
@@ -297,7 +298,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 cursor-pointer"
               >
                 <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-2xl border border-white/30">
-                  ▶
+                  <GlassIcon ch="▶" size="xs" />
                 </div>
               </div>
             )}
@@ -310,7 +311,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 className="w-9 h-9 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
                 title="Previous Video"
               >
-                ▲
+                <GlassIcon ch="▲" size="xs" />
               </button>
               <button
                 type="button"
@@ -318,7 +319,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 className="w-9 h-9 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition"
                 title="Next Video"
               >
-                ▼
+                <GlassIcon ch="▼" size="xs" />
               </button>
             </div>
 
@@ -364,7 +365,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   }}
                   className="bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-pink-500/30 flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>⚡</span> Buy Now
+                  <span><GlassIcon i="zap" size="xs" /></span> Buy Now
                 </button>
               </div>
 

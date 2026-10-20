@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface ChatMessage {
   id: string;
@@ -177,7 +178,7 @@ export default function AIChatWidget() {
                 className="w-9 h-9 rounded-full hover:bg-white/15 flex items-center justify-center text-lg font-bold active:scale-90 transition cursor-pointer"
                 aria-label="Close chat"
               >
-                ✕
+                <GlassIcon i="x" size="xs" />
               </button>
             </div>
 

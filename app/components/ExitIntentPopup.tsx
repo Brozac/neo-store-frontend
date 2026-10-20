@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function ExitIntentPopup() {
   const router = useRouter();
@@ -119,11 +120,11 @@ export default function ExitIntentPopup() {
           className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition active:scale-90 text-sm font-bold"
           aria-label="Close"
         >
-          ✕
+          <GlassIcon i="x" size="xs" />
         </button>
 
         <div className="w-14 h-14 bg-[#FF6B9D]/20 text-[#FF6B9D] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-[#FF6B9D]/30">
-          🎁
+          <GlassIcon ch="🎁" size="xs" />
         </div>
 
         <span className="text-[10px] font-black uppercase tracking-widest bg-black/40 text-[#FF6B9D] px-3 py-1 rounded-full border border-white/10 inline-block mb-1">
@@ -153,9 +154,9 @@ export default function ExitIntentPopup() {
             className="w-full bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {claimed ? (
-              <><span>✓</span> 10% Discount Applied!</>
+              <><span><GlassIcon i="check" size="xs" /></span> 10% Discount Applied!</>
             ) : (
-              <><span>⚡</span> Claim 10% &amp; Shop Now</>
+              <><span><GlassIcon i="zap" size="xs" /></span> Claim 10% &amp; Shop Now</>
             )}
           </button>
 

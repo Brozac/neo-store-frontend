@@ -37,6 +37,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import { IMG } from '../../lib/imageOptimizer';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface Product {
   id: string | number;
@@ -185,7 +186,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         >
           {isAdded ? (
             <>
-              <span>✓</span> Added to Cart
+              <span><GlassIcon i="check" size="xs" /></span> Added to Cart
             </>
           ) : (
             <>

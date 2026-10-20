@@ -22,6 +22,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface Product {
   id: string | number;
@@ -109,7 +110,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         {/* حالة الخطأ القاتل منفصلة — retry داخلي (بلا reload — الجلسة والسكرول كيبقاو) */}
         {error && (
           <div className="bg-white p-10 rounded-temu-sm shadow-sm text-center border border-temu-gray-border-light">
-            <p className="text-temu-black font-semibold mb-2">⚠️ {error}</p>
+            <p className="text-temu-black font-semibold mb-2"><GlassIcon ch="⚠️" size="xs" /> {error}</p>
             <button
               onClick={retry}
               className="inline-block bg-temu-orange text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
@@ -171,7 +172,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
             {/* 🩹 v2.0 — moreError غير قاتل: inline — الـ grid كيبقى كامل والزر هو الـ retry */}
             {moreError && products.length > 0 && !loadingMore && (
               <p className="text-center text-xs font-bold text-temu-black pb-2">
-                ⚠️ {moreError} Press Load More to retry.
+                <GlassIcon ch="⚠️" size="xs" /> {moreError} Press Load More to retry.
               </p>
             )}
 
@@ -190,7 +191,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
             {/* End state */}
             {done && products.length > 0 && (
               <p className="text-center text-xs text-gray-400 py-8">
-                🏁 {totalCount > 0
+                <GlassIcon ch="🏁" size="xs" /> {totalCount > 0
                   ? `${totalCount.toLocaleString()} products in this category`
                   : `${products.length} products`}
               </p>

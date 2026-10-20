@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -69,7 +70,7 @@ export default function ReviewPage() {
   if (error && !order) return (
     <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center">
-        <span className="text-5xl mb-4 block">🔗</span>
+        <span className="text-5xl mb-4 block"><GlassIcon ch="🔗" size="xs" /></span>
         <h1 className="text-xl font-black text-temu-black mb-2">Link Invalid</h1>
         <p className="text-sm text-gray-600">This review link is invalid or has already been used.</p>
       </div>
@@ -79,11 +80,11 @@ export default function ReviewPage() {
   if (submitted) return (
     <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center">
-        <div className="text-5xl mb-4">🎉</div>
+        <div className="text-5xl mb-4"><GlassIcon ch="🎉" size="xs" /></div>
         <h1 className="text-xl font-black text-temu-black mb-2">Thank You!</h1>
         <p className="text-sm text-gray-600 mb-4">Your verified review has been published.</p>
         <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-xl p-4 mb-4">
-          <p className="text-xs font-bold text-temu-black mb-1">🎁 Your Reward:</p>
+          <p className="text-xs font-bold text-temu-black mb-1"><GlassIcon ch="🎁" size="xs" /> Your Reward:</p>
           <p className="text-xs text-gray-600">Use code <strong className="text-temu-orange font-black">NEXT5</strong> for 5% off your next order!</p>
         </div>
         <button onClick={() => router.push('/')} className="bg-[#8B78C6] text-white font-bold px-6 py-3 rounded-temu-sm text-sm">Continue Shopping</button>
@@ -98,9 +99,9 @@ export default function ReviewPage() {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white p-8 rounded-2xl shadow-xl">
           <div className="text-center mb-6">
-            <span className="text-4xl">⭐</span>
+            <span className="text-4xl"><GlassIcon ch="⭐" size="xs" /></span>
             <h1 className="text-xl font-black text-temu-black mt-2">How was your experience?</h1>
-            <p className="text-xs text-gray-500 mt-1">Order #{orderId} — Delivered ✅</p>
+            <p className="text-xs text-gray-500 mt-1">Order #{orderId} — Delivered <GlassIcon ch="✅" size="xs" /></p>
           </div>
 
           {items.length > 0 && (
@@ -118,7 +119,7 @@ export default function ReviewPage() {
             <div className="flex justify-center gap-2">
               {[1,2,3,4,5].map(star => (
                 <button key={star} onClick={() => setRating(star)} className="text-3xl transition hover:scale-125 active:scale-95">
-                  <span className={star <= rating ? 'text-amber-400' : 'text-gray-300'}>★</span>
+                  <span className={star <= rating ? 'text-amber-400' : 'text-gray-300'}><GlassIcon i="star" size="xs" /></span>
                 </button>
               ))}
             </div>
@@ -152,7 +153,7 @@ export default function ReviewPage() {
           </button>
 
           <p className="text-[10px] text-gray-400 text-center mt-3">
-            Your review will be marked as <strong>Verified Purchase</strong> ✅
+            Your review will be marked as <strong>Verified Purchase</strong> <GlassIcon ch="✅" size="xs" />
           </p>
         </div>
       </div>

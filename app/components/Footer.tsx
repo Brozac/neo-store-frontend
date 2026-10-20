@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function Footer() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -44,7 +45,7 @@ export default function Footer() {
               Your global flagship store for curated lifestyle gear, electric grooming innovations, and verified daily essentials. Fully automated worldwide fulfillment with bank-grade security.
             </p>
             <div className="pt-2 flex items-center gap-3 text-xs text-emerald-400 font-bold">
-              <span>🛡️ 100% Buyer Protection Guaranteed</span>
+              <span><GlassIcon ch="🛡️" size="xs" /> 100% Buyer Protection Guaranteed</span>
             </div>
           </div>
 
@@ -69,7 +70,7 @@ export default function Footer() {
               <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
               <li className="pt-2">
                 <a href="mailto:support@laclarc.com" className="text-gray-300 hover:text-[#FF6B9D] font-bold transition flex items-center gap-1.5">
-                  <span>✉️</span> support@laclarc.com
+                  <span><GlassIcon ch="✉️" size="xs" /></span> support@laclarc.com
                 </a>
               </li>
               <li className="text-[11px] text-gray-500">24/7 Automated & AI Support</li>
@@ -145,11 +146,11 @@ export default function Footer() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-12 bg-purple-500/20 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto">
-              📲
+              <GlassIcon ch="📲" size="xs" />
             </div>
             <h3 className="text-base font-black text-white">How to Install Laclarc App</h3>
             <div className="text-xs text-gray-300 space-y-2 text-left bg-[#0E1020] p-4 rounded-xl border border-white/5">
-              <p><strong>On iPhone (Safari):</strong> Tap the <strong>Share</strong> button <span className="text-lg">⎋</span> at the bottom of Safari, then choose <strong>&ldquo;Add to Home Screen&rdquo;</strong>.</p>
+              <p><strong>On iPhone (Safari):</strong> Tap the <strong>Share</strong> button <span className="text-lg"><GlassIcon ch="⎋" size="xs" /></span> at the bottom of Safari, then choose <strong>&ldquo;Add to Home Screen&rdquo;</strong>.</p>
               <p className="pt-1"><strong>On Android / Chrome:</strong> Tap the 3 dots (menu) at the top right, then select <strong>&ldquo;Install App&rdquo;</strong>.</p>
             </div>
             <button 

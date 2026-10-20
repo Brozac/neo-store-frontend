@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useCart } from '../context/CartContext';
 import { IMG } from '@/lib/imageOptimizer';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface Product {
   id: string | number;
@@ -86,7 +87,7 @@ export default function FrequentlyBoughtTogether({
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm my-8 space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-100 pb-3">
         <h3 className="text-base font-black text-[#1D1E3C] flex items-center gap-2">
-          <span>🤝</span> Frequently Bought Together
+          <span><GlassIcon ch="🤝" size="xs" /></span> Frequently Bought Together
         </h3>
         <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
           Bundle & Save 15%
@@ -172,9 +173,9 @@ export default function FrequentlyBoughtTogether({
             }`}
           >
             {addedSuccess ? (
-              <><span>✓</span> Both Added to Bag (15% OFF Saved)!</>
+              <><span><GlassIcon i="check" size="xs" /></span> Both Added to Bag (15% OFF Saved)!</>
             ) : (
-              <><span>⚡</span> {includePartner ? 'Add Both to Cart (Save 15%)' : 'Add Item to Cart'}</>
+              <><span><GlassIcon i="zap" size="xs" /></span> {includePartner ? 'Add Both to Cart (Save 15%)' : 'Add Item to Cart'}</>
             )}
           </button>
         </div>

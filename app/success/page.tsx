@@ -5,6 +5,7 @@ import { createCheckoutSession } from '../../lib/checkout';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 // 🆕 FILE 5: Browser Purchase بمطابقة eventID حرفية مع conversionService.js
 // نفس event_id (purch_{orderId}) → Meta تعده مرة واحدة (Deduplication داخل 48h)
@@ -255,7 +256,7 @@ function SuccessContent() {
         </div>
 
         {/* =========================================================================
-            🔥 عرض الـ 1-Click Upsell الذكي (ينبثق بحواف نيون وعد تنازلي)
+            <GlassIcon ch="🔥" size="xs" /> عرض الـ 1-Click Upsell الذكي (ينبثق بحواف نيون وعد تنازلي)
            ========================================================================= */}
         {!upsellDismissed && (
           <div className="bg-linear-to-br from-[#1D1E3C] to-[#2D2E5C] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#8B78C6] relative overflow-hidden space-y-4 animate-scale">
@@ -263,7 +264,7 @@ function SuccessContent() {
             {/* مؤقت الـ 5 دقائق المتناقص */}
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B9D] flex items-center gap-1">
-                <span>⚡</span> Exclusive One-Time Offer
+                <span><GlassIcon i="zap" size="xs" /></span> Exclusive One-Time Offer
               </span>
               <span className="text-xs font-mono font-black bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-amber-300">
                 Expires in {formatTimer(upsellTimeLeft)}
@@ -313,7 +314,7 @@ function SuccessContent() {
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <span>⚡</span> Yes! Add to My Parcel for $9.99
+                    <span><GlassIcon i="zap" size="xs" /></span> Yes! Add to My Parcel for $9.99
                   </>
                 )}
               </button>

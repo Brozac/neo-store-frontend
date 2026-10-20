@@ -11,6 +11,7 @@ import TiltCard from '../../components/TiltCard';
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 // ════════════════════════════════════════════════════════════════
 // ProductDetailsClient v1.1 — مراجعة عميقة سطر بسطر (Task 9)
@@ -389,7 +390,7 @@ export default function ProductDetailsClient({
                     onClick={() => setShowVideo(true)}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
                   >
-                    <span className="text-white text-xl">▶</span>
+                    <span className="text-white text-xl"><GlassIcon ch="▶" size="xs" /></span>
                   </div>
                 )}
                 {galleryImages.map((img, idx) => (
@@ -447,7 +448,7 @@ export default function ProductDetailsClient({
                     </span>
                   </>
                 ) : (
-                  <span className="text-xs font-bold text-temu-gray-text">✨ New in catalog — be the first to review</span>
+                  <span className="text-xs font-bold text-temu-gray-text"><GlassIcon ch="✨" size="xs" /> New in catalog — be the first to review</span>
                 )}
               </div>
 
@@ -486,7 +487,7 @@ export default function ProductDetailsClient({
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
                     <button type="button" onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
-                      Size Guide ↗
+                      Size Guide <GlassIcon ch="↗" size="xs" />
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -514,7 +515,7 @@ export default function ProductDetailsClient({
               <div className="space-y-2.5 my-6">
                 {/* 🩹 P0 مالي: "Bundle Savings" كان خصم وهمي — كيتعرض فالسلة ويختفى فالـ checkout */}
                 <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
-                  ⚡ Quantity:
+                  <GlassIcon i="zap" size="xs" /> Quantity:
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -585,7 +586,7 @@ export default function ProductDetailsClient({
                   }`}
                 >
                   {mainAdded ? (
-                    <><span>✓</span> Added to Bag — View Cart →</>
+                    <><span><GlassIcon i="check" size="xs" /></span> Added to Bag — View Cart <GlassIcon i="arrowRight" size="xs" /></>
                   ) : (
                     <>Add to Cart</>
                   )}
@@ -722,7 +723,7 @@ export default function ProductDetailsClient({
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-black text-temu-black">Customer Reviews ({reviews.length})</h2>
             {reviews.length > 0 && (
-              <span className="text-xs font-bold text-temu-green">✓ Verified Purchases</span>
+              <span className="text-xs font-bold text-temu-green"><GlassIcon i="check" size="xs" /> Verified Purchases</span>
             )}
           </div>
 
@@ -792,7 +793,7 @@ export default function ProductDetailsClient({
                 className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-full border border-white/10 transition cursor-pointer text-xs font-bold active:scale-95 flex items-center gap-1.5"
                 title={isZoomed ? "Reset Zoom" : "Zoom In (2.5x)"}
               >
-                <span>🔍</span> {isZoomed ? 'Reset (1x)' : 'Zoom (2.5x)'}
+                <span><GlassIcon ch="🔍" size="xs" /></span> {isZoomed ? 'Reset (1x)' : 'Zoom (2.5x)'}
               </button>
 
               <button
@@ -801,7 +802,7 @@ export default function ProductDetailsClient({
                 className="bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
                 aria-label="Close Lightbox"
               >
-                ✕
+                <GlassIcon i="x" size="xs" />
               </button>
             </div>
           </div>
@@ -929,7 +930,7 @@ export default function ProductDetailsClient({
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
               }`}
             >
-              {stickyAdded ? <span>✓ Added</span> : <span>🛒 +Bag</span>}
+              {stickyAdded ? <span><GlassIcon i="check" size="xs" /> Added</span> : <span><GlassIcon ch="🛒" size="xs" /> +Bag</span>}
             </button>
 
             <button
@@ -941,7 +942,7 @@ export default function ProductDetailsClient({
               }}
               className="bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#8B78C6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <span>⚡</span> Buy Now
+              <span><GlassIcon i="zap" size="xs" /></span> Buy Now
             </button>
           </div>
 

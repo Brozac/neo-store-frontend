@@ -3,6 +3,7 @@
 import { useState, ChangeEvent } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function MultiStepRegister() {
   const [step, setStep] = useState<number>(1);
@@ -129,9 +130,9 @@ export default function MultiStepRegister() {
       {isComplete ? (
         <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-xl text-center border border-gray-100 space-y-4">
           <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">
-            ✓
+            <GlassIcon i="check" size="xs" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900">Registration Successful! 🎉</h2>
+          <h2 className="text-2xl font-black text-gray-900">Registration Successful! <GlassIcon ch="🎉" size="xs" /></h2>
           <p className="text-gray-600 text-sm max-w-md mx-auto leading-relaxed">
             We have dispatched an activation link to <strong className="text-[#8B78C6]">{formData.email}</strong>. Please verify your inbox to activate your account.
           </p>
@@ -172,7 +173,7 @@ export default function MultiStepRegister() {
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl mb-6 text-xs font-bold">
-              ⚠️ {error}
+              <GlassIcon ch="⚠️" size="xs" /> {error}
             </div>
           )}
 
@@ -187,7 +188,7 @@ export default function MultiStepRegister() {
                   htmlFor="fileInput" 
                   className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 transition shadow-sm active:scale-95"
                 >
-                  <span>📷</span> Upload Avatar
+                  <span><GlassIcon ch="📷" size="xs" /></span> Upload Avatar
                 </label>
                 <input id="fileInput" accept="image/*" className="hidden" type="file" onChange={handleImageChange} />
 
@@ -255,7 +256,7 @@ export default function MultiStepRegister() {
                     onClick={() => setTogglePassword(!togglePassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
                   >
-                    {togglePassword ? '🙈' : '👁️'}
+                    {togglePassword ? <GlassIcon i="eyeOff" bare size="sm" className="w-5 h-5" /> : <GlassIcon i="eye" bare size="sm" className="w-5 h-5" />}
                   </button>
                 </div>
               </div>

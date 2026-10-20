@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -61,20 +62,20 @@ function ResetPasswordContent() {
       <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
         
         <div className="w-14 h-14 bg-purple-100 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
-          🔒
+          <GlassIcon ch="🔒" size="xs" />
         </div>
         <h1 className="text-2xl font-black text-gray-900 mb-1">Set New Password</h1>
         <p className="text-gray-500 text-xs mb-6">Enter and confirm your new secure master password.</p>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl mb-4 text-xs font-bold text-center">
-            ⚠️ {error}
+            <GlassIcon ch="⚠️" size="xs" /> {error}
           </div>
         )}
 
         {success ? (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs font-bold space-y-2">
-            <p>✓ Password updated successfully!</p>
+            <p><GlassIcon i="check" size="xs" /> Password updated successfully!</p>
             <p className="text-[11px] font-normal text-gray-500">Redirecting to sign in screen...</p>
           </div>
         ) : (

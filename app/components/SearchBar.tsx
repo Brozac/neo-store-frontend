@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface SearchResult {
   id: string | number;
@@ -125,7 +126,7 @@ export default function SearchBar() {
             onClick={() => { setQuery(''); setResults([]); setIsDropdownOpen(false); }}
             className="absolute right-20 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 text-xs cursor-pointer active:scale-90"
           >
-            ✕
+            <GlassIcon i="x" size="xs" />
           </button>
         )}
 

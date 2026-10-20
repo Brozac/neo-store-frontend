@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getExchangeOptionsAction, pickExchangeAction } from '../actions/commerce';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 interface Substitute {
   id: string | number;
@@ -152,7 +153,7 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
         )}
 
         {phase === 'exchanged' && (
-          <><div className="text-5xl mb-4">✅</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="✅" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Exchange completed!</h1>
             <p className="text-sm text-gray-600 mb-6">Your new item will be shipped right away — follow it from the tracking page.</p>
             <a href="/" className="inline-block bg-[#8B78C6] text-white font-bold px-6 py-3 rounded-xl text-sm">Back to store</a></>
@@ -160,7 +161,7 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
 
         {phase === 'pick' && (
           <>
-            <div className="text-4xl mb-3">🔄</div>
+            <div className="text-4xl mb-3"><GlassIcon ch="🔄" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Your item can't ship to your country</h1>
             {notice && (
               <p role="status" className="text-xs font-bold text-[#8B78C6] bg-[#F4F1FB] rounded-lg px-3 py-2 mb-4">{notice}</p>
@@ -177,41 +178,41 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
                     <p className="text-xs font-bold text-[#1D1E3C] line-clamp-2">{opt.title}</p>
                     <p className="text-sm font-black text-[#FF6B9D] mt-0.5">${Number(opt.price).toFixed(2)}</p>
                   </div>
-                  <span className="text-[#8B78C6] font-black text-lg">→</span>
+                  <span className="text-[#8B78C6] font-black text-lg"><GlassIcon i="arrowRight" size="xs" /></span>
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-gray-400 mt-6">🔒 No extra payment — the replacement matches your order value. Full automatic refund after 72 hours if you don't pick.</p>
+            <p className="text-[10px] text-gray-400 mt-6"><GlassIcon ch="🔒" size="xs" /> No extra payment — the replacement matches your order value. Full automatic refund after 72 hours if you don't pick.</p>
           </>
         )}
 
         {phase === 'unavailable' && (
-          <><div className="text-5xl mb-4">💰</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="💰" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">You'll be refunded automatically</h1>
             <p className="text-sm text-gray-600 mb-6">No replacements are available for your item right now — your full refund runs automatically within 72 hours, no action needed.</p></>
         )}
 
         {phase === 'refunded' && (
-          <><div className="text-5xl mb-4">💰</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="💰" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Your refund is done</h1>
             <p className="text-sm text-gray-600 mb-6">The pick window closed — your full refund was executed or is being processed now. It shows on your payment method within days.</p></>
         )}
 
         {phase === 'processing' && (
-          <><div className="text-5xl mb-4">⏳</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="⏳" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Your order is being processed</h1>
             <p className="text-sm text-gray-600 mb-6">Our team is handling it right now — you'll get an email update very soon.</p>
             <button onClick={load} className="text-[#8B78C6] font-bold text-sm cursor-pointer underline">Check status</button></>
         )}
 
         {phase === 'invalid' && (
-          <><div className="text-5xl mb-4">🔗</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="🔗" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Invalid or expired link</h1>
             <p className="text-sm text-gray-600 mb-6">If you're waiting for an exchange on your order, contact us at support@laclarc.com and we'll help right away.</p></>
         )}
 
         {phase === 'net' && (
-          <><div className="text-5xl mb-4">📡</div>
+          <><div className="text-5xl mb-4"><GlassIcon ch="📡" size="xs" /></div>
             <h1 className="text-xl font-black text-[#1D1E3C] mb-2">Connection problem</h1>
             <p className="text-sm text-gray-600 mb-6">{msg || 'A temporary network issue — your order is safe.'}</p>
             <button onClick={load} className="bg-[#8B78C6] text-white font-bold px-6 py-3 rounded-xl text-sm cursor-pointer active:scale-95">Retry</button></>

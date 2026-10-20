@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { Check, Plane, Truck, Zap } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
-// DeliveryEstimator v5 [cj-eta-v5] — Kit 29g [cj-freeship]
+// DeliveryEstimator v6 [cj-eta-v6] — Kit 29g [cj-freeship] + Kit 29h [glassdock-v1]
 // (LaClarc × CJ live ETA — «التوصيل مجاني» هي نجمة الصندوق)
 //
 // 🧩 STANDALONE — كما v3/v4: كيكتاشف المنتج من الـ URL (usePathname)
@@ -119,7 +120,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => clearInterval(timer);
   }, []);
 
-  // 🧩 [cj-eta-v5] self-discovery: /products/51151 → 51151 → cj_product_id
+  // 🧩 [cj-eta-v6] self-discovery: /products/51151 → 51151 → cj_product_id
   useEffect(() => {
     if (cjPid) return; // prop موجود → ما كانحتاجش الاكتشاف
     if (!pathname) return;
@@ -145,7 +146,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [cjPid, pathname]);
 
-  // 🆕 [cj-eta-v5] نافذة الوصول الحقيقية (freightCalculateTip عبر البريدج)
+  // 🆕 [cj-eta-v6] نافذة الوصول الحقيقية (freightCalculateTip عبر البريدج)
   // shipping.arrivalTime = القناة اللي المتجر كيشحن بيها فعلاً — هي كيتعرض
   useEffect(() => {
     if (!effectivePid) return; // منتج بلا رابط CJ → fallback الواقعي
@@ -188,7 +189,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [effectivePid]);
 
-  // 🌍 [cj-eta-v5] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
+  // 🌍 [cj-eta-v6] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
   useEffect(() => {
     if (live?.country) return;
     let dead = false;
@@ -221,20 +222,20 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
   return (
     <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-2xl p-4 my-4 space-y-3 font-sans">
 
-      {/* 🆕 [cj-eta-v5] عنوان التوصيل المجاني — النجمة ديال الصندوق */}
+      {/* 🆕 [cj-eta-v6] عنوان التوصيل المجاني — النجمة ديال الصندوق */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[13px] font-black uppercase tracking-wide shadow-sm">
-          🚚 Free Delivery
+          <Truck size={14} strokeWidth={2.5} /> Free Delivery
         </span>
         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
           Worldwide · On Us
         </span>
       </div>
 
-      {/* سطر موعد الوصول — نافذة CJ الحقيقية [cj-eta-v5] أو نافذة واقعية عامة */}
+      {/* سطر موعد الوصول — نافذة CJ الحقيقية [cj-eta-v6] أو نافذة واقعية عامة */}
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-xl bg-white text-[#8B78C6] flex items-center justify-center text-base shrink-0 border border-[#8B78C6]/20 shadow-xs">
-          ✈️
+          <Plane size={16} strokeWidth={2.3} />
         </div>
         <div className="text-xs leading-relaxed flex-1">
           {live ? (
@@ -246,7 +247,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
                 </span>
                 {' '}
                 <span className="inline-block align-middle ml-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-black text-emerald-700 uppercase tracking-wide">
-                  ⚡ live CJ window · {live.raw} days
+                  <Zap size={11} strokeWidth={2.6} className="inline-block align-[-2px] mr-0.5" /> live CJ window · {live.raw} days
                 </span>
               </p>
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
@@ -272,19 +273,19 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
       {/* شريط مؤشرات الثقة الأربعة */}
       <div className="pt-3 border-t border-[#8B78C6]/15 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-700">
         <div className="flex items-center gap-1.5">
-          <span className="text-emerald-600">✓</span>
+          <Check size={14} strokeWidth={3} className="text-emerald-600 shrink-0" />
           <span>Free Worldwide Shipping</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-emerald-600">✓</span>
+          <Check size={14} strokeWidth={3} className="text-emerald-600 shrink-0" />
           <span>30-Day Money-Back Guarantee</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-emerald-600">✓</span>
+          <Check size={14} strokeWidth={3} className="text-emerald-600 shrink-0" />
           <span>Direct Factory Insured</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-emerald-600">✓</span>
+          <Check size={14} strokeWidth={3} className="text-emerald-600 shrink-0" />
           <span>256-Bit SSL Encrypted</span>
         </div>
       </div>

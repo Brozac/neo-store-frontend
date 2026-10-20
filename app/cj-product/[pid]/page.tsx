@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CjProductPage() {
   const { pid } = useParams() as { pid: string };
@@ -97,11 +98,11 @@ export default function CjProductPage() {
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
         <button onClick={() => router.back()} className="text-temu-gray-light hover:text-temu-black font-medium text-sm">
-          ← Back
+          <GlassIcon i="arrowLeft" size="xs" /> Back
         </button>
 
         <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-xl p-3 text-xs font-bold text-[#8B78C6] text-center">
-          🌍 Global Catalog Item — ships directly via CJ Dropshipping
+          <GlassIcon ch="🌍" size="xs" /> Global Catalog Item — ships directly via CJ Dropshipping
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
@@ -135,17 +136,17 @@ export default function CjProductPage() {
               /* 🚚 Geo Flow v3.0 — الثمن المباشر من freightCalculateTip (عرض حقيقي) */
               <div className="bg-white border border-temu-gray-border-light rounded-xl p-3 text-xs font-bold text-temu-gray-text space-y-1">
                 <p>
-                  🚚 Shipping to {flagOf(product.geo?.country)} {product.geo?.name || 'you'}:
+                  <GlassIcon ch="🚚" size="xs" /> Shipping to {flagOf(product.geo?.country)} {product.geo?.name || 'you'}:
                   <span className="text-temu-black"> ${Number(product.shipping.amount).toFixed(2)}</span>
                   {product.shipping.channelName && <span className="text-temu-gray-light font-medium"> · {product.shipping.channelName}</span>}
                 </p>
                 {product.shipping.arrivalTime && (
-                  <p className="text-temu-gray-light font-medium">⏱️ Estimated arrival: {product.shipping.arrivalTime} days · live CJ quote</p>
+                  <p className="text-temu-gray-light font-medium"><GlassIcon ch="⏱️" size="xs" /> Estimated arrival: {product.shipping.arrivalTime} days · live CJ quote</p>
                 )}
               </div>
             ) : Number(product.estimatedShipUsd) > 0 ? (
               <div className="bg-white border border-temu-gray-border-light rounded-xl p-3 text-xs font-bold text-temu-gray-text">
-                🚚 Estimated shipping from ~${Number(product.estimatedShipUsd).toFixed(2)} — ships worldwide via CJ, 7–15 business days
+                <GlassIcon ch="🚚" size="xs" /> Estimated shipping from ~${Number(product.estimatedShipUsd).toFixed(2)} — ships worldwide via CJ, 7–15 business days
               </div>
             ) : null}
 
@@ -156,7 +157,7 @@ export default function CjProductPage() {
                 added ? 'bg-emerald-600' : 'bg-temu-orange hover:bg-temu-orange-bright'
               }`}
             >
-              {added ? <><span>✓</span> Added — Opening Cart…</> : <><span>🛒</span> Add to Cart</>}
+              {added ? <><span><GlassIcon i="check" size="xs" /></span> Added — Opening Cart…</> : <><span><GlassIcon ch="🛒" size="xs" /></span> Add to Cart</>}
             </button>
 
             {/* 🔒 XSS-safe (FIX Task 20) — description كتنعرض كنص عادي منقّى

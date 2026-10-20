@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from '../components/PaymentModal';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CartPage() {
   const router = useRouter();
@@ -144,7 +145,7 @@ export default function CartPage() {
 
             {wheelDiscount > 0 && (
               <div className="bg-temu-green-light/10 text-temu-green p-3 rounded-temu-sm mb-4 text-sm font-bold text-center">
-                🎉 Lucky you! You saved {wheelDiscount}% with your Spin & Win reward!
+                <GlassIcon ch="🎉" size="xs" /> Lucky you! You saved {wheelDiscount}% with your Spin & Win reward!
               </div>
             )}
 

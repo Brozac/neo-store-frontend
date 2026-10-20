@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CancelPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function CancelPage() {
         
         {/* Reassurance Badge */}
         <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner ring-8 ring-amber-50/50">
-          ⚠️
+          <GlassIcon ch="⚠️" size="xs" />
         </div>
 
         <div>
