@@ -4,22 +4,21 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 // ════════════════════════════════════════════════════════════════
-// DeliveryEstimator v4 [cj-eta-v4] — Kit 29f [cj-eta-pick]
-// (LaClarc × CJ live ETA — المتسوق يختار سرعة التوصيل اللي يشوفها)
+// DeliveryEstimator v5 [cj-eta-v5] — Kit 29g [cj-freeship]
+// (LaClarc × CJ live ETA — «التوصيل مجاني» هي نجمة الصندوق)
 //
-// 🧩 STANDALONE — كما v3: كيكتاشف المنتج من الـ URL (usePathname)
+// 🧩 STANDALONE — كما v3/v4: كيكتاشف المنتج من الـ URL (usePathname)
 //   → /api/products/:id → cj_product_id → البريدج /api/cj-live/product/:cjPid
 //   بلا أي props إجبارية، وأي props آخرين مقبولين ([key: string]: unknown).
 //
-// 🆕 v4 — اختيار القناة: البريدج أصلاً كيرجع top-3 قنوات CJ الحقيقية
-//   (options[] فيها name/arrivalTime/amount) فنفس الجواب — صفر نقاط زيادة.
-//   المكوّن كيبنيهم أزرار: ⚡ Fastest · 🚚 Standard · 🌍 Economy (مرتبين
-//   بالسرعة)، والعميل كينقر ويشوف نافذة الوصول ديال كل قناة.
-//   الافتراضي المختار = القناة الأرخص (اللي المتجر فعلاً كيشحن بيها).
-//
-// 🔒 مجاني للعميل: ثمن القنوات ما كيتعرضش أبداً (SHOW_CHANNEL_PRICES=false)
-//   — الشحن مجاني ومحسوب كامل فالثمن (قانون التسعير v31). غير السرعة
-//   والنافذة كيبانو، واسم ناقل CJ الحقيقي كيتحط فـ tooltip.
+// 🆕 v5 — تراجع صريح من المستخدم: فكرة اختيار القنوات (أزرار v4) ملغاة.
+//   المطلوب: ميزة «توصيل مجاني» تبان بارزة للعميل — والشحن محسوب كامل
+//   فالثمن (قانون التسعير v3.1) وكيبقى سر داخلي 100%.
+//   • عنوان أخضر بارز: 🚚 Free Delivery فوق كلشي
+//   • نافذة الوصول الحقيقية من CJ — shipping.arrivalTime هو القناة اللي
+//     المتجر كيشحن بيها فعلاً (الأرخص — البريدج كيرجعها أصلاً)
+//   • بلا أزرار · بلا أسماء قنوات · بلا أثمنة — حتى فالـ tooltip
+//   • شارة صغيرة "⚡ live CJ window" كدليل مصداقية على النافذة
 //
 // 🛟 fallback واقعي كما v3: بلا رابط CJ / بلا قناة / fetch فاشل →
 //   نافذة صادقة 2-4 أسابيع (+14/+28) — عمرنا ما نرجعو للتواريخ الخيالية.
@@ -28,25 +27,6 @@ import { usePathname } from 'next/navigation';
 // ════════════════════════════════════════════════════════════════
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-
-// 🔒 ثمن القنوات داخلي — العميل كيشوف التوصيل مجاني (محسوب فالثمن أصلاً)
-const SHOW_CHANNEL_PRICES = false;
-
-interface Tier {
-  raw: string;       // arrivalTime الأصلي من CJ ("5-8")
-  name: string;      // اسم ناقل CJ (Yw Eub · 燕文…)
-  amount: number;    // الثمن الداخلي (ما كيتعرضش)
-  min: number;
-  max: number;
-  start: string;     // اليوم+min منسق
-  end: string;       // اليوم+max منسق
-}
-
-interface LiveState {
-  country: string;
-  tiers: Tier[];
-  defaultIdx: number; // القناة الأرخص — اللي المتجر كيشحن بيها فعلاً
-}
 
 // أي props مقبولين — المكوّن ما يكسرش الـ build مهما كان شكل المستدعي
 type EstimatorProps = { cjPid?: string | number | null; [key: string]: unknown };
@@ -75,14 +55,20 @@ function parseWindow(raw: string): { min: number; max: number } | null {
   return { min, max };
 }
 
+interface LiveEta {
+  country: string;
+  start: string;
+  end: string;
+  raw: string;
+}
+
 export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
   const pathname = usePathname();
   const [deliveryDates, setDeliveryDates] = useState({
     start: '', end: '', hoursLeft: 4, minsLeft: 32,
   });
   const [selfPid, setSelfPid] = useState<string | null>(null);
-  const [live, setLive] = useState<LiveState | null>(null);
-  const [sel, setSel] = useState(0);
+  const [live, setLive] = useState<LiveEta | null>(null);
   const [fallbackCountry, setFallbackCountry] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -127,13 +113,13 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
 
     calculateDates();
 
-    // 🩹 FIX — live minute-tick: العدّاد يعيش ويحدّث التواريخ لو غيّر اليوم
+    // 🩹 live minute-tick: العدّاد يعيش ويحدّث التواريخ لو غيّر اليوم
     const timer = setInterval(calculateDates, 60000);
 
     return () => clearInterval(timer);
   }, []);
 
-  // 🧩 [cj-eta-v4] self-discovery: /products/51151 → 51151 → cj_product_id
+  // 🧩 [cj-eta-v5] self-discovery: /products/51151 → 51151 → cj_product_id
   useEffect(() => {
     if (cjPid) return; // prop موجود → ما كانحتاجش الاكتشاف
     if (!pathname) return;
@@ -159,7 +145,8 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [cjPid, pathname]);
 
-  // 🆕 [cj-eta-v4] نافذة الوصول الحقيقية + قنوات CJ (freightCalculateTip عبر البريدج)
+  // 🆕 [cj-eta-v5] نافذة الوصول الحقيقية (freightCalculateTip عبر البريدج)
+  // shipping.arrivalTime = القناة اللي المتجر كيشحن بيها فعلاً — هي كيتعرض
   useEffect(() => {
     if (!effectivePid) return; // منتج بلا رابط CJ → fallback الواقعي
     let dead = false;
@@ -174,52 +161,15 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
         const ship = data?.shipping;
         if (!ship || ship.source !== 'cj-live' || !ship.arrivalTime) return;
 
+        const raw = String(ship.arrivalTime).trim();
+        const w = parseWindow(raw);
+        if (!w) return;
+
         const fmt = (days: number) => {
           const dt = new Date();
           dt.setDate(dt.getDate() + days);
           return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         };
-
-        // بناء القنوات من options[] (name/arrivalTime/amount) — وإلا القناة الرئيسية برك
-        const rawOpts: unknown[] = Array.isArray(ship.options) && ship.options.length
-          ? ship.options
-          : [{ name: ship.channelName, arrivalTime: ship.arrivalTime, amount: ship.amount }];
-
-        const seen = new Set<string>();
-        const tiers: Tier[] = [];
-        for (const o of rawOpts) {
-          if (!o || typeof o !== 'object') continue;
-          const rec = o as Record<string, unknown>;
-          const raw = String(rec.arrivalTime ?? '').trim();
-          if (!raw) continue;
-          const w = parseWindow(raw);
-          if (!w) continue;
-          const name = typeof rec.name === 'string' ? rec.name : '';
-          const key = raw + '|' + name;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          const amt = typeof rec.amount === 'number' ? rec.amount : parseFloat(String(rec.amount ?? ''));
-          tiers.push({
-            raw, name,
-            amount: Number.isFinite(amt) ? amt : 0,
-            min: w.min, max: w.max,
-            start: fmt(w.min), end: fmt(w.max),
-          });
-        }
-        if (!tiers.length) return;
-
-        // ⚡ مرتبين بالسرعة (الأسرع أول) — تعادل → النافذة الأقصر → الثمن
-        tiers.sort((a, b) => (a.min - b.min) || (a.max - b.max) || (a.amount - b.amount));
-
-        // الافتراضي = الأرخص (القناة اللي المتجر فعلاً كيشحن بيها)
-        let defaultIdx = 0;
-        const primaryAmt = typeof ship.amount === 'number' ? ship.amount : parseFloat(String(ship.amount ?? ''));
-        if (Number.isFinite(primaryAmt)) {
-          const i = tiers.findIndex(t => t.amount === primaryAmt);
-          if (i >= 0) defaultIdx = i;
-        } else {
-          defaultIdx = tiers.reduce((best, t, i) => (t.amount < tiers[best].amount ? i : best), 0);
-        }
 
         // اسم البلد الكامل من الكود (HK → Hong Kong) — client-side، بلا نداء
         let country = String(data?.geo?.country || '').toUpperCase();
@@ -229,8 +179,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
           if (nice && nice.toUpperCase() !== country) country = nice;
         } catch { /* Intl غير مدعوم → نبقى على الكود */ }
 
-        setLive({ country, tiers, defaultIdx });
-        setSel(defaultIdx);
+        setLive({ country, start: fmt(w.min), end: fmt(w.max), raw });
       } catch {
         // شبكة/سيرفر نائم → fallback الواقعي — عمداً بلا alert
       }
@@ -239,7 +188,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [effectivePid]);
 
-  // 🌍 [cj-eta-v4] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
+  // 🌍 [cj-eta-v5] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
   useEffect(() => {
     if (live?.country) return;
     let dead = false;
@@ -269,73 +218,45 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
 
   if (!isMounted) return null;
 
-  const t = live && live.tiers[sel] ? live.tiers[sel] : null;
-  const nTiers = live?.tiers.length ?? 0;
-
-  // 🏷️ لقب القناة حسب الترتيب ديال السرعة
-  const tierLabel = (i: number, n: number) => {
-    if (n <= 1) return '🚚 Standard';
-    if (i === 0) return '⚡ Fastest';
-    if (i === n - 1) return '🌍 Economy';
-    return '🚚 Standard';
-  };
-
   return (
     <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-2xl p-4 my-4 space-y-3 font-sans">
 
-      {/* سطر موعد الوصول — القناة المختارة من CJ [cj-eta-v4] أو نافذة واقعية عامة */}
+      {/* 🆕 [cj-eta-v5] عنوان التوصيل المجاني — النجمة ديال الصندوق */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[13px] font-black uppercase tracking-wide shadow-sm">
+          🚚 Free Delivery
+        </span>
+        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+          Worldwide · On Us
+        </span>
+      </div>
+
+      {/* سطر موعد الوصول — نافذة CJ الحقيقية [cj-eta-v5] أو نافذة واقعية عامة */}
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-xl bg-white text-[#8B78C6] flex items-center justify-center text-base shrink-0 border border-[#8B78C6]/20 shadow-xs">
           ✈️
         </div>
         <div className="text-xs leading-relaxed flex-1">
-          {live && t ? (
+          {live ? (
             <>
               <p className="font-bold text-gray-900">
-                Estimated Delivery to {live.country || 'You'}:{' '}
-                <span
-                  className="text-[#8B78C6] font-black underline decoration-[#8B78C6]/40 underline-offset-2"
-                  title={t.name ? `CJ channel: ${t.name}` : undefined}
-                >
-                  {t.start} – {t.end}
+                Estimated arrival to {live.country || 'You'}:{' '}
+                <span className="text-[#8B78C6] font-black underline decoration-[#8B78C6]/40 underline-offset-2">
+                  {live.start} – {live.end}
                 </span>
                 {' '}
                 <span className="inline-block align-middle ml-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-black text-emerald-700 uppercase tracking-wide">
-                  ⚡ live CJ quote · {t.raw} days
+                  ⚡ live CJ window · {live.raw} days
                 </span>
               </p>
-
-              {/* 🆕 [cj-eta-v4] أزرار سرعة التوصيل — خيارات CJ الحقيقية، العميل يختار */}
-              {nTiers >= 2 && (
-                <div className="flex flex-wrap gap-1.5 mt-2" role="group" aria-label="CJ delivery speed options">
-                  {live.tiers.map((tier, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-pressed={i === sel}
-                      onClick={() => setSel(i)}
-                      title={tier.name ? `CJ channel: ${tier.name}` : undefined}
-                      className={
-                        'px-2 py-0.5 rounded-full border text-[10px] font-bold transition-colors cursor-pointer ' +
-                        (i === sel
-                          ? 'bg-[#8B78C6] text-white border-[#8B78C6]'
-                          : 'bg-white text-gray-600 border-[#8B78C6]/30 hover:border-[#8B78C6]/60')
-                      }
-                    >
-                      {tierLabel(i, nTiers)} · {tier.raw}d
-                    </button>
-                  ))}
-                </div>
-              )}
-
               <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                Free shipping included — real CJ carrier window for your country.
+                No shipping fees — delivery is on us, tracked &amp; insured all the way.
               </p>
             </>
           ) : (
             <>
               <p className="font-bold text-gray-900">
-                Estimated Delivery{fallbackCountry ? ` to ${fallbackCountry}` : ''}:{' '}
+                Estimated arrival{fallbackCountry ? ` to ${fallbackCountry}` : ''}:{' '}
                 <span className="text-[#8B78C6] font-black underline decoration-[#8B78C6]/40 underline-offset-2">
                   {deliveryDates.start} – {deliveryDates.end}
                 </span>
