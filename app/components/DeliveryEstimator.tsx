@@ -4,38 +4,48 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 // ════════════════════════════════════════════════════════════════
-// DeliveryEstimator v3 [cj-eta-v3] — Kit 29e v2 (LaClarc × CJ live ETA)
+// DeliveryEstimator v4 [cj-eta-v4] — Kit 29f [cj-eta-pick]
+// (LaClarc × CJ live ETA — المتسوق يختار سرعة التوصيل اللي يشوفها)
 //
-// 🧩 STANDALONE — المكوّن كيخدم بوحدو بلا أي props ولا رقعات فـ
-//   ProductDetailsClient: كيكتاشف الـ product id من الـ URL (usePathname)
-//   كيجيب cj_product_id من /api/products/:id (SELECT * كيرجعو أصلاً)
-//   ومن بعد كيسقسي البريدج /api/cj-live/product/:cjPid.
-//   إلا مرّر لي حدا cjPid كـ prop → كيستعملو مباشرة (بلا fetch إضافي)
-//   وأي props آخرين كيتقبلو بصمت ([key: string]: unknown) — المكوّن
-//   ما يكسرش الـ build مهما كان شكل المستدعي.
+// 🧩 STANDALONE — كما v3: كيكتاشف المنتج من الـ URL (usePathname)
+//   → /api/products/:id → cj_product_id → البريدج /api/cj-live/product/:cjPid
+//   بلا أي props إجبارية، وأي props آخرين مقبولين ([key: string]: unknown).
 //
-// 🌍 البريدج كيكشف بلد الزائر أوتوماتيك (cf-ipcountry عبر Cloudflare→Render)
-//   وكينادي freightCalculateTip. إلا رجعت قناة حقيقية (source=cj-live):
-//   التواريخ كولحي من نافذة الوصول الحقيقية ديال CJ
-//   (arrivalTime "20-60" → اليوم+20 → اليوم+60) + شارة "live CJ quote"
-//   + اسم قناة الشحن كـ tooltip. بلا تغيير الثمن ولا السلة.
+// 🆕 v4 — اختيار القناة: البريدج أصلاً كيرجع top-3 قنوات CJ الحقيقية
+//   (options[] فيها name/arrivalTime/amount) فنفس الجواب — صفر نقاط زيادة.
+//   المكوّن كيبنيهم أزرار: ⚡ Fastest · 🚚 Standard · 🌍 Economy (مرتبين
+//   بالسرعة)، والعميل كينقر ويشوف نافذة الوصول ديال كل قناة.
+//   الافتراضي المختار = القناة الأرخص (اللي المتجر فعلاً كيشحن بيها).
 //
-// 🛟 fallback واقعي: بلا رابط CJ / بلا قناة / fetch فاشل → نافذة عامة
-//   صادقة 2-4 أسابيع (+14/+28) — عمرنا ما نرجعو للتواريخ الخيالية
-//   القصيرة (مخاطر شكاوى واسترجاعات للمندوبية من الصين).
+// 🔒 مجاني للعميل: ثمن القنوات ما كيتعرضش أبداً (SHOW_CHANNEL_PRICES=false)
+//   — الشحن مجاني ومحسوب كامل فالثمن (قانون التسعير v31). غير السرعة
+//   والنافذة كيبانو، واسم ناقل CJ الحقيقي كيتحط فـ tooltip.
 //
-// 💰 النقاط: MISS ≈ 20pt (product/query 10 + freightCalculateTip 10)
-//   كاش البريدج 10د لكل (منتج×بلد) → HIT = 0pt · /geo = 0pt دائماً.
+// 🛟 fallback واقعي كما v3: بلا رابط CJ / بلا قناة / fetch فاشل →
+//   نافذة صادقة 2-4 أسابيع (+14/+28) — عمرنا ما نرجعو للتواريخ الخيالية.
+//
+// 💰 النقاط: MISS ≈ 20pt (كاش البريدج 10د/منتج×بلد → HIT = 0pt) · /geo = 0pt.
 // ════════════════════════════════════════════════════════════════
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
-interface LiveEta {
-  start: string;
-  end: string;
+// 🔒 ثمن القنوات داخلي — العميل كيشوف التوصيل مجاني (محسوب فالثمن أصلاً)
+const SHOW_CHANNEL_PRICES = false;
+
+interface Tier {
+  raw: string;       // arrivalTime الأصلي من CJ ("5-8")
+  name: string;      // اسم ناقل CJ (Yw Eub · 燕文…)
+  amount: number;    // الثمن الداخلي (ما كيتعرضش)
+  min: number;
+  max: number;
+  start: string;     // اليوم+min منسق
+  end: string;       // اليوم+max منسق
+}
+
+interface LiveState {
   country: string;
-  channel: string;
-  range: string;
+  tiers: Tier[];
+  defaultIdx: number; // القناة الأرخص — اللي المتجر كيشحن بيها فعلاً
 }
 
 // أي props مقبولين — المكوّن ما يكسرش الـ build مهما كان شكل المستدعي
@@ -56,13 +66,23 @@ function extractCjPid(j: unknown): string | null {
   return null;
 }
 
+// تحليل arrivalTime ديال CJ: "20-60" · "12-50" · رقم واحد "30"
+function parseWindow(raw: string): { min: number; max: number } | null {
+  const m = raw.match(/(\d+)\s*[-–]\s*(\d+)/);
+  const min = m ? parseInt(m[1], 10) : parseInt(raw, 10);
+  const max = m ? parseInt(m[2], 10) : min;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) return null;
+  return { min, max };
+}
+
 export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
   const pathname = usePathname();
   const [deliveryDates, setDeliveryDates] = useState({
     start: '', end: '', hoursLeft: 4, minsLeft: 32,
   });
   const [selfPid, setSelfPid] = useState<string | null>(null);
-  const [liveEta, setLiveEta] = useState<LiveEta | null>(null);
+  const [live, setLive] = useState<LiveState | null>(null);
+  const [sel, setSel] = useState(0);
   const [fallbackCountry, setFallbackCountry] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -75,7 +95,6 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
       const today = new Date();
 
       // 🛟 fallback واقعي للمندوبية من الصين: 2-4 أسابيع (+14 → +28)
-      //   عمرنا ما نعرض تواريخ خيالية قصيرة — شكاوى واسترجاعات
       const startDate = new Date(today);
       startDate.setDate(today.getDate() + 14);
 
@@ -114,8 +133,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => clearInterval(timer);
   }, []);
 
-  // 🧩 [cj-eta-v3] self-discovery: /products/51151 → 51151 → cj_product_id
-  //   (كي تعمل إلا ما مرّرش لينا cjPid كـ prop)
+  // 🧩 [cj-eta-v4] self-discovery: /products/51151 → 51151 → cj_product_id
   useEffect(() => {
     if (cjPid) return; // prop موجود → ما كانحتاجش الاكتشاف
     if (!pathname) return;
@@ -141,7 +159,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [cjPid, pathname]);
 
-  // 🆕 [cj-eta-v3] نافذة الوصول الحقيقية من CJ (freightCalculateTip عبر البريدج)
+  // 🆕 [cj-eta-v4] نافذة الوصول الحقيقية + قنوات CJ (freightCalculateTip عبر البريدج)
   useEffect(() => {
     if (!effectivePid) return; // منتج بلا رابط CJ → fallback الواقعي
     let dead = false;
@@ -149,25 +167,59 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     (async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/cj-live/product/${effectivePid}`);
-        if (!res.ok) return; // 502/404 → fallback (بلا صمت في الـ console.error — البريدج كيفهم)
+        if (!res.ok) return; // 502/404 → fallback (البريدج كيفهم — بلا صمت)
         const data = await res.json();
         if (dead) return;
 
         const ship = data?.shipping;
         if (!ship || ship.source !== 'cj-live' || !ship.arrivalTime) return;
 
-        // arrivalTime من CJ: "20-60" · "12-50" · رقم واحد "30"
-        const raw = String(ship.arrivalTime);
-        const m = raw.match(/(\d+)\s*[-–]\s*(\d+)/);
-        const minDays = m ? parseInt(m[1], 10) : parseInt(raw, 10);
-        const maxDays = m ? parseInt(m[2], 10) : minDays;
-        if (!Number.isFinite(minDays) || !Number.isFinite(maxDays) || minDays <= 0 || maxDays < minDays) return;
-
         const fmt = (days: number) => {
           const dt = new Date();
           dt.setDate(dt.getDate() + days);
           return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         };
+
+        // بناء القنوات من options[] (name/arrivalTime/amount) — وإلا القناة الرئيسية برك
+        const rawOpts: unknown[] = Array.isArray(ship.options) && ship.options.length
+          ? ship.options
+          : [{ name: ship.channelName, arrivalTime: ship.arrivalTime, amount: ship.amount }];
+
+        const seen = new Set<string>();
+        const tiers: Tier[] = [];
+        for (const o of rawOpts) {
+          if (!o || typeof o !== 'object') continue;
+          const rec = o as Record<string, unknown>;
+          const raw = String(rec.arrivalTime ?? '').trim();
+          if (!raw) continue;
+          const w = parseWindow(raw);
+          if (!w) continue;
+          const name = typeof rec.name === 'string' ? rec.name : '';
+          const key = raw + '|' + name;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const amt = typeof rec.amount === 'number' ? rec.amount : parseFloat(String(rec.amount ?? ''));
+          tiers.push({
+            raw, name,
+            amount: Number.isFinite(amt) ? amt : 0,
+            min: w.min, max: w.max,
+            start: fmt(w.min), end: fmt(w.max),
+          });
+        }
+        if (!tiers.length) return;
+
+        // ⚡ مرتبين بالسرعة (الأسرع أول) — تعادل → النافذة الأقصر → الثمن
+        tiers.sort((a, b) => (a.min - b.min) || (a.max - b.max) || (a.amount - b.amount));
+
+        // الافتراضي = الأرخص (القناة اللي المتجر فعلاً كيشحن بيها)
+        let defaultIdx = 0;
+        const primaryAmt = typeof ship.amount === 'number' ? ship.amount : parseFloat(String(ship.amount ?? ''));
+        if (Number.isFinite(primaryAmt)) {
+          const i = tiers.findIndex(t => t.amount === primaryAmt);
+          if (i >= 0) defaultIdx = i;
+        } else {
+          defaultIdx = tiers.reduce((best, t, i) => (t.amount < tiers[best].amount ? i : best), 0);
+        }
 
         // اسم البلد الكامل من الكود (HK → Hong Kong) — client-side، بلا نداء
         let country = String(data?.geo?.country || '').toUpperCase();
@@ -177,13 +229,8 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
           if (nice && nice.toUpperCase() !== country) country = nice;
         } catch { /* Intl غير مدعوم → نبقى على الكود */ }
 
-        setLiveEta({
-          start: fmt(minDays),
-          end: fmt(maxDays),
-          country,
-          channel: String(ship.channelName || ''),
-          range: raw,
-        });
+        setLive({ country, tiers, defaultIdx });
+        setSel(defaultIdx);
       } catch {
         // شبكة/سيرفر نائم → fallback الواقعي — عمداً بلا alert
       }
@@ -192,10 +239,9 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
     return () => { dead = true; };
   }, [effectivePid]);
 
-  // 🌍 [cj-eta-v3] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
-  //   كي تعمل غير ملي ما كاينش ETA حي — إلا جا حي، البلد ديالو كافي
+  // 🌍 [cj-eta-v4] بلد الزائر للـ fallback (0pt — GeoIP من الهيدر، بلا CJ)
   useEffect(() => {
-    if (liveEta?.country) return;
+    if (live?.country) return;
     let dead = false;
     (async () => {
       try {
@@ -219,36 +265,71 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
       }
     })();
     return () => { dead = true; };
-  }, [liveEta]);
+  }, [live]);
 
   if (!isMounted) return null;
+
+  const t = live && live.tiers[sel] ? live.tiers[sel] : null;
+  const nTiers = live?.tiers.length ?? 0;
+
+  // 🏷️ لقب القناة حسب الترتيب ديال السرعة
+  const tierLabel = (i: number, n: number) => {
+    if (n <= 1) return '🚚 Standard';
+    if (i === 0) return '⚡ Fastest';
+    if (i === n - 1) return '🌍 Economy';
+    return '🚚 Standard';
+  };
 
   return (
     <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-2xl p-4 my-4 space-y-3 font-sans">
 
-      {/* سطر موعد الوصول — حقيقي من CJ [cj-eta-v3] أو نافذة واقعية عامة */}
+      {/* سطر موعد الوصول — القناة المختارة من CJ [cj-eta-v4] أو نافذة واقعية عامة */}
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-xl bg-white text-[#8B78C6] flex items-center justify-center text-base shrink-0 border border-[#8B78C6]/20 shadow-xs">
           ✈️
         </div>
-        <div className="text-xs leading-relaxed">
-          {liveEta ? (
+        <div className="text-xs leading-relaxed flex-1">
+          {live && t ? (
             <>
               <p className="font-bold text-gray-900">
-                Estimated Delivery to {liveEta.country || 'You'}:{' '}
+                Estimated Delivery to {live.country || 'You'}:{' '}
                 <span
                   className="text-[#8B78C6] font-black underline decoration-[#8B78C6]/40 underline-offset-2"
-                  title={liveEta.channel ? `CJ channel: ${liveEta.channel}` : undefined}
+                  title={t.name ? `CJ channel: ${t.name}` : undefined}
                 >
-                  {liveEta.start} – {liveEta.end}
+                  {t.start} – {t.end}
                 </span>
                 {' '}
                 <span className="inline-block align-middle ml-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-black text-emerald-700 uppercase tracking-wide">
-                  ⚡ live CJ quote · {liveEta.range} days
+                  ⚡ live CJ quote · {t.raw} days
                 </span>
               </p>
-              <p className="text-[11px] text-gray-500 mt-0.5 font-medium">
-                Real carrier window from CJ Dropshipping for your country.
+
+              {/* 🆕 [cj-eta-v4] أزرار سرعة التوصيل — خيارات CJ الحقيقية، العميل يختار */}
+              {nTiers >= 2 && (
+                <div className="flex flex-wrap gap-1.5 mt-2" role="group" aria-label="CJ delivery speed options">
+                  {live.tiers.map((tier, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-pressed={i === sel}
+                      onClick={() => setSel(i)}
+                      title={tier.name ? `CJ channel: ${tier.name}` : undefined}
+                      className={
+                        'px-2 py-0.5 rounded-full border text-[10px] font-bold transition-colors cursor-pointer ' +
+                        (i === sel
+                          ? 'bg-[#8B78C6] text-white border-[#8B78C6]'
+                          : 'bg-white text-gray-600 border-[#8B78C6]/30 hover:border-[#8B78C6]/60')
+                      }
+                    >
+                      {tierLabel(i, nTiers)} · {tier.raw}d
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Free shipping included — real CJ carrier window for your country.
               </p>
             </>
           ) : (
