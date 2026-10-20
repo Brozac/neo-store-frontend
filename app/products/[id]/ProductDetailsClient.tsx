@@ -27,6 +27,23 @@ import GlassIcon from '@/components/ui/GlassIcon';
 // 🧹: spans خاويين حيدو (نفس نمط HeroSection — إيموجيات طايحة)
 // ⚠️ M#45 موثق (ما تبدلش — قرار المالك): "insured delivery" · "30-Day Guarantee"
 // ════════════════════════════════════════════════════════════════
+//
+// 🆕 v1.2 [variant-truth] Kit 29j — محرّك الفاريانت الحقيقي (من قراءة معمّقة لتوثيق CJ Product API)
+//
+// 🔴 P0 مالي مصلّح: الماتشر القديم كان كيقارن hex اللون بـ variantKey بـ includes → فاشل دائماً
+//    ("Black-XS") — والألوان مخزّنة hex ("#000000") → مطابقة مستحيلة → exact-match كيفشل
+//    دايماً → كيرجع لـ size-only match → الزبون يختار "Army Green+XXXL" والسيرفر يطلب
+//    أول "XXXL" فاللائحة (Yellow-XXXL!) — vid خاطئ = بضاعة خاطئة = ريفونات.
+//    مثبت على الداتا الحية: 96917 فيه 8 عائلات لون و colors[] فيها 6 برك.
+// 🆕 الحل: مجموعات اللون كتشتق من variantKey نفسو (strip الحجم) — كل مجموعة عندها:
+//    صورة variantImage الحقيقية (526/526 معمّرين فالداتا الحية) + مقاساتها الفعلية
+//    (2XL/3XL الناقصة من DB sizes[] كيبانو دابا).
+// 🛡️ بلا تجاوز للون: الفاريانت كيتلقا داخل المجموعة فقط — size-match عابر للألوان ممنوع.
+// 🖼️ اختيار اللون كيقاد للصورة الحقيقية تاع ذاك اللون فالمعرض (Temu/Shein pattern).
+// ⚠️ درس اللايف (96814): variantSellPrice = كلفة CJ (wholesale) ماشي سعر البيع —
+//    DB فيها retail (20.99) والـ variants فيهم كلفة (4.90/6.59). عرض الكلفة للزبون
+//    = تسريب هامش → العرض كيبقى safePrice (DB) والـ checkout Bank-Grade كيما كان.
+//    (variantSellPrice كيتخزن فالمحرك للـ admin/backlog — ما كيتعرضش للزبون أبداً)
 
 // 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (social-problem وهمي: أسماء/مدن عشوائية)
 // 🆕 Phase 3 — مكونات ما تشافش في أول paint — تُحمّل عند الحاجة فقط
@@ -91,6 +108,9 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
+// 🛡️ [variant-truth] escape regex — مقاسات فيها رموز خاص ("S/M", "4 (Kids)") ما يرميوش
+const escRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export default function ProductDetailsClient({
   product,
   initialReviews,
@@ -106,8 +126,8 @@ export default function ProductDetailsClient({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '');
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
+  const [selectedColorName, setSelectedColorName] = useState('');   // 🆕 [variant-truth] اسم عائلة اللون (من variantKey) — hex بقى legacy فقط
+  const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
   const [activeTab, setActiveTab] = useState<TabKey>('details');
   const [reviews, setReviews] = useState(initialReviews);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -123,14 +143,6 @@ export default function ProductDetailsClient({
 
   const defaultImage = '/icon-512.png';
 
-  const galleryImages = useMemo(() => {
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return product.images.filter(img => img && typeof img === 'string');
-    }
-    return [product.image_url || product.image || defaultImage];
-  }, [product, defaultImage]);
-
-  const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   const scrollThumbnails = (direction: 'left' | 'right') => {
@@ -140,39 +152,122 @@ export default function ProductDetailsClient({
     }
   };
 
-  const matchedVariant = useMemo(() => {
-    if (!product.variants) return null;
+  // ═══ 🆕 [variant-truth] Kit 29j — محرّك الفاريانت الحقيقي ═══
+  // الحقيقة من variantKey نفسو ("Black-XS" → لون Black + حجم XS) — colors[] من DB مش موثوقة.
+  const variantEngine = useMemo(() => {
+    const dbSizes: string[] = Array.isArray(product.sizes)
+      ? product.sizes.filter((s): s is string => typeof s === 'string')
+      : [];
+    let vars: any[] = [];
     try {
-      const parsedVariants = typeof product.variants === 'string'
-        ? JSON.parse(product.variants)
-        : product.variants;
+      const parsed = typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants;
+      if (Array.isArray(parsed)) vars = parsed;
+    } catch { /* 🩹 parse-safe — variants فاسدة ما تكسرش الصفحة */ }
 
-      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) return null;
+    const SIZE_RX = /^(xxs|xs|s|m|l|xl|2xl|xxl|3xl|xxxl|4xl|xxxxl|5xl|one[- ]?size|free[- ]?size|custom)$/i;
 
-      // 🛡️ escape regex — حجم فيه رموز خاص ("S/M", "4 (Kids)") كان يرمي → variant null → vid فاضي
-      const sizeRx = selectedSize
-        ? new RegExp(`\\b${selectedSize.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
-        : null;
+    // "Black-XS" → [Black, XS] · "Rose Red" → [Rose Red, ''] · "One-Size" آمن (SIZE_RX)
+    const splitKey = (key: string): [string, string] => {
+      const i = key.lastIndexOf('-');
+      if (i === -1) return [key, ''];
+      const right = key.slice(i + 1);
+      if (dbSizes.some(s => s.toLowerCase() === right.toLowerCase()) || SIZE_RX.test(right)) {
+        return [key.slice(0, i), right];
+      }
+      return [key, ''];
+    };
 
-      const exactMatch = parsedVariants.find((v: any) => {
-        const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
-        const matchesColor = selectedColor ? name.includes(selectedColor.toLowerCase()) : true;
-        const matchesSize = sizeRx ? sizeRx.test(name) : true;
-        return matchesColor && matchesSize;
-      });
-      if (exactMatch) return exactMatch;
-
-      const sizeMatch = parsedVariants.find((v: any) => {
-        const name = (v.variantKey || v.variantNameEn || '').toLowerCase();
-        return sizeRx ? sizeRx.test(name) : false;
-      });
-      if (sizeMatch) return sizeMatch;
-
-      return parsedVariants[0];
-    } catch (e) {
-      return null;
+    interface VariantItem { raw: any; vid: string; size: string; price: number | null; }
+    interface ColorGroup { name: string; image: string; items: VariantItem[]; sizes: string[]; hex: string | null; }
+    const groups: ColorGroup[] = [];
+    const byName = new Map<string, ColorGroup>();
+    const flat: VariantItem[] = [];
+    for (const v of vars) {
+      const vid = v?.vid != null ? String(v.vid) : '';
+      if (!vid) continue;                                  // 🛡️ بلا vid ما كيتطلبش من CJ
+      const key = String(v?.variantKey || v?.variantNameEn || '').trim();
+      const [color, size] = splitKey(key);
+      if (!color) continue;
+      let g = byName.get(color.toLowerCase());
+      if (!g) {
+        g = { name: color, image: '', items: [], sizes: [], hex: null };
+        byName.set(color.toLowerCase(), g);
+        groups.push(g);
+      }
+      if (!g.image && v?.variantImage) g.image = String(v.variantImage);
+      const item: VariantItem = { raw: v, vid, size, price: v?.variantSellPrice != null ? Number(v.variantSellPrice) : null };
+      g.items.push(item);
+      flat.push(item);
+      if (size && !g.sizes.includes(size)) g.sizes.push(size);
     }
-  }, [product.variants, selectedColor, selectedSize]);
+
+    // ترتيب canon — ظهور CJ ماشي مرتّب (شفت Pink: 2XL,3XL,L,M,S,XL فالداتا الحية)
+    const CANON = ['xxs','xs','s','m','l','xl','2xl','xxl','3xl','xxxl','4xl','xxxxl','5xl','one size','one-size'];
+    const canonIdx = (s: string) => {
+      const i = CANON.indexOf(s.toLowerCase());
+      return i === -1 ? 99 : i;
+    };
+    for (const g of groups) g.sizes.sort((a, b) => canonIdx(a) - canonIdx(b) || a.localeCompare(b));
+
+    // hex mapping — غير إلا العدد متطابق معقول (96854: 2=2 ✓) · colors[] ناقصة (96917: 6 مقابل 8)
+    const cols = Array.isArray(product.colors)
+      ? product.colors.filter((c): c is string => typeof c === 'string')
+      : [];
+    if (groups.length > 1 && groups.length === cols.length) {
+      groups.forEach((g, i) => { g.hex = cols[i]; });
+    }
+
+    return { groups, flat };
+  }, [product]);
+
+  // اللون المختار — الافتراضي أول مجموعة · المجموعة هي مصدر الحقيقة
+  const selectedGroup = useMemo(() => {
+    const gs = variantEngine.groups;
+    if (gs.length === 0) return null;
+    return gs.find(g => g.name.toLowerCase() === selectedColorName.toLowerCase()) || gs[0];
+  }, [variantEngine, selectedColorName]);
+
+  // المقاسات المتاحة = مقاسات المجموعة الحقيقية (2XL/3XL الناقصة من DB كيبانو دابا)
+  const availableSizes = useMemo(() => {
+    if (selectedGroup && selectedGroup.sizes.length > 0) return selectedGroup.sizes;
+    return Array.isArray(product.sizes)
+      ? product.sizes.filter((s): s is string => typeof s === 'string')
+      : [];
+  }, [selectedGroup, product.sizes]);
+
+  // المقاس الفعلي: المختار إلا كاين فالمجموعة، وإلا أول مقاس متاح — كيمنع "مقاس غير موجود"
+  const effectiveSize = useMemo(() => {
+    if (!selectedGroup || selectedGroup.sizes.length === 0) return '';
+    return selectedGroup.sizes.includes(selectedSize) ? selectedSize : selectedGroup.sizes[0];
+  }, [selectedGroup, selectedSize]);
+
+  // 🎯 الفاريانت المطابق — داخل المجموعة فقط (P0: ما بقاش size-match عابر للألوان)
+  const matchedVariant = useMemo(() => {
+    const { groups, flat } = variantEngine;
+    if (groups.length === 0) return flat[0] || null;        // fallback قديم: أول variant بـ vid
+    const g = selectedGroup || groups[0];
+    if (!effectiveSize) return g.items[0] || null;
+    const rx = new RegExp(`^${escRx(effectiveSize)}$`, 'i');
+    return g.items.find(it => it.size && rx.test(it.size)) || g.items[0] || null;
+  }, [variantEngine, selectedGroup, effectiveSize]);
+
+  // 🖼️ صورة اللون المختار كتزول قدام فالمعرض (variantImage معمّرة 526/526 فالداتا الحية)
+  const variantImage = selectedGroup?.image || '';
+  const galleryImages = useMemo(() => {
+    const base = (product.images && Array.isArray(product.images) && product.images.length > 0)
+      ? product.images.filter(img => img && typeof img === 'string')
+      : [product.image_url || product.image || defaultImage];
+    if (variantImage && !base.includes(variantImage)) return [variantImage, ...base];
+    return base;
+  }, [product, defaultImage, variantImage]);
+
+  const mainImageSrc = galleryImages[currentImageIndex] || galleryImages[0] || defaultImage;
+
+  // قفزة تلقائية للصورة تاع اللون (كيتبدل غير الـ index المشتق — السوايب اليدوي باقي)
+  const variantImageIdx = variantImage ? galleryImages.indexOf(variantImage) : -1;
+  useEffect(() => {
+    if (variantImageIdx >= 0) setCurrentImageIndex(variantImageIdx);
+  }, [variantImageIdx]);
 
   // 🛡️ parse-safe للمفضلة — localStorage فاسد ما يكسرش الزر (نفس نمط CartContext v1.1)
   //    + cap 100 = مطابق لـ by-ids LIMIT 100 (API)
@@ -227,6 +322,9 @@ export default function ProductDetailsClient({
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100)
     : 0;
 
+  // 💰 [variant-truth] درس اللايف: variantSellPrice = كلفة CJ — العرض للزبون كيبقى سعر الـ DB
+  //    (الـ checkout أصلاً Bank-Grade من prepareSecureItems). الفاريانت الحقيقي = vid صحيح فقط.
+
   // 🩹 P0 مالي: discountedUnitPrice (×0.85/×0.75) محذوف — خصم client-only ما كيتطبقش
   //    فالـ checkout (prepareSecureItems من DB) — تفاصيل فالهيدر. Backlog: qty-tier سيرفر-side.
 
@@ -247,12 +345,12 @@ export default function ProductDetailsClient({
       id: product.id,
       title: product.title,
       name: product.title,
-      price: safePrice, // 🩹 P0: السعر الحقيقي من DB — السلة والـ checkout كيتلاقاو
+      price: safePrice, // 🩹 P0: السعر الحقيقي من DB — السلة والـ checkout كيتلاقاو (Bank-Grade)
       quantity,
       image: mainImageSrc,
       image_url: mainImageSrc,
-      color: selectedColor,
-      size: selectedSize,
+      color: selectedGroup?.name || selectedColorName || '',   // 🩹 اسم مقروء عوض hex خام
+      size: effectiveSize || '',
       vid: resolvedVid
     }, quantity);
 
@@ -462,18 +560,56 @@ export default function ProductDetailsClient({
                 )}
               </div>
 
-              {product.colors && product.colors.length > 0 && (
+              {variantEngine.groups.length > 1 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-temu-gray-text font-semibold">{selectedColor}</span>
+                    Color: <span className="text-temu-gray-text font-semibold">{selectedGroup?.name}</span>
+                  </label>
+                  <div className="flex gap-2.5 flex-wrap">
+                    {variantEngine.groups.map((g) => (
+                      <button
+                        key={g.name}
+                        type="button"
+                        onClick={() => setSelectedColorName(g.name)}
+                        title={g.name}
+                        aria-label={`Color ${g.name}`}
+                        aria-pressed={selectedGroup?.name === g.name}
+                        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 active:scale-90 ${
+                          selectedGroup?.name === g.name
+                            ? 'border-temu-orange scale-110 shadow ring-2 ring-temu-orange/30'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {g.image ? (
+                          <img
+                            src={IMG.thumb(g.image)}
+                            alt={g.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span style={{ backgroundColor: getColorHex(g.hex || g.name) }} className="block w-full h-full rounded-full border border-black/10"></span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* fallback قديم — بلا variants صالحين: دوائر hex كيما قبل (بلا أثر على الـ vid) */}
+              {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
+                <div className="mb-6">
+                  <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
+                    Color: <span className="text-temu-gray-text font-semibold">{selectedColorName || product.colors[0]}</span>
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {product.colors.map((col, idx) => (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setSelectedColor(col)}
-                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColor === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
+                        onClick={() => setSelectedColorName(col)}
+                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColorName === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
                       >
                         <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/10"></span>
                       </button>
@@ -482,7 +618,7 @@ export default function ProductDetailsClient({
                 </div>
               )}
 
-              {product.sizes && product.sizes.length > 0 && (
+              {availableSizes.length > 0 && (
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
@@ -491,12 +627,12 @@ export default function ProductDetailsClient({
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((sz) => (
+                    {availableSizes.map((sz) => (
                       <button
                         key={sz}
                         type="button"
                         onClick={() => setSelectedSize(sz)}
-                        className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${selectedSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
+                        className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${effectiveSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
                       >
                         {sz}
                       </button>
@@ -608,8 +744,8 @@ export default function ProductDetailsClient({
                   name: product.title,
                   price: safePrice, // 🩹 P0: DB-true — السيرفر هو الحكم (prepareSecureItems)
                   image: mainImageSrc,
-                  color: selectedColor,
-                  size: selectedSize,
+                  color: selectedGroup?.name || selectedColorName || '',
+                  size: effectiveSize || '',
                   quantity: quantity,
                   vid: matchedVariant?.vid || ''
                 }}
@@ -911,7 +1047,7 @@ export default function ProductDetailsClient({
                 )}
               </div>
               <p className="text-[10px] text-gray-500 font-semibold truncate">
-                {selectedColor && `${selectedColor} • `}{selectedSize} • Qty: {quantity}
+                {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' • ')} • Qty: {quantity}
               </p>
             </div>
           </div>
