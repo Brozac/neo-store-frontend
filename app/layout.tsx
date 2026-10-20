@@ -1,6 +1,5 @@
 import './globals.css';
 import { Providers } from './providers';
-import GlassDock from '@/components/ui/GlassDock';
 import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 
@@ -122,8 +121,6 @@ export default function RootLayout({
             `}
           </Script>
         )}
-
-        <GlassDock />
       </body>
     </html>
   );
