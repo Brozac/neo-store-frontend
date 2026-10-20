@@ -2,33 +2,33 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * Laclarc ProductCard — v2.0 (Task 10 Review)
+ * Laclarc ProductCard — v3.1 (Kit 30 [card-swatches] · حلقة السواتش الداكنة)
  * ═══════════════════════════════════════════════════════════════
- * 🔴 FIX-IMG (الاكتشاف الكبير) — Image Beast كان مبنيًا وغير موصول بشيء.
- *    الكارت كان يخدم الصورة الخام من CJ CDN (قياسكم الموثق: 259,677B)
- *    بدل transform الخاص بـ OSS (→ 15,696B، −94%).
- *    الآن: IMG.card() على كل صورة كارت —
- *    صفحة feed فيها 30 كارت: ~7.8MB صور → ~0.5MB.
- * 🩹 FIX-LAZY — loading="lazy" + decoding="async": الـ feed اللانهائي
- *    لا يجب أن يحمّل كل الصور دفعة واحدة. eager?: boolean اختياري
- *    (أول 4 كروت في أول صفحة = مرشحو LCP — تمررها من الـ feeds:
- *    <ProductCard product={p} eager={i < 4} />)
- * 🩹 FIX-LINK — <Link> حقيقي حول الصورة + العنوان + السعر:
- *    · middle-click / فتح في تبويب جديد يخدم (كان مستحيلاً على div onClick)
- *    · keyboard: Tab + Enter (div كان غير قابل للتركيز أصلاً)
- *    · الروابط ظاهرة للزواحف (crawlable)
- *    · prefetch={false}: feed فيه عشرات الكروت لا يسبق عشرات صفحات المنتج
- * 🩹 FIX-SILENT — catch الفارغ ({}) ممنوع (Tenet: silence in catch forbidden)
- *    → console.error ينجو من removeConsole (exclude: ['error']) في production
- * 🩹 FIX-ZERO — سعر مفقود كان يعرض "$0.00" = قاتل ثقة → الصف يختفي
+ * ✨ [card-swatches] — سواتشات الصور فالكارت (بأسلوب Temu):
+ *    · swatches[] كتجي من الباك (Kit 30): لون + صورة variant + vid
+ *      (المصدر: variants JSONB — variantKey بصيغة CJ الرسمية "Color-Size")
+ *    · hover = معاينة الصورة بتاعة ذاك اللون · click = تثبيت الاختيار
+ *    · 🩹 إصلاح حقيقي للـ quick-add: كان كيصيفط vid خاوي (اللائحة ما فيهاش
+ *      variants) → دابا كيصيفط vid تاع اللون المختار/المعاين — نفس
+ *      الحماية اللي في ProductDetailsClient (vid خاطئ = بضاعة خاطئة)
+ *    · +N للألوان الزايدة · title/aria-label لكل سواتش · بلا CLS
+ *    · [swatch-ring v3.1] حلقة الاختيار = temu-black (#1D1E3C) + ring-offset أبيض:
+ *      السواتشات صور حقيقية فيها بنفسجي (مثال 28701 Purple) → حلقة بنفسجي
+ *      كتخفي — الداكن المحايد كيتقرا على أي لون (بنترن Temu/Amazon/SHEIN)
+ *      ويزال من نفس باليت الموقع · البنفسجي يبقى للـ CTA/الروابط/الأسعار
+ *    · توافق خلفي 100%: بلا swatches فالپايلود → الصف مخبي (الكارت القديم)
  * ───────────────────────────────────────────────────────────────
- * محفوظ كما هو: TRUST FIX (خصم من original_price الحقيقي فقط، 1–89%)
- * · isTouched/is-active · quick-add مع defaultVid · stopPropagation الزر
- * · aspect-square الحاوية = صفر CLS (كان صحيحاً من قبل)
+ * محفوظ كما هو (v2.0 — Task 10 Review):
+ * 🔹 FIX-IMG — IMG.card() (OSS transform 400w ~15KB بدل 259KB خام)
+ * 🔹 FIX-LAZY — loading="lazy" + decoding="async" + eager اختياري (LCP)
+ * 🔹 FIX-LINK — Link حقيقي: new-tab / keyboard / SEO / prefetch={false}
+ * 🔹 FIX-SILENT — catch بلا صوت ممنوع → console.error ينجو من removeConsole
+ * 🔹 FIX-ZERO — سعر مفقود ما يعرضش "$0.00" → الصف يختفي
+ * 🔹 TRUST FIX — خصم من original_price الحقيقي فقط (1–89%)
+ * 🔹 isTouched/is-active · aspect-square = صفر CLS
  * ───────────────────────────────────────────────────────────────
- * ⚠️ تذكير أمني (خارج نطاق هذا الملف لكن حياتي): السعر هنا للعرض/السلة فقط.
- *    إعادة التسعير server-side إلزامية في checkout (server.js) قبل أي
- *    PaymentIntent — لا تثق أبداً في سعر قادم من العميل.
+ * ⚠️ تذكير أمني: السعر هنا للعرض/السلة فقط. إعادة التسعير server-side
+ *    إلزامية في checkout (server.js) قبل أي PaymentIntent.
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -51,6 +51,10 @@ interface Product {
   sales_count?: number;
   discount?: string;
   variants?: any[];
+  /** ✨ [card-swatches] — من الباك (Kit 30): {c: اسم اللون, i: صورة الـ variant, v: vid} */
+  swatches?: { c: string; i: string; v?: string }[];
+  /** ✨ [card-swatches] — عدد الألوان الزايدة فوق الـ 5 المعروضين */
+  swMore?: number;
 }
 
 interface ProductCardProps {
@@ -64,17 +68,32 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
   const router = useRouter();
   const { addToCart } = useCart();
   const [isAdded, setIsAdded] = useState(false);
+  // ✨ [card-swatches] — hover = معاينة مؤقتة · click = اختيار مثبت (موبايل)
+  const [swHover, setSwHover] = useState(-1);
+  const [swSel, setSwSel] = useState(-1);
 
   const handleCardClick = () => {
     router.push(`/products/${product.id}`);
   };
 
+  // ✨ [card-swatches] — قائمة السواتشات الصالحة (≥2 باش الصف يظهر — لون واحد ما كيحتاجش سواتش)
+  const swList = Array.isArray(product.swatches)
+    ? product.swatches.filter((s) => s && typeof s.i === 'string' && s.i)
+    : [];
+  const hasSwatches = swList.length >= 2;
+  const activeIdx = swHover >= 0 ? swHover : swSel;
+  const activeSw = hasSwatches && activeIdx >= 0 && activeIdx < swList.length ? swList[activeIdx] : null;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
 
+    // 🩹 [card-swatches] FIX-VID — الأولوية للـ vid تاع اللون المختار/المعاين
+    //    (كان كيصيفط '' دايماً من اللائحة — الباك كان يوقع على أول variant بلا اختيار)
     let defaultVid = '';
-    if (product.variants) {
+    if (activeSw?.v) {
+      defaultVid = activeSw.v;
+    } else if (product.variants) {
       try {
         const v = typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants;
         if (Array.isArray(v) && v[0]?.vid) defaultVid = v[0].vid;
@@ -114,10 +133,9 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
     }
   }
 
-  // 🩹 FIX-IMG — كانت الصورة الخام تُقدَّم مباشرة (259KB) — الآن OSS transform 400w (~15KB)
-  //    ملاحظة: IMG.card يقبل null ويرجع fallback داخلي؛ نمرر placeholder.jpg كي نحافظ
-  //    على نفس الـ fallback القديم بالحرف (local paths تمر عبر getOptimizedImage بلا تغيير)
-  const imgSrc = IMG.card(product.image_url || product.image || '/placeholder.jpg');
+  // 🩹 FIX-IMG — OSS transform 400w (~15KB) — ✨ [card-swatches]: المعاينة كتبدل الصورة
+  //    لصورة الـ variant المختار (نفس الـ transform → نفس الأداء)
+  const imgSrc = IMG.card(activeSw?.i || product.image_url || product.image || '/placeholder.jpg');
 
   const productUrl = `/products/${product.id}`;
 
@@ -138,7 +156,8 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         className="block"
       >
         <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
-          {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري) */}
+          {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري)
+              ✨ [card-swatches]: activeSw?.i = صورة اللون المختار (نفس OSS transform) */}
           <img
             src={imgSrc}
             alt={product.title || 'Product'}
@@ -173,6 +192,52 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
           )}
         </div>
       </Link>
+
+      {/* ✨ [card-swatches] — صف السواتشات: خارج الـ Link (كليك ما كيبدلش الصفحة)
+          stopPropagation يمنع card onClick · hover=معاينة · click=تثبيت */}
+      {hasSwatches && (
+        <div
+          className="px-3 pb-1 flex items-center gap-1.5 flex-wrap"
+          onMouseLeave={() => setSwHover(-1)}
+        >
+          {swList.map((s, idx) => (
+            <button
+              key={`${s.c || 'sw'}-${idx}`}
+              type="button"
+              title={s.c || 'Color'}
+              aria-label={`Color: ${s.c || 'option'}${swSel === idx ? ' (selected)' : ''}`}
+              aria-pressed={swSel === idx}
+              onMouseEnter={() => setSwHover(idx)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSwSel((prev) => (prev === idx ? -1 : idx));
+              }}
+              className={`w-5 h-5 rounded-md overflow-hidden border transition-all duration-150 cursor-pointer p-0 ${
+                activeIdx === idx
+                  ? 'border-temu-black ring-2 ring-temu-black ring-offset-1 ring-offset-white'
+                  : 'border-temu-gray-border-light hover:border-temu-gray-light'
+              }`}
+            >
+              <img
+                src={IMG.thumb(s.i)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
+          {typeof product.swMore === 'number' && product.swMore > 0 && (
+            <span className="text-[10px] font-bold text-temu-gray-light leading-none">+{product.swMore}</span>
+          )}
+          {activeSw?.c && (
+            <span className="text-[10px] text-temu-gray-light truncate max-w-[90px] leading-none">
+              {activeSw.c}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="p-3 pt-0">
         <button
