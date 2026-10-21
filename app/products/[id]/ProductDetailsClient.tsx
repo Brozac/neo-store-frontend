@@ -90,7 +90,7 @@ interface Product {
 }
 
 interface Review {
-  id: number;
+  id: number | string; // [cj-reviews v2] صفوف CJ بمعرفات نصية cj-…
   author: string;
   rating: number;
   content: string;
@@ -107,6 +107,9 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
+
+// ⭐ [cj-reviews v2] — «Load more» كيزيد بـ 6 كل ضغطة (نفس حجم الشبكة، نفس بداية v1)
+const REVIEWS_PAGE = 6;
 
 // 🛡️ [variant-truth] escape regex — مقاسات فيها رموز خاص ("S/M", "4 (Kids)") ما يرميوش
 const escRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -130,6 +133,50 @@ export default function ProductDetailsClient({
   const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
   const [activeTab, setActiveTab] = useState<TabKey>('details');
   const [reviews, setReviews] = useState(initialReviews);
+  // ⭐ [cj-reviews v2] — فلتر النجوم + Load more + الإجمالي الحقيقي (meta.total من CJ)
+  const [starFilter, setStarFilter] = useState(0); // 0 = الكل · 1..5 فلتر نجمي
+  const [visibleReviews, setVisibleReviews] = useState(REVIEWS_PAGE);
+  const [reviewsMeta, setReviewsMeta] = useState<{ total: number; loaded: number; hasMore: boolean } | null>(null);
+
+  // ⭐ [cj-reviews v2] — الإجمالي الحقيقي مع fallback للشكل القديم (array بلا meta)
+  const realTotal = reviewsMeta?.total ?? reviews.length;
+
+  const starCounts = useMemo(() => {
+    const c: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const r of reviews) {
+      const k = Math.round(r.rating);
+      if (k >= 1 && k <= 5) c[k]++;
+    }
+    return c;
+  }, [reviews]);
+
+  const filteredReviews = useMemo(
+    () => (starFilter === 0 ? reviews : reviews.filter(r => Math.round(r.rating) === starFilter)),
+    [reviews, starFilter]
+  );
+  const shownReviews = filteredReviews.slice(0, visibleReviews);
+
+  // 🛡️ [cj-reviews v2] — شكلين مقبولين: array (backend قديم) ولا {reviews, meta} (v2)
+  //    → التركيب آمن مهما كان ترتيب deploy تاع الفرونت/الباك.
+  const applyReviewsPayload = (data: unknown) => {
+    if (Array.isArray(data)) {
+      setReviews(data as Review[]);
+      setReviewsMeta(null);
+      return;
+    }
+    if (data && typeof data === 'object' && Array.isArray((data as { reviews?: unknown }).reviews)) {
+      const payload = data as { reviews: Review[]; meta?: { total?: number; loaded?: number; hasMore?: boolean } };
+      setReviews(payload.reviews);
+      const m = payload.meta;
+      const loaded = payload.reviews.length;
+      setReviewsMeta(m
+        ? { total: Number(m.total) || loaded, loaded: Number(m.loaded) || loaded, hasMore: Boolean(m.hasMore) }
+        : null);
+      return;
+    }
+    setReviews([]); // 🛡️ error shape غير-array كان يكسر الصفحة كاملة (نفس حماية v1)
+    setReviewsMeta(null);
+  };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
@@ -286,9 +333,9 @@ export default function ProductDetailsClient({
 
     setFavoriteIds(parseFavorites());
 
-    fetch(`${API_BASE_URL}/api/reviews/${product.id}`, { signal: controller.signal })
+    fetch(`${API_BASE_URL}/api/reviews/${product.id}?v2=1`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
-      .then(data => { setReviews(Array.isArray(data) ? data : []); }) // 🛡️ error shape غير-array كان يكسر الصفحة كاملة
+      .then(data => { applyReviewsPayload(data); }) // 🛡️ [cj-reviews v2] شكلين مقبولين — array قديم ولا {reviews, meta}
       .catch((err) => { if (err?.name !== 'AbortError') console.warn('reviews: fetch failed', err); });
 
     return () => {
@@ -542,7 +589,7 @@ export default function ProductDetailsClient({
                       {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
                     </span>
                     <span className="text-xs text-temu-gray-light">
-                      ({reviews.length} verified rating{reviews.length > 1 ? 's' : ''})
+                      ({realTotal} verified rating{realTotal !== 1 ? 's' : ''})
                     </span>
                   </>
                 ) : (
@@ -857,14 +904,39 @@ export default function ProductDetailsClient({
         {/* Customer Reviews — 🩹 TRUST: مراجعات حقيقية فقط (بعد تنضيف 237,627 وهمية) */}
         <div className="border-t border-temu-gray-border-light pt-10">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-black text-temu-black">Customer Reviews ({reviews.length})</h2>
+            <h2 className="text-lg font-black text-temu-black">Customer Reviews ({realTotal})</h2>
             {reviews.length > 0 && (
               <span className="text-xs font-bold text-temu-green"><GlassIcon i="check" size="xs" /> Verified Purchases</span>
             )}
           </div>
 
+          {/* ⭐ [cj-reviews v2] — فلتر النجوم بعدادات حية (الكل + 5★…1★) */}
+          {reviews.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <button
+                onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
+                className={starFilter === 0
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#FF6B9D] to-rose-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#FF6B9D]/50 hover:text-[#FF6B9D] transition-all duration-200'}
+              >
+                All ({realTotal})
+              </button>
+              {[5, 4, 3, 2, 1].map(s => (
+                <button
+                  key={s}
+                  onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
+                  className={starFilter === s
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#FF6B9D] to-rose-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#FF6B9D]/50 hover:text-[#FF6B9D] transition-all duration-200'}
+                >
+                  {s}★ ({starCounts[s]})
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {reviews.slice(0, 6).map((rev) => (
+            {shownReviews.map((rev) => (
               <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
@@ -899,12 +971,36 @@ export default function ProductDetailsClient({
             ))}
           </div>
 
+          {/* ⭐ [cj-reviews v2] — حالة خاوية للفلتر النشيط */}
+          {reviews.length > 0 && filteredReviews.length === 0 && (
+            <div className="text-center py-10 mb-8 border border-dashed border-gray-200 rounded-2xl text-sm text-gray-400">
+              No reviews with this star rating yet.
+            </div>
+          )}
+
+          {/* ⭐ [cj-reviews v2] — Load more + العدد المتبقي */}
+          {filteredReviews.length > shownReviews.length && (
+            <div className="flex flex-col items-center gap-2 mb-8">
+              <button
+                onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
+                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#FF6B9D] to-rose-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(255,107,157,0.3)] transition-all duration-300"
+              >
+                Load more reviews ({filteredReviews.length - shownReviews.length} more)
+              </button>
+              {reviewsMeta?.hasMore && (
+                <span className="text-[11px] text-gray-400">
+                  Showing {reviews.length} of {realTotal} reviews
+                </span>
+              )}
+            </div>
+          )}
+
           <ReviewForm
             productId={product.id}
             onReviewAdded={() => {
-              fetch(`${API_BASE_URL}/api/reviews/${product.id}`)
+              fetch(`${API_BASE_URL}/api/reviews/${product.id}?v2=1`)
                 .then(r => r.json())
-                .then(setReviews)
+                .then(data => applyReviewsPayload(data))
                 .catch(() => {});
             }}
           />
