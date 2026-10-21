@@ -213,9 +213,9 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
                 e.stopPropagation();
                 setSwSel((prev) => (prev === idx ? -1 : idx));
               }}
-              className={`w-5 h-5 rounded-full overflow-hidden border transition-all duration-150 cursor-pointer p-0 ${
+              className={`w-5 h-5 rounded-full overflow-hidden border-2 border-transparent transition-all duration-150 cursor-pointer p-0 ${
                 activeIdx === idx
-                  ? 'border-[#FF6B9D] ring-2 ring-[#FF6B9D]'
+                  ? '[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(135deg,#FF6B9D,#e11d48)_border-box] shadow-[0_0_6px_1px_rgba(255,107,157,0.30)]'
                   : 'border-temu-gray-border-light hover:border-temu-gray-light'
               }`}
             >
