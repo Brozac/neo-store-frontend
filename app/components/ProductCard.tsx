@@ -215,7 +215,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
               }}
               className={`w-5 h-5 rounded-full overflow-hidden border transition-all duration-150 cursor-pointer p-0 ${
                 activeIdx === idx
-                  ? 'border-[#FF6B9D] ring-2 ring-[#FF6B9D] ring-offset-1 ring-offset-white'
+                  ? 'border-[#FF6B9D] ring-2 ring-[#FF6B9D]'
                   : 'border-temu-gray-border-light hover:border-temu-gray-light'
               }`}
             >
