@@ -124,7 +124,7 @@ export default function GlassDock() {
 
                 {/* Badge السلة */}
                 {typeof item.badge === 'number' && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-temu-error text-white text-[9px] font-black min-w-4.5 h-4.5 flex items-center justify-center rounded-full border-2 border-white shadow-md">
+                  <span data-cart-badge="" className="absolute -top-0.5 -right-0.5 bg-temu-error text-white text-[9px] font-black min-w-4.5 h-4.5 flex items-center justify-center rounded-full border-2 border-white shadow-md">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}

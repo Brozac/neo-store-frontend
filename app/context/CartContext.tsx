@@ -156,6 +156,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       ];
     });
+
+    // ✨ FLY_TO_CART_V1 — بثّ حدث الطيران للدوك (FlyToCart كيسمع عليه)
+    // نقطة عبور وحيدة: كل أزرار الإضافة فالموقع كتدوز من هنا
+    try {
+      window.dispatchEvent(
+        new CustomEvent('laclarc:added-to-cart', {
+          detail: {
+            image: product.image_url || product.image || '',
+          },
+        })
+      );
+    } catch (e) {
+      // فشل بثّ الحدث ما يوقفش الإضافة للسلة أبداً
+    }
   }, []);
 
   // ✨ تدعم حذف المنتجات سواء بالمفتاح الموحد أو بالطريقة القديمة (productId, color, size)

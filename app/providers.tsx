@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import UtmTracker from './components/UtmTracker';
 import SessionBridge from './components/SessionBridge';
+import FlyToCart from './components/FlyToCart'; // ✨ FLY_TO_CART_V1 — حركة الطيران للدوك
 
 // 🚀 PERF (Task 20) — الويدجت العائمة الثقيلة ولّاو lazy (dynamic + ssr:false):
 // كانو static imports فالـ providers = JS ديالهم كيتحمل فـ **كل صفحة** (حتى admin/auth).
@@ -79,6 +80,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {/* <SpinWheel /> */}
           <ExitIntentPopup />
           <GlassDock />
+          <FlyToCart /> {/* ✨ FLY_TO_CART_V1 — مستمع حركة الطيران */}
         </>
       )}
     </CartProvider>
