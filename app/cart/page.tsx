@@ -101,8 +101,23 @@ export default function CartPage() {
         <h1 className="text-3xl font-extrabold text-temu-black mb-6">My Cart</h1>
 
         {cart.length === 0 ? (
-          <div className="bg-white p-8 rounded-temu-sm border border-temu-gray-border-light text-center mb-6 shadow-sm">
-            <p className="text-temu-black font-semibold mb-2">Your cart is currently empty.</p>
+          /* ✨ REPLICA_V3 — حالة فارغة بنفس روح المعاينة: دائرة ناعمة + عنوان + تلميح + CTA */
+          <div className="flex flex-col items-center text-center bg-white p-12 sm:p-16 rounded-2xl border border-gray-200 shadow-sm mb-6">
+            <div className="w-20 h-20 rounded-full bg-fog-50 text-[#6B3DB4] flex items-center justify-center mb-4">
+              <GlassIcon ch="🛒" size="md" />
+            </div>
+            <h2 className="text-lg font-black text-temu-black">Your cart is empty</h2>
+            <p className="text-xs text-gray-500 leading-relaxed mt-2 max-w-xs">
+              Looks like you haven&apos;t added anything yet.
+              <br />
+              Discover today&apos;s trending picks — free express shipping worldwide.
+            </p>
+            <button
+              onClick={() => router.push('/')}
+              className="mt-5 bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer touch-manipulation"
+            >
+              Start Shopping &rarr;
+            </button>
           </div>
         ) : (
           <div className="space-y-4 mb-6">

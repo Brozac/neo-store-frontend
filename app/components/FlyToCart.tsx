@@ -21,6 +21,25 @@ type FlyDetail = { image?: string };
 // آخر نقطة ضغط — متغير وحدة (ماشي state) باش ما نسببوش re-render
 let lastTap: { x: number; y: number; has: boolean } = { x: 0, y: 0, has: false };
 
+// ✨ REPLICA_V3 — توست موحد فوق الدوك (نفس الاستايل تاع المعاينة)
+let toastEl: HTMLDivElement | null = null;
+let toastTimer: number | undefined;
+
+function showToast() {
+  if (typeof document === 'undefined') return;
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.className = 'laclarc-toast';
+    toastEl.innerHTML = '<span>🛒</span><b>Added to cart</b>';
+    document.body.appendChild(toastEl);
+  }
+  toastEl.classList.add('show');
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastEl?.classList.remove('show');
+  }, 1900);
+}
+
 export default function FlyToCart() {
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
@@ -33,6 +52,7 @@ export default function FlyToCart() {
 
     const onAdded = (e: Event) => {
       const detail = (e as CustomEvent<FlyDetail>).detail || {};
+      showToast();
       flyToDock(detail.image);
     };
     window.addEventListener('laclarc:added-to-cart', onAdded);
@@ -42,6 +62,11 @@ export default function FlyToCart() {
         capture: true,
       });
       window.removeEventListener('laclarc:added-to-cart', onAdded);
+      if (toastTimer) window.clearTimeout(toastTimer);
+      if (toastEl) {
+        toastEl.remove();
+        toastEl = null;
+      }
     };
   }, []);
 
@@ -131,6 +156,41 @@ export default function FlyToCart() {
         }
         100% {
           transform: scale(1);
+        }
+      }
+
+      /* ✨ REPLICA_V3 — توست "Added to cart" فوق الدوك */
+      .laclarc-toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%) translateY(16px);
+        background: rgba(23, 23, 26, 0.94);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 11px 20px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        z-index: 9997;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 12px 30px rgba(23, 23, 26, 0.4);
+        white-space: nowrap;
+      }
+      .laclarc-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .laclarc-toast span {
+        font-size: 14px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .laclarc-toast {
+          transition: opacity 0.2s ease;
         }
       }
     `}</style>

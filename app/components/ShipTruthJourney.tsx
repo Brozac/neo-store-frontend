@@ -158,7 +158,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
                     <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-linear-to-b from-[#6B3DB4] to-gray-200" />
                   )}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 shadow-md text-sm ${
-                    isLast ? 'bg-[#6B3DB4] text-white ring-4 ring-[#6B3DB4]/20' : 'bg-gray-100 text-gray-400'}`}>
+                    isLast ? 'bg-[#6B3DB4] text-white ring-4 ring-[#6B3DB4]/20 laclarc-pulse' : 'bg-gray-100 text-gray-400'}`}>
                     <GlassIcon ch={STAGE_ICONS[ev.type] || '📍'} size="sm" />
                   </div>
                   <div className="flex-1 min-w-0 pt-1">

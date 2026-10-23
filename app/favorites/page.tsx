@@ -92,8 +92,8 @@ export default function FavoritesPage() {
 
         {favoriteProducts.length === 0 ? (
           <div className="bg-white p-12 sm:p-16 rounded-2xl border border-gray-200 text-center shadow-sm max-w-lg mx-auto space-y-4">
-            <div className="w-16 h-16 bg-coral-50 text-[#7E56C4] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">
-              <GlassIcon ch="❤️" size="xs" />
+            <div className="w-20 h-20 bg-coral-50 text-[#7E56C4] rounded-full flex items-center justify-center mx-auto shadow-sm">
+              <GlassIcon ch="❤️" size="md" />
             </div>
             <h2 className="text-lg font-black text-gray-900">Your Wishlist is Empty</h2>
             <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">

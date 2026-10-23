@@ -238,10 +238,13 @@ function SuccessContent() {
         
         {/* بطاقة تأكيد الطلب الأساسية */}
         <div className="bg-white border border-gray-100 shadow-xl rounded-3xl p-6 sm:p-8 text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+          {/* ✨ REPLICA_V3 — حلقة النجاح المتحركة (نفس المعاينة: هالة + قرص بنفسجي + ✓) */}
+          <div className="w-24 h-24 bg-fog-100 rounded-full flex items-center justify-center mx-auto laclarc-ringin">
+            <div className="w-14 h-14 rounded-full bg-linear-to-br from-[#6B3DB4] to-[#7E56C4] text-white flex items-center justify-center shadow-lg shadow-[#6B3DB4]/40">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
           </div>
 
           <div>

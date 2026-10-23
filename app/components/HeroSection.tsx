@@ -224,6 +224,10 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
   };
 
+  // ✨ REPLICA_V3 — شارات صادقة على بطاقات الـ hero (من نفس مصدر الترند بلا ادعاءات)
+  const HERO_TAGS = ['Trending', 'Curated', 'Featured'];
+  const heroTag = (i: number) => HERO_TAGS[i] || '';
+
   // ✨ أول ضغطة = توسيع | ضغطة ثانية = دخول للمنتج
   const handleCardTap = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
     if (activeCard !== index) {
@@ -306,6 +310,10 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                       className="hero-card-img"
                       aria-hidden="true"
                     />
+                    {/* ✨ REPLICA_V3 — شارة بيضاء أعلى البطاقة */}
+                    {heroTag(index) && (
+                      <span className="hero-card-tag">{heroTag(index)}</span>
+                    )}
                     <div className="hero-card-content">
                       <div className="hero-card-title">
                         {product?.title || 'Laclarc Premium'}

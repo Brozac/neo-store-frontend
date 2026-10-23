@@ -502,7 +502,7 @@
   position: absolute;
   bottom: 0; left: 0; right: 0;
   padding: 1.5rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  background: linear-gradient(to top, rgba(23, 23, 26, 0.82), transparent); /* 🩹 REPLICA_V3 — ink تاع Aurora بدل الأسود الصافي */
   transition: all 0.3s ease;
   text-align: left;
 }
@@ -771,4 +771,53 @@ img {
 }
 .animate-fab-ring-once {
   animation: heart-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ✨ REPLICA_V3 — تفاصيل النسخة الطبق الأصل (Aurora)
+   hero tags · timeline pulse · success ring
+   ══════════════════════════════════════════════════════════ */
+
+/* شارة صغيرة أعلى يسار بطاقات الـ hero (TRENDING / CURATED / FEATURED) */
+.hero-card-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.92);
+  color: #6B3DB4;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(23, 23, 26, 0.18);
+  pointer-events: none;
+}
+
+/* نبضة النقطة الحالية في timeline التتبع — حلقة بنفسجية كتتوسع
+   (كتشمل الـ ring-4 الثابت باش ما يكونش قفزة بصرية) */
+.laclarc-pulse {
+  animation: laclarcPulse 1.8s infinite;
+}
+@keyframes laclarcPulse {
+  0%   { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 0 rgba(107, 61, 180, 0.45); }
+  70%  { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 10px rgba(107, 61, 180, 0); }
+  100% { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 0 rgba(107, 61, 180, 0); }
+}
+
+/* حلقة النجاح فصفحة /success — دخول بارتدة (نفس المعاينة) */
+.laclarc-ringin {
+  animation: laclarcRingin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes laclarcRingin {
+  0%   { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .laclarc-pulse,
+  .laclarc-ringin {
+    animation: none;
+  }
 }
