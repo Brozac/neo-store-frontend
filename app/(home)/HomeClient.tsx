@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '../components/ProductCard';
 import LightningDeals from '../components/LightningDeals';
 import HeroSection from '../components/HeroSection';
+import GlassIcon from '../components/ui/GlassIcon';
 import dynamic from 'next/dynamic';
 
 // 🚀 PERF (Task 20) — Reels تحتها الـ fold = lazy (كيتحمّل غير ملي يوصلو الزائر)
@@ -488,6 +489,26 @@ function HomeContent() {
               🏁 You&apos;ve reached the end — {displayProducts.length.toLocaleString()} products
             </p>
           )}
+        </div>
+
+        {/* 7. 🎨 REPLICA_V5 — شريط الثقة (trust strip تاع المعاينة)
+            3 بطاقات بيضاء بأيقونات زجاجية — آخر حاجة قبل الـ footer */}
+        <div className="grid grid-cols-3 gap-2.5 mt-4 mb-2">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+            <GlassIcon i="truck" tone="brand" size="md" className="mx-auto" />
+            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Free Express</b>
+            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Worldwide</small>
+          </div>
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+            <GlassIcon i="shield" tone="success" size="md" className="mx-auto" />
+            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">30-Day Guarantee</b>
+            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Easy returns</small>
+          </div>
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+            <GlassIcon i="lock" tone="brand" size="md" className="mx-auto" />
+            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Secure Checkout</b>
+            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">100% protected</small>
+          </div>
         </div>
       </div>
     </main>
