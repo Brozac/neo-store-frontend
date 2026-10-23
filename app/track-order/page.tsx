@@ -333,7 +333,7 @@ function TrackOrderContent() {
 
               <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                 <p><span className="text-gray-400 uppercase text-[10px] font-bold block">Destination:</span> <strong className="text-gray-800">{formatAddress(order.shipping_address)}</strong></p>
-                <p className="pt-1"><span className="text-gray-400 uppercase text-[10px] font-bold block">Total Billed:</span> <strong className="text-[#7E56C4] font-black">${safeTotal.toFixed(2)}</strong></p>
+                <p className="pt-1"><span className="text-gray-400 uppercase text-[10px] font-bold block">Total Billed:</span> <strong className="text-coral-600 font-black">${safeTotal.toFixed(2)}</strong></p>
               </div>
 
               {order.created_at && (

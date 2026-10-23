@@ -121,7 +121,7 @@ export default function AllProducts() {
                 {/* 🩹 FIX-ZERO + FIX-TRUST — بلا سعر = بلا صف · بلا سقف 90% = بلا anchor مزيف */}
                 {price > 0 && (
                   <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <span className="text-sm font-black text-[#7E56C4]">
+                    <span className="text-sm font-black text-coral-600">
                       ${price.toFixed(2)}
                     </span>
                     {showOrig && (

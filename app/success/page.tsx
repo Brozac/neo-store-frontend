@@ -296,9 +296,9 @@ function SuccessContent() {
               <div className="min-w-0 flex-1 text-left">
                 <h4 className="text-xs font-bold text-white line-clamp-2">{UPSELL_PRODUCT.title}</h4>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-base font-black text-[#7E56C4]">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
+                  <span className="text-base font-black text-coral-600">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
                   <span className="text-xs text-gray-400 line-through">${UPSELL_PRODUCT.originalPrice.toFixed(2)}</span>
-                  <span className="text-[10px] font-black bg-[#7E56C4]/20 text-[#7E56C4] px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-black bg-coral-500/20 text-coral-600 px-1.5 py-0.5 rounded">
                     Save {UPSELL_PRODUCT.discountPct}%
                   </span>
                 </div>

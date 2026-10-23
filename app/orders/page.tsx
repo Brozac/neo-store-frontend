@@ -293,7 +293,7 @@ export default function OrdersPage() {
                 <div className="flex justify-between items-center gap-2 border-t border-temu-gray-border-light pt-3 flex-wrap">
                   <div>
                     <span className="text-[9.5px] uppercase font-extrabold tracking-wider text-temu-gray-light block">Total</span>
-                    <b className="text-[17px] font-black text-[#7E56C4]">${Number(order.total_amount).toFixed(2)}</b>
+                    <b className="text-[17px] font-black text-coral-600">${Number(order.total_amount).toFixed(2)}</b>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -360,7 +360,7 @@ export default function OrdersPage() {
                       <p className="text-xs font-bold text-gray-900 line-clamp-2">{item.title}</p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[11px] text-gray-500 font-semibold">Qty: {item.quantity}</span>
-                        <span className="text-xs font-black text-[#7E56C4]">${Number(item.price_at_purchase).toFixed(2)}</span>
+                        <span className="text-xs font-black text-coral-600">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export default function OrdersPage() {
 
             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-600">Total Settled</span>
-              <span className="text-lg font-black text-[#7E56C4]">${Number(modalOrder.total_amount).toFixed(2)}</span>
+              <span className="text-lg font-black text-coral-600">${Number(modalOrder.total_amount).toFixed(2)}</span>
             </div>
 
           </div>

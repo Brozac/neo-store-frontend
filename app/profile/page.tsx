@@ -292,7 +292,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#7E56C4]"><GlassIcon ch="❤️" size="xs" /></span>
+                  <span className="text-base text-coral-600"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>

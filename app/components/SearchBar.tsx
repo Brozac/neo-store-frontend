@@ -174,7 +174,7 @@ export default function SearchBar() {
                     </div>
                     <div className="grow min-w-0">
                       <p className="text-xs font-bold text-temu-black truncate">{product.title}</p>
-                      <p className="text-xs font-black text-[#7E56C4] mt-0.5">${safePrice.toFixed(2)}</p>
+                      <p className="text-xs font-black text-coral-600 mt-0.5">${safePrice.toFixed(2)}</p>
                     </div>
                     <span className="text-xs text-gray-400 font-bold">&rarr;</span>
                   </div>

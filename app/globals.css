@@ -16,11 +16,11 @@
   --color-temu-orange: #6B3DB4;
   --color-temu-orange-bright: #5B2F9E;
 
-  /* 2. ألوان الإلحاح والخصم والأسعار (بنفسجي فاتح) */
-  --color-temu-error: #7E56C4;
-  --color-temu-yellow: #F1EBFA;
-  --color-temu-yellow-soft: #F7F4FC;
-  --color-temu-gold: #7E56C4;
+  /* 2. ألوان الإلحاح والخصم والأسعار (وردي ROSE — اللون الثاني تاع الهوية) */
+  --color-temu-error: #C9465E;
+  --color-temu-yellow: #FBECEF;
+  --color-temu-yellow-soft: #FDF6F7;
+  --color-temu-gold: #C9465E;
 
   /* 3. ألوان الثقة والهوية العميقة */
   --color-temu-green: #17171A;
@@ -48,15 +48,15 @@
   --color-fog-800: #17171A;
   --color-fog-900: #101013;
 
-  /* 6. Aurora — بنفسجي فاتح للبادجات والخصم */
-  --color-coral-50: #F7F4FC;
-  --color-coral-100: #F1EBFA;
-  --color-coral-200: #DCCBF2;
-  --color-coral-300: #C9B6E8;
-  --color-coral-400: #A78BCF;
-  --color-coral-500: #7E56C4;
-  --color-coral-600: #6B3DB4;
-  --color-coral-700: #4C2585;
+  /* 6. ROSE — الوردي الرسمي (من الصورة: #F1BCC2) — للأسعار والخصومات والقلوب */
+  --color-coral-50: #FDF6F7;
+  --color-coral-100: #FBECEF;
+  --color-coral-200: #F6D8DC;
+  --color-coral-300: #F1BCC2;
+  --color-coral-400: #E89AA4;
+  --color-coral-500: #DE7385;
+  --color-coral-600: #C9465E;
+  --color-coral-700: #A63349;
 
   /* 7. زوايا (نفس روح التصميم المرجعي) */
   --radius-temu-sm: 12px;

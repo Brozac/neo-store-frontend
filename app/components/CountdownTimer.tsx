@@ -57,19 +57,19 @@ export default function CountdownTimer({ hoursLeft = 0 }: { hoursLeft?: number }
     if (expired) return null;
 
     return (
-      <div className="flex items-center justify-between bg-linear-to-r from-[#F7F4FC] to-[#F1EBFA] border border-[#7E56C4]/30 p-3.5 rounded-xl my-4 shadow-sm">
-        <span className="text-xs font-black text-[#7E56C4] uppercase tracking-wider"><GlassIcon i="zap" size="xs" /> Flash Deal — Today Only (ends 00:00 UTC)</span>
+      <div className="flex items-center justify-between bg-linear-to-r from-[#FDF6F7] to-[#FBECEF] border border-coral-500/30 p-3.5 rounded-xl my-4 shadow-sm">
+        <span className="text-xs font-black text-coral-600 uppercase tracking-wider"><GlassIcon i="zap" size="xs" /> Flash Deal — Today Only (ends 00:00 UTC)</span>
       </div>
     );
   }
 
   // بعد هذا السطر: isMounted ✓ && !expired ✓ && timeLeft ✓ — TS يثق الآن
   return (
-    <div className="flex items-center justify-between bg-linear-to-r from-[#F7F4FC] to-[#F1EBFA] border border-[#7E56C4]/30 p-3.5 rounded-xl my-4 shadow-sm">
+    <div className="flex items-center justify-between bg-linear-to-r from-[#FDF6F7] to-[#FBECEF] border border-coral-500/30 p-3.5 rounded-xl my-4 shadow-sm">
 
       <div className="flex items-center gap-2">
         <span className="text-base animate-bounce"><GlassIcon i="zap" size="xs" /></span>
-        <span className="text-xs font-black text-[#7E56C4] uppercase tracking-wider">
+        <span className="text-xs font-black text-coral-600 uppercase tracking-wider">
           Flash Deal Ends in:
         </span>
       </div>

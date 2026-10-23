@@ -735,7 +735,7 @@ export default function ProductDetailsClient({
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-[#7E56C4] mt-1">${(safePrice * 2).toFixed(2)}</span>
+                    <span className="text-sm font-black text-coral-600 mt-1">${(safePrice * 2).toFixed(2)}</span>
                   </div>
 
                   <div
@@ -1140,7 +1140,7 @@ export default function ProductDetailsClient({
             <div className="min-w-0 pr-1">
               <p className="text-xs font-black text-temu-black truncate">{product.title}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-sm font-black text-coral-500">${safePrice.toFixed(2)}</span>
+                <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
                 {safeOriginalPrice > safePrice && (
                   <span className="text-[10px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
                 )}

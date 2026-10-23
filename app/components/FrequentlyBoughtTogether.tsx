@@ -152,7 +152,7 @@ export default function FrequentlyBoughtTogether({
           <div className="text-center sm:text-right">
             <span className="text-[10px] uppercase font-bold text-gray-400 block">Combined Bundle Price:</span>
             <div className="flex items-baseline gap-2 justify-center sm:justify-end">
-              <span className="text-xl font-black text-[#7E56C4]">
+              <span className="text-xl font-black text-coral-600">
                 ${discountedCombinedPrice.toFixed(2)}
               </span>
               {includePartner && (

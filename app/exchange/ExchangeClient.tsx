@@ -176,7 +176,7 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-[#17171A] line-clamp-2">{opt.title}</p>
-                    <p className="text-sm font-black text-[#7E56C4] mt-0.5">${Number(opt.price).toFixed(2)}</p>
+                    <p className="text-sm font-black text-coral-600 mt-0.5">${Number(opt.price).toFixed(2)}</p>
                   </div>
                   <span className="text-[#6B3DB4] font-black text-lg"><GlassIcon i="arrowRight" size="xs" /></span>
                 </button>

@@ -212,7 +212,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 </div>
               </div>
 
-              <span className="absolute top-3 right-3 bg-[#7E56C4] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
+              <span className="absolute top-3 right-3 bg-coral-600 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
                 <GlassInline text={reel.badge || 'Live Drop'} />
               </span>
 
@@ -340,7 +340,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   <div className="min-w-0">
                     <h4 className="text-xs font-bold text-white truncate">{currentReel.title}</h4>
                     <div className="flex items-baseline gap-1.5 mt-0.5">
-                      <span className="text-sm font-black text-[#7E56C4]">${safePrice.toFixed(2)}</span>
+                      <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
                       {Number(currentReel.original_price) > safePrice && (
                         <span className="text-[10px] text-gray-400 line-through">
                           ${Number(currentReel.original_price).toFixed(2)}

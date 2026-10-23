@@ -1,5 +1,5 @@
 ﻿================================================================
-  LACLARC — AURORA EDITION · FINAL FULL FILES
+  LACLARC — AURORA · ROSE DUO EDITION · FINAL FULL FILES v2
   الحل النهائي الأضمن — بلا git apply خلاص
 ================================================================
 
@@ -14,19 +14,24 @@
   4. REPLICA_V3             (hero tags + timeline pulse + empty states + success ring)
   5. REPLICA_V4             (sticky CTA + حلقة الأقسام + بطاقات الطلبات pills)
   6. REPLICA_V5             (شريط الثقة في الرئيسية)
-  7. PWA cache v6           (الهاتف يجيب النسخة الجديدة أوتوماتيك)
+  7. ROSE DUO (جديد)        (البنفسجي + الوردي من الصورة تاعك:
+                             الأسعار والخصومات والقلوب ولديو، بادج Lightning،
+                             بانر Flash Deal وردي، زر الشراء بنفسجي→وردي)
+  8. PWA cache v7           (الهاتف يجيب النسخة الجديدة أوتوماتيك)
+
+⚠️ هذه النسخة v2 — تحل مكان أي ZIP قديم عندك.
 
 كيفاش تخدم بيه (PowerShell داخل مجلد الـ repo):
 -----------------------------------------------
-  1. حط الملف laclarc-aurora-FINAL-full-files.zip في مجلد الـ repo
+  1. حط الملف laclarc-aurora-FINAL-full-files-v2.zip في مجلد الـ repo
      (نفس البلاصة فين جربت git apply)
 
   2. فك الضغط فوق الملفات مباشرة:
-       Expand-Archive -Path laclarc-aurora-FINAL-full-files.zip -DestinationPath . -Force
+       Expand-Archive -Path laclarc-aurora-FINAL-full-files-v2.zip -DestinationPath . -Force
 
   3. سجل وادفع:
        git add -A
-       git commit -m "Aurora Edition - full final (fly + v3 + v4 + v5 trust bar)"
+       git commit -m "Aurora + ROSE duo - full final (fly + v3 + v4 + v5 + pink)"
        git push
 
   4. صبر على النشر (Vercel/النشر التلقائي)، من بعد حل الـ PWA في الهاتف

@@ -123,11 +123,11 @@ export default function ExitIntentPopup() {
           <GlassIcon i="x" size="xs" />
         </button>
 
-        <div className="w-14 h-14 bg-[#7E56C4]/20 text-[#7E56C4] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-[#7E56C4]/30">
+        <div className="w-14 h-14 bg-coral-500/20 text-coral-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-coral-500/30">
           <GlassIcon ch="🎁" size="xs" />
         </div>
 
-        <span className="text-[10px] font-black uppercase tracking-widest bg-black/40 text-[#7E56C4] px-3 py-1 rounded-full border border-white/10 inline-block mb-1">
+        <span className="text-[10px] font-black uppercase tracking-widest bg-black/40 text-coral-300 px-3 py-1 rounded-full border border-white/10 inline-block mb-1">
           Limited Exit Offer &bull; Expires in {formatTimer(timeLeft)}
         </span>
 

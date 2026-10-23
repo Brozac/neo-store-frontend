@@ -121,7 +121,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                       className="object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
                     />
                     {discount > 0 && (
-                      <span className="absolute top-2 left-2 bg-linear-to-r from-[#7E56C4] to-[#6B3DB4] text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                      <span className="absolute top-2 left-2 bg-linear-to-r from-coral-500 to-coral-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
                         -{discount}%
                       </span>
                     )}
@@ -133,7 +133,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                     </h3>
                     
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span className="text-base font-black text-[#7E56C4]">${safePrice.toFixed(2)}</span>
+                      <span className="text-base font-black text-coral-600">${safePrice.toFixed(2)}</span>
                       {safeOldPrice > safePrice && (
                         <span className="text-[11px] text-gray-500 line-through">${safeOldPrice.toFixed(2)}</span>
                       )}
