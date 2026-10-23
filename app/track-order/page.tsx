@@ -58,8 +58,8 @@ const getStatusInfo = (status?: string, serverLabel?: string) => {
 };
 
 const TONE_CLASSES: Record<Tone, string> = {
-  good: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  warn: 'bg-amber-50 text-amber-700 border-amber-200',
+  good: 'bg-maroccan-tea-50 text-maroccan-tea-700 border-maroccan-tea-200',
+  warn: 'bg-butter-up-50 text-butter-up-700 border-butter-up-200',
   bad:  'bg-coral-50 text-coral-700 border-coral-200',
   info: 'bg-fog-50 text-[#6B3DB4] border-fog-200',
 };
@@ -272,14 +272,14 @@ function TrackOrderContent() {
                 <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-2">
                   <span className={statusInfo.step >= 1 ? 'text-[#6B3DB4]' : ''}>Confirmed</span>
                   <span className={statusInfo.step >= 2 ? 'text-[#6B3DB4]' : ''}>CJ Processing</span>
-                  <span className={statusInfo.step >= 3 ? 'text-emerald-600 font-black' : ''}>Dispatched</span>
+                  <span className={statusInfo.step >= 3 ? 'text-maroccan-tea-600 font-black' : ''}>Dispatched</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-700 ${
                       statusInfo.tone === 'bad'
                         ? 'bg-coral-300'
-                        : 'bg-linear-to-r from-[#6B3DB4] to-emerald-500'
+                        : 'bg-linear-to-r from-[#6B3DB4] to-maroccan-tea-500'
                     }`}
                     style={{ width: statusInfo.tone === 'bad' ? '8%' : STEP_WIDTH[statusInfo.step] }}
                   ></div>
@@ -298,7 +298,7 @@ function TrackOrderContent() {
                       onClick={() => copyTracking(order.id, order.tracking_number!.trim())}
                       className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition active:scale-90 touch-manipulation ${
                         copiedId === order.id
-                          ? 'bg-emerald-600 text-white'
+                          ? 'bg-maroccan-tea-600 text-white'
                           : 'bg-[#17171A] text-white hover:bg-[#26262B]'
                       }`}
                     >
@@ -314,7 +314,7 @@ function TrackOrderContent() {
                     <div className="mt-3 space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
                       {events.slice(0, 10).map((ev, i) => (
                         <div key={i} className="flex gap-2.5 text-[10px] bg-white/80 rounded-lg p-2 border border-gray-100">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-maroccan-tea-500 shrink-0 mt-1"></span>
                           <div className="min-w-0">
                             <p className="font-bold text-gray-800">{ev.status || ev.details || 'Update'}</p>
                             {(ev.details || ev.location) && (

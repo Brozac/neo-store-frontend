@@ -177,7 +177,7 @@ export default function FailedOrdersAdmin() {
 
         {orders.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm space-y-3">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+            <div className="w-14 h-14 bg-maroccan-tea-50 text-maroccan-tea-600 rounded-full flex items-center justify-center mx-auto text-2xl">
               ✓
             </div>
             <h3 className="text-base font-bold text-temu-black">Queue is 100% Clean!</h3>
@@ -212,7 +212,7 @@ export default function FailedOrdersAdmin() {
                       {order.customer_phone ? (
                         <span className="font-mono font-bold text-gray-800">{order.customer_phone}</span>
                       ) : (
-                        <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[10px]">⚠️ Missing Phone</span>
+                        <span className="text-butter-up-600 font-bold bg-butter-up-50 px-2 py-0.5 rounded border border-butter-up-200 text-[10px]">⚠️ Missing Phone</span>
                       )}
                     </p>
 
@@ -221,18 +221,18 @@ export default function FailedOrdersAdmin() {
                   </div>
                                     {/* 🩹 M#31 — halt_details: سبب توقف CJ الرسمي (يظهر فقط للطلبات الموقوفة) */}
                   {order.halt_details && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-2 space-y-1">
-                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider">🛑 CJ Halt Reason:</p>
-                      <p className="text-[11px] text-amber-800 font-bold">
+                    <div className="bg-butter-up-50 border border-butter-up-200 rounded-xl p-3 mt-2 space-y-1">
+                      <p className="text-[10px] font-black text-butter-up-700 uppercase tracking-wider">🛑 CJ Halt Reason:</p>
+                      <p className="text-[11px] text-butter-up-800 font-bold">
                         {order.halt_details.reason} — {order.halt_details.number || ''}
                       </p>
                       {order.halt_details.probeStatus && (
-                        <p className="text-[10px] text-amber-600 font-mono">
+                        <p className="text-[10px] text-butter-up-600 font-mono">
                           CJ probe status: {order.halt_details.probeStatus}
                         </p>
                       )}
                       {order.halt_details.probeOrderNum && (
-                        <p className="text-[10px] text-amber-600 font-mono">
+                        <p className="text-[10px] text-butter-up-600 font-mono">
                           CJ order: {order.halt_details.probeOrderNum}
                         </p>
                       )}

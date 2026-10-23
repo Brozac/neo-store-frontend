@@ -143,7 +143,7 @@ export default function OrdersPage() {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'paid':
-        return 'bg-[#E8F4EC] text-[#3E8E5A]';                          // Delivered
+        return 'bg-[#e9f7de] text-[#4c7c00]';                          // Delivered
       case 'fulfilled':                                                // Shipped
         return 'bg-fog-50 text-fog-600 border border-fog-200';
       case 'awaiting_exchange':

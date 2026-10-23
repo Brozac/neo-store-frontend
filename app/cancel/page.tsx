@@ -12,7 +12,7 @@ export default function CancelPage() {
       <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full space-y-6">
         
         {/* Reassurance Badge */}
-        <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner ring-8 ring-amber-50/50">
+        <div className="w-16 h-16 bg-butter-up-50 text-butter-up-500 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner ring-8 ring-butter-up-50/50">
           <GlassIcon ch="⚠️" size="xs" />
         </div>
 

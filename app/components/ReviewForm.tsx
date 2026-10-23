@@ -174,7 +174,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
       {message && (
         <div className={`p-3 rounded-xl text-xs font-bold ${
           message.includes('✅') 
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+            ? 'bg-maroccan-tea-50 text-maroccan-tea-700 border border-maroccan-tea-200' 
             : 'bg-red-50 text-red-600 border border-red-200'
         }`}>
           {message}

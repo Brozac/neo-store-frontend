@@ -129,7 +129,7 @@ export default function MultiStepRegister() {
     <div className="max-w-2xl mx-auto px-4 py-8 font-sans">
       {isComplete ? (
         <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-xl text-center border border-gray-100 space-y-4">
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto">
+          <div className="w-20 h-20 bg-maroccan-tea-100 text-maroccan-tea-600 rounded-full flex items-center justify-center text-3xl mx-auto">
             <GlassIcon i="check" size="xs" />
           </div>
           <h2 className="text-2xl font-black text-gray-900">Registration Successful! <GlassIcon ch="🎉" size="xs" /></h2>
@@ -266,8 +266,8 @@ export default function MultiStepRegister() {
                 <div className="space-y-1 pt-1">
                   <div className="flex gap-1.5 h-1.5">
                     <div className={`flex-1 rounded-full ${passwordStrength === 'weak' || passwordStrength === 'medium' || passwordStrength === 'strong' ? 'bg-red-500' : 'bg-gray-200'}`}></div>
-                    <div className={`flex-1 rounded-full ${passwordStrength === 'medium' || passwordStrength === 'strong' ? 'bg-amber-400' : 'bg-gray-200'}`}></div>
-                    <div className={`flex-1 rounded-full ${passwordStrength === 'strong' ? 'bg-emerald-500' : 'bg-gray-200'}`}></div>
+                    <div className={`flex-1 rounded-full ${passwordStrength === 'medium' || passwordStrength === 'strong' ? 'bg-butter-up-400' : 'bg-gray-200'}`}></div>
+                    <div className={`flex-1 rounded-full ${passwordStrength === 'strong' ? 'bg-maroccan-tea-500' : 'bg-gray-200'}`}></div>
                   </div>
                   <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
                     Strength: {passwordStrength}

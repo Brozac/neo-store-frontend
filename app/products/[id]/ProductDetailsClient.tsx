@@ -747,13 +747,13 @@ export default function ProductDetailsClient({
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-emerald-600">Trio</span>
+                      <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
+                    <span className="text-sm font-black text-maroccan-tea-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -764,7 +764,7 @@ export default function ProductDetailsClient({
                   onClick={handleAddToCart}
                   className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
                     mainAdded
-                      ? 'bg-emerald-600 shadow-emerald-600/20'
+                      ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/20'
                       : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
                   }`}
                 >
@@ -940,7 +940,7 @@ export default function ProductDetailsClient({
               <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
-                  <span className="text-amber-400 text-xs">{'★'.repeat(rev.rating)}</span>
+                  <span className="text-butter-up-400 text-xs">{'★'.repeat(rev.rating)}</span>
                 </div>
                 <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
 
@@ -1162,7 +1162,7 @@ export default function ProductDetailsClient({
               }}
               className={`flex-1 sm:flex-none font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
                 stickyAdded
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                  ? 'bg-maroccan-tea-600 text-white shadow-md shadow-maroccan-tea-600/25'
                   : 'bg-fog-100 text-fog-700 hover:bg-fog-200/70'
               }`}
             >

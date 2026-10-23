@@ -14,12 +14,12 @@ export default function Navbar() {
       <div className="bg-[#17171A] text-white text-center py-2 px-4 text-[11px] sm:text-xs font-bold tracking-wide">
         <div className="max-w-7xl mx-auto flex justify-between sm:justify-center items-center gap-4 sm:gap-8">
           <span className="flex items-center gap-1.5">
-            <span className="text-emerald-400">
+            <span className="text-maroccan-tea-400">
               <GlobeShippingIcon size={14} active />
             </span> Free Worldwide Express Shipping
           </span>
           <span className="hidden sm:flex items-center gap-1.5">
-            <span className="text-amber-400">
+            <span className="text-butter-up-400">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9.5 22L19 10H12.5L13 2Z" /></svg>
             </span> 100% Satisfaction Guarantee
           </span>

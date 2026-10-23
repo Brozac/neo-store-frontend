@@ -119,7 +119,7 @@ export default function ReviewPage() {
             <div className="flex justify-center gap-2">
               {[1,2,3,4,5].map(star => (
                 <button key={star} onClick={() => setRating(star)} className="text-3xl transition hover:scale-125 active:scale-95">
-                  <span className={star <= rating ? 'text-amber-400' : 'text-gray-300'}><GlassIcon i="star" size="xs" /></span>
+                  <span className={star <= rating ? 'text-butter-up-400' : 'text-gray-300'}><GlassIcon i="star" size="xs" /></span>
                 </button>
               ))}
             </div>

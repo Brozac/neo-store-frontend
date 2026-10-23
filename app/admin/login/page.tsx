@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
         )}
 
         {serverWaking && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-600 p-3.5 rounded-xl mb-5 text-xs font-medium text-center animate-pulse">
+          <div className="bg-butter-up-50 border border-butter-up-200 text-butter-up-600 p-3.5 rounded-xl mb-5 text-xs font-medium text-center animate-pulse">
             ⏳ Waking up secure cloud server on Render... Please hold.
           </div>
         )}

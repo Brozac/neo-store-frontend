@@ -161,12 +161,12 @@ export default function AIChatWidget() {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                     <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
                   </svg>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-[#26262B]" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-maroccan-tea-400 rounded-full border-2 border-[#26262B]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-black tracking-wide flex items-center gap-1.5">
                     Laclarc AI
-                    <span className="text-[9px] font-bold bg-emerald-400/20 text-emerald-300 px-1.5 py-0.5 rounded-full uppercase">Online</span>
+                    <span className="text-[9px] font-bold bg-maroccan-tea-400/20 text-maroccan-tea-300 px-1.5 py-0.5 rounded-full uppercase">Online</span>
                   </h3>
                   <p className="text-[10px] text-gray-300 font-medium">Replies instantly • Any language</p>
                 </div>

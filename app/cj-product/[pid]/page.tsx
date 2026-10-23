@@ -154,7 +154,7 @@ export default function CjProductPage() {
               onClick={handleAddToCart}
               disabled={added}
               className={`w-full text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-2 text-base cursor-pointer active:scale-95 shadow-lg ${
-                added ? 'bg-emerald-600' : 'bg-temu-orange hover:bg-temu-orange-bright'
+                added ? 'bg-maroccan-tea-600' : 'bg-temu-orange hover:bg-temu-orange-bright'
               }`}
             >
               {added ? <><span><GlassIcon i="check" size="xs" /></span> Added — Opening Cart…</> : <><span><GlassIcon ch="🛒" size="xs" /></span> Add to Cart</>}

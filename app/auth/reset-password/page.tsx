@@ -74,7 +74,7 @@ function ResetPasswordContent() {
         )}
 
         {success ? (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs font-bold space-y-2">
+          <div className="bg-maroccan-tea-50 border border-maroccan-tea-200 text-maroccan-tea-800 p-4 rounded-xl text-xs font-bold space-y-2">
             <p><GlassIcon i="check" size="xs" /> Password updated successfully!</p>
             <p className="text-[11px] font-normal text-gray-500">Redirecting to sign in screen...</p>
           </div>

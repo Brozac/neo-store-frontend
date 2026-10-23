@@ -89,7 +89,7 @@ export default function FrequentlyBoughtTogether({
         <h3 className="text-base font-black text-[#17171A] flex items-center gap-2">
           <span><GlassIcon ch="🤝" size="xs" /></span> Frequently Bought Together
         </h3>
-        <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+        <span className="text-[10px] font-black uppercase tracking-wider bg-maroccan-tea-50 text-maroccan-tea-700 border border-maroccan-tea-200 px-2.5 py-0.5 rounded-full">
           Bundle & Save 15%
         </span>
       </div>
@@ -168,7 +168,7 @@ export default function FrequentlyBoughtTogether({
             onClick={handleAddBundleToCart}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer ${
               addedSuccess
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-maroccan-tea-600 text-white'
                 : 'bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white shadow-[#6B3DB4]/20'
             }`}
           >

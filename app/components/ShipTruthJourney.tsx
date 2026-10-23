@@ -109,8 +109,8 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
       <div className="bg-linear-to-br from-[#17171A] via-[#26262B] to-[#6B3DB4] p-6 text-white">
         <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300 flex items-center gap-1.5 mb-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <div className="text-[10px] font-black uppercase tracking-widest text-maroccan-tea-300 flex items-center gap-1.5 mb-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-maroccan-tea-400 animate-ping" />
               Live Shipment Truth
             </div>
             <h2 className="text-xl font-black">{t[lang]}</h2>
@@ -125,11 +125,11 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
           <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/15">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-gray-200">{journey.eta.message}</span>
-              <span className="text-lg font-black text-amber-300">~{journey.eta.predictedDays}d</span>
+              <span className="text-lg font-black text-butter-up-300">~{journey.eta.predictedDays}d</span>
             </div>
             {journey.eta.confidence === 'high' && (
               <div className="mt-2 h-1.5 bg-black/30 rounded-full overflow-hidden">
-                <div className="h-full bg-linear-to-r from-emerald-400 to-emerald-300 rounded-full" style={{ width: '87%' }} />
+                <div className="h-full bg-linear-to-r from-maroccan-tea-400 to-maroccan-tea-300 rounded-full" style={{ width: '87%' }} />
               </div>
             )}
           </div>
@@ -180,8 +180,8 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
         )}
 
         {/* شارة الحقيقة */}
-        <div className="mt-2 bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4 text-center">
-          <p className="text-xs font-black text-emerald-700 flex items-center justify-center gap-1.5">
+        <div className="mt-2 bg-linear-to-r from-maroccan-tea-50 to-teal-50 border border-maroccan-tea-100 rounded-2xl p-4 text-center">
+          <p className="text-xs font-black text-maroccan-tea-700 flex items-center justify-center gap-1.5">
             <GlassIcon ch="✅" size="xs" /> {lang === 'ar' ? 'بيانات حية مباشرة من مستودعات CJ' : 'Live data directly from warehouses'}
           </p>
           <p className="text-[10px] text-gray-400 mt-1">

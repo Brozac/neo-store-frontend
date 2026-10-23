@@ -74,8 +74,8 @@ export default function PaymentSettingsPage() {
           </p>
 
           {/* 🆕 v1.1 — in-flight awareness (flag is UI-only — backend verify independent) */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-5">
-            <p className="text-[10px] text-amber-700 font-bold">
+          <div className="bg-butter-up-50 border border-butter-up-200 rounded-xl px-3 py-2 mb-5">
+            <p className="text-[10px] text-butter-up-700 font-bold">
               ⚠️ Note: Disabling a gateway only hides it at checkout. Payments already in progress
               (verification pending) continue processing normally.
             </p>
@@ -94,7 +94,7 @@ export default function PaymentSettingsPage() {
                   onClick={() => handleToggle(g.gateway_key, g.enabled)}
                   disabled={togglingKey === g.gateway_key}
                   aria-label={`Toggle ${g.display_name}`}
-                  className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${g.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${g.enabled ? 'bg-maroccan-tea-500' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${g.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>

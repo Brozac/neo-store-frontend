@@ -126,7 +126,7 @@ function AuthContent() {
           )}
 
           {infoMessage && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3.5 rounded-xl mb-4 text-xs font-bold text-center">
+            <div className="bg-maroccan-tea-50 border border-maroccan-tea-200 text-maroccan-tea-700 p-3.5 rounded-xl mb-4 text-xs font-bold text-center">
               <GlassIcon i="check" size="xs" /> {infoMessage}
             </div>
           )}
@@ -194,7 +194,7 @@ function AuthContent() {
         )}
 
         {serverWaking && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl mb-4 text-xs font-medium text-center animate-pulse">
+          <div className="bg-butter-up-50 border border-butter-up-200 text-butter-up-800 p-3 rounded-xl mb-4 text-xs font-medium text-center animate-pulse">
             <GlassIcon ch="⏳" size="xs" /> Connecting to secure cloud authentication... Please wait.
           </div>
         )}

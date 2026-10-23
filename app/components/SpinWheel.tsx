@@ -138,7 +138,7 @@ export default function SpinWheel() {
               </div>
               
               {/* Indicator Arrow */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-amber-400 z-20 drop-shadow-md"></div>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-butter-up-400 z-20 drop-shadow-md"></div>
               
               {/* Spin Trigger Hub */}
               <button 
@@ -169,9 +169,9 @@ export default function SpinWheel() {
           <div className="py-6 space-y-4">
             <div className="text-5xl animate-bounce">🎁</div>
             <h2 className="text-2xl font-black text-temu-black">Congratulations!</h2>
-            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-              <p className="text-xl font-black text-emerald-600 mb-1">{result}</p>
-              <p className="text-xs text-emerald-800 font-medium">Your discount has been activated in your shopping cart!</p>
+            <div className="p-4 bg-maroccan-tea-50 rounded-2xl border border-maroccan-tea-200">
+              <p className="text-xl font-black text-maroccan-tea-600 mb-1">{result}</p>
+              <p className="text-xs text-maroccan-tea-800 font-medium">Your discount has been activated in your shopping cart!</p>
             </div>
             
             <button 

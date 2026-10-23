@@ -196,7 +196,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
             {error && <div className="bg-red-50 text-temu-error p-3 rounded-temu-sm mb-4 text-xs font-bold text-center">{error}</div>}
 
             {noGatewaysAvailable ? (
-              <div className="bg-amber-50 text-amber-700 p-4 rounded-temu-sm text-xs font-bold text-center">
+              <div className="bg-butter-up-50 text-butter-up-700 p-4 rounded-temu-sm text-xs font-bold text-center">
                 No payment method is available at the moment. Please try again later.
               </div>
             ) : (
@@ -243,19 +243,19 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   <button
                     onClick={() => handlePayment('crypto')}
                     disabled={loadingGateway !== null}
-                    className="w-full flex items-center justify-between p-4 border-2 border-emerald-500/30 bg-emerald-50/30 rounded-temu-sm hover:border-emerald-500 transition cursor-pointer active:scale-95 text-left"
+                    className="w-full flex items-center justify-between p-4 border-2 border-maroccan-tea-500/30 bg-maroccan-tea-50/30 rounded-temu-sm hover:border-maroccan-tea-500 transition cursor-pointer active:scale-95 text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-500/15 text-emerald-600 rounded-xl flex items-center justify-center font-black text-base">
+                      <div className="w-10 h-10 bg-maroccan-tea-500/15 text-maroccan-tea-600 rounded-xl flex items-center justify-center font-black text-base">
                         <GlassIcon ch="💎" size="xs" />
                       </div>
                       <div>
                         <span className="font-extrabold text-temu-black text-sm block">Crypto — Stablecoins</span>
                         <span className="text-[11px] text-temu-gray-light block">
-                          USDT · USDC <span className="font-bold text-emerald-600">(TRC-20 / BEP-20)</span>
+                          USDT · USDC <span className="font-bold text-maroccan-tea-600">(TRC-20 / BEP-20)</span>
                         </span>
-                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-[10px] text-maroccan-tea-600 font-bold flex items-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-maroccan-tea-500"></span>
                           Instant • ~$0.25 fee • No volatility
                         </span>
                       </div>
@@ -263,7 +263,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                     {loadingGateway === 'crypto' ? (
                       <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <span className="text-xs text-emerald-600 font-bold">&rarr;</span>
+                      <span className="text-xs text-maroccan-tea-600 font-bold">&rarr;</span>
                     )}
                   </button>
                 )}
@@ -272,18 +272,18 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   <button
                     onClick={() => setManualPayment(true)}
                     disabled={loadingGateway !== null}
-                    className="w-full flex items-center justify-between p-4 border-2 border-emerald-500/30 bg-emerald-50/20 rounded-temu-sm hover:border-emerald-500 transition cursor-pointer active:scale-95 text-left"
+                    className="w-full flex items-center justify-between p-4 border-2 border-maroccan-tea-500/30 bg-maroccan-tea-50/20 rounded-temu-sm hover:border-maroccan-tea-500 transition cursor-pointer active:scale-95 text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-600/10 text-emerald-600 rounded-xl flex items-center justify-center font-black text-lg">
+                      <div className="w-10 h-10 bg-maroccan-tea-600/10 text-maroccan-tea-600 rounded-xl flex items-center justify-center font-black text-lg">
                         🇩🇿
                       </div>
                       <div>
                         <span className="font-extrabold text-temu-black text-sm block">BaridiMob / CCP</span>
-                        <span className="text-[11px] text-emerald-700 font-bold">الدفع عبر تطبيق بريدي موب (الجزائر)</span>
+                        <span className="text-[11px] text-maroccan-tea-700 font-bold">الدفع عبر تطبيق بريدي موب (الجزائر)</span>
                       </div>
                     </div>
-                    <span className="text-xs text-emerald-600 font-bold">&rarr;</span>
+                    <span className="text-xs text-maroccan-tea-600 font-bold">&rarr;</span>
                   </button>
                 )}
               </div>
@@ -369,7 +369,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-xs focus:outline-none focus:border-temu-orange"
                 />
 
-                <div dir="rtl" className="bg-emerald-50/50 p-4 rounded-temu-sm border border-emerald-500/30 text-right">
+                <div dir="rtl" className="bg-maroccan-tea-50/50 p-4 rounded-temu-sm border border-maroccan-tea-500/30 text-right">
                   <p className="text-xs text-temu-gray-text mb-2">
                     يرجى تحويل مبلغ <strong className="text-temu-error font-black text-sm">{totalAmountDZD.toLocaleString()} دج</strong> إلى الحساب:
                   </p>
@@ -385,7 +385,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
-                      className={`px-2.5 py-1 rounded text-[11px] font-bold text-white transition ${copied ? 'bg-emerald-600' : 'bg-temu-orange'}`}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold text-white transition ${copied ? 'bg-maroccan-tea-600' : 'bg-temu-orange'}`}
                     >
                       {copied ? 'تم النسخ ✓' : 'نسخ'}
                     </button>
@@ -417,7 +417,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
               </form>
             ) : (
               <div className="text-center py-6 space-y-3">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <div className="w-14 h-14 bg-maroccan-tea-100 text-maroccan-tea-600 rounded-full flex items-center justify-center mx-auto text-2xl">
                   <GlassIcon i="check" size="xs" />
                 </div>
                 <h2 className="text-lg font-black text-temu-black">تم استلام طلبك بنجاح!</h2>

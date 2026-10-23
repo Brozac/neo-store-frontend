@@ -1,11 +1,11 @@
 ﻿================================================================
-  LACLARC — AURORA · ROSE DUO EDITION · FINAL FULL FILES v2
+  LACLARC — AURORA · ROSE DUO EDITION · FINAL FULL FILES v3
   الحل النهائي الأضمن — بلا git apply خلاص
 ================================================================
 
 شنو هذا؟
 --------
-هذا الـ ZIP فيه النسخة النهائية الكاملة (55 ملفاً) من كل
+هذا الـ ZIP فيه النسخة النهائية الكاملة (59 ملفاً) من كل
 التحديثات اللي درناها من البداية حتى اليوم:
 
   1. Serene fog v2.0        (تحويل الألوان الأول)
@@ -17,17 +17,18 @@
   7. ROSE DUO (جديد)        (البنفسجي + الوردي من الصورة تاعك:
                              الأسعار والخصومات والقلوب ولديو، بادج Lightning،
                              بانر Flash Deal وردي، زر الشراء بنفسجي→وردي)
-  8. PWA cache v7           (الهاتف يجيب النسخة الجديدة أوتوماتيك)
+  8. ROSE DUO scales (جديد): أخضر maroccan-tea للنجاح والتوصيل + ذهبي butter-up + 9 سكيلات مسجلة كاملة
+  9. PWA cache v8           (الهاتف يجيب النسخة الجديدة أوتوماتيك)
 
-⚠️ هذه النسخة v2 — تحل مكان أي ZIP قديم عندك.
+⚠️ هذه النسخة v3 — تحل مكان أي ZIP قديم عندك.
 
 كيفاش تخدم بيه (PowerShell داخل مجلد الـ repo):
 -----------------------------------------------
-  1. حط الملف laclarc-aurora-FINAL-full-files-v2.zip في مجلد الـ repo
+  1. حط الملف laclarc-aurora-FINAL-full-files-v3.zip في مجلد الـ repo
      (نفس البلاصة فين جربت git apply)
 
   2. فك الضغط فوق الملفات مباشرة:
-       Expand-Archive -Path laclarc-aurora-FINAL-full-files-v2.zip -DestinationPath . -Force
+       Expand-Archive -Path laclarc-aurora-FINAL-full-files-v3.zip -DestinationPath . -Force
 
   3. سجل وادفع:
        git add -A
@@ -49,10 +50,14 @@
 قائمة الملفات (55):
 -------------------
   app/(home)/HomeClient.tsx
+  app/admin/advanced/page.tsx
+  app/admin/baridimob/page.tsx
   app/admin/disputes/page.tsx
   app/admin/failed-orders/page.tsx
+  app/admin/login/page.tsx
   app/admin/manage/page.tsx
   app/admin/page.tsx
+  app/admin/payment-settings/page.tsx
   app/all-products/page.tsx
   app/auth/page.tsx
   app/auth/reset-password/page.tsx

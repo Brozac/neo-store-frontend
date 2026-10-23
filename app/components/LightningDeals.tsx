@@ -139,7 +139,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                       )}
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-[10px] font-black text-amber-400">
+                    <div className="mt-2 flex items-center justify-between text-[10px] font-black text-butter-up-400">
                       <span><GlassIcon i="zap" size="xs" /> Flash Left: {stockLeft}</span>
                       <span className="text-[9px] text-gray-400 font-normal">Claim &rarr;</span>
                     </div>

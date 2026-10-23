@@ -285,10 +285,10 @@ function ManageProductsContent() {
             <button 
               onClick={handleAutoCategorize} 
               disabled={isCategorizing} 
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
+              className="bg-maroccan-tea-50 hover:bg-maroccan-tea-100 text-maroccan-tea-600 border border-maroccan-tea-200 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
             >
               {isCategorizing ? (
-                <><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
+                <><div className="w-4 h-4 border-2 border-maroccan-tea-500 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
               ) : (
                 <>🤖 Run Auto-Categorizer</>
               )}
@@ -344,7 +344,7 @@ function ManageProductsContent() {
                       <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                         <img src={imgSrc} alt={product.title} className="w-full h-full object-cover" />
                         {product.is_sourced && (
-                          <span className="absolute top-0.5 right-0.5 bg-amber-400 text-black text-[9px] font-black px-1 rounded shadow">
+                          <span className="absolute top-0.5 right-0.5 bg-butter-up-400 text-black text-[9px] font-black px-1 rounded shadow">
                             ⚡
                           </span>
                         )}
@@ -405,7 +405,7 @@ function ManageProductsContent() {
                       {/* Review Button */}
                       <button 
                         onClick={() => openReviewModal(product)} 
-                        className="bg-amber-50 hover:bg-amber-100 text-amber-500 border border-amber-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-butter-up-50 hover:bg-butter-up-100 text-butter-up-500 border border-butter-up-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Add Verified Review"
                       >
                         ⭐
@@ -417,7 +417,7 @@ function ManageProductsContent() {
                         disabled={togglingDealId === product.id}
                         className={`p-2.5 rounded-xl border transition cursor-pointer active:scale-95 disabled:opacity-50 ${
                           product.is_sourced 
-                            ? 'bg-amber-500 text-white border-amber-400 font-bold shadow-md shadow-amber-500/20' 
+                            ? 'bg-butter-up-500 text-white border-butter-up-400 font-bold shadow-md shadow-butter-up-500/20' 
                             : 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-200'
                         }`}
                         title={product.is_sourced ? 'Active Lightning Deal (Click to Remove)' : 'Activate Lightning Deal'}
@@ -592,7 +592,7 @@ function ManageProductsContent() {
             {reviewMessage && (
               <div className={`p-3 rounded-xl mb-4 text-xs font-bold ${
                 reviewMessage.includes('✅') 
-                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                  ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border border-maroccan-tea-200' 
                   : 'bg-red-50 text-red-500 border border-red-200'
               }`}>
                 {reviewMessage}

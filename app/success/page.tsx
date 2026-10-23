@@ -269,7 +269,7 @@ function SuccessContent() {
               <span className="text-[10px] font-black uppercase tracking-widest text-[#7E56C4] flex items-center gap-1">
                 <span><GlassIcon i="zap" size="xs" /></span> Exclusive One-Time Offer
               </span>
-              <span className="text-xs font-mono font-black bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-amber-300">
+              <span className="text-xs font-mono font-black bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-butter-up-300">
                 Expires in {formatTimer(upsellTimeLeft)}
               </span>
             </div>

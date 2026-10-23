@@ -245,7 +245,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
           onClick={handleAddToCart}
           className={`w-full font-bold py-2.5 px-3 rounded-temu-sm transition-all duration-200 flex items-center justify-center gap-1.5 text-xs cursor-pointer active:scale-90 shadow-sm ${
             isAdded
-              ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+              ? 'bg-maroccan-tea-600 text-white shadow-maroccan-tea-500/20'
               : 'bg-temu-orange hover:bg-temu-orange-bright text-white'
           }`}
         >

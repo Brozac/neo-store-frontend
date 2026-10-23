@@ -278,8 +278,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
           </div>
 
           {/* الساعة */}
-          <div className="gsap-hero shrink-0 bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-emerald-600 text-[10px] font-mono font-bold flex items-center gap-1.5 whitespace-nowrap tabular-nums">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+          <div className="gsap-hero shrink-0 bg-white/80 backdrop-blur-md border border-white/80 px-3 py-1.5 rounded-full text-maroccan-tea-600 text-[10px] font-mono font-bold flex items-center gap-1.5 whitespace-nowrap tabular-nums">
+            <span className="w-1.5 h-1.5 rounded-full bg-maroccan-tea-500 animate-ping shrink-0"></span>
             {isMounted ? liveTime : 'Live'}
           </div>
         </div>

@@ -220,7 +220,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 <p className="text-xs font-bold line-clamp-2 leading-tight mb-1 drop-shadow-lg">
                   {reel.title}
                 </p>
-                <p className="text-base font-black text-amber-300 drop-shadow-lg">
+                <p className="text-base font-black text-butter-up-300 drop-shadow-lg">
                   ${price.toFixed(2)}
                 </p>
               </div>

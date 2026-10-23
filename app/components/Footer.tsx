@@ -44,7 +44,7 @@ export default function Footer() {
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-sm">
               Your global flagship store for curated lifestyle gear, electric grooming innovations, and verified daily essentials. Fully automated worldwide fulfillment with bank-grade security.
             </p>
-            <div className="pt-2 flex items-center gap-3 text-xs text-emerald-400 font-bold">
+            <div className="pt-2 flex items-center gap-3 text-xs text-maroccan-tea-400 font-bold">
               <span><GlassIcon ch="🛡️" size="xs" /> 100% Buyer Protection Guaranteed</span>
             </div>
           </div>

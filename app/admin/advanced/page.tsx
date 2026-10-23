@@ -213,7 +213,7 @@ export default function AdvancedDashboard() {
                 <div className="bg-temu-offwhite p-6 rounded-2xl border border-gray-200 space-y-4">
                   <div className="flex justify-between items-center border-b border-gray-200 pb-3 flex-wrap gap-2">
                     <h4 className="text-sm font-black text-temu-black">Financial Statement &bull; {cogsData.orderCode || orderCode}</h4>
-                    <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="text-[10px] font-mono bg-maroccan-tea-50 text-maroccan-tea-600 px-2 py-0.5 rounded border border-maroccan-tea-200">
                       Verified Invoice
                     </span>
                   </div>
@@ -284,7 +284,7 @@ export default function AdvancedDashboard() {
                       <button
                         onClick={() => handleSubmitMerge(group, idx)}
                         disabled={submittingMergeIdx === idx}
-                        className="bg-linear-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-white px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer active:scale-95 disabled:opacity-50 shadow-md flex items-center gap-1.5"
+                        className="bg-linear-to-r from-maroccan-tea-500 to-teal-500 hover:brightness-110 text-white px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer active:scale-95 disabled:opacity-50 shadow-md flex items-center gap-1.5"
                       >
                         {submittingMergeIdx === idx ? (
                           <>
@@ -338,13 +338,13 @@ export default function AdvancedDashboard() {
                 </div>
               ) : makeupList.length > 0 ? (
                 makeupList.map((bill: any, idx: number) => (
-                  <div key={idx} className="bg-white p-4 rounded-xl border border-amber-200 flex items-center justify-between flex-wrap gap-3">
+                  <div key={idx} className="bg-white p-4 rounded-xl border border-butter-up-200 flex items-center justify-between flex-wrap gap-3">
                     <div>
                       <h4 className="font-bold text-temu-black text-sm font-mono">{bill.orderCode || 'N/A'}</h4>
                       <p className="text-xs text-gray-500 mt-0.5">{bill.reason || 'Logistics freight recalculation'}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-black text-amber-600">${Number(bill.amount || 0).toFixed(2)}</span>
+                      <span className="text-sm font-black text-butter-up-600">${Number(bill.amount || 0).toFixed(2)}</span>
                       <span className="block text-[10px] text-gray-400 uppercase">Adjustment Due</span>
                     </div>
                   </div>

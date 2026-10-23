@@ -54,8 +54,8 @@ function SystemEventsPanel() {
 
   const sevStyle: Record<string, string> = {
     critical: 'text-red-600 border-red-200 bg-red-50',
-    warning:  'text-amber-600 border-amber-200 bg-amber-50',
-    info:     'text-emerald-600 border-emerald-200 bg-emerald-50',
+    warning:  'text-butter-up-600 border-butter-up-200 bg-butter-up-50',
+    info:     'text-maroccan-tea-600 border-maroccan-tea-200 bg-maroccan-tea-50',
   };
 
   const EVENT_TYPES = [
@@ -468,7 +468,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   alert(`❌ Subscribe failed:\n${err.response?.data?.error || err.message}`);
                 }
               }}
-              className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-600 transition cursor-pointer"
+              className="px-3.5 py-2 bg-maroccan-tea-50 hover:bg-maroccan-tea-100 border border-maroccan-tea-200 rounded-xl text-xs font-bold text-maroccan-tea-600 transition cursor-pointer"
             >
               📌 Subscribe Products
             </button>
@@ -492,7 +492,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-maroccan-tea-500 animate-pulse' : 'bg-red-500'}`}></span>
               Render Backend
             </span>
             <div className="mt-2 flex items-baseline justify-between">
@@ -510,7 +510,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </span>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-base font-black text-temu-black">{telemetry.backendStatus === 'healthy' ? 'Connected' : telemetry.backendStatus === 'checking' ? 'Checking…' : 'Unreachable'}</span>
-              <span className="text-[11px] font-mono text-emerald-500">{telemetry.backendStatus === 'healthy' ? 'Pool Active' : '—'}</span>
+              <span className="text-[11px] font-mono text-maroccan-tea-500">{telemetry.backendStatus === 'healthy' ? 'Pool Active' : '—'}</span>
             </div>
           </div>
 
@@ -605,7 +605,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#6B3DB4] to-fog-600', icon: '📦' },
                   { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-coral-500 to-coral-600', icon: '🎬' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#7E56C4] to-coral-600', icon: '🇩🇿' },
-                  { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
+                  { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-butter-up-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-fog-600', icon: '⚖️' },
                   { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-fog-600 to-[#17171A]', icon: '🛠️' },
                 ].map((card, i) => (
@@ -661,7 +661,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <span className="text-[11px] font-bold text-gray-500 block uppercase">Organic / Direct</span>
                   <span className="text-xs text-gray-400">Word of mouth</span>
                 </div>
-                <span className="text-sm font-black text-emerald-600">Free 🌿</span>
+                <span className="text-sm font-black text-maroccan-tea-600">Free 🌿</span>
               </div>
             </div>
           </div>
@@ -704,7 +704,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       alert('⚠️ Could not save the setting. Check your connection and try again.');
                     }
                   }}
-                  className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-maroccan-tea-500' : 'bg-gray-300'}`}
                   aria-pressed={showReels}
                 >
                   <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${showReels ? 'translate-x-7' : 'translate-x-0'}`} />
@@ -734,8 +734,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </h4>
                   <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full border ${
                     videoProducts.length >= 5
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                      : 'bg-amber-50 text-amber-600 border-amber-200'
+                      ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border-maroccan-tea-200'
+                      : 'bg-butter-up-50 text-butter-up-600 border-butter-up-200'
                   }`}>
                     {videoProducts.length >= 5 ? '✓ Reels Ready' : 'Need 5+ for full carousel'}
                   </span>
@@ -810,25 +810,25 @@ const handleSubmit = async (e: React.FormEvent) => {
               <p className="text-xs text-gray-500 mb-6">Create manual items or auto-fill details via external link</p>
 
               {message && (
-                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-50 border border-emerald-200 text-emerald-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
+                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-maroccan-tea-50 border border-maroccan-tea-200 text-maroccan-tea-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
                   {message}
                 </div>
               )}
 
-              <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
+              <div className="mb-6 p-4 bg-butter-up-50 rounded-xl border border-butter-up-200">
+                <label className="block text-xs font-bold text-butter-up-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     value={scrapeUrl}
                     onChange={(e) => setScrapeUrl(e.target.value)}
                     placeholder="Paste product page URL here..."
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-amber-400 transition"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-butter-up-400 transition"
                   />
                   <button
                     onClick={handleScrape}
                     disabled={scraping}
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95 cursor-pointer"
+                    className="bg-butter-up-500 hover:bg-butter-up-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95 cursor-pointer"
                   >
                     {scraping ? 'Extracting Data...' : 'Scrape Data'}
                   </button>
@@ -939,7 +939,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
                   </button>
                 </div>
-                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}>{singleMessage}</p>}
+                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-maroccan-tea-500' : 'text-red-500'}`}>{singleMessage}</p>}
               </div>
 
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
@@ -991,7 +991,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <button
                     onClick={handleSyncCategories}
                     disabled={syncingCats}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
+                    className="bg-maroccan-tea-500 hover:bg-maroccan-tea-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
                   >
                     {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
                   </button>

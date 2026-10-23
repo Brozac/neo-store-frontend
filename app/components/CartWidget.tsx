@@ -120,7 +120,7 @@ export default function CartWidget() {
           {/* Footer & Checkout Trigger */}
           <div className="border-t border-gray-100 pt-3 mt-3">
             {wheelDiscount > 0 && (
-              <div className="bg-emerald-50 text-emerald-700 text-[10px] font-bold p-1.5 rounded mb-2 text-center">
+              <div className="bg-maroccan-tea-50 text-maroccan-tea-700 text-[10px] font-bold p-1.5 rounded mb-2 text-center">
                 <GlassIcon ch="🎉" size="xs" /> Reward Applied: {wheelDiscount}% OFF
               </div>
             )}
