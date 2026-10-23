@@ -1,9 +1,9 @@
 'use client';
 
 // ════════════════════════════════════════════════════════════════
-// Navbar — SERENE EDITION v2.0 (طبق الأصل من laclarc-serene-v2)
+// Navbar — SERENE v2.1 (طبق الأصل من laclarc-serene-v2)
 // · شريط إعلانات ضبابي فاتح (bg fog-200 — لا أسود ثقيل)
-// · رأس أبيض زجاجي: brandmark متدرج + LACLARC بخط Marcellus
+// · رأس أبيض زجاجي: أيقونة الشعار الرسمية + LACLARC بخط Marcellus
 //   + searchpill + أيقونات fog · بادج السلة وردي ناعم (#D98A8A)
 // ════════════════════════════════════════════════════════════════
 
@@ -42,15 +42,16 @@ export default function Navbar() {
       <nav className="bg-white/88 backdrop-blur-xl px-4 py-2.5 sm:py-3 border-b border-fog-200 shadow-[0_4px_18px_rgba(91,126,166,0.09)]">
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-3 sm:gap-6">
 
-          {/* Brand lock — brandmark متدرج + Marcellus */}
+          {/* Brand lock — أيقونة الشعار الرسمية (مونوغرام LL) + Marcellus */}
           <Link href="/" className="flex items-center gap-2.5 group cursor-pointer" aria-label="Laclarc home">
-            <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-linear-to-br from-fog-300 to-fog-600 text-white font-brand text-xl sm:text-2xl grid place-items-center shadow-[0_10px_22px_rgba(70,100,138,0.32)] group-active:scale-95 transition select-none leading-none pt-0.5">
-              L
-            </span>
-            <span className="hidden sm:flex flex-col leading-none">
-              <span className="font-brand text-lg sm:text-xl text-fog-800">LACLARC</span>
-              <span className="text-[9px] text-temu-gray-text font-semibold tracking-[0.14em] mt-1">SERENE EDITION</span>
-            </span>
+            <img
+              src="/icon-512.png"
+              alt="Laclarc logo"
+              width={44}
+              height={44}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-cover border border-fog-200/70 shadow-[0_10px_22px_rgba(70,100,138,0.22)] group-active:scale-95 transition select-none"
+            />
+            <span className="hidden sm:flex font-brand text-lg sm:text-xl text-fog-800 leading-none">LACLARC</span>
           </Link>
 
           {/* Search Bar (Desktop) */}
