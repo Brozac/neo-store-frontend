@@ -7,7 +7,7 @@
 //   • /api/ و /admin       → مستثناة تماماً من الـ SW
 // ============================================================
 
-const CACHE_NAME = 'laclarc-pwa-v8';
+const CACHE_NAME = 'laclarc-pwa-v9';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.webmanifest',

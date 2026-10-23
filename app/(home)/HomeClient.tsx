@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '../components/ProductCard';
 import LightningDeals from '../components/LightningDeals';
 import HeroSection from '../components/HeroSection';
+import PromoBanner from '../components/PromoBanner';
+import BestSelling from '../components/BestSelling';
 import GlassIcon from '../components/ui/GlassIcon';
 import dynamic from 'next/dynamic';
 
@@ -216,6 +218,13 @@ function HomeContent() {
     return list;
   }, [filteredProducts, sortBy]);
 
+  // ✨ MERGE_MOCKUP — Best Selling: أول 10 من الفيد الافتراضي، خارج عروض
+  //    الفلاش باش ما يتكرروش مع القسم اللي فوقو (نفس مصدر الحقيقة: الفيد)
+  const bestSelling = useMemo(() => {
+    const dealIds = new Set(dealsProducts.map((d: any) => String(d.id)));
+    return products.filter((p) => !dealIds.has(String(p.id))).slice(0, 10);
+  }, [products, dealsProducts]);
+
   // ✨ العرض: default feed = accumulated (بلا trending) · الفرز = sorted — بلا slice
   const displayProducts = useMemo(() => {
     const isDefaultFeed = activeCategory === 'All' && !searchQuery && sortBy === 'default' && priceRange === 'all';
@@ -279,11 +288,21 @@ function HomeContent() {
           })}
         </div>
 
-        {/* 3. Lightning Deals */}
+        {/* 2.5 🎨 MERGE_MOCKUP — بانر العروض الناعم (Special Offer / Shop Now) */}
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
-          <div className="mb-6">
+          <PromoBanner products={dealsProducts} />
+        )}
+
+        {/* 3. Flash Sale — 🎨 MERGE_MOCKUP: الصف الأفقي النظيف (LightningDeals v3) */}
+        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
+          <div className="mb-2">
             <LightningDeals products={dealsProducts} />
           </div>
+        )}
+
+        {/* 3.5 🎨 MERGE_MOCKUP — Best Selling: صف أفقي بقلوب المفضلة */}
+        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
+          <BestSelling products={bestSelling} />
         )}
 
         {/* 4. Shoppable Reels */}

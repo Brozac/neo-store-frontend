@@ -129,6 +129,8 @@ export default function ProductDetailsClient({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  // ✨ MERGE_MOCKUP — Read More للوصف الطويل (كيما الموكاب)
+  const [descExpanded, setDescExpanded] = useState(false);
   const [selectedColorName, setSelectedColorName] = useState('');   // 🆕 [variant-truth] اسم عائلة اللون (من variantKey) — hex بقى legacy فقط
   const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
   const [activeTab, setActiveTab] = useState<TabKey>('details');
@@ -365,6 +367,8 @@ export default function ProductDetailsClient({
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
+  // ✨ MERGE_MOCKUP — الوصف الطويل (أكثر من 220 حرف) هو اللي يستحق Read More
+  const descIsLong = (stripHtml(product.description) || '').length > 220;
   const discountPct = safeOriginalPrice > safePrice
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100)
     : 0;
@@ -837,7 +841,20 @@ export default function ProductDetailsClient({
           <div className="text-sm text-temu-gray-text leading-relaxed">
             {activeTab === 'details' && (
               <div>
-                <p className="mb-4">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
+                {/* 🎨 MERGE_MOCKUP — وصف مقصوص 3 أسطر + Read More كيما الموكاب */}
+                <p className={`mb-4 ${!descExpanded && descIsLong ? 'line-clamp-3' : ''}`}>
+                  {stripHtml(product.description) || 'Full specifications available — contact support for any question.'}
+                </p>
+                {descIsLong && (
+                  <button
+                    type="button"
+                    onClick={() => setDescExpanded((v) => !v)}
+                    className="text-sm font-bold text-fog-600 hover:underline cursor-pointer -mt-2 mb-4 block"
+                    aria-expanded={descExpanded}
+                  >
+                    {descExpanded ? 'Read Less' : 'Read More'}
+                  </button>
+                )}
                 {detailBullets.length > 0 && (
                   <ul className="space-y-1.5 list-disc list-inside">
                     {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
@@ -1153,6 +1170,30 @@ export default function ProductDetailsClient({
 
           {/* الزوز أزرار — نفس المعاينة: ghost + primary متدرج */}
           <div className="flex items-center gap-2.5 flex-1 sm:flex-none">
+            {/* 🎨 MERGE_MOCKUP — ستيبر الكمية (− 1 +) في البار السفلي كيما الموكاب:
+                الكمية كانت تتضبط غير من كروت Standard/Duo/Trio اللي فوق — دابا
+                متاحة حتى والمسخدم في آخر الصفحة، و Buy Now كيتحدث فوري */}
+            <div className="flex items-center gap-1 bg-fog-100 rounded-temu-sm p-1 shrink-0" role="group" aria-label="Quantity">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1}
+                aria-label="Decrease quantity"
+                className="w-8 h-8 rounded-lg bg-white text-temu-black font-black text-sm flex items-center justify-center shadow-xs transition active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                −
+              </button>
+              <span className="w-7 text-center font-black text-sm text-temu-black tabular-nums" aria-live="polite">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                aria-label="Increase quantity"
+                className="w-8 h-8 rounded-lg bg-white text-temu-black font-black text-sm flex items-center justify-center shadow-xs transition active:scale-90 cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => {

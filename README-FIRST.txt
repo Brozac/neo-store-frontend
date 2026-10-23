@@ -1,11 +1,11 @@
 ﻿================================================================
-  LACLARC — AURORA · ROSE DUO EDITION · FINAL FULL FILES v3
+  LACLARC — AURORA · ROSE DUO EDITION · FINAL FULL FILES v4 — MERGE_MOCKUP
   الحل النهائي الأضمن — بلا git apply خلاص
 ================================================================
 
 شنو هذا؟
 --------
-هذا الـ ZIP فيه النسخة النهائية الكاملة (59 ملفاً) من كل
+هذا الـ ZIP فيه النسخة النهائية الكاملة (61 ملفاً) من كل
 التحديثات اللي درناها من البداية حتى اليوم:
 
   1. Serene fog v2.0        (تحويل الألوان الأول)
@@ -20,23 +20,25 @@
   8. ROSE DUO scales (جديد): أخضر maroccan-tea للنجاح والتوصيل + ذهبي butter-up + 9 سكيلات مسجلة كاملة
   9. PWA cache v8           (الهاتف يجيب النسخة الجديدة أوتوماتيك)
 
-⚠️ هذه النسخة v3 — تحل مكان أي ZIP قديم عندك.
+⚠️ هذه النسخة v4 — تحل مكان أي ZIP قديم عندك.
+الجديد: دمج موكاب المستخدم — Flash Sale نظيف أفقي + Best Selling بقلوب المفضلة
++ بانر Special Offer/Shop Now + Read More وستيبر كمية (− 1 +) في صفحة المنتج + PWA v9.
 
 كيفاش تخدم بيه (PowerShell داخل مجلد الـ repo):
 -----------------------------------------------
-  1. حط الملف laclarc-aurora-FINAL-full-files-v3.zip في مجلد الـ repo
+  1. حط الملف laclarc-aurora-FINAL-full-files-v4.zip في مجلد الـ repo
      (نفس البلاصة فين جربت git apply)
 
   2. فك الضغط فوق الملفات مباشرة:
-       Expand-Archive -Path laclarc-aurora-FINAL-full-files-v3.zip -DestinationPath . -Force
+       Expand-Archive -Path laclarc-aurora-FINAL-full-files-v4.zip -DestinationPath . -Force
 
   3. سجل وادفع:
        git add -A
-       git commit -m "Aurora + ROSE duo - full final (fly + v3 + v4 + v5 + pink)"
+       git commit -m "Aurora + ROSE duo + MERGE_MOCKUP - full final v4"
        git push
 
   4. صبر على النشر (Vercel/النشر التلقائي)، من بعد حل الـ PWA في الهاتف
-     — الـ Service Worker جديد (v6) يمسح الكاش القديم بوحدو.
+     — الـ Service Worker جديد (v9) يمسح الكاش القديم بوحدو.
 
 ملاحظات مهمة:
 -------------
@@ -47,7 +49,7 @@
    فوق — احفظ نسخة قبل.
  * بعدها تنسى ملفات الـ patches القديمة — الـ ZIP هو المرجع النهائي.
 
-قائمة الملفات (55):
+قائمة الملفات (61):
 -------------------
   app/(home)/HomeClient.tsx
   app/admin/advanced/page.tsx
@@ -108,3 +110,5 @@
   app/success/page.tsx
   app/track-order/page.tsx
   public/sw.js
+  app/components/BestSelling.tsx
+  app/components/PromoBanner.tsx
