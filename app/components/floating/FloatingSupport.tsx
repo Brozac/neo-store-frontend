@@ -30,7 +30,7 @@ export default function FloatingSupport() {
   return (
     <div
       className="fixed z-[60] flex flex-col items-start gap-2.5
-                 bottom-[calc(8.5rem+env(safe-area-inset-bottom))] left-4
+                 bottom-[calc(10.5rem+env(safe-area-inset-bottom))] left-4
                  md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] md:left-5"
       aria-label="Customer Support Channels"
     >

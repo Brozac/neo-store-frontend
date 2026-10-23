@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import GlassIcon, { GlassInline } from '@/components/ui/GlassIcon';
@@ -34,6 +34,26 @@ export default function OrdersPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+
+  // 🎨 REPLICA_V4 — مصغرات منتجات كل طلب (oc-items تاع المعاينة)
+  // جلب خفيف best-effort لأول 8 طلبات بالتوازي — يفشل بصمت (البطاقة بلا مصغرات)
+  const [itemsMap, setItemsMap] = useState<Record<string, OrderItem[]>>({});
+  const itemsFetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (itemsFetchedRef.current || orders.length === 0) return;
+    itemsFetchedRef.current = true;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
+    Promise.all(orders.slice(0, 8).map(o =>
+      fetch(`${API_BASE_URL}/api/orders/${o.id}/items`, { headers })
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => [])
+        .then(items => [String(o.id), Array.isArray(items) ? items : []] as const)
+    )).then(entries => {
+      setItemsMap(Object.fromEntries(entries));
+    });
+  }, [orders, API_BASE_URL]);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -117,26 +137,27 @@ export default function OrdersPage() {
     return MAP[String(order.status || '').toLowerCase()] || String(order.status || '');
   };
 
-  // 🩹 M#29 — لون البادج يتبع نفس نظام getStatusStyle الحالي
+  // 🎨 REPLICA_V4 — لوون الـ pills طبق الأصل من المعاينة (Aurora tokens)
+  // delivered أخضر الثقة · shipped ضبابي بحدود · processing لافندر معتم · cancelled بنفسجي فاتح
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-      case 'fulfilled':
       case 'paid':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-      case 'awaiting_exchange':   // 🩹 جديد — لون مميز للبديل المعروض
+        return 'bg-[#E8F4EC] text-[#3E8E5A]';                          // Delivered
+      case 'fulfilled':                                                // Shipped
+        return 'bg-fog-50 text-fog-600 border border-fog-200';
+      case 'awaiting_exchange':
       case 'reconciling':
       case 'processing':
       case 'pending':
-        return 'bg-fog-50 text-fog-700 border border-fog-200';
-      case 'refunded':            // 🩹 جديد — لون مميز للمسترد
-        return 'bg-fog-50 text-fog-700 border border-fog-200';
+      case 'refunded':
+        return 'bg-fog-100 text-fog-700';                              // Processing / Refunded
       case 'manual':
       case 'cancelled':
       case 'expired':
-        return 'bg-coral-50 text-coral-700 border border-coral-200';
+        return 'bg-coral-100 text-coral-700';                          // Cancelled
       default:
-        return 'bg-gray-100 text-gray-700 border border-gray-200';
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -227,56 +248,75 @@ export default function OrdersPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition">
-                <div className="flex justify-between items-start pb-4 border-b border-gray-100 flex-wrap gap-2">
-                  <div>
-                    <h3 className="font-black text-gray-900 text-base">Order {(order as any).order_number || `#${order.id}`}</h3>
-                    <p className="text-[11px] text-gray-400 mt-0.5 font-medium">
-                      {new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                  </div>
-                  {/* 🩹 M#29 — status_label الودي من الباكند */}
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusStyle(order.status)}`}>
+          <div className="space-y-3">
+            {orders.map((order) => {
+              const items = itemsMap[String(order.id)] || [];
+              const extraCount = Math.max(0, items.length - 4);
+              return (
+              <div key={order.id} className="bg-white rounded-2xl border border-temu-gray-border-light/70 shadow-[0_4px_18px_rgba(23,23,26,0.05)] p-4 sm:p-5 hover:shadow-md transition">
+                {/* 🎨 REPLICA_V4 oc-top — رقم الطلب · التاريخ | pill الحالة */}
+                <div className="flex justify-between items-center gap-2">
+                  <small className="text-[11px] font-bold text-temu-gray-text truncate min-w-0">
+                    Order {(order as any).order_number || `#${order.id}`} · {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}
+                  </small>
+                  <span className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusStyle(order.status)}`}>
                     <GlassInline text={getStatusLabel(order)} />
                   </span>
                 </div>
+                <p className="text-[10.5px] text-temu-gray-light font-semibold truncate mt-1">
+                  📍 {formatAddress(order.shipping_address)}
+                </p>
 
-                <div className="py-3 text-xs text-gray-600 flex items-start gap-2.5">
-                  <span className="text-base"><GlassIcon ch="📍" size="xs" /></span>
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Delivery Destination</span>
-                    <p className="font-medium text-gray-800 truncate">{formatAddress(order.shipping_address)}</p>
+                {/* 🎨 REPLICA_V4 oc-items — مصغرات المنتجات + عداد +N مثل المعاينة */}
+                {items.length > 0 && (
+                  <div className="flex items-center gap-2.5 my-3.5">
+                    {items.slice(0, 4).map((item, idx) => (
+                      <div key={idx} className="w-[46px] h-[46px] rounded-[11px] bg-fog-50 border border-temu-gray-border-light overflow-hidden shrink-0 relative">
+                        <Image
+                          src={item.image_url || '/placeholder.jpg'}
+                          alt=""
+                          fill
+                          sizes="46px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                    {extraCount > 0 && (
+                      <div className="w-[46px] h-[46px] rounded-[11px] bg-fog-100 text-fog-700 flex items-center justify-center text-[11px] font-black shrink-0">
+                        +{extraCount}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
 
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100 flex-wrap gap-2">
+                {/* 🎨 REPLICA_V4 oc-bot — المجموع | أزرار التتبع والتفاصيل */}
+                <div className="flex justify-between items-center gap-2 border-t border-temu-gray-border-light pt-3 flex-wrap">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Billed</span>
-                    <span className="text-lg font-black text-[#7E56C4]">${Number(order.total_amount).toFixed(2)}</span>
+                    <span className="text-[9.5px] uppercase font-extrabold tracking-wider text-temu-gray-light block">Total</span>
+                    <b className="text-[17px] font-black text-[#7E56C4]">${Number(order.total_amount).toFixed(2)}</b>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {/* 🩹 M#29 — مرر الإيميل لصفحة التتبع (نفس عقد track/:identifier) */}
                     <button
                       onClick={() => router.push(`/track-order?orderId=${order.id}&email=${encodeURIComponent(order.customer_email || userEmail)}`)}
-                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5"
+                      className="px-4 py-2 bg-fog-50 hover:bg-fog-100 border border-fog-200 text-fog-700 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span><GlassIcon ch="🚚" size="xs" /></span>
-                      <span>Track Shipment</span>
+                      <GlassIcon ch="🚚" size="xs" />
+                      <span>Track order →</span>
                     </button>
 
                     <button
                       onClick={() => handleViewDetails(order)}
-                      className="px-4 py-2 bg-[#6B3DB4] hover:bg-[#5B2F9E] text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm"
+                      className="px-4 py-2 bg-linear-to-r from-fog-600 to-fog-500 text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm shadow-fog-500/30 cursor-pointer"
                     >
                       View Items
                     </button>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

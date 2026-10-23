@@ -431,7 +431,7 @@ export default function ProductDetailsClient({
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
   return (
-    <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
+    <main className="min-h-screen bg-temu-offwhite pb-48 font-sans">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
 
         {/* Breadcrumbs */}
@@ -1112,20 +1112,23 @@ export default function ProductDetailsClient({
 
       {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
 
-      {/* Sticky Buy Bar */}
+      {/* 🎨 REPLICA_V4 — Sticky CTA طبق الأصل من المعاينة
+          🩹 كان bottom-0 و GlassDock (z-40) كيغطي على نص الأزرار في الموبايل —
+          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] p-3 sm:p-4 transition-all duration-300 transform ${
-          showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
+        className={`fixed left-0 right-0 z-30 bg-white/90 backdrop-blur-xl border-t border-temu-gray-border-light shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
+          showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-6 opacity-0 pointer-events-none'
         }`}
       >
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto flex items-center gap-3">
 
+          {/* ملخص المنتج — ديسكتوب فقط (المعاينة: الموبايل فيه زوز أزرار برك) */}
           <div
             onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+            className="hidden sm:flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
             title="Tap to review choices"
           >
-            <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
+            <div className="relative w-12 h-12 rounded-xl bg-fog-50 overflow-hidden border border-temu-gray-border-light shrink-0">
               <img
                 src={IMG.thumb(mainImageSrc)}
                 alt={product.title}
@@ -1135,20 +1138,21 @@ export default function ProductDetailsClient({
             </div>
 
             <div className="min-w-0 pr-1">
-              <p className="text-xs font-black text-gray-900 truncate">{product.title}</p>
+              <p className="text-xs font-black text-temu-black truncate">{product.title}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-sm font-black text-[#7E56C4]">${safePrice.toFixed(2)}</span>
+                <span className="text-sm font-black text-coral-500">${safePrice.toFixed(2)}</span>
                 {safeOriginalPrice > safePrice && (
-                  <span className="text-[10px] text-gray-400 line-through">${safeOriginalPrice.toFixed(2)}</span>
+                  <span className="text-[10px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
                 )}
               </div>
-              <p className="text-[10px] text-gray-500 font-semibold truncate">
+              <p className="text-[10px] text-temu-gray-text font-semibold truncate">
                 {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' • ')} • Qty: {quantity}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* الزوز أزرار — نفس المعاينة: ghost + primary متدرج */}
+          <div className="flex items-center gap-2.5 flex-1 sm:flex-none">
             <button
               type="button"
               onClick={() => {
@@ -1156,25 +1160,29 @@ export default function ProductDetailsClient({
                 setStickyAdded(true);
                 setTimeout(() => setStickyAdded(false), 1200);
               }}
-              className={`py-3 px-3.5 sm:px-4 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm ${
+              className={`flex-1 sm:flex-none font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
                 stickyAdded
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                  : 'bg-fog-100 text-fog-700 hover:bg-fog-200/70'
               }`}
             >
-              {stickyAdded ? <span><GlassIcon i="check" size="xs" /> Added</span> : <span><GlassIcon ch="🛒" size="xs" /> +Bag</span>}
+              {stickyAdded ? (
+                <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added</span>
+              ) : (
+                'Add to Cart'
+              )}
             </button>
 
             <button
               type="button"
               onClick={() => {
-                // 🩹 Tenet #31: كاتب واحد للإلحاق — كان نسخة مكررة ديال handleAddToCart (طبقة divergence جاهزة)
+                // 🩹 Tenet #31: كاتب واحد للإلحاق — نفس handleAddToCart (مع الحركة fly-to-cart)
                 handleAddToCart();
                 router.push('/cart');
               }}
-              className="bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#6B3DB4]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="flex-1 sm:flex-none bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 text-white font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm shadow-lg shadow-fog-500/40 active:scale-[.97] transition flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
-              <span><GlassIcon i="zap" size="xs" /></span> Buy Now
+              <GlassIcon i="zap" size="xs" /> Buy Now • ${(safePrice * quantity).toFixed(2)}
             </button>
           </div>
 

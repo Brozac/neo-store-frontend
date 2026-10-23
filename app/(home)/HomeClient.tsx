@@ -251,8 +251,12 @@ function HomeContent() {
                 }}
                 className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
-                <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-300
-                                 ${isActive ? 'ring-[#6B3DB4] shadow-md' : 'ring-transparent group-hover:ring-[#6B3DB4]/40'}`}>
+                {/* 🎨 REPLICA_V4 — حلقة الأقسام طبق الأصل من المعاينة (.cat-ring):
+                    النشط = حلقة بنفسجية + هالة fog-100 (0 0 0 4px) + ظل عميق · الضغطة = scale .92 */}
+                <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-200 group-active:scale-90
+                                 ${isActive
+                                   ? 'ring-[#6B3DB4] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
+                                   : 'ring-transparent group-hover:ring-[#6B3DB4]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
                   <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#6B3DB4]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
