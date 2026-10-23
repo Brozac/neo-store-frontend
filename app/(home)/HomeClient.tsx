@@ -252,8 +252,8 @@ function HomeContent() {
                 className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-300
-                                 ${isActive ? 'ring-[#5B7EA6] shadow-md' : 'ring-transparent group-hover:ring-[#5B7EA6]/40'}`}>
-                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#5B7EA6]/70">
+                                 ${isActive ? 'ring-[#6B3DB4] shadow-md' : 'ring-transparent group-hover:ring-[#6B3DB4]/40'}`}>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#6B3DB4]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
                   {img && (
@@ -266,7 +266,7 @@ function HomeContent() {
                   )}
                 </div>
                 <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
-                                  ${isActive ? 'text-[#5B7EA6]' : 'text-temu-black'}`}>
+                                  ${isActive ? 'text-[#6B3DB4]' : 'text-temu-black'}`}>
                   {label}
                 </span>
               </button>
@@ -360,7 +360,7 @@ function HomeContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5B7EA6] cursor-pointer w-full sm:w-auto shadow-2xs"
+                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#6B3DB4] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
                 <option value="default">✨ Top Recommendations</option>
                 <option value="price-asc">💵 Price: Low to High</option>
@@ -388,7 +388,7 @@ function HomeContent() {
                   onClick={() => setPriceRange(pill.id as PriceRangeOption)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
                     priceRange === pill.id
-                      ? 'bg-[#22364A] text-white shadow-xs'
+                      ? 'bg-[#17171A] text-white shadow-xs'
                       : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
                   }`}
                 >
@@ -404,7 +404,7 @@ function HomeContent() {
                   setSortBy('default');
                   setPriceRange('all');
                 }}
-                className="text-xs text-[#E2836B] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
+                className="text-xs text-[#7E56C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
               >
                 Reset Filters ✕
               </button>
@@ -476,7 +476,7 @@ function HomeContent() {
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
             <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (

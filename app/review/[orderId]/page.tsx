@@ -83,11 +83,11 @@ export default function ReviewPage() {
         <div className="text-5xl mb-4"><GlassIcon ch="🎉" size="xs" /></div>
         <h1 className="text-xl font-black text-temu-black mb-2">Thank You!</h1>
         <p className="text-sm text-gray-600 mb-4">Your verified review has been published.</p>
-        <div className="bg-fog-50/60 border border-[#5B7EA6]/25 rounded-xl p-4 mb-4">
+        <div className="bg-fog-50/60 border border-[#6B3DB4]/25 rounded-xl p-4 mb-4">
           <p className="text-xs font-bold text-temu-black mb-1"><GlassIcon ch="🎁" size="xs" /> Your Reward:</p>
           <p className="text-xs text-gray-600">Use code <strong className="text-temu-orange font-black">NEXT5</strong> for 5% off your next order!</p>
         </div>
-        <button onClick={() => router.push('/')} className="bg-[#5B7EA6] text-white font-bold px-6 py-3 rounded-temu-sm text-sm">Continue Shopping</button>
+        <button onClick={() => router.push('/')} className="bg-[#6B3DB4] text-white font-bold px-6 py-3 rounded-temu-sm text-sm">Continue Shopping</button>
       </div>
     </main>
   );

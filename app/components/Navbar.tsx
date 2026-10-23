@@ -11,7 +11,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 shadow-md">
       {/* شريط الإعلانات العلوي — 🆕 Function Icons بدل الإيموجي */}
-      <div className="bg-[#22364A] text-white text-center py-2 px-4 text-[11px] sm:text-xs font-bold tracking-wide">
+      <div className="bg-[#17171A] text-white text-center py-2 px-4 text-[11px] sm:text-xs font-bold tracking-wide">
         <div className="max-w-7xl mx-auto flex justify-between sm:justify-center items-center gap-4 sm:gap-8">
           <span className="flex items-center gap-1.5">
             <span className="text-emerald-400">
@@ -24,7 +24,7 @@ export default function Navbar() {
             </span> 100% Satisfaction Guarantee
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-[#E2836B]">
+            <span className="text-[#7E56C4]">
               <LockIcon size={13} active />
             </span> Bank-Grade Secure Checkout
           </span>
@@ -32,7 +32,7 @@ export default function Navbar() {
       </div>
 
       {/* شريط التنقل الأساسي */}
-      <nav className="bg-linear-to-r from-[#22364A] via-[#5B7EA6] to-[#22364A] text-white px-4 py-3 sm:py-3.5 border-b border-white/10">
+      <nav className="bg-linear-to-r from-[#17171A] via-[#6B3DB4] to-[#17171A] text-white px-4 py-3 sm:py-3.5 border-b border-white/10">
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4 sm:gap-8">
 
           {/* Logo */}
@@ -86,7 +86,7 @@ export default function Navbar() {
               </svg>
 
               {isMounted && totalItemsCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-[#E2836B] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#22364A] shadow-md animate-scale">
+                <span className="absolute -top-1.5 -right-1.5 bg-[#7E56C4] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#17171A] shadow-md animate-scale">
                   {totalItemsCount > 99 ? '99+' : totalItemsCount}
                 </span>
               )}

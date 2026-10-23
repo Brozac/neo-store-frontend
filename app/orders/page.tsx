@@ -186,7 +186,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -214,14 +214,14 @@ export default function OrdersPage() {
 
         {orders.length === 0 ? (
           <div className="bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-sm space-y-4">
-            <div className="w-16 h-16 bg-fog-50 text-[#5B7EA6] rounded-full flex items-center justify-center text-2xl mx-auto">
+            <div className="w-16 h-16 bg-fog-50 text-[#6B3DB4] rounded-full flex items-center justify-center text-2xl mx-auto">
               <GlassIcon ch="📦" size="xs" />
             </div>
             <h3 className="text-base font-bold text-gray-800">No Orders Found Yet</h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
             <button
               onClick={() => router.push('/')}
-              className="bg-[#22364A] hover:bg-[#33475C] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+              className="bg-[#17171A] hover:bg-[#26262B] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Start Shopping &rarr;
             </button>
@@ -254,7 +254,7 @@ export default function OrdersPage() {
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100 flex-wrap gap-2">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Billed</span>
-                    <span className="text-lg font-black text-[#E2836B]">${Number(order.total_amount).toFixed(2)}</span>
+                    <span className="text-lg font-black text-[#7E56C4]">${Number(order.total_amount).toFixed(2)}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function OrdersPage() {
 
                     <button
                       onClick={() => handleViewDetails(order)}
-                      className="px-4 py-2 bg-[#5B7EA6] hover:bg-[#46688C] text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm"
+                      className="px-4 py-2 bg-[#6B3DB4] hover:bg-[#5B2F9E] text-white rounded-xl text-xs font-extrabold transition active:scale-95 shadow-sm"
                     >
                       View Items
                     </button>
@@ -302,7 +302,7 @@ export default function OrdersPage() {
             <div className="p-5 space-y-3 overflow-y-auto flex-1">
               {loadingDetails ? (
                 <div className="flex justify-center py-10">
-                  <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-3 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : orderItems.length > 0 && !orderItems[0].title.includes('Could not load') ? (
                 orderItems.map((item, idx) => (
@@ -320,7 +320,7 @@ export default function OrdersPage() {
                       <p className="text-xs font-bold text-gray-900 line-clamp-2">{item.title}</p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[11px] text-gray-500 font-semibold">Qty: {item.quantity}</span>
-                        <span className="text-xs font-black text-[#E2836B]">${Number(item.price_at_purchase).toFixed(2)}</span>
+                        <span className="text-xs font-black text-[#7E56C4]">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -332,7 +332,7 @@ export default function OrdersPage() {
 
             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-600">Total Settled</span>
-              <span className="text-lg font-black text-[#E2836B]">${Number(modalOrder.total_amount).toFixed(2)}</span>
+              <span className="text-lg font-black text-[#7E56C4]">${Number(modalOrder.total_amount).toFixed(2)}</span>
             </div>
 
           </div>

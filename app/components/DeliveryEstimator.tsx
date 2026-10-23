@@ -220,7 +220,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
   if (!isMounted) return null;
 
   return (
-    <div className="bg-fog-50/60 border border-[#5B7EA6]/25 rounded-2xl p-4 my-4 space-y-3 font-sans">
+    <div className="bg-fog-50/60 border border-[#6B3DB4]/25 rounded-2xl p-4 my-4 space-y-3 font-sans">
 
       {/* 🆕 [cj-eta-v6] عنوان التوصيل المجاني — النجمة ديال الصندوق */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -234,7 +234,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
 
       {/* سطر موعد الوصول — نافذة CJ الحقيقية [cj-eta-v6] أو نافذة واقعية عامة */}
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-xl bg-white text-[#5B7EA6] flex items-center justify-center text-base shrink-0 border border-[#5B7EA6]/20 shadow-xs">
+        <div className="w-8 h-8 rounded-xl bg-white text-[#6B3DB4] flex items-center justify-center text-base shrink-0 border border-[#6B3DB4]/20 shadow-xs">
           <Plane size={16} strokeWidth={2.3} />
         </div>
         <div className="text-xs leading-relaxed flex-1">
@@ -242,7 +242,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
             <>
               <p className="font-bold text-gray-900">
                 Estimated arrival to {live.country || 'You'}:{' '}
-                <span className="text-[#5B7EA6] font-black underline decoration-[#5B7EA6]/40 underline-offset-2">
+                <span className="text-[#6B3DB4] font-black underline decoration-[#6B3DB4]/40 underline-offset-2">
                   {live.start} – {live.end}
                 </span>
                 {' '}
@@ -258,7 +258,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
             <>
               <p className="font-bold text-gray-900">
                 Estimated arrival{fallbackCountry ? ` to ${fallbackCountry}` : ''}:{' '}
-                <span className="text-[#5B7EA6] font-black underline decoration-[#5B7EA6]/40 underline-offset-2">
+                <span className="text-[#6B3DB4] font-black underline decoration-[#6B3DB4]/40 underline-offset-2">
                   {deliveryDates.start} – {deliveryDates.end}
                 </span>
               </p>
@@ -271,7 +271,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
       </div>
 
       {/* شريط مؤشرات الثقة الأربعة */}
-      <div className="pt-3 border-t border-[#5B7EA6]/15 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-700">
+      <div className="pt-3 border-t border-[#6B3DB4]/15 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-700">
         <div className="flex items-center gap-1.5">
           <Check size={14} strokeWidth={3} className="text-emerald-600 shrink-0" />
           <span>Free Worldwide Shipping</span>

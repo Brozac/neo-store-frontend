@@ -165,7 +165,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
             {loadingMore && (
               <div className="text-center py-6">
-                <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             )}
 

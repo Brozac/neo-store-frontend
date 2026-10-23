@@ -544,7 +544,7 @@ export default function ProductDetailsClient({
                     onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
-                        ? 'border-[#5B7EA6] shadow-md ring-2 ring-[#5B7EA6]/30 scale-95'
+                        ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
@@ -706,13 +706,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 1
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -724,31 +724,31 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 2
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#5B7EA6]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-[#6B3DB4]">Duo</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-[#E2836B] mt-1">${(safePrice * 2).toFixed(2)}</span>
+                    <span className="text-sm font-black text-[#7E56C4] mt-1">${(safePrice * 2).toFixed(2)}</span>
                   </div>
 
                   <div
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity >= 3
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-emerald-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -916,8 +916,8 @@ export default function ProductDetailsClient({
               <button
                 onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
                 className={starFilter === 0
-                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#E2836B] to-coral-600 text-white shadow-sm transition-all duration-200'
-                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#E2836B]/50 hover:text-[#E2836B] transition-all duration-200'}
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
               >
                 All ({realTotal})
               </button>
@@ -926,8 +926,8 @@ export default function ProductDetailsClient({
                   key={s}
                   onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
                   className={starFilter === s
-                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#E2836B] to-coral-600 text-white shadow-sm transition-all duration-200'
-                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#E2836B]/50 hover:text-[#E2836B] transition-all duration-200'}
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
                 >
                   {s}★ ({starCounts[s]})
                 </button>
@@ -983,7 +983,7 @@ export default function ProductDetailsClient({
             <div className="flex flex-col items-center gap-2 mb-8">
               <button
                 onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
-                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#E2836B] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(226,131,107,0.3)] transition-all duration-300"
+                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(126,86,196,0.3)] transition-all duration-300"
               >
                 Load more reviews ({filteredReviews.length - shownReviews.length} more)
               </button>
@@ -1137,7 +1137,7 @@ export default function ProductDetailsClient({
             <div className="min-w-0 pr-1">
               <p className="text-xs font-black text-gray-900 truncate">{product.title}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-sm font-black text-[#E2836B]">${safePrice.toFixed(2)}</span>
+                <span className="text-sm font-black text-[#7E56C4]">${safePrice.toFixed(2)}</span>
                 {safeOriginalPrice > safePrice && (
                   <span className="text-[10px] text-gray-400 line-through">${safeOriginalPrice.toFixed(2)}</span>
                 )}
@@ -1172,7 +1172,7 @@ export default function ProductDetailsClient({
                 handleAddToCart();
                 router.push('/cart');
               }}
-              className="bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#5B7EA6]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#6B3DB4]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <span><GlassIcon i="zap" size="xs" /></span> Buy Now
             </button>

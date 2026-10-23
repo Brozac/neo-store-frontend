@@ -106,7 +106,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
       className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden my-6 border border-gray-100"
     >
       {/* Header — الحالة الحية */}
-      <div className="bg-linear-to-br from-[#22364A] via-[#33475C] to-[#5B7EA6] p-6 text-white">
+      <div className="bg-linear-to-br from-[#17171A] via-[#26262B] to-[#6B3DB4] p-6 text-white">
         <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300 flex items-center gap-1.5 mb-1">
@@ -138,8 +138,8 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
 
       {/* Language toggle */}
       <div className="flex justify-end px-4 pt-3 gap-1.5">
-        <button onClick={() => setLang('en')} className={`text-[10px] font-black px-2.5 py-1 rounded-full transition cursor-pointer ${lang === 'en' ? 'bg-[#5B7EA6] text-white' : 'bg-gray-100 text-gray-500'}`}>EN</button>
-        <button onClick={() => setLang('ar')} className={`text-[10px] font-black px-2.5 py-1 rounded-full transition cursor-pointer ${lang === 'ar' ? 'bg-[#5B7EA6] text-white' : 'bg-gray-100 text-gray-500'}`}>عربي</button>
+        <button onClick={() => setLang('en')} className={`text-[10px] font-black px-2.5 py-1 rounded-full transition cursor-pointer ${lang === 'en' ? 'bg-[#6B3DB4] text-white' : 'bg-gray-100 text-gray-500'}`}>EN</button>
+        <button onClick={() => setLang('ar')} className={`text-[10px] font-black px-2.5 py-1 rounded-full transition cursor-pointer ${lang === 'ar' ? 'bg-[#6B3DB4] text-white' : 'bg-gray-100 text-gray-500'}`}>عربي</button>
       </div>
 
       {/* Timeline — رحلة حية */}
@@ -155,10 +155,10 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
               return (
                 <div key={i} className="flex gap-4 pb-6 relative">
                   {!isLast && (
-                    <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-linear-to-b from-[#5B7EA6] to-gray-200" />
+                    <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-linear-to-b from-[#6B3DB4] to-gray-200" />
                   )}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 shadow-md text-sm ${
-                    isLast ? 'bg-[#5B7EA6] text-white ring-4 ring-[#5B7EA6]/20' : 'bg-gray-100 text-gray-400'}`}>
+                    isLast ? 'bg-[#6B3DB4] text-white ring-4 ring-[#6B3DB4]/20' : 'bg-gray-100 text-gray-400'}`}>
                     <GlassIcon ch={STAGE_ICONS[ev.type] || '📍'} size="sm" />
                   </div>
                   <div className="flex-1 min-w-0 pt-1">

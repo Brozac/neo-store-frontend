@@ -86,7 +86,7 @@ export default function FrequentlyBoughtTogether({
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm my-8 space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2 border-b border-gray-100 pb-3">
-        <h3 className="text-base font-black text-[#22364A] flex items-center gap-2">
+        <h3 className="text-base font-black text-[#17171A] flex items-center gap-2">
           <span><GlassIcon ch="🤝" size="xs" /></span> Frequently Bought Together
         </h3>
         <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
@@ -109,11 +109,11 @@ export default function FrequentlyBoughtTogether({
             />
           </div>
 
-          <span className="text-xl font-black text-[#5B7EA6]">+</span>
+          <span className="text-xl font-black text-[#6B3DB4]">+</span>
 
           {/* المنتج الثاني المكمل */}
           <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gray-50 border-2 overflow-hidden shrink-0 shadow-sm transition ${
-            includePartner ? 'border-[#5B7EA6]' : 'border-gray-200 opacity-40'
+            includePartner ? 'border-[#6B3DB4]' : 'border-gray-200 opacity-40'
           }`}>
             <Image 
               src={IMG.card(partnerImg)} 
@@ -128,9 +128,9 @@ export default function FrequentlyBoughtTogether({
         {/* خانة تحديد المنتجات والأسعار */}
         <div className="flex-1 min-w-0 space-y-2 text-xs w-full">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={true} disabled className="rounded text-[#5B7EA6]" />
+            <input type="checkbox" checked={true} disabled className="rounded text-[#6B3DB4]" />
             <span className="font-bold text-gray-900 truncate">
-              This item: <span className="text-[#5B7EA6]">{currentProduct.title}</span> (${currentPrice.toFixed(2)})
+              This item: <span className="text-[#6B3DB4]">{currentProduct.title}</span> (${currentPrice.toFixed(2)})
             </span>
           </label>
 
@@ -139,10 +139,10 @@ export default function FrequentlyBoughtTogether({
               type="checkbox" 
               checked={includePartner} 
               onChange={(e) => setIncludePartner(e.target.checked)} 
-              className="rounded text-[#5B7EA6] cursor-pointer" 
+              className="rounded text-[#6B3DB4] cursor-pointer" 
             />
             <span className="font-bold text-gray-900 truncate">
-              Add-on item: <span className="text-[#5B7EA6]">{bundlePartner.title}</span> (${partnerPrice.toFixed(2)})
+              Add-on item: <span className="text-[#6B3DB4]">{bundlePartner.title}</span> (${partnerPrice.toFixed(2)})
             </span>
           </label>
         </div>
@@ -152,7 +152,7 @@ export default function FrequentlyBoughtTogether({
           <div className="text-center sm:text-right">
             <span className="text-[10px] uppercase font-bold text-gray-400 block">Combined Bundle Price:</span>
             <div className="flex items-baseline gap-2 justify-center sm:justify-end">
-              <span className="text-xl font-black text-[#E2836B]">
+              <span className="text-xl font-black text-[#7E56C4]">
                 ${discountedCombinedPrice.toFixed(2)}
               </span>
               {includePartner && (
@@ -169,7 +169,7 @@ export default function FrequentlyBoughtTogether({
             className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer ${
               addedSuccess
                 ? 'bg-emerald-600 text-white'
-                : 'bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white shadow-[#5B7EA6]/20'
+                : 'bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white shadow-[#6B3DB4]/20'
             }`}
           >
             {addedSuccess ? (

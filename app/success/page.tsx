@@ -224,16 +224,16 @@ function SuccessContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-6 text-center font-sans">
-        <div className="w-12 h-12 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h2 className="text-xl font-black text-[#22364A]">Confirming Order Settlement...</h2>
+      <main className="min-h-screen bg-[#FBFAFE] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <div className="w-12 h-12 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 className="text-xl font-black text-[#17171A]">Confirming Order Settlement...</h2>
         <p className="text-xs text-gray-500 mt-1">Securing dispatch protocol with international air logistics...</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4 sm:p-6 font-sans py-12">
+    <main className="min-h-screen bg-[#FBFAFE] flex flex-col items-center justify-center p-4 sm:p-6 font-sans py-12">
       <div className="max-w-md w-full space-y-6">
         
         {/* بطاقة تأكيد الطلب الأساسية */}
@@ -245,10 +245,10 @@ function SuccessContent() {
           </div>
 
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#5B7EA6] bg-fog-50 px-3 py-1 rounded-full border border-fog-100 inline-block mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#6B3DB4] bg-fog-50 px-3 py-1 rounded-full border border-fog-100 inline-block mb-1.5">
               Verified Settlement &bull; {method}
             </span>
-            <h1 className="text-2xl font-black text-[#22364A]">Payment Confirmed!</h1>
+            <h1 className="text-2xl font-black text-[#17171A]">Payment Confirmed!</h1>
             <p className="text-xs text-gray-500 mt-1">
               Your parcel is now in automated dispatch. Order #{verifiedOrder?.orderId || orderIdParam || 'Confirmed'}.
             </p>
@@ -259,11 +259,11 @@ function SuccessContent() {
             <GlassIcon ch="🔥" size="xs" /> عرض الـ 1-Click Upsell الذكي (ينبثق بحواف نيون وعد تنازلي)
            ========================================================================= */}
         {!upsellDismissed && (
-          <div className="bg-linear-to-br from-[#22364A] to-[#33475C] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#5B7EA6] relative overflow-hidden space-y-4 animate-scale">
+          <div className="bg-linear-to-br from-[#17171A] to-[#26262B] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#6B3DB4] relative overflow-hidden space-y-4 animate-scale">
             
             {/* مؤقت الـ 5 دقائق المتناقص */}
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#E2836B] flex items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#7E56C4] flex items-center gap-1">
                 <span><GlassIcon i="zap" size="xs" /></span> Exclusive One-Time Offer
               </span>
               <span className="text-xs font-mono font-black bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-amber-300">
@@ -293,9 +293,9 @@ function SuccessContent() {
               <div className="min-w-0 flex-1 text-left">
                 <h4 className="text-xs font-bold text-white line-clamp-2">{UPSELL_PRODUCT.title}</h4>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-base font-black text-[#E2836B]">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
+                  <span className="text-base font-black text-[#7E56C4]">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
                   <span className="text-xs text-gray-400 line-through">${UPSELL_PRODUCT.originalPrice.toFixed(2)}</span>
-                  <span className="text-[10px] font-black bg-[#E2836B]/20 text-[#E2836B] px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-black bg-[#7E56C4]/20 text-[#7E56C4] px-1.5 py-0.5 rounded">
                     Save {UPSELL_PRODUCT.discountPct}%
                   </span>
                 </div>
@@ -308,7 +308,7 @@ function SuccessContent() {
                 type="button"
                 onClick={handleClaimUpsell}
                 disabled={isUpsellProcessing}
-                className="w-full bg-linear-to-r from-[#E2836B] to-coral-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-coral-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full bg-linear-to-r from-[#7E56C4] to-coral-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-coral-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isUpsellProcessing ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -335,7 +335,7 @@ function SuccessContent() {
         <div className="space-y-2.5">
           <button 
             onClick={() => router.push('/track-order')}
-            className="w-full bg-[#22364A] hover:bg-[#33475C] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
+            className="w-full bg-[#17171A] hover:bg-[#26262B] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
           >
             Track Parcel Shipment &rarr;
           </button>
@@ -356,8 +356,8 @@ function SuccessContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#F7FAFC]">
-        <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#FBFAFE]">
+        <div className="w-8 h-8 border-3 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <SuccessContent />

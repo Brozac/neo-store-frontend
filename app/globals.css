@@ -1,64 +1,65 @@
 /* app/globals.css - Laclarc Enterprise Design System
    ═══════════════════════════════════════════════════════════
-   LACLARC — Serene Edition · v2.0 (ضباب أزرق)
-   الهوية الجديدة كاملة: هدوء + نعومة + رقي تجاري
-   · fog  = عائلة الضباب الأزرق (Primary #5B7EA6)
-   · coral= مرجاني هادئ للأسعار والخصم والاستعجال (#E2836B)
-   · خلفية #F7FAFC · ظلال ناعمة · زوايا كبيرة
-   ملاحظة: أسماء توكنات temu-* القديمة بقيت كما هي (689 استعمالاً)
-   وقيمها فقط هي التي تحولت — صفر كسر، انسجام كامل.
+   LACLARC — Aurora Edition · v1.0 (بنفسجي لافندر)
+   نسخة طبق الأصل من التصميم المرجعي المعتمد:
+   · PRIMARY #6B3DB4 (أزرار Checkout / Add to Cart / Shop Now)
+   · INK #17171A نصوص أسود حقيقي · رمادي #6E6E76 / #9A9AA2
+   · wells #F4F3FA · tint لافندر #F3E8F9 · بادج #EAE3F6
+   · fog = عائلة اللافندر (أسماء تاريخية) · coral = بنفسجي فاتح
+   ملاحظة: أسماء توكنات temu-* / fog-* / coral-* ثابتة (صفر كسر)
+   والقيم فقط هي التي تجسّد الهوية الجديدة.
    ═══════════════════════════════════════════════════════════ */
 @import "tailwindcss";
 
 @theme {
-  /* 1. الألوان الأساسية (الضباب الأزرق — الهوية) */
-  --color-temu-orange: #5B7EA6;
-  --color-temu-orange-bright: #46688C;
+  /* 1. الألوان الأساسية (البنفسجي الافندر — الهوية) */
+  --color-temu-orange: #6B3DB4;
+  --color-temu-orange-bright: #5B2F9E;
 
-  /* 2. ألوان الإلحاح والخصم والأسعار (مرجاني هادئ) */
-  --color-temu-error: #E2836B;
-  --color-temu-yellow: #FAEAE2;
-  --color-temu-yellow-soft: #FDF4F0;
-  --color-temu-gold: #E2836B;
+  /* 2. ألوان الإلحاح والخصم والأسعار (بنفسجي فاتح) */
+  --color-temu-error: #7E56C4;
+  --color-temu-yellow: #F1EBFA;
+  --color-temu-yellow-soft: #F7F4FC;
+  --color-temu-gold: #7E56C4;
 
   /* 3. ألوان الثقة والهوية العميقة */
-  --color-temu-green: #22364A;
-  --color-temu-green-light: #5B7EA6;
+  --color-temu-green: #17171A;
+  --color-temu-green-light: #6B3DB4;
 
-  /* 4. الألوان المحايدة والخلفيات (ضبابية) */
-  --color-temu-black: #22364A;
-  --color-temu-dark: #33475C;
-  --color-temu-gray-text: #52657A;
-  --color-temu-gray-light: #7A8CA0;
-  --color-temu-gray-border: #DCE5EE;
-  --color-temu-gray-border-light: #EAF1F7;
-  --color-temu-offwhite: #F7FAFC;
+  /* 4. الألوان المحايدة والخلفيات (افندرية) */
+  --color-temu-black: #17171A;
+  --color-temu-dark: #26262B;
+  --color-temu-gray-text: #6E6E76;
+  --color-temu-gray-light: #9A9AA2;
+  --color-temu-gray-border: #E5DFF0;
+  --color-temu-gray-border-light: #EFEBF7;
+  --color-temu-offwhite: #FBFAFE;
 
-  /* 5. Serene v2.0 — مقياس الضباب fog (تدرجات الهوية)
-     fog-500 = PRIMARY · fog-800 = Ink (نصوص رئيسية) */
-  --color-fog-50: #F0F5FA;
-  --color-fog-100: #E3EDF5;
-  --color-fog-200: #CFDFEC;
-  --color-fog-300: #B4CDE2;
-  --color-fog-400: #8FB1CD;
-  --color-fog-500: #5B7EA6;
-  --color-fog-600: #46688C;
-  --color-fog-700: #3A5676;
-  --color-fog-800: #22364A;
-  --color-fog-900: #16222E;
+  /* 5. Aurora — مقياس اللافندر fog (تدرجات الهوية)
+     fog-500 = PRIMARY #6B3DB4 · fog-800 = Ink #17171A */
+  --color-fog-50: #F4F3FA;
+  --color-fog-100: #EAE3F6;
+  --color-fog-200: #DDD2F0;
+  --color-fog-300: #C9B6E8;
+  --color-fog-400: #A78BCF;
+  --color-fog-500: #6B3DB4;
+  --color-fog-600: #5B2F9E;
+  --color-fog-700: #4C2585;
+  --color-fog-800: #17171A;
+  --color-fog-900: #101013;
 
-  /* 6. Serene v2.0 — مرجاني هادئ (أسعار · خصم · استعجال) */
-  --color-coral-50: #FDF4F0;
-  --color-coral-100: #FAEAE2;
-  --color-coral-200: #F4D5C7;
-  --color-coral-300: #F0B49E;
-  --color-coral-400: #E99C7F;
-  --color-coral-500: #E2836B;
-  --color-coral-600: #C96A52;
-  --color-coral-700: #A85440;
+  /* 6. Aurora — بنفسجي فاتح للبادجات والخصم */
+  --color-coral-50: #F7F4FC;
+  --color-coral-100: #F1EBFA;
+  --color-coral-200: #DCCBF2;
+  --color-coral-300: #C9B6E8;
+  --color-coral-400: #A78BCF;
+  --color-coral-500: #7E56C4;
+  --color-coral-600: #6B3DB4;
+  --color-coral-700: #4C2585;
 
-  /* 7. زوايا أنعم (Serene = انسياب) */
-  --radius-temu-sm: 10px;
+  /* 7. زوايا (نفس روح التصميم المرجعي) */
+  --radius-temu-sm: 12px;
   --radius-temu-pill: 9999px;
 }
 
@@ -72,7 +73,7 @@
   }
 
   body {
-    background-color: #F7FAFC;
+    background-color: #FBFAFE;
     touch-action: manipulation;
     overscroll-behavior-y: contain;
   }
@@ -118,8 +119,8 @@
 .product-card-animated:active {
   transform: translateY(-4px);
   z-index: 10;
-  box-shadow: 0 12px 28px -6px rgba(91,126,166, 0.25);
-  border-color: #5B7EA6 !important;
+  box-shadow: 0 12px 28px -6px rgba(107,61,180, 0.25);
+  border-color: #6B3DB4 !important;
 }
 
 /* ==========================================
@@ -187,7 +188,7 @@
 
 .t-accordion-head {
   color: white;
-  background: rgba(34,54,74, 0.85);
+  background: rgba(23,23,26, 0.85);
   backdrop-filter: blur(4px);
   padding: 0.5rem 1rem;
   transition: all 0.4s ease-in-out;
@@ -204,7 +205,7 @@
 .t-accordion-head .acc-price {
   display: block;
   font-size: 0.95rem;
-  color: #E2836B;
+  color: #7E56C4;
   font-weight: 900;
   margin-top: 0.2rem;
 }
@@ -229,7 +230,7 @@
   scroll-snap-align: center;
   flex: 0 0 280px;
   background: white;
-  border: 1px solid #EAF1F7;
+  border: 1px solid #EFEBF7;
   border-radius: 12px;
   padding: 1.25rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -239,10 +240,10 @@
    ✨ تأثير الحدود الكهربائية المسرعة عتادياً (Lightning Deals)
    ========================================== */
 :root {
-  --electric-border-color: #5B7EA6;
-  --electric-light-color: #E2836B;
-  --gradient-color: rgba(91,126,166, 0.35);
-  --color-neutral-900: #22364A;
+  --electric-border-color: #6B3DB4;
+  --electric-light-color: #7E56C4;
+  --gradient-color: rgba(107,61,180, 0.35);
+  --color-neutral-900: #17171A;
 }
 
 .lightning-main-container {
@@ -267,13 +268,13 @@
   width: 100%;
   max-width: 1240px;
   background: linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)), linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
-  box-shadow: 0 20px 40px -15px rgba(34,54,74, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(23,23,26, 0.4);
 }
 
 .lightning-inner-container { position: relative; }
 
 .lightning-border-outer {
-  border: 2px solid rgba(91,126,166, 0.4);
+  border: 2px solid rgba(107,61,180, 0.4);
   border-radius: 24px;
   padding: 2px;
 }
@@ -284,12 +285,12 @@
   border-radius: 22px;
   border: 2px solid var(--electric-border-color);
   filter: url(#turbulent-displace);
-  background: #22364A;
+  background: #17171A;
   transform: translateZ(0);
 }
 
 .lightning-glow-layer-1 {
-  border: 2px solid rgba(226,131,107, 0.5);
+  border: 2px solid rgba(126,86,196, 0.5);
   border-radius: 24px;
   width: 100%;
   height: 100%;
@@ -370,7 +371,7 @@
   font-weight: 900;
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: #E2836B;
+  color: #7E56C4;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -378,7 +379,7 @@
   font-size: 24px;
   font-weight: 900;
   color: white;
-  text-shadow: 0 0 20px rgba(91,126,166, 0.7);
+  text-shadow: 0 0 20px rgba(107,61,180, 0.7);
   letter-spacing: 0.05em;
 }
 
@@ -414,7 +415,7 @@
   font-size: 14px;
   min-width: 36px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(226,131,107, 0.3);
+  box-shadow: 0 2px 8px rgba(126,86,196, 0.3);
 }
 
 /* ==========================================
@@ -443,7 +444,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   cursor: pointer;
-  background-color: #E3EDF5; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
+  background-color: #EAE3F6; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
   touch-action: manipulation;
 }
 
@@ -519,7 +520,7 @@
 .hero-card-price {
   font-size: 0.95rem;
   font-weight: 900;
-  color: #F0A98E;
+  color: #C9B6E8;
 }
 
 .hero-card-description {
@@ -592,7 +593,7 @@
     width: 26px;
     height: 26px;
     background: rgba(255, 255, 255, 0.92);
-    color: #22364A;
+    color: #17171A;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -645,8 +646,8 @@
     padding-bottom: 1.5rem;
     background: linear-gradient(
       to top,
-      rgba(34,54,74, 0.92) 20%,
-      rgba(34,54,74, 0.45) 55%,
+      rgba(23,23,26, 0.92) 20%,
+      rgba(23,23,26, 0.45) 55%,
       transparent
     );
   }
@@ -719,12 +720,12 @@
 /* ═══ Tab strip — مؤشر سكرول رقيق (Mission #9 UX) ═══ */
 .tabstrip::-webkit-scrollbar { height: 6px; }
 .tabstrip::-webkit-scrollbar-track { background: transparent; }
-.tabstrip::-webkit-scrollbar-thumb { background: rgba(91,126,166,.4); border-radius: 999px; }
-.tabstrip { scrollbar-width: thin; scrollbar-color: rgba(91,126,166,.4) transparent; }
+.tabstrip::-webkit-scrollbar-thumb { background: rgba(107,61,180,.4); border-radius: 999px; }
+.tabstrip { scrollbar-width: thin; scrollbar-color: rgba(107,61,180,.4) transparent; }
 
 /* ═══ Image Beast — Guard against CLS on lazy images ═══ */
 img[loading="lazy"] {
-  background-color: #F0F5FA;
+  background-color: #F4F3FA;
 }
 img {
   content-visibility: auto;

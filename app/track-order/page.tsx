@@ -61,7 +61,7 @@ const TONE_CLASSES: Record<Tone, string> = {
   good: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   warn: 'bg-amber-50 text-amber-700 border-amber-200',
   bad:  'bg-coral-50 text-coral-700 border-coral-200',
-  info: 'bg-fog-50 text-[#5B7EA6] border-fog-200',
+  info: 'bg-fog-50 text-[#6B3DB4] border-fog-200',
 };
 
 // ✨ عرض التقدم حسب المرحلة الحقيقية — الطلبات الملغاة كيبانو 0%
@@ -193,7 +193,7 @@ function TrackOrderContent() {
 
       {/* Header */}
       <div className="text-center mb-6 pt-4">
-        <div className="w-14 h-14 bg-fog-100 text-[#5B7EA6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+        <div className="w-14 h-14 bg-fog-100 text-[#6B3DB4] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
           <GlassIcon ch="📦" size="xs" />
         </div>
         <h1 className="text-2xl font-black text-gray-900 tracking-tight">Track Your Shipment</h1>
@@ -210,7 +210,7 @@ function TrackOrderContent() {
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
             required
-            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#5B7EA6] transition"
+            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#6B3DB4] transition"
           />
         </div>
 
@@ -222,14 +222,14 @@ function TrackOrderContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#5B7EA6] transition"
+            className="w-full p-3 bg-gray-50 rounded-xl text-xs text-gray-900 outline-none border border-gray-200 focus:border-[#6B3DB4] transition"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer mt-1 touch-manipulation"
+          className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer mt-1 touch-manipulation"
         >
           {loading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -270,8 +270,8 @@ function TrackOrderContent() {
               {/* Visual Logistics Stepper — المرحلة محسوبة من الحالة */}
               <div className="py-2">
                 <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-2">
-                  <span className={statusInfo.step >= 1 ? 'text-[#5B7EA6]' : ''}>Confirmed</span>
-                  <span className={statusInfo.step >= 2 ? 'text-[#5B7EA6]' : ''}>CJ Processing</span>
+                  <span className={statusInfo.step >= 1 ? 'text-[#6B3DB4]' : ''}>Confirmed</span>
+                  <span className={statusInfo.step >= 2 ? 'text-[#6B3DB4]' : ''}>CJ Processing</span>
                   <span className={statusInfo.step >= 3 ? 'text-emerald-600 font-black' : ''}>Dispatched</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -279,7 +279,7 @@ function TrackOrderContent() {
                     className={`h-full rounded-full transition-all duration-700 ${
                       statusInfo.tone === 'bad'
                         ? 'bg-coral-300'
-                        : 'bg-linear-to-r from-[#5B7EA6] to-emerald-500'
+                        : 'bg-linear-to-r from-[#6B3DB4] to-emerald-500'
                     }`}
                     style={{ width: statusInfo.tone === 'bad' ? '8%' : STEP_WIDTH[statusInfo.step] }}
                   ></div>
@@ -288,10 +288,10 @@ function TrackOrderContent() {
 
               {/* ✨ رقم التتبع — بطاقة بارزة مع النسخ والأحداث الحية */}
               {hasTracking && (
-                <div className="bg-linear-to-br from-[#F7FAFC] to-fog-50 border border-[#5B7EA6]/25 rounded-xl p-3.5">
+                <div className="bg-linear-to-br from-[#FBFAFE] to-fog-50 border border-[#6B3DB4]/25 rounded-xl p-3.5">
                   <div className="flex justify-between items-center gap-2">
                     <div className="min-w-0">
-                      <span className="text-[10px] font-black uppercase text-[#5B7EA6] block">Tracking Number</span>
+                      <span className="text-[10px] font-black uppercase text-[#6B3DB4] block">Tracking Number</span>
                       <p className="font-mono font-bold text-xs text-gray-900 truncate">{order.tracking_number}</p>
                     </div>
                     <button
@@ -299,7 +299,7 @@ function TrackOrderContent() {
                       className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition active:scale-90 touch-manipulation ${
                         copiedId === order.id
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-[#22364A] text-white hover:bg-[#33475C]'
+                          : 'bg-[#17171A] text-white hover:bg-[#26262B]'
                       }`}
                     >
                       {copiedId === order.id ? 'Copied ✓' : 'Copy'}
@@ -333,7 +333,7 @@ function TrackOrderContent() {
 
               <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                 <p><span className="text-gray-400 uppercase text-[10px] font-bold block">Destination:</span> <strong className="text-gray-800">{formatAddress(order.shipping_address)}</strong></p>
-                <p className="pt-1"><span className="text-gray-400 uppercase text-[10px] font-bold block">Total Billed:</span> <strong className="text-[#E2836B] font-black">${safeTotal.toFixed(2)}</strong></p>
+                <p className="pt-1"><span className="text-gray-400 uppercase text-[10px] font-bold block">Total Billed:</span> <strong className="text-[#7E56C4] font-black">${safeTotal.toFixed(2)}</strong></p>
               </div>
 
               {order.created_at && (
@@ -363,7 +363,7 @@ export default function TrackOrderPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <TrackOrderContent />

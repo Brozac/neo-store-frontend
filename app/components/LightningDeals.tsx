@@ -110,7 +110,7 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                 <Link 
                   href={`/products/${p.id}`} 
                   key={p.id} 
-                  className="group bg-[#16222E]/80 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden hover:border-[#5B7EA6]/80 transition-all duration-300 active:scale-95 flex flex-col justify-between shadow-lg"
+                  className="group bg-[#101013]/80 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden hover:border-[#6B3DB4]/80 transition-all duration-300 active:scale-95 flex flex-col justify-between shadow-lg"
                 >
                   <div className="relative aspect-square bg-white/5 overflow-hidden">
                     <Image 
@@ -121,19 +121,19 @@ export default function LightningDeals({ products }: { products: Product[] }) {
                       className="object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
                     />
                     {discount > 0 && (
-                      <span className="absolute top-2 left-2 bg-linear-to-r from-red-600 to-[#E2836B] text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                      <span className="absolute top-2 left-2 bg-linear-to-r from-[#7E56C4] to-[#6B3DB4] text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
                         -{discount}%
                       </span>
                     )}
                   </div>
 
                   <div className="p-3">
-                    <h3 className="text-xs font-bold text-white line-clamp-2 mb-2 group-hover:text-[#5B7EA6] transition">
+                    <h3 className="text-xs font-bold text-white line-clamp-2 mb-2 group-hover:text-[#6B3DB4] transition">
                       {p.title}
                     </h3>
                     
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span className="text-base font-black text-[#E2836B]">${safePrice.toFixed(2)}</span>
+                      <span className="text-base font-black text-[#7E56C4]">${safePrice.toFixed(2)}</span>
                       {safeOldPrice > safePrice && (
                         <span className="text-[11px] text-gray-500 line-through">${safeOldPrice.toFixed(2)}</span>
                       )}

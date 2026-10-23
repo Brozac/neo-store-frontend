@@ -112,7 +112,7 @@ function AuthContent() {
         <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
           
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-fog-50 text-[#5B7EA6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+            <div className="w-14 h-14 bg-fog-50 text-[#6B3DB4] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
               <GlassIcon ch="🔑" size="xs" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">Reset Password</h1>
@@ -141,14 +141,14 @@ function AuthContent() {
                 onChange={handleChange} 
                 required 
                 placeholder="name@example.com" 
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition" 
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#6B3DB4] transition" 
               />
             </div>
 
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+              className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
             >
               {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Dispatch Reset Email'}
             </button>
@@ -157,7 +157,7 @@ function AuthContent() {
           <div className="mt-6 text-center">
             <button 
               onClick={() => { setMode('login'); setInfoMessage(''); setError(''); }} 
-              className="text-[#5B7EA6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
+              className="text-[#6B3DB4] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
             >
               &larr; Back to Sign In
             </button>
@@ -210,7 +210,7 @@ function AuthContent() {
               required 
               autoComplete="email"
               placeholder="name@example.com" 
-              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition" 
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#6B3DB4] transition" 
             />
           </div>
 
@@ -220,7 +220,7 @@ function AuthContent() {
               <button 
                 type="button" 
                 onClick={() => { setMode('forgot'); setError(''); }} 
-                className="text-[11px] text-[#5B7EA6] hover:underline font-bold cursor-pointer"
+                className="text-[11px] text-[#6B3DB4] hover:underline font-bold cursor-pointer"
               >
                 Forgot?
               </button>
@@ -235,7 +235,7 @@ function AuthContent() {
                 required 
                 autoComplete="current-password"
                 placeholder="••••••••••••" 
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-[#5B7EA6] transition" 
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-[#6B3DB4] transition" 
               />
               <button 
                 type="button"
@@ -250,7 +250,7 @@ function AuthContent() {
           <button 
             type="submit" 
             disabled={loading} 
-            className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-lg shadow-[#5B7EA6]/20 text-xs uppercase tracking-wider"
+            className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-lg shadow-[#6B3DB4]/20 text-xs uppercase tracking-wider"
           >
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Sign In & Access Account'}
           </button>
@@ -261,7 +261,7 @@ function AuthContent() {
             Don&apos;t have an account yet?{' '}
             <button 
               onClick={() => setMode('register')} 
-              className="text-[#E2836B] font-bold hover:underline cursor-pointer"
+              className="text-[#7E56C4] font-bold hover:underline cursor-pointer"
             >
               Sign up now &rarr;
             </button>
@@ -277,7 +277,7 @@ export default function AuthPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <AuthContent />
