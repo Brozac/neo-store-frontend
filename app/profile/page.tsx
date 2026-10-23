@@ -222,7 +222,7 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto space-y-6">
 
         {/* Navigation */}
-        <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+        <div className="flex justify-between items-center border-b border-fog-100 pb-4">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Account Dashboard</h1>
           <button
             onClick={() => router.push('/')}
@@ -233,7 +233,7 @@ export default function ProfilePage() {
         </div>
 
         {/* User Card */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-fog-100 flex flex-col items-center text-center relative overflow-hidden">
 
           <div className="relative p-1 rounded-full bg-linear-to-tr from-[#6B3DB4] to-[#7E56C4] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
@@ -284,15 +284,15 @@ export default function ProfilePage() {
         </div>
 
         {/* Action Menu */}
-        <div className="bg-white rounded-2xl shadow-sm p-2 border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm p-2 border border-fog-100 divide-y divide-fog-100">
           {user ? (
             <>
               <button
                 onClick={() => router.push('/favorites')}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-coral-600"><GlassIcon ch="❤️" size="xs" /></span>
+                  <span className="w-9 h-9 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center shrink-0"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -301,10 +301,10 @@ export default function ProfilePage() {
               {/* 🩹 M#29 — Order History button يحمل الإيميل لصفحة الطلبات */}
               <button
                 onClick={getUserOrders}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#6B3DB4]"><GlassIcon ch="📦" size="xs" /></span>
+                  <span className="w-9 h-9 rounded-full bg-fog-100 text-fog-600 flex items-center justify-center shrink-0"><GlassIcon ch="📦" size="xs" /></span>
                   Order History & Invoices
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -312,10 +312,10 @@ export default function ProfilePage() {
 
               <button
                 onClick={() => router.push('/track-order')}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-maroccan-tea-600"><GlassIcon ch="🚚" size="xs" /></span>
+                  <span className="w-9 h-9 rounded-full bg-maroccan-tea-100 text-maroccan-tea-700 flex items-center justify-center shrink-0"><GlassIcon ch="🚚" size="xs" /></span>
                   Track Live Shipment
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-coral-50 rounded-xl transition text-coral-600 cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-3">
-                  <span className="text-base"><GlassIcon ch="🔒" size="xs" /></span>
+                  <span className="w-9 h-9 rounded-full bg-coral-100 flex items-center justify-center shrink-0"><GlassIcon ch="🔒" size="xs" /></span>
                   Sign Out of Laclarc
                 </span>
                 <span className="text-xs">&rarr;</span>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => router.push('/auth')}
-              className="w-full bg-[#17171A] hover:bg-[#26262B] text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md active:scale-95"
+              className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md shadow-fog-500/25 active:scale-95"
             >
               Sign In / Register &rarr;
             </button>

@@ -18,7 +18,7 @@
 
   /* 2. ألوان الإلحاح والخصم والأسعار (وردي ROSE — اللون الثاني تاع الهوية) */
   --color-temu-error: #C9465E;
-  --color-temu-yellow: #FBECEF;
+  --color-temu-yellow: #FFE1EB;   /* OWNER_PICK #FFE1EB (255,225,235) — وردي فاتح رسمي */
   --color-temu-yellow-soft: #FDF6F7;
   --color-temu-gold: #C9465E;
 
@@ -33,11 +33,11 @@
   --color-temu-gray-light: #9A9AA2;
   --color-temu-gray-border: #E5DFF0;
   --color-temu-gray-border-light: #EFEBF7;
-  --color-temu-offwhite: #FBFAFE;
+  --color-temu-offwhite: #F5F2FB;  /* OWNER_PICK #F5F2FB (245,242,251) — أبيض لافندر رسمي */
 
   /* 5. Aurora — مقياس اللافندر fog (تدرجات الهوية)
      fog-500 = PRIMARY #6B3DB4 · fog-800 = Ink #17171A */
-  --color-fog-50: #F4F3FA;
+  --color-fog-50: #F5F2FB;  /* OWNER_PICK — موحّد مع الخلفية الرسمية */
   --color-fog-100: #EAE3F6;
   --color-fog-200: #DDD2F0;
   --color-fog-300: #C9B6E8;
@@ -50,7 +50,7 @@
 
   /* 6. ROSE — الوردي الرسمي (من الصورة: #F1BCC2) — للأسعار والخصومات والقلوب */
   --color-coral-50: #FDF6F7;
-  --color-coral-100: #FBECEF;
+  --color-coral-100: #FFE1EB;  /* OWNER_PICK #FFE1EB — غسلة الوردي الرسمية */
   --color-coral-200: #F6D8DC;
   --color-coral-300: #F1BCC2;
   --color-coral-400: #E89AA4;

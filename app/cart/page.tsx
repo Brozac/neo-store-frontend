@@ -8,7 +8,7 @@ import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CartPage() {
   const router = useRouter();
-  const { cart, removeFromCart, cartTotal, wheelDiscount } = useCart();
+  const { cart, removeFromCart, updateQuantity, cartTotal, wheelDiscount } = useCart();
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [couponCode, setCouponCode] = useState('');
@@ -86,11 +86,11 @@ export default function CartPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-5 pb-32 font-sans">
       <div className="max-w-md mx-auto">
         <button
           onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
+          className="flex items-center gap-1.5 text-fog-600 font-bold text-sm mb-5 cursor-pointer active:scale-95 transition touch-manipulation w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -98,11 +98,18 @@ export default function CartPage() {
           Continue Shopping
         </button>
 
-        <h1 className="text-3xl font-extrabold text-temu-black mb-6">My Cart</h1>
+        <div className="flex items-end justify-between mb-5">
+          <h1 className="text-2xl font-black text-temu-black tracking-tight">My Cart</h1>
+          {cart.length > 0 && (
+            <span className="text-[11px] font-bold text-fog-600 bg-coral-100 px-3 py-1 rounded-full">
+              {cart.reduce((n, i) => n + (i.quantity || 1), 0)} item{cart.length > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
 
         {cart.length === 0 ? (
           /* ✨ REPLICA_V3 — حالة فارغة بنفس روح المعاينة: دائرة ناعمة + عنوان + تلميح + CTA */
-          <div className="flex flex-col items-center text-center bg-white p-12 sm:p-16 rounded-2xl border border-gray-200 shadow-sm mb-6">
+          <div className="flex flex-col items-center text-center bg-white p-12 sm:p-16 rounded-2xl border border-fog-100 shadow-sm mb-6">
             <div className="w-20 h-20 rounded-full bg-fog-50 text-[#6B3DB4] flex items-center justify-center mb-4">
               <GlassIcon ch="🛒" size="md" />
             </div>
@@ -120,35 +127,69 @@ export default function CartPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4 mb-6">
+          <div className="space-y-3 mb-6">
             {cart.map((item) => {
               const safePrice = parsePrice(item.price);
               const itemKey = getCartItemKey(item);
+              const qty = item.quantity || 1;
 
               return (
-                <div key={itemKey} className="bg-white p-4 rounded-temu-sm border border-temu-gray-border-light flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-4">
-                    {item.displayImage && (
-                      <img src={item.displayImage} alt={item.displayTitle} className="w-16 h-16 rounded-temu-sm object-cover" />
+                <div key={itemKey} className="bg-white rounded-2xl border border-fog-100 shadow-sm p-3.5 flex gap-3.5">
+                  {/* صورة على بئر لافندر — مفردات الموكاب */}
+                  {item.displayImage && (
+                    <img
+                      src={item.displayImage}
+                      alt={item.displayTitle}
+                      className="w-20 h-20 rounded-xl object-cover bg-fog-50 ring-1 ring-fog-100 shrink-0"
+                    />
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[13px] font-bold text-temu-black leading-snug line-clamp-2">{item.displayTitle}</h3>
+                      <button
+                        onClick={() => removeFromCart(itemKey)}
+                        className="w-7 h-7 shrink-0 flex items-center justify-center bg-coral-100 text-coral-600 rounded-lg transition cursor-pointer active:scale-90 touch-manipulation"
+                        aria-label="Remove item"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+
+                    {item.color && (
+                      <p className="text-[11px] text-temu-gray-light font-medium mt-0.5">
+                        {item.color}{item.size ? ` · Size: ${item.size}` : ''}
+                      </p>
                     )}
-                    <div>
-                      <h3 className="font-bold text-temu-dark">{item.displayTitle}</h3>
-                      {item.color && <p className="text-xs text-temu-gray-light">Color: {item.color} | Size: {item.size}</p>}
-                      <p className="text-temu-error font-semibold">
-                        ${safePrice.toFixed(2)} x {item.quantity || 1}
+
+                    <div className="flex items-center justify-between mt-2.5">
+                      {/* ستيبر الكمية — نفس مفردات ستيبر صفحة المنتج */}
+                      <div className="flex items-center gap-1 bg-fog-50 rounded-lg p-0.5" role="group" aria-label="Quantity">
+                        <button
+                          onClick={() => updateQuantity(itemKey, qty - 1)}
+                          className="w-7 h-7 rounded-md bg-white border border-fog-100 text-fog-700 flex items-center justify-center text-sm font-black transition active:scale-90 cursor-pointer touch-manipulation"
+                          aria-label="Decrease quantity"
+                        >
+                          &minus;
+                        </button>
+                        <span className="w-6 text-center text-xs font-black text-temu-black" aria-live="polite">{qty}</span>
+                        <button
+                          onClick={() => updateQuantity(itemKey, Math.min(99, qty + 1))}
+                          className="w-7 h-7 rounded-md bg-white border border-fog-100 text-fog-700 flex items-center justify-center text-sm font-black transition active:scale-90 cursor-pointer touch-manipulation"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <p className="text-sm font-black text-coral-600">
+                        ${(safePrice * qty).toFixed(2)}
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => removeFromCart(itemKey)}
-                    className="w-8 h-8 flex items-center justify-center bg-temu-error/10 text-temu-error rounded-temu-sm hover:bg-red-50 transition cursor-pointer active:scale-90 touch-manipulation"
-                    aria-label="Remove item"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
                 </div>
               );
             })}
@@ -156,15 +197,15 @@ export default function CartPage() {
         )}
 
         {cart.length > 0 && (
-          <div className="bg-white p-6 rounded-temu-sm border border-temu-gray-border-light mb-6 shadow-sm">
+          <div className="bg-white p-6 rounded-2xl border border-fog-100 mb-6 shadow-sm">
 
             {wheelDiscount > 0 && (
-              <div className="bg-temu-green-light/10 text-temu-green p-3 rounded-temu-sm mb-4 text-sm font-bold text-center">
+              <div className="bg-maroccan-tea-100 text-maroccan-tea-700 p-3 rounded-xl mb-4 text-sm font-bold text-center">
                 <GlassIcon ch="🎉" size="xs" /> Lucky you! You saved {wheelDiscount}% with your Spin & Win reward!
               </div>
             )}
 
-            <div className="mb-6 pb-6 border-b border-temu-gray-border-light">
+            <div className="mb-6 pb-6 border-b border-fog-100">
               <label className="block text-sm font-bold text-temu-black mb-2">Have a coupon?</label>
               <div className="flex gap-2">
                 <input
@@ -173,18 +214,18 @@ export default function CartPage() {
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder="Enter code..."
                   disabled={couponApplied}
-                  className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition disabled:opacity-50 touch-manipulation"
+                  className="flex-1 bg-fog-50 border border-fog-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-fog-400 focus:bg-white transition disabled:opacity-50 touch-manipulation"
                 />
                 <button
                   onClick={handleApplyCoupon}
                   disabled={couponApplied}
-                  className="bg-temu-black text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap active:scale-95 touch-manipulation shadow-sm"
+                  className="bg-temu-black text-white font-bold px-6 py-3 rounded-xl hover:bg-temu-dark transition disabled:opacity-50 cursor-pointer whitespace-nowrap active:scale-95 touch-manipulation shadow-sm"
                 >
                   Apply
                 </button>
               </div>
               {couponMessage && (
-                <p className={`text-xs mt-2 font-medium ${couponApplied ? 'text-temu-green' : 'text-temu-error'}`}>
+                <p className={`text-xs mt-2 font-medium ${couponApplied ? 'text-maroccan-tea-600' : 'text-coral-600'}`}>
                   {couponMessage}
                 </p>
               )}
@@ -197,29 +238,33 @@ export default function CartPage() {
 
             {wheelDiscount > 0 && (
               <div className="flex justify-between items-center mb-2">
-                <span className="text-temu-green font-medium">Spin & Win ({wheelDiscount}%):</span>
-                <span className="text-lg font-bold text-temu-green">-${wheelDiscountAmount.toFixed(2)}</span>
+                <span className="text-maroccan-tea-600 font-medium">Spin & Win ({wheelDiscount}%):</span>
+                <span className="text-lg font-bold text-maroccan-tea-600">-${wheelDiscountAmount.toFixed(2)}</span>
               </div>
             )}
 
             {discount > 0 && (
               <div className="flex justify-between items-center mb-2">
-                <span className="text-temu-green font-medium">Coupon Discount:</span>
-                <span className="text-lg font-bold text-temu-green">-${discount.toFixed(2)}</span>
+                <span className="text-maroccan-tea-600 font-medium">Coupon Discount:</span>
+                <span className="text-lg font-bold text-maroccan-tea-600">-${discount.toFixed(2)}</span>
               </div>
             )}
 
-            <div className="flex justify-between items-center mb-4 pt-2 border-t border-temu-gray-border-light">
+            <div className="flex justify-between items-center mb-4 pt-3 border-t border-fog-100">
               <span className="text-temu-gray-text font-medium">Total:</span>
-              <span className="text-2xl font-bold text-temu-error">${finalTotalString}</span>
+              <span className="text-2xl font-black text-coral-600">${finalTotalString}</span>
             </div>
 
             <button
               onClick={handleCheckout}
-              className="w-full bg-temu-orange text-white font-extrabold p-4 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
+              className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold p-4 rounded-xl transition flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md shadow-fog-500/25"
             >
               Proceed to Checkout
             </button>
+
+            <p className="text-center text-[10px] text-temu-gray-light font-semibold mt-3">
+              🔒 Secure checkout · Free worldwide express shipping
+            </p>
           </div>
         )}
       </div>

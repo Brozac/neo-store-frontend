@@ -43,7 +43,7 @@ function fmt(n: number): string {
 
 function RootSection({ node }: { node: HubNode }) {
   return (
-    <section className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
+    <section className="bg-white rounded-2xl p-6 border border-fog-100 shadow-sm">
       <div className="flex items-center gap-4 mb-4">
         {node.image_url && (
           // صورة تمثيلية من الباكند (نفس نمط /api/categories) — below the fold → lazy
@@ -53,18 +53,18 @@ function RootSection({ node }: { node: HubNode }) {
             loading="lazy"
             width={56}
             height={56}
-            className="w-14 h-14 rounded-temu-sm object-cover bg-temu-offwhite flex-shrink-0"
+            className="w-14 h-14 rounded-xl object-cover bg-fog-50 ring-1 ring-fog-100 flex-shrink-0"
           />
         )}
         <div>
           <Link
             href={`/category/${node.slugPath}`}
-            className="text-2xl font-extrabold text-temu-black hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation inline-block w-fit"
+            className="text-xl sm:text-2xl font-black text-temu-black hover:text-fog-600 transition cursor-pointer active:scale-95 touch-manipulation inline-block w-fit"
           >
             {node.name}
           </Link>
           {node.count !== null && (
-            <p className="text-temu-gray-light text-xs mt-0.5">
+            <p className="text-temu-gray-light text-xs font-semibold mt-0.5">
               {fmt(node.count)} products
             </p>
           )}
@@ -77,18 +77,18 @@ function RootSection({ node }: { node: HubNode }) {
             <div key={sub.id || sub.slug} className="flex flex-col">
               <Link
                 href={`/category/${sub.slugPath}`}
-                className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
+                className="text-sm font-bold text-temu-black hover:text-fog-600 transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
               >
                 {sub.name}
               </Link>
 
               {sub.children.length > 0 && (
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {sub.children.map((leaf) => (
                     <Link
                       key={leaf.id || leaf.slug}
                       href={`/category/${leaf.slugPath}`}
-                      className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
+                      className="text-xs text-temu-gray-text hover:text-fog-600 transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
                     >
                       {leaf.name}
                     </Link>
@@ -130,7 +130,7 @@ export default async function CategoriesPage() {
 
         <Link
           href="/"
-          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
+          className="flex items-center gap-1.5 text-fog-600 font-bold text-sm mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -139,8 +139,8 @@ export default async function CategoriesPage() {
         </Link>
 
         <div className="text-center mb-10 mt-4">
-          <h1 className="text-4xl font-extrabold text-temu-black mb-2">Browse All Categories</h1>
-          <p className="text-temu-gray-light text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-temu-black mb-2 tracking-tight">Browse All Categories</h1>
+          <p className="text-temu-gray-text text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
           {totalProducts !== null && (
             <p className="text-temu-dark text-xs font-bold mt-2">
               {fmt(totalCategories)} departments · {fmt(totalProducts)} products in stock

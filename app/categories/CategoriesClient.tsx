@@ -45,7 +45,7 @@ export default function CategoriesClient() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function CategoriesClient() {
       <div className="max-w-7xl mx-auto p-6">
         <Link
           href="/"
-          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
+          className="flex items-center gap-1.5 text-fog-600 font-bold text-sm mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -64,16 +64,16 @@ export default function CategoriesClient() {
         </Link>
 
         <div className="text-center mb-10 mt-4">
-          <h1 className="text-4xl font-extrabold text-temu-black mb-2">Browse All Categories</h1>
-          <p className="text-temu-gray-light text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-temu-black mb-2 tracking-tight">Browse All Categories</h1>
+          <p className="text-temu-gray-text text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
         </div>
 
         <div className="space-y-8">
           {tree.map((mainCat) => (
-            <div key={mainCat.id} className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
+            <div key={mainCat.id} className="bg-white rounded-2xl p-6 border border-fog-100 shadow-sm">
               <Link
                 href={`/category/${mainCat.slug}`}
-                className="text-2xl font-extrabold text-temu-black mb-4 inline-block hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation"
+                className="text-xl sm:text-2xl font-black text-temu-black mb-4 inline-block hover:text-fog-600 transition cursor-pointer active:scale-95 touch-manipulation"
               >
                 {mainCat.name}
               </Link>
@@ -84,18 +84,18 @@ export default function CategoriesClient() {
                     <div key={subCat.id} className="flex flex-col">
                       <Link
                         href={`/category/${mainCat.slug}/${subCat.slug}`}
-                        className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
+                        className="text-sm font-bold text-temu-black hover:text-fog-600 transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
                       >
                         {subCat.name}
                       </Link>
 
                       {subCat.children && subCat.children.length > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {subCat.children.slice(0, 5).map((leaf) => (
                             <Link
                               key={leaf.id}
                               href={`/category/${mainCat.slug}/${subCat.slug}/${leaf.slug}`}
-                              className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
+                              className="text-xs text-temu-gray-text hover:text-fog-600 transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
                             >
                               {leaf.name}
                             </Link>
