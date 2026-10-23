@@ -71,7 +71,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#6B3DB4',
+  themeColor: '#F4F8FB',
 };
 
 export default function RootLayout({
@@ -81,13 +81,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
+      <body className="font-sans antialiased text-temu-black" suppressHydrationWarning>
 
-        {/* ✨ JSON-LD Structured Data (FIX-ESCAPE مطبق) */}
+        {/* ✨ SERENE — دوائر الضباب المضبّبة فالخلفية (زخرفة بلا تفاعل) */}
+        <div className="serene-blobs" aria-hidden="true">
+          <i className="b1" /><i className="b2" /><i className="b3" />
+        </div>
 
-        <Providers>
-          {children}
-        </Providers>
+        {/* ✨ SERENE — المحتوى فوق الضباب (z-10 wrapper) */}
+        <div className="relative z-10">
+          <Providers>
+            {children}
+          </Providers>
+        </div>
 
         {/* Meta Pixel — ⚡ Phase 3: lazyOnload — التتبع لا يزاحم تفاعل الزبون الأول (INP) */}
         {/* ✓ Task 13: الـ ID منقّى بأرقام فقط [^\d] — ما فيهاش XSS */}

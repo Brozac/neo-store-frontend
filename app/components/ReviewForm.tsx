@@ -156,7 +156,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
         <p className="text-xs text-gray-500 mb-4">Sign in to leave a verified review with real photos and earn reward points.</p>
         <button 
           onClick={() => router.push('/auth')}
-          className="bg-[#17171A] hover:bg-[#26262B] text-white font-extrabold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-md"
+          className="bg-[#2E4057] hover:bg-[#33475B] text-white font-extrabold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-md"
         >
           Sign In to Review &rarr;
         </button>
@@ -194,7 +194,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
             value={country} 
             onChange={(e) => setCountry(e.target.value)} 
             placeholder="e.g. United States, France, Algeria..."
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 focus:outline-none focus:border-[#6B3DB4] transition"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 focus:outline-none focus:border-[#5B7EA6] transition"
           />
         </div>
 
@@ -206,7 +206,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
             required 
             rows={3} 
             placeholder="Share details regarding build quality, packaging, delivery speed..." 
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-900 focus:outline-none focus:border-[#6B3DB4] transition resize-none"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-900 focus:outline-none focus:border-[#5B7EA6] transition resize-none"
           />
         </div>
 
@@ -231,9 +231,9 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
             ))}
 
             {uploadedImages.length < 3 && (
-              <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#6B3DB4] flex flex-col items-center justify-center cursor-pointer transition bg-gray-50 hover:bg-fog-50/50 active:scale-95">
+              <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#5B7EA6] flex flex-col items-center justify-center cursor-pointer transition bg-gray-50 hover:bg-fog-50/50 active:scale-95">
                 {uploadingPhotos ? (
-                  <div className="w-4 h-4 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
                     <span className="text-lg text-gray-400"><GlassIcon ch="📷" size="xs" /></span>
@@ -256,7 +256,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
         <button 
           type="submit" 
           disabled={submitting || uploadingPhotos} 
-          className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 active:scale-95 shadow-md flex items-center justify-center gap-2"
+          className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-black py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 active:scale-95 shadow-md flex items-center justify-center gap-2"
         >
           {submitting ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

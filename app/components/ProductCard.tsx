@@ -12,7 +12,7 @@
  *      variants) → دابا كيصيفط vid تاع اللون المختار/المعاين — نفس
  *      الحماية اللي في ProductDetailsClient (vid خاطئ = بضاعة خاطئة)
  *    · +N للألوان الزايدة · title/aria-label لكل سواتش · بلا CLS
- *    · [swatch-ring v3.1] حلقة الاختيار = temu-black (#17171A) + ring-offset أبيض:
+ *    · [swatch-ring v3.1] حلقة الاختيار = temu-black (#2E4057) + ring-offset أبيض:
  *      السواتشات صور حقيقية فيها بنفسجي (مثال 28701 Purple) → حلقة بنفسجي
  *      كتخفي — الداكن المحايد كيتقرا على أي لون (بنترن Temu/Amazon/SHEIN)
  *      ويزال من نفس باليت الموقع · البنفسجي يبقى للـ CTA/الروابط/الأسعار
@@ -118,6 +118,9 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
   };
 
   const safePrice = Number(product.price) || 0;
+  // ✨ SERENE — التقييم والمبيعات (prate تاع المعاينة) — محروسين بأمان
+  const safeRating = Number(product.rating) || 0;
+  const safeSold = Number(product.sales_count) || 0;
 
   // 🩹 TRUST FIX — discount من original_price الحقيقي فقط (CJ) — صفر خصومات مفبركة:
   //    النسبة تُحسب من original_price الحقيقي فقط، والشارة تظهر فقط عند خصم حقيقي معقول (1-89%)
@@ -142,7 +145,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
   return (
     <div
       data-product-id={String(product.id)}
-      className={`product-card-wrapper product-card-animated bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow-md ${
+      className={`product-card-wrapper product-card-animated bg-white border border-fog-100 rounded-[20px] p-2 overflow-hidden flex flex-col justify-between group relative cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-[0_4px_18px_rgba(91,126,166,0.09)] hover:shadow-[0_14px_34px_rgba(91,126,166,0.18)] ${
         isTouched ? 'is-active' : ''
       }`}
       onClick={handleCardClick}
@@ -155,7 +158,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         onClick={(e) => e.stopPropagation()}
         className="block"
       >
-        <div className="relative aspect-square bg-temu-offwhite overflow-hidden">
+        <div className="relative aspect-square bg-fog-100 rounded-2xl overflow-hidden">
           {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري)
               ✨ [card-swatches]: activeSw?.i = صورة اللون المختار (نفس OSS transform) */}
           <img
@@ -166,21 +169,21 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
             className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
           {discountText && (
-            <div className="absolute top-2 left-2 bg-temu-error text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">
+            <div className="absolute top-2 left-2 bg-coral-100 text-coral-700 text-[10px] font-black px-2 py-1 rounded-full shadow-sm">
               {discountText}
             </div>
           )}
         </div>
 
-        <div className="p-3 pb-2">
-          <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-2 group-hover:text-temu-orange transition min-h-[32px] leading-relaxed">
+        <div className="px-1.5 pt-2.5 pb-1">
+          <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1.5 group-hover:text-fog-600 transition min-h-[32px] leading-relaxed">
             {product.title}
           </h3>
 
-          {/* 🩹 FIX-ZERO — بلا سعر حقيقي ما كاينش "$0.00" */}
+          {/* 🩹 FIX-ZERO — بلا سعر حقيقي ما كاينش "$0.00" — ✨ SERENE: السعر أزرق عميق (price تاع المعاينة) */}
           {safePrice > 0 && (
             <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-              <span className="text-base font-black text-temu-error">
+              <span className="text-base font-extrabold text-fog-600">
                 ${safePrice.toFixed(2)}
               </span>
               {displayOriginalPrice > safePrice && (
@@ -188,6 +191,15 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
                   ${displayOriginalPrice.toFixed(2)}
                 </span>
               )}
+            </div>
+          )}
+
+          {/* ✨ SERENE — صف التقييم (prate تاع المعاينة: نجمة ذهبية + مبيعات) */}
+          {safeRating > 0 && (
+            <div className="flex items-center gap-1 mt-0.5 text-[10.5px] text-temu-gray-text">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#C9A96A"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
+              <b className="text-temu-black font-extrabold">{safeRating.toFixed(1)}</b>
+              {safeSold > 0 && <span>· {safeSold.toLocaleString()}+ sold</span>}
             </div>
           )}
         </div>
@@ -215,7 +227,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
               }}
               className={`w-5 h-5 rounded-full overflow-hidden border-2 border-transparent transition-all duration-150 cursor-pointer p-0 ${
                 activeIdx === idx
-                  ? '[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(135deg,#7E56C4,#6B3DB4)_border-box] shadow-[0_0_6px_1px_rgba(126,86,196,0.30)]'
+                  ? '[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(135deg,#7FA1C4,#5B7EA6)_border-box] shadow-[0_0_6px_1px_rgba(127,161,196,0.30)]'
                   : 'border-temu-gray-border-light hover:border-temu-gray-light'
               }`}
             >
@@ -239,14 +251,14 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         </div>
       )}
 
-      <div className="p-3 pt-0">
+      <div className="px-1.5 pb-0.5 pt-1">
         <button
           type="button"
           onClick={handleAddToCart}
-          className={`w-full font-bold py-2.5 px-3 rounded-temu-sm transition-all duration-200 flex items-center justify-center gap-1.5 text-xs cursor-pointer active:scale-90 shadow-sm ${
+          className={`w-full font-bold py-2.5 px-3 rounded-full transition-all duration-200 flex items-center justify-center gap-1.5 text-xs cursor-pointer active:scale-95 ${
             isAdded
               ? 'bg-maroccan-tea-600 text-white shadow-maroccan-tea-500/20'
-              : 'bg-temu-orange hover:bg-temu-orange-bright text-white'
+              : 'bg-linear-to-r from-fog-500 to-fog-600 text-white shadow-[0_10px_22px_rgba(70,100,138,0.32)]'
           }`}
         >
           {isAdded ? (

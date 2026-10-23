@@ -20,7 +20,7 @@ export default function PromoBanner({ products }: { products: any[] }) {
 
   return (
     <section
-      className="relative overflow-hidden rounded-3xl bg-linear-to-br from-fog-50 via-[#F4EFFB] to-[#EDE3F9] border border-fog-200/60 mb-8"
+      className="relative overflow-hidden rounded-3xl bg-linear-to-br from-fog-50 via-[#EAF1F7] to-[#DCE9F4] border border-fog-200/60 mb-8"
       aria-label="Special offer"
     >
       <div className="relative z-10 p-6 sm:p-8 max-w-[68%]">
@@ -36,7 +36,7 @@ export default function PromoBanner({ products }: { products: any[] }) {
 
         <Link
           href="/all-products"
-          className="inline-flex items-center gap-1.5 mt-4 bg-fog-700 hover:bg-fog-600 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-fog-500/30 active:scale-95 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 mt-4 bg-linear-to-r from-fog-500 to-fog-600 hover:brightness-110 text-white px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider shadow-[0_10px_22px_rgba(70,100,138,0.32)] active:scale-95 transition cursor-pointer"
         >
           Shop Now
         </Link>

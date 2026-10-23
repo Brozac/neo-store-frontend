@@ -114,13 +114,13 @@ export default function LightningDeals({ products }: { products: Product[] }) {
 
               {/* صف السعر — كيما الموكاب: سعر + قديم مشطوب + بادج خصم */}
               <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
+                <span className="text-sm font-black text-fog-600">${safePrice.toFixed(2)}</span>
                 {safeOldPrice > safePrice && (
                   <>
                     <span className="text-[11px] text-temu-gray-light line-through font-semibold">
                       ${safeOldPrice.toFixed(2)}
                     </span>
-                    <span className="bg-fog-100 text-fog-700 text-[10px] font-black px-1.5 py-0.5 rounded-md">
+                    <span className="bg-coral-100 text-coral-700 text-[10px] font-black px-2 py-0.5 rounded-full">
                       -{discount}%
                     </span>
                   </>

@@ -133,7 +133,7 @@ export default function FailedOrdersAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center gap-3">
-        <div className="w-8 h-8 border-3 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-bold text-gray-500">Scanning stalled order queue...</p>
       </div>
     );
@@ -147,7 +147,7 @@ export default function FailedOrdersAdmin() {
         <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
           <button 
             onClick={() => router.push('/admin')} 
-            className="text-xs font-bold text-[#6B3DB4] hover:text-[#5B2F9E] transition flex items-center gap-2 cursor-pointer active:scale-95"
+            className="text-xs font-bold text-[#5B7EA6] hover:text-[#46648A] transition flex items-center gap-2 cursor-pointer active:scale-95"
           >
             &larr; Back to Mission Control
           </button>
@@ -216,7 +216,7 @@ export default function FailedOrdersAdmin() {
                       )}
                     </p>
 
-                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Gateway:</span> <span className="font-mono font-bold text-[#6B3DB4]">{order.payment_method}</span></p>
+                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Gateway:</span> <span className="font-mono font-bold text-[#5B7EA6]">{order.payment_method}</span></p>
                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Total Paid:</span> <span className="text-temu-error font-black text-sm">${Number(order.total_amount).toFixed(2)}</span></p>
                   </div>
                                     {/* 🩹 M#31 — halt_details: سبب توقف CJ الرسمي (يظهر فقط للطلبات الموقوفة) */}
@@ -264,7 +264,7 @@ export default function FailedOrdersAdmin() {
                     type="button"
                     onClick={() => handleApprove(order.id)}
                     disabled={actionLoading === order.id}
-                    className="flex-1 lg:flex-none bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#6B3DB4]/20"
+                    className="flex-1 lg:flex-none bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#5B7EA6]/20"
                   >
                     {actionLoading === order.id ? (
                       <>
@@ -308,7 +308,7 @@ export default function FailedOrdersAdmin() {
             <div className="overflow-y-auto flex-1 space-y-3 pr-1">
               {loadingItems ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : orderItems.length > 0 ? (
                 orderItems.map((item, idx) => (
@@ -326,7 +326,7 @@ export default function FailedOrdersAdmin() {
                       <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
                       <div className="flex justify-between items-center mt-1 text-[11px] text-gray-500">
                         <span>Qty: {item.quantity}</span>
-                        <span className="font-bold text-[#7E56C4]">${Number(item.price_at_purchase).toFixed(2)}</span>
+                        <span className="font-bold text-[#7FA1C4]">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>

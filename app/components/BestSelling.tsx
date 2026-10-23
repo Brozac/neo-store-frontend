@@ -127,7 +127,7 @@ export default function BestSelling({ products }: { products: BSProduct[] }) {
                 <h3 className="text-xs font-bold text-temu-black line-clamp-2 mt-2 leading-snug group-hover:text-fog-600 transition">
                   {p.title}
                 </h3>
-                <div className="text-sm font-black text-coral-600 mt-1">
+                <div className="text-sm font-black text-fog-600 mt-1">
                   ${safePrice.toFixed(2)}
                 </div>
               </Link>

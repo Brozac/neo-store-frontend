@@ -72,17 +72,17 @@ function SystemEventsPanel() {
   return (
     <div className="bg-white text-temu-black rounded-2xl p-5 border border-temu-gray-border-light space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black uppercase tracking-wider text-[#6B3DB4] flex items-center gap-2">
+        <h3 className="text-sm font-black uppercase tracking-wider text-[#5B7EA6] flex items-center gap-2">
           📋 System Events — Automated Decisions
         </h3>
-        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-[#6B3DB4] transition cursor-pointer">↻ Refresh</button>
+        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-[#5B7EA6] transition cursor-pointer">↻ Refresh</button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         {EVENT_TYPES.map(t => (
           <button key={t} onClick={() => setFilter(t)}
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition cursor-pointer ${
-              filter === t ? 'bg-[#6B3DB4] text-white border-[#6B3DB4]' : 'border-temu-gray-border-light text-gray-500 hover:text-temu-black'
+              filter === t ? 'bg-[#5B7EA6] text-white border-[#5B7EA6]' : 'border-temu-gray-border-light text-gray-500 hover:text-temu-black'
             }`}>
             {t || 'All'}
           </button>
@@ -434,7 +434,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         {/* Top Header & Fast Nav */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-tr from-[#6B3DB4] to-[#7E56C4] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
+            <div className="w-10 h-10 bg-linear-to-tr from-[#5B7EA6] to-[#7FA1C4] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
               L
             </div>
             <div>
@@ -505,7 +505,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#6B3DB4]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#5B7EA6]"></span>
               Neon DB
             </span>
             <div className="mt-2 flex items-baseline justify-between">
@@ -517,7 +517,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           <div
             onClick={() => router.push('/admin/baridimob')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
-              (telemetry.pendingBaridiCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-coral-50 border-[#7E56C4]' : 'bg-white border-temu-gray-border-light'
+              (telemetry.pendingBaridiCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-coral-50 border-[#7FA1C4]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -525,7 +525,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </span>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-base font-black text-temu-black">{telemetry.pendingBaridiCount === null ? <span className="text-gray-400">—</span> : telemetry.pendingBaridiCount}</span>
-              <span className="text-[11px] text-[#7E56C4] font-bold">Action Needed &rarr;</span>
+              <span className="text-[11px] text-[#7FA1C4] font-bold">Action Needed &rarr;</span>
             </div>
           </div>
 
@@ -552,9 +552,9 @@ const handleSubmit = async (e: React.FormEvent) => {
             value={adminSearch}
             onChange={(e) => setAdminSearch(e.target.value)}
             placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..."
-            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#6B3DB4] transition shadow-xs"
+            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#5B7EA6] transition shadow-xs"
           />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#6B3DB4] p-1 cursor-pointer">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5B7EA6] p-1 cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
@@ -571,7 +571,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl snap-start shrink-0 ${
                 activeTab === tab.id
-                  ? 'bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] text-white shadow-lg shadow-[#6B3DB4]/20'
+                  ? 'bg-linear-to-r from-[#5B7EA6] to-[#46648A] text-white shadow-lg shadow-[#5B7EA6]/20'
                   : 'bg-white text-gray-500 border border-temu-gray-border-light hover:bg-temu-offwhite hover:text-temu-black'
               }`}
             >
@@ -602,22 +602,22 @@ const handleSubmit = async (e: React.FormEvent) => {
               {/* بطاقات العمليات */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#6B3DB4] to-fog-600', icon: '📦' },
+                  { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#5B7EA6] to-fog-600', icon: '📦' },
                   { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-coral-500 to-coral-600', icon: '🎬' },
-                  { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#7E56C4] to-coral-600', icon: '🇩🇿' },
+                  { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#7FA1C4] to-coral-600', icon: '🇩🇿' },
                   { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-butter-up-500 to-red-600', icon: '🚨' },
                   { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-fog-600', icon: '⚖️' },
-                  { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-fog-600 to-[#17171A]', icon: '🛠️' },
+                  { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-fog-600 to-[#2E4057]', icon: '🛠️' },
                 ].map((card, i) => (
                   <button
                     key={i}
                     onClick={() => card.link ? router.push(card.link) : card.action?.()}
-                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#6B3DB4]/60 transition group cursor-pointer active:scale-[0.98] shadow-xs"
+                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#5B7EA6]/60 transition group cursor-pointer active:scale-[0.98] shadow-xs"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
                     </div>
-                    <h3 className="font-bold text-temu-black text-sm group-hover:text-[#6B3DB4] transition">{card.label}</h3>
+                    <h3 className="font-bold text-temu-black text-sm group-hover:text-[#5B7EA6] transition">{card.label}</h3>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">{card.desc}</p>
                   </button>
                 ))}
@@ -634,7 +634,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </h3>
                 <p className="text-xs text-gray-500">Track which ad network generates the most paid revenue</p>
               </div>
-              <span className="text-[10px] font-bold uppercase bg-fog-50 text-[#6B3DB4] border border-[#6B3DB4]/20 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] font-bold uppercase bg-fog-50 text-[#5B7EA6] border border-[#5B7EA6]/20 px-2.5 py-1 rounded-full">
                 Real-time ROI
               </span>
             </div>
@@ -653,7 +653,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <span className="text-[11px] font-bold text-gray-500 block uppercase">Facebook / Meta</span>
                   <span className="text-xs text-gray-400">Tracked via fbclid</span>
                 </div>
-                <span className="text-sm font-black text-[#6B3DB4]">Active 🎯</span>
+                <span className="text-sm font-black text-[#5B7EA6]">Active 🎯</span>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
@@ -711,7 +711,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </button>
               </div>
 
-              <div className="bg-fog-50/60 p-5 rounded-2xl border border-[#6B3DB4]/25 flex items-center justify-between flex-wrap gap-4">
+              <div className="bg-fog-50/60 p-5 rounded-2xl border border-[#5B7EA6]/25 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Sync New Video Assets</h4>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -721,7 +721,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <button
                   onClick={handleSyncVideos}
                   disabled={syncingVideos}
-                  className="bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-md"
+                  className="bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-md"
                 >
                   {syncingVideos ? 'Scanning CJ Videos...' : 'Scan & Import Videos'}
                 </button>
@@ -743,7 +743,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 {loadingVideos ? (
                   <div className="text-center py-10">
-                    <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                     <p className="text-xs text-gray-400 font-bold">Scanning database for video products...</p>
                   </div>
                 ) : videoProducts.length === 0 ? (
@@ -773,7 +773,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-temu-black truncate">{p.title}</p>
-                            <p className="text-[11px] text-[#7E56C4] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
+                            <p className="text-[11px] text-[#7FA1C4] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
                           </div>
                         </div>
 
@@ -843,7 +843,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   multiple
                   onChange={handleFileUpload}
                   disabled={uploading}
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#6B3DB4] file:text-white hover:file:brightness-110 cursor-pointer"
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#5B7EA6] file:text-white hover:file:brightness-110 cursor-pointer"
                 />
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -859,29 +859,29 @@ const handleSubmit = async (e: React.FormEvent) => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Title *</label>
-                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Cost / Base Price ($) *</label>
-                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Strikethrough Price ($)</label>
-                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Main Image URL *</label>
-                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Gallery Images (Comma Separated)</label>
-                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Category</label>
-                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]">
+                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]">
                     {availableCategories.map(cat => (
                       <option key={cat.value} value={cat.value}>{cat.label}</option>
                     ))}
@@ -890,21 +890,21 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Colors (Hex / Names)</label>
-                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Sizes</label>
-                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4] resize-none"></textarea>
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6] resize-none"></textarea>
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#6B3DB4]/20 active:scale-[0.98]"
+                  className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#5B7EA6]/20 active:scale-[0.98]"
                 >
                   {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
                 </button>
@@ -920,8 +920,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <p className="text-xs text-gray-500 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
               </div>
 
-              <div className="p-5 bg-fog-50 rounded-xl border border-[#6B3DB4]/30">
-                <label className="block text-xs font-bold text-[#6B3DB4] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
+              <div className="p-5 bg-fog-50 rounded-xl border border-[#5B7EA6]/30">
+                <label className="block text-xs font-bold text-[#5B7EA6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
                 <p className="text-xs text-gray-500 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -929,12 +929,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                     value={singlePid}
                     onChange={(e) => setSinglePid(e.target.value)}
                     placeholder="Enter CJ Product PID (e.g. 172938192)..."
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]"
                   />
                   <button
                     onClick={handleSyncSingle}
                     disabled={syncingSingle}
-                    className="bg-[#6B3DB4] hover:bg-[#5B2F9E] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
+                    className="bg-[#5B7EA6] hover:bg-[#46648A] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
                   >
                     {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
                   </button>
@@ -948,7 +948,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <select
                     value={syncCategory}
                     onChange={(e) => setSyncCategory(e.target.value)}
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]"
                   >
                     <option value="">🛍️ Trending / General Selection</option>
                     <option value="clipper">🪒 Shavers & Grooming</option>
@@ -969,11 +969,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
 
                 <div className="pt-4 border-t border-temu-gray-border-light">
-                  <label className="block text-xs font-bold text-[#6B3DB4] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
+                  <label className="block text-xs font-bold text-[#5B7EA6] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
                   <button
                     onClick={handleMassSync}
                     disabled={massSyncing}
-                    className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#6B3DB4]/20 cursor-pointer"
+                    className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#5B7EA6]/20 cursor-pointer"
                   >
                     {massSyncing ? 'Engine Starting...' : 'Start Mass Import Engine'}
                   </button>
@@ -1028,21 +1028,21 @@ const handleSubmit = async (e: React.FormEvent) => {
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Product Title *</label>
-                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">High-Res Product Image URL *</label>
-                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">1688 Reference Product URL</label>
-                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Purchase Price ($ USD)</label>
-                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#6B3DB4]/20 cursor-pointer">
+                <button type="submit" className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#5B7EA6]/20 cursor-pointer">
                   Transmit Sourcing Request to CJ Dropshipping
                 </button>
               </form>
@@ -1073,22 +1073,22 @@ const handleSubmit = async (e: React.FormEvent) => {
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light max-w-lg">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Coupon Code *</label>
-                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4] uppercase" />
+                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6] uppercase" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Discount Type</label>
-                    <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]">
+                    <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]">
                       <option value="percentage">Percentage (%)</option>
                       <option value="fixed">Fixed Cash ($)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Value *</label>
-                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#6B3DB4]" />
+                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#7E56C4] to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#7E56C4]/20 cursor-pointer">
+                <button type="submit" className="w-full bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#7FA1C4]/20 cursor-pointer">
                   Deploy Discount Code
                 </button>
               </form>

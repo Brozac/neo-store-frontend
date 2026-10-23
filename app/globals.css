@@ -1,62 +1,163 @@
 /* app/globals.css - Laclarc Enterprise Design System
    ═══════════════════════════════════════════════════════════
-   LACLARC — Aurora Edition · v1.0 (بنفسجي لافندر)
+   LACLARC — Serene Edition · v2.0 (ضباب أزرق — لاclarc-serene-v2)
    نسخة طبق الأصل من التصميم المرجعي المعتمد:
-   · PRIMARY #6B3DB4 (أزرار Checkout / Add to Cart / Shop Now)
-   · INK #17171A نصوص أسود حقيقي · رمادي #6E6E76 / #9A9AA2
-   · wells #F4F3FA · tint لافندر #F3E8F9 · بادج #EAE3F6
-   · fog = عائلة اللافندر (أسماء تاريخية) · coral = بنفسجي فاتح
+   · PRIMARY #5B7EA6 (أزرار Checkout / Add to Cart / Shop Now)
+   · PRIMARY-DEEP #46648A (أسعار · نصوص زر · chip.on)
+   · INK #2E4057 نصوص · INK-SOFT #7A8CA0 · LINE #E2EBF3
+   · GOLD #C9A96A نجوم/عضوية · ROSE #D98A8A قلوب/بادج خصم
+   · wells #EDF3F8 · tint ضبابي #DCE9F4 · خلفية #F4F8FB
+   · fog = عائلة الأزرق الضبابي (أسماء تاريخية) · coral = وردي ناعم
    ملاحظة: أسماء توكنات temu-* / fog-* / coral-* ثابتة (صفر كسر)
    والقيم فقط هي التي تجسّد الهوية الجديدة.
    ═══════════════════════════════════════════════════════════ */
 @import "tailwindcss";
 
-@theme {
-  /* 1. الألوان الأساسية (البنفسجي الافندر — الهوية) */
-  --color-temu-orange: #6B3DB4;
-  --color-temu-orange-bright: #5B2F9E;
+/* ═══════════════════════════════════════════════════════════
+   ✨ SERENE — الخطوط الرسمية المستضافة محلياً (صفر اعتماد خارجي وقت البناء)
+   Tajawal 400/500/700/800 (عربي+لاتيني) · Marcellus 400 (لاتيني — brand)
+   ═══════════════════════════════════════════════════════════ */
+/* Marcellus · latin-ext · 400 */
+@font-face {
+  font-family: 'Marcellus';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/marcellus-latin-ext-400.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Marcellus · latin · 400 */
+@font-face {
+  font-family: 'Marcellus';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/marcellus-latin-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Tajawal · arabic · 400 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/tajawal-arabic-400.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+/* Tajawal · latin · 400 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/tajawal-latin-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Tajawal · arabic · 500 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/tajawal-arabic-500.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+/* Tajawal · latin · 500 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/tajawal-latin-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Tajawal · arabic · 700 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/tajawal-arabic-700.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+/* Tajawal · latin · 700 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/tajawal-latin-700.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Tajawal · arabic · 800 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/tajawal-arabic-800.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+/* Tajawal · latin · 800 */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/tajawal-latin-800.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
-  /* 2. ألوان الإلحاح والخصم والأسعار (وردي ROSE — اللون الثاني تاع الهوية) */
-  --color-temu-error: #C9465E;
-  --color-temu-yellow: #FFE1EB;   /* OWNER_PICK #FFE1EB (255,225,235) — وردي فاتح رسمي */
-  --color-temu-yellow-soft: #FDF6F7;
-  --color-temu-gold: #C9465E;
+
+@theme {
+  /* ✨ الخطوط الرسمية — Serene Edition (Tajawal body · Marcellus brand) */
+  --font-sans: 'Tajawal', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* 1. الألوان الأساسية (الأزرق الضبابي — الهوية) */
+  --color-temu-orange: #5B7EA6;
+  --color-temu-orange-bright: #46648A;
+
+  /* 2. ألوان الخصم والقلوب (وردي ناعم ROSE #D98A8A — اللون الثاني تاع الهوية) */
+  --color-temu-error: #B05C5C;
+  --color-temu-yellow: #F7E3E3;   /* SERENE tint الوردي الناعم — بادج الخصم */
+  --color-temu-yellow-soft: #FBF1F1;
+  --color-temu-gold: #B08D4C;
 
   /* 3. ألوان الثقة والهوية العميقة */
-  --color-temu-green: #17171A;
-  --color-temu-green-light: #6B3DB4;
+  --color-temu-green: #2E4057;
+  --color-temu-green-light: #46648A;
 
-  /* 4. الألوان المحايدة والخلفيات (افندرية) */
-  --color-temu-black: #17171A;
-  --color-temu-dark: #26262B;
-  --color-temu-gray-text: #6E6E76;
-  --color-temu-gray-light: #9A9AA2;
-  --color-temu-gray-border: #E5DFF0;
-  --color-temu-gray-border-light: #EFEBF7;
-  --color-temu-offwhite: #F5F2FB;  /* OWNER_PICK #F5F2FB (245,242,251) — أبيض لافندر رسمي */
+  /* 4. الألوان المحايدة والخلفيات (ضبابية) */
+  --color-temu-black: #2E4057;
+  --color-temu-dark: #33475B;
+  --color-temu-gray-text: #7A8CA0;
+  --color-temu-gray-light: #93A5B8;
+  --color-temu-gray-border: #E2EBF3;
+  --color-temu-gray-border-light: #EDF3F8;
+  --color-temu-offwhite: #F4F8FB;  /* SERENE — خلفية الضباب الرسمية */
 
-  /* 5. Aurora — مقياس اللافندر fog (تدرجات الهوية)
-     fog-500 = PRIMARY #6B3DB4 · fog-800 = Ink #17171A */
-  --color-fog-50: #F5F2FB;  /* OWNER_PICK — موحّد مع الخلفية الرسمية */
-  --color-fog-100: #EAE3F6;
-  --color-fog-200: #DDD2F0;
-  --color-fog-300: #C9B6E8;
-  --color-fog-400: #A78BCF;
-  --color-fog-500: #6B3DB4;
-  --color-fog-600: #5B2F9E;
-  --color-fog-700: #4C2585;
-  --color-fog-800: #17171A;
-  --color-fog-900: #101013;
+  /* 5. Serene — مقياس الضباب الأزرق fog (تدرجات الهوية)
+     fog-500 = PRIMARY #5B7EA6 · fog-600 = primary-deep #46648A · fog-800 = Ink #2E4057 */
+  --color-fog-50: #F4F8FB;  /* خلفية الضباب الرسمية */
+  --color-fog-100: #EDF3F8;  /* wells / surface-2 */
+  --color-fog-200: #DCE9F4;  /* primary-fog — tints و active pills */
+  --color-fog-300: #A8C3DC;  /* primary-soft — حدود لطيفة */
+  --color-fog-400: #7FA1C4;  /* mid — أيقونات ثانوية */
+  --color-fog-500: #5B7EA6;  /* PRIMARY */
+  --color-fog-600: #46648A;  /* PRIMARY-DEEP — أسعار/CTA/نصوص */
+  --color-fog-700: #3A5273;
+  --color-fog-800: #2E4057;  /* Ink */
+  --color-fog-900: #24334A;
 
-  /* 6. ROSE — الوردي الرسمي (من الصورة: #F1BCC2) — للأسعار والخصومات والقلوب */
-  --color-coral-50: #FDF6F7;
-  --color-coral-100: #FFE1EB;  /* OWNER_PICK #FFE1EB — غسلة الوردي الرسمية */
-  --color-coral-200: #F6D8DC;
-  --color-coral-300: #F1BCC2;
-  --color-coral-400: #E89AA4;
-  --color-coral-500: #DE7385;
-  --color-coral-600: #C9465E;
-  --color-coral-700: #A63349;
+  /* 6. ROSE — الوردي الناعم الرسمي (#D98A8A من المعاينة) — للقلوب والبادجات */
+  --color-coral-50: #FBF1F1;
+  --color-coral-100: #F7E3E3;
+  --color-coral-200: #F0CDCD;
+  --color-coral-300: #E8B5B5;
+  --color-coral-400: #E2A3A3;
+  --color-coral-500: #D98A8A;
+  --color-coral-600: #B05C5C;
+  --color-coral-700: #96494B;
 
   /* 7. زوايا (نفس روح التصميم المرجعي) */
   --radius-temu-sm: 12px;
@@ -65,17 +166,18 @@
   /* 8. سكيلات المستخدم (ROSE DUO palette) — مسجلة كاملة جاهزة للاستعمال
      maroccan-tea (أخضر النجاح) · butter-up (ذهبي) · blush-rush (الوردي الرسمي — 500 = #f1bcc2 من الصورة)
      apricot-freeze · manga-pink · purple-s-baby-sister · beefy-pink · violet-heaven · white-asparagus */
-  --color-maroccan-tea-50: #f4faef;
-  --color-maroccan-tea-100: #e9f7de;
-  --color-maroccan-tea-200: #d4f1bc;
-  --color-maroccan-tea-300: #b2e088;
-  --color-maroccan-tea-400: #88c83c;
-  --color-maroccan-tea-500: #73b700;
-  --color-maroccan-tea-600: #5d9600;
-  --color-maroccan-tea-700: #4c7c00;
-  --color-maroccan-tea-800: #3c6300;
-  --color-maroccan-tea-900: #315300;
-  --color-maroccan-tea-950: #1a3000;
+  /* 🌿 SERENE — maroccan-tea ولّى أخضر المريمية الساكت (#7C9E85 — free-success تاع المعاينة) */
+  --color-maroccan-tea-50: #f2f7f4;
+  --color-maroccan-tea-100: #e7f0ea;
+  --color-maroccan-tea-200: #cfe3d6;
+  --color-maroccan-tea-300: #a9cdb8;
+  --color-maroccan-tea-400: #8fb99e;
+  --color-maroccan-tea-500: #7c9e85;
+  --color-maroccan-tea-600: #67896f;
+  --color-maroccan-tea-700: #53705a;
+  --color-maroccan-tea-800: #435c4a;
+  --color-maroccan-tea-900: #374b3d;
+  --color-maroccan-tea-950: #1d2a21;
   --color-white-asparagus-50: #f7fae3;
   --color-white-asparagus-100: #eaf1bc;
   --color-white-asparagus-200: #dae668;
@@ -87,17 +189,18 @@
   --color-white-asparagus-800: #545900;
   --color-white-asparagus-900: #464b00;
   --color-white-asparagus-950: #292c00;
-  --color-butter-up-50: #faf7ef;
-  --color-butter-up-100: #f7f0df;
-  --color-butter-up-200: #f1e2bc;
-  --color-butter-up-300: #e3ca8b;
-  --color-butter-up-400: #d0ac48;
-  --color-butter-up-500: #c29913;
-  --color-butter-up-600: #a07d00;
-  --color-butter-up-700: #856700;
-  --color-butter-up-800: #6a5200;
-  --color-butter-up-900: #594400;
-  --color-butter-up-950: #342700;
+  /* 🌟 SERENE — butter-up ولّى الذهب الهادئ (#C9A96A — نجوم/عضوية كلار الذهبية) */
+  --color-butter-up-50: #f9f5ec;
+  --color-butter-up-100: #f4ebdc;
+  --color-butter-up-200: #eadcc0;
+  --color-butter-up-300: #dcc79b;
+  --color-butter-up-400: #d4ba85;
+  --color-butter-up-500: #c9a96a;
+  --color-butter-up-600: #b08d4c;
+  --color-butter-up-700: #9a783d;
+  --color-butter-up-800: #7a6335;
+  --color-butter-up-900: #64512b;
+  --color-butter-up-950: #3a2e17;
   --color-apricot-freeze-50: #faf7f5;
   --color-apricot-freeze-100: #f9f3f0;
   --color-apricot-freeze-200: #f9ebe5;
@@ -176,7 +279,10 @@
   }
 
   body {
-    background-color: #FBFAFE;
+    /* ✨ SERENE — خلفية الضباب المتدرجة الرسمية (من laclarc-serene-v2) */
+    background: linear-gradient(165deg, #EAF1F7 0%, #F7FAFC 40%, #E3EDF5 100%);
+    background-attachment: fixed;
+    color: #2E4057;
     touch-action: manipulation;
     overscroll-behavior-y: contain;
   }
@@ -207,6 +313,36 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  /* ✨ SERENE — خط الهوية Brand (Marcellus — LACLARC) */
+  .font-brand {
+    font-family: 'Marcellus', 'Tajawal', serif;
+    letter-spacing: 0.3em;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   ✨ SERENE BLOBS — دوائر الضباب المضبّبة فالخلفية
+   (ثابتة · بلا تفاعل · خلف كل المحتوى z-10 wrapper)
+   ══════════════════════════════════════════════ */
+.serene-blobs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.serene-blobs i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  display: block;
+}
+.serene-blobs .b1 { width: 420px; height: 420px; background: #C5D8EA; top: -120px; right: -100px; }
+.serene-blobs .b2 { width: 360px; height: 360px; background: #DCE9F4; bottom: -100px; left: -80px; }
+.serene-blobs .b3 { width: 260px; height: 260px; background: #E8F0F7; top: 40%; left: 60%; }
+@media (prefers-reduced-motion: reduce) {
+  .serene-blobs i { filter: blur(50px); }
 }
 
 /* ==========================================
@@ -222,8 +358,8 @@
 .product-card-animated:active {
   transform: translateY(-4px);
   z-index: 10;
-  box-shadow: 0 12px 28px -6px rgba(107,61,180, 0.25);
-  border-color: #6B3DB4 !important;
+  box-shadow: 0 12px 28px -6px rgba(91,126,166, 0.22);
+  border-color: #A8C3DC !important;
 }
 
 /* ==========================================
@@ -308,7 +444,7 @@
 .t-accordion-head .acc-price {
   display: block;
   font-size: 0.95rem;
-  color: #7E56C4;
+  color: #A8C3DC;
   font-weight: 900;
   margin-top: 0.2rem;
 }
@@ -333,20 +469,20 @@
   scroll-snap-align: center;
   flex: 0 0 280px;
   background: white;
-  border: 1px solid #EFEBF7;
+  border: 1px solid #EDF3F8;
   border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 12px rgba(46,64,87,0.05);
 }
 
 /* ==========================================
    ✨ تأثير الحدود الكهربائية المسرعة عتادياً (Lightning Deals)
    ========================================== */
 :root {
-  --electric-border-color: #6B3DB4;
-  --electric-light-color: #7E56C4;
-  --gradient-color: rgba(107,61,180, 0.35);
-  --color-neutral-900: #17171A;
+  --electric-border-color: #5B7EA6;
+  --electric-light-color: #A8C3DC;
+  --gradient-color: rgba(91,126,166, 0.35);
+  --color-neutral-900: #2E4057;
 }
 
 .lightning-main-container {
@@ -371,13 +507,13 @@
   width: 100%;
   max-width: 1240px;
   background: linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)), linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
-  box-shadow: 0 20px 40px -15px rgba(23,23,26, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(46,64,87, 0.4);
 }
 
 .lightning-inner-container { position: relative; }
 
 .lightning-border-outer {
-  border: 2px solid rgba(107,61,180, 0.4);
+  border: 2px solid rgba(91,126,166, 0.4);
   border-radius: 24px;
   padding: 2px;
 }
@@ -388,12 +524,12 @@
   border-radius: 22px;
   border: 2px solid var(--electric-border-color);
   filter: url(#turbulent-displace);
-  background: #17171A;
+  background: #2E4057;
   transform: translateZ(0);
 }
 
 .lightning-glow-layer-1 {
-  border: 2px solid rgba(126,86,196, 0.5);
+  border: 2px solid rgba(127,161,196, 0.5);
   border-radius: 24px;
   width: 100%;
   height: 100%;
@@ -474,7 +610,7 @@
   font-weight: 900;
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: #7E56C4;
+  color: #A8C3DC;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -482,7 +618,7 @@
   font-size: 24px;
   font-weight: 900;
   color: white;
-  text-shadow: 0 0 20px rgba(107,61,180, 0.7);
+  text-shadow: 0 0 20px rgba(91,126,166, 0.7);
   letter-spacing: 0.05em;
 }
 
@@ -518,7 +654,7 @@
   font-size: 14px;
   min-width: 36px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(126,86,196, 0.3);
+  box-shadow: 0 2px 8px rgba(127,161,196, 0.3);
 }
 
 /* ==========================================
@@ -544,10 +680,10 @@
   overflow: hidden;
   background-size: cover;
   background-position: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(46,64,87, 0.1);
   border-radius: 12px;
   cursor: pointer;
-  background-color: #EAE3F6; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
+  background-color: #DCE9F4; /* ✨ SERENE — خلفية ضبابية تحت صور الشفافية */
   touch-action: manipulation;
 }
 
@@ -623,7 +759,7 @@
 .hero-card-price {
   font-size: 0.95rem;
   font-weight: 900;
-  color: #C9B6E8;
+  color: #A8C3DC;
 }
 
 .hero-card-description {
@@ -888,14 +1024,14 @@ img {
   left: 10px;
   z-index: 2;
   background: rgba(255, 255, 255, 0.92);
-  color: #6B3DB4;
+  color: #46648A;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.08em;
   padding: 4px 9px;
   border-radius: 999px;
   text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(23, 23, 26, 0.18);
+  box-shadow: 0 2px 8px rgba(46, 64, 87, 0.18);
   pointer-events: none;
 }
 
@@ -905,9 +1041,9 @@ img {
   animation: laclarcPulse 1.8s infinite;
 }
 @keyframes laclarcPulse {
-  0%   { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 0 rgba(107, 61, 180, 0.45); }
-  70%  { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 10px rgba(107, 61, 180, 0); }
-  100% { box-shadow: 0 0 0 4px rgba(107, 61, 180, 0.2), 0 0 0 0 rgba(107, 61, 180, 0); }
+  0%   { box-shadow: 0 0 0 4px rgba(91, 126, 166, 0.2), 0 0 0 0 rgba(91, 126, 166, 0.45); }
+  70%  { box-shadow: 0 0 0 4px rgba(91, 126, 166, 0.2), 0 0 0 10px rgba(91, 126, 166, 0); }
+  100% { box-shadow: 0 0 0 4px rgba(91, 126, 166, 0.2), 0 0 0 0 rgba(91, 126, 166, 0); }
 }
 
 /* حلقة النجاح فصفحة /success — دخول بارتدة (نفس المعاينة) */

@@ -211,31 +211,31 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
+    <main className="min-h-screen p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-md mx-auto space-y-6">
 
         {/* Navigation */}
-        <div className="flex justify-between items-center border-b border-fog-100 pb-4">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Account Dashboard</h1>
+        <div className="flex justify-between items-center border-b border-fog-200 pb-4">
+          <h1 className="text-2xl font-black text-temu-black tracking-tight">Account Dashboard</h1>
           <button
             onClick={() => router.push('/')}
-            className="text-xs font-bold text-gray-500 hover:text-black transition"
+            className="text-xs font-bold text-temu-gray-text hover:text-fog-600 transition"
           >
             &larr; Storefront
           </button>
         </div>
 
         {/* User Card */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-fog-100 flex flex-col items-center text-center relative overflow-hidden">
+        <div className="p-8 rounded-3xl shadow-[0_4px_18px_rgba(91,126,166,0.09)] border border-fog-200 flex flex-col items-center text-center relative overflow-hidden bg-linear-to-br from-white via-white to-fog-200/70">
 
-          <div className="relative p-1 rounded-full bg-linear-to-tr from-[#6B3DB4] to-[#7E56C4] mb-4 shadow-md">
+          <div className="relative p-1 rounded-full bg-linear-to-tr from-[#5B7EA6] to-[#7FA1C4] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
               {user?.profile_picture ? (
                 <img
@@ -247,14 +247,14 @@ export default function ProfilePage() {
                   }}
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-fog-50 flex items-center justify-center text-3xl font-black text-[#6B3DB4]">
+                <div className="w-24 h-24 rounded-full bg-fog-50 flex items-center justify-center text-3xl font-black text-[#5B7EA6]">
                   {user ? user.name.charAt(0).toUpperCase() : '?'}
                 </div>
               )}
             </div>
 
             <label
-              className="absolute bottom-1 right-1 flex items-center justify-center w-8 h-8 text-white bg-[#6B3DB4] hover:bg-[#5B2F9E] border-2 border-white rounded-full cursor-pointer transition shadow-md active:scale-90"
+              className="absolute bottom-1 right-1 flex items-center justify-center w-8 h-8 text-white bg-[#5B7EA6] hover:bg-[#46648A] border-2 border-white rounded-full cursor-pointer transition shadow-md active:scale-90"
               title="Upload New Avatar"
             >
               {uploadingImage ? (
@@ -270,13 +270,13 @@ export default function ProfilePage() {
             <p className="text-xs text-coral-600 font-bold mb-2">{uploadError}</p>
           )}
 
-          <h2 className="text-xl font-black text-gray-900">{user ? user.name : 'Guest Shopper'}</h2>
-          <p className="text-xs text-gray-400 font-medium mb-3">{user ? user.email : 'Sign in to sync your cart and orders'}</p>
+          <h2 className="text-xl font-black text-temu-black">{user ? user.name : 'Guest Shopper'}</h2>
+          <p className="text-xs text-temu-gray-light font-medium mb-3">{user ? user.email : 'Sign in to sync your cart and orders'}</p>
 
           {user && (
             <button
               onClick={() => { setEditName(user.name); setEditError(''); setIsEditOpen(true); }}
-              className="inline-flex items-center gap-1.5 text-[#6B3DB4] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 text-[#5B7EA6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
             >
               <span><GlassIcon ch="✏️" size="xs" /></span> Edit Profile Details
             </button>
@@ -291,11 +291,11 @@ export default function ProfilePage() {
                 onClick={() => router.push('/favorites')}
                 className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
                   <span className="w-9 h-9 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center shrink-0"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
-                <span className="text-gray-400 text-xs">&rarr;</span>
+                <span className="text-temu-gray-light text-xs">&rarr;</span>
               </button>
 
               {/* 🩹 M#29 — Order History button يحمل الإيميل لصفحة الطلبات */}
@@ -303,22 +303,22 @@ export default function ProfilePage() {
                 onClick={getUserOrders}
                 className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
                   <span className="w-9 h-9 rounded-full bg-fog-100 text-fog-600 flex items-center justify-center shrink-0"><GlassIcon ch="📦" size="xs" /></span>
                   Order History & Invoices
                 </span>
-                <span className="text-gray-400 text-xs">&rarr;</span>
+                <span className="text-temu-gray-light text-xs">&rarr;</span>
               </button>
 
               <button
                 onClick={() => router.push('/track-order')}
                 className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
                   <span className="w-9 h-9 rounded-full bg-maroccan-tea-100 text-maroccan-tea-700 flex items-center justify-center shrink-0"><GlassIcon ch="🚚" size="xs" /></span>
                   Track Live Shipment
                 </span>
-                <span className="text-gray-400 text-xs">&rarr;</span>
+                <span className="text-temu-gray-light text-xs">&rarr;</span>
               </button>
 
               <button
@@ -335,7 +335,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => router.push('/auth')}
-              className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md shadow-fog-500/25 active:scale-95"
+              className="w-full bg-linear-to-r from-fog-500 to-fog-600 hover:brightness-110 text-white font-extrabold p-4 rounded-full transition text-xs uppercase tracking-wider shadow-[0_10px_22px_rgba(70,100,138,0.32)] active:scale-95"
             >
               Sign In / Register &rarr;
             </button>
@@ -384,7 +384,7 @@ export default function ProfilePage() {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#6B3DB4] transition"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition"
                 />
               </div>
 
@@ -403,7 +403,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={updating}
-                className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+                className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
               >
                 {updating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Profile Changes'}
               </button>

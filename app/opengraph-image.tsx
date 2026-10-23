@@ -28,7 +28,7 @@ export default function OGImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #17171A 0%, #26262B 50%, #6B3DB4 100%)',
+          background: 'linear-gradient(135deg, #2E4057 0%, #33475B 50%, #5B7EA6 100%)',
           color: 'white',
           fontFamily: 'sans-serif',
           position: 'relative',
@@ -55,7 +55,7 @@ export default function OGImage() {
             width: 140,
             height: 140,
             borderRadius: 9999,
-            background: 'linear-gradient(135deg, #7E56C4, #6B3DB4)',
+            background: 'linear-gradient(135deg, #7FA1C4, #5B7EA6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -110,7 +110,7 @@ export default function OGImage() {
             left: 0,
             right: 0,
             height: 12,
-            background: 'linear-gradient(90deg, #7E56C4, #6B3DB4, #7E56C4)',
+            background: 'linear-gradient(90deg, #7FA1C4, #5B7EA6, #7FA1C4)',
           }}
         />
       </div>

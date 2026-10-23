@@ -125,7 +125,7 @@ export default async function CategoriesPage() {
   const totalProducts = hub.totals?.products ?? null;
 
   return (
-    <main className="min-h-screen bg-temu-offwhite pb-24 font-sans">
+    <main className="min-h-screen pb-24 font-sans">
       <div className="max-w-7xl mx-auto p-6">
 
         <Link

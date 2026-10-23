@@ -44,14 +44,14 @@ export default function CategoriesClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite pb-24 font-sans">
+    <main className="min-h-screen pb-24 font-sans">
       <div className="max-w-7xl mx-auto p-6">
         <Link
           href="/"

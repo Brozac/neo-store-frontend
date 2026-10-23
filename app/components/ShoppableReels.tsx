@@ -173,12 +173,12 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
           <span className="text-xl animate-pulse"><GlassIcon ch="🎬" size="xs" /></span>
           <div>
             <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
-              Watch & Shop <span className="text-[#7E56C4]">&bull; Reels</span>
+              Watch & Shop <span className="text-[#7FA1C4]">&bull; Reels</span>
             </h2>
             <p className="text-xs text-gray-500">See trending innovations tested live in action</p>
           </div>
         </div>
-        <span className="text-xs font-bold text-[#6B3DB4] uppercase tracking-wider bg-fog-50 px-3 py-1 rounded-full border border-fog-100">
+        <span className="text-xs font-bold text-[#5B7EA6] uppercase tracking-wider bg-fog-50 px-3 py-1 rounded-full border border-fog-100">
           Tap to Watch
         </span>
       </div>
@@ -340,7 +340,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   <div className="min-w-0">
                     <h4 className="text-xs font-bold text-white truncate">{currentReel.title}</h4>
                     <div className="flex items-baseline gap-1.5 mt-0.5">
-                      <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
+                      <span className="text-sm font-black text-[#A8C3DC]">${safePrice.toFixed(2)}</span>
                       {Number(currentReel.original_price) > safePrice && (
                         <span className="text-[10px] text-gray-400 line-through">
                           ${Number(currentReel.original_price).toFixed(2)}
@@ -363,7 +363,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                     }
                     setIsPaymentOpen(true);
                   }}
-                  className="bg-linear-to-r from-[#7E56C4] to-coral-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-coral-500/30 flex items-center gap-1.5 cursor-pointer"
+                  className="bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-coral-500/30 flex items-center gap-1.5 cursor-pointer"
                 >
                   <span><GlassIcon i="zap" size="xs" /></span> Buy Now
                 </button>

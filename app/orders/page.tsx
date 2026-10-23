@@ -206,14 +206,14 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
+    <main className="min-h-screen p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
 
         <button
@@ -235,14 +235,14 @@ export default function OrdersPage() {
 
         {orders.length === 0 ? (
           <div className="bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-sm space-y-4">
-            <div className="w-16 h-16 bg-fog-50 text-[#6B3DB4] rounded-full flex items-center justify-center text-2xl mx-auto">
+            <div className="w-16 h-16 bg-fog-50 text-[#5B7EA6] rounded-full flex items-center justify-center text-2xl mx-auto">
               <GlassIcon ch="📦" size="xs" />
             </div>
             <h3 className="text-base font-bold text-gray-800">No Orders Found Yet</h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
             <button
               onClick={() => router.push('/')}
-              className="bg-[#17171A] hover:bg-[#26262B] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+              className="bg-[#2E4057] hover:bg-[#33475B] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Start Shopping &rarr;
             </button>
@@ -253,7 +253,7 @@ export default function OrdersPage() {
               const items = itemsMap[String(order.id)] || [];
               const extraCount = Math.max(0, items.length - 4);
               return (
-              <div key={order.id} className="bg-white rounded-2xl border border-temu-gray-border-light/70 shadow-[0_4px_18px_rgba(23,23,26,0.05)] p-4 sm:p-5 hover:shadow-md transition">
+              <div key={order.id} className="bg-white rounded-2xl border border-temu-gray-border-light/70 shadow-[0_4px_18px_rgba(46,64,87,0.05)] p-4 sm:p-5 hover:shadow-md transition">
                 {/* 🎨 REPLICA_V4 oc-top — رقم الطلب · التاريخ | pill الحالة */}
                 <div className="flex justify-between items-center gap-2">
                   <small className="text-[11px] font-bold text-temu-gray-text truncate min-w-0">
@@ -293,7 +293,7 @@ export default function OrdersPage() {
                 <div className="flex justify-between items-center gap-2 border-t border-temu-gray-border-light pt-3 flex-wrap">
                   <div>
                     <span className="text-[9.5px] uppercase font-extrabold tracking-wider text-temu-gray-light block">Total</span>
-                    <b className="text-[17px] font-black text-coral-600">${Number(order.total_amount).toFixed(2)}</b>
+                    <b className="text-[17px] font-black text-fog-600">${Number(order.total_amount).toFixed(2)}</b>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -342,7 +342,7 @@ export default function OrdersPage() {
             <div className="p-5 space-y-3 overflow-y-auto flex-1">
               {loadingDetails ? (
                 <div className="flex justify-center py-10">
-                  <div className="w-8 h-8 border-3 border-[#6B3DB4] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : orderItems.length > 0 && !orderItems[0].title.includes('Could not load') ? (
                 orderItems.map((item, idx) => (
@@ -360,7 +360,7 @@ export default function OrdersPage() {
                       <p className="text-xs font-bold text-gray-900 line-clamp-2">{item.title}</p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[11px] text-gray-500 font-semibold">Qty: {item.quantity}</span>
-                        <span className="text-xs font-black text-coral-600">${Number(item.price_at_purchase).toFixed(2)}</span>
+                        <span className="text-xs font-black text-fog-600">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export default function OrdersPage() {
 
             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-600">Total Settled</span>
-              <span className="text-lg font-black text-coral-600">${Number(modalOrder.total_amount).toFixed(2)}</span>
+              <span className="text-lg font-black text-fog-600">${Number(modalOrder.total_amount).toFixed(2)}</span>
             </div>
 
           </div>

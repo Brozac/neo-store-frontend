@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/?homescreen=1',
     scope: '/',
     display: 'standalone',
-    background_color: '#FBFAFE',
-    theme_color: '#6B3DB4',
+    background_color: '#F7FAFC',
+    theme_color: '#F4F8FB',
     id: '/?homescreen=1', // ✨ مطابق للـ default الضمني — بلا كسر هوية المستخدمين المركبين
     orientation: 'portrait',
     categories: ['shopping', 'lifestyle'],

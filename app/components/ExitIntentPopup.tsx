@@ -111,7 +111,7 @@ export default function ExitIntentPopup() {
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="bg-linear-to-br from-[#17171A] to-[#26262B] text-white border-2 border-[#6B3DB4] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center overflow-hidden animate-scale"
+        className="bg-linear-to-br from-[#2E4057] to-[#33475B] text-white border-2 border-[#5B7EA6] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center overflow-hidden animate-scale"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -136,12 +136,12 @@ export default function ExitIntentPopup() {
         </h2>
 
         <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto mt-2">
-          Take an extra <strong className="text-[#6B3DB4]">10% OFF</strong> on your entire purchase right now. Valid for the next 10 minutes only!
+          Take an extra <strong className="text-[#5B7EA6]">10% OFF</strong> on your entire purchase right now. Valid for the next 10 minutes only!
         </p>
 
-        <div className="bg-white/5 border border-dashed border-[#6B3DB4] p-3.5 rounded-2xl my-4">
+        <div className="bg-white/5 border border-dashed border-[#5B7EA6] p-3.5 rounded-2xl my-4">
           <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Use Code at Checkout:</span>
-          <span className="font-mono font-black text-lg sm:text-xl text-white tracking-widest bg-[#6B3DB4]/30 px-4 py-1 rounded-xl border border-[#6B3DB4]/40 inline-block">
+          <span className="font-mono font-black text-lg sm:text-xl text-white tracking-widest bg-[#5B7EA6]/30 px-4 py-1 rounded-xl border border-[#5B7EA6]/40 inline-block">
             LACLARC10
           </span>
         </div>
@@ -151,7 +151,7 @@ export default function ExitIntentPopup() {
             type="button"
             onClick={handleClaim}
             disabled={claimed}
-            className="w-full bg-linear-to-r from-[#7E56C4] to-coral-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-coral-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-coral-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {claimed ? (
               <><span><GlassIcon i="check" size="xs" /></span> 10% Discount Applied!</>

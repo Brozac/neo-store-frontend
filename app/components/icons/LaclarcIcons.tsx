@@ -34,8 +34,8 @@ export function HomeIcon({ size = 24, active = false }: IconProps) {
       {active && (
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#6B3DB4" />
-            <stop offset="100%" stopColor="#7E56C4" />
+            <stop stopColor="#5B7EA6" />
+            <stop offset="100%" stopColor="#7FA1C4" />
           </linearGradient>
         </defs>
       )}
@@ -49,11 +49,11 @@ export function SearchIcon({ size = 24, active = false }: IconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <circle
         cx="10.5" cy="10.5" r="6.5"
-        fill={active ? 'rgba(107,61,180,0.2)' : 'transparent'}
+        fill={active ? 'rgba(91,126,166,0.2)' : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.8}
       />
-      <circle cx="8.5" cy="8.5" r="2.5" fill={active ? 'rgba(126,86,196,0.4)' : 'transparent'} />
+      <circle cx="8.5" cy="8.5" r="2.5" fill={active ? 'rgba(127,161,196,0.4)' : 'transparent'} />
       <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth={active ? 2.6 : 2.2} strokeLinecap="round" />
     </svg>
   );
@@ -81,13 +81,13 @@ export function BagIcon({ size = 24, active = false }: IconProps & { badge?: boo
       {/* قلب صغير في وسط الحقيبة — لمسة Laclarc */}
       <path
         d="M12 13.2c.6-.9 2-.9 2.3.2.2.8-.4 1.5-2.3 2.6-1.9-1.1-2.5-1.8-2.3-2.6.3-1.1 1.7-1.1 2.3-.2z"
-        fill={active ? '#fff' : 'rgba(126,86,196,0.5)'}
+        fill={active ? '#fff' : 'rgba(127,161,196,0.5)'}
       />
       {active && (
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#7E56C4" />
-            <stop offset="100%" stopColor="#6B3DB4" />
+            <stop stopColor="#7FA1C4" />
+            <stop offset="100%" stopColor="#5B7EA6" />
           </linearGradient>
         </defs>
       )}
@@ -101,7 +101,7 @@ export function TrackIcon({ size = 24, active = false }: IconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <rect
         x="3.5" y="7" width="13" height="13" rx="2"
-        fill={active ? 'rgba(107,61,180,0.25)' : 'transparent'}
+        fill={active ? 'rgba(91,126,166,0.25)' : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.8}
       />
@@ -109,7 +109,7 @@ export function TrackIcon({ size = 24, active = false }: IconProps) {
       <path d="M8 7v-1.5A1.5 1.5 0 019.5 4h8A1.5 1.5 0 0119 5.5V17a1.5 1.5 0 01-1.5 1.5H16.5"
         stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" fill="none" opacity={active ? 1 : 0.6} />
       {/* نقطة تتبع متحركة */}
-      <circle cx="10" cy="14.5" r="1.8" fill={active ? '#7E56C4' : 'rgba(107,61,180,0.4)'} />
+      <circle cx="10" cy="14.5" r="1.8" fill={active ? '#7FA1C4' : 'rgba(91,126,166,0.4)'} />
     </svg>
   );
 }
@@ -120,7 +120,7 @@ export function ProfileIcon({ size = 24, active = false }: IconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <circle
         cx="12" cy="8" r="4"
-        fill={active ? 'rgba(126,86,196,0.25)' : 'transparent'}
+        fill={active ? 'rgba(127,161,196,0.25)' : 'transparent'}
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.8}
       />
@@ -129,7 +129,7 @@ export function ProfileIcon({ size = 24, active = false }: IconProps) {
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.8}
         strokeLinecap="round"
-        fill={active ? 'rgba(107,61,180,0.15)' : 'transparent'}
+        fill={active ? 'rgba(91,126,166,0.15)' : 'transparent'}
       />
     </svg>
   );
@@ -150,8 +150,8 @@ export function HeartIcon({ size = 24, active = false }: IconProps) {
       {active && (
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#7E56C4" />
-            <stop offset="100%" stopColor="#6B3DB4" />
+            <stop stopColor="#7FA1C4" />
+            <stop offset="100%" stopColor="#5B7EA6" />
           </linearGradient>
         </defs>
       )}
@@ -166,20 +166,20 @@ export function AIIcon({ size = 24, active = false }: IconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path
         d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"
-        fill={active ? `url(#${gradId})` : 'rgba(107,61,180,0.35)'}
+        fill={active ? `url(#${gradId})` : 'rgba(91,126,166,0.35)'}
         stroke={active ? 'none' : 'currentColor'}
         strokeWidth={1.6}
         strokeLinejoin="round"
       />
       <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"
-        fill={active ? '#7E56C4' : 'rgba(126,86,196,0.5)'} />
+        fill={active ? '#7FA1C4' : 'rgba(127,161,196,0.5)'} />
       <path d="M5.5 16l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6.6-1.6z"
-        fill={active ? '#6B3DB4' : 'rgba(107,61,180,0.5)'} />
+        fill={active ? '#5B7EA6' : 'rgba(91,126,166,0.5)'} />
       {active && (
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#7E56C4" />
-            <stop offset="100%" stopColor="#6B3DB4" />
+            <stop stopColor="#7FA1C4" />
+            <stop offset="100%" stopColor="#5B7EA6" />
           </linearGradient>
         </defs>
       )}
@@ -202,9 +202,9 @@ export function ShieldCheckIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"
-        fill={active ? 'rgba(107,61,180,0.25)' : 'rgba(107,61,180,0.08)'}
+        fill={active ? 'rgba(91,126,166,0.25)' : 'rgba(91,126,166,0.08)'}
         stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round" />
-      <path d="M8.5 12l2.5 2.5 4.5-5" stroke={active ? '#6B3DB4' : 'currentColor'}
+      <path d="M8.5 12l2.5 2.5 4.5-5" stroke={active ? '#5B7EA6' : 'currentColor'}
         strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -215,12 +215,12 @@ export function GlobeShippingIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9"
-        fill={active ? 'rgba(107,61,180,0.15)' : 'transparent'}
+        fill={active ? 'rgba(91,126,166,0.15)' : 'transparent'}
         stroke="currentColor" strokeWidth={1.8} />
       <path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z"
         stroke="currentColor" strokeWidth={1.4} opacity={0.7} />
-      <circle cx="17" cy="6" r="2" fill="#7E56C4" />
-      <path d="M15 8l3-3" stroke="#7E56C4" strokeWidth={1.4} strokeLinecap="round" />
+      <circle cx="17" cy="6" r="2" fill="#7FA1C4" />
+      <path d="M15 8l3-3" stroke="#7FA1C4" strokeWidth={1.4} strokeLinecap="round" />
     </svg>
   );
 }
@@ -233,7 +233,7 @@ export function ReturnsIcon({ size = 24, active = false }: IconProps) {
         strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d="M5 10h9a5 5 0 015 5v1" stroke="currentColor" strokeWidth={1.9}
         strokeLinecap="round" fill="none" />
-      <circle cx="19" cy="16" r="1.5" fill={active ? '#7E56C4' : 'rgba(107,61,180,0.4)'} />
+      <circle cx="19" cy="16" r="1.5" fill={active ? '#7FA1C4' : 'rgba(91,126,166,0.4)'} />
     </svg>
   );
 }
@@ -243,12 +243,12 @@ export function LockIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <rect x="5" y="10.5" width="14" height="10" rx="2.5"
-        fill={active ? 'rgba(107,61,180,0.25)' : 'rgba(107,61,180,0.08)'}
+        fill={active ? 'rgba(91,126,166,0.25)' : 'rgba(91,126,166,0.08)'}
         stroke="currentColor" strokeWidth={1.8} />
       <path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor"
         strokeWidth={1.8} strokeLinecap="round" />
-      <circle cx="12" cy="15" r="1.6" fill={active ? '#7E56C4' : 'rgba(126,86,196,0.6)'} />
-      <path d="M12 16.5v2" stroke={active ? '#7E56C4' : 'rgba(126,86,196,0.6)'}
+      <circle cx="12" cy="15" r="1.6" fill={active ? '#7FA1C4' : 'rgba(127,161,196,0.6)'} />
+      <path d="M12 16.5v2" stroke={active ? '#7FA1C4' : 'rgba(127,161,196,0.6)'}
         strokeWidth={1.8} strokeLinecap="round" />
     </svg>
   );
@@ -259,13 +259,13 @@ export function CardsIcon({ size = 24, active = false }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <rect x="3" y="6" width="15" height="10" rx="2" transform="rotate(-8 10 11)"
-        fill={active ? 'rgba(126,86,196,0.2)' : 'rgba(107,61,180,0.1)'}
+        fill={active ? 'rgba(127,161,196,0.2)' : 'rgba(91,126,166,0.1)'}
         stroke="currentColor" strokeWidth={1.6} />
       <rect x="6" y="9" width="15" height="10" rx="2"
-        fill={active ? 'rgba(107,61,180,0.25)' : 'rgba(255,255,255,0.9)'}
+        fill={active ? 'rgba(91,126,166,0.25)' : 'rgba(255,255,255,0.9)'}
         stroke="currentColor" strokeWidth={1.8} />
       <path d="M6 13h7" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
-      <circle cx="17.5" cy="16" r="1.3" fill={active ? '#7E56C4' : '#6B3DB4'} />
+      <circle cx="17.5" cy="16" r="1.3" fill={active ? '#7FA1C4' : '#5B7EA6'} />
     </svg>
   );
 }

@@ -248,20 +248,20 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   };
 
   return (
-    <div className="w-full font-sans text-[#17171A] overflow-hidden bg-[#FBFAFE] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
+    <div className="w-full font-sans text-[#2E4057] overflow-hidden bg-[#F7FAFC] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" onLoad={initGSAP} />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP} />
 
       <section className="hero-container relative min-h-[90vh] md:min-h-[85vh] lg:min-h-[92vh] w-full flex flex-col justify-between p-6 sm:p-12 lg:p-16 overflow-hidden">
 
-        <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#6B3DB4]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
+        <div className="gsap-bg-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black leading-none select-none pointer-events-none text-[#5B7EA6]/[0.08] tracking-tighter whitespace-nowrap z-0 hidden md:block">
           LACLARC
         </div>
 
         {/* رأس الصفحة */}
         <div className="relative z-20 flex justify-between items-center w-full gap-2">
           <div className="float-anim gsap-hero flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-full border-2 border-[#7E56C4] overflow-hidden shrink-0 shadow-lg shadow-[#7E56C4]/25">
+            <div className="w-10 h-10 rounded-full border-2 border-[#7FA1C4] overflow-hidden shrink-0 shadow-lg shadow-[#7FA1C4]/25">
               <Image
                 src="/icon-192.png"
                 alt="Laclarc Logo"
@@ -271,7 +271,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                 priority
               />
             </div>
-            <div className="text-[#17171A] min-w-0">
+            <div className="text-[#2E4057] min-w-0">
               <h4 className="text-xs font-black uppercase tracking-wider leading-none">Laclarc</h4>
               <span className="text-[9px] text-gray-500 uppercase">Enterprise</span>
             </div>
@@ -350,27 +350,27 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
           {/* النصوص والأزرار */}
           <div className="max-w-xl space-y-6 text-center lg:text-left z-20 lg:w-1/2 order-2 lg:order-1">
-            <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#6B3DB4]/15 border border-[#6B3DB4]/30 text-[#6B3DB4] text-[10px] font-black uppercase tracking-wider">
+            <div className="gsap-hero inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#5B7EA6]/15 border border-[#5B7EA6]/30 text-[#5B7EA6] text-[10px] font-black uppercase tracking-wider">
               Exclusive Premium Deals
             </div>
 
-            <h1 className="gsap-hero text-3xl sm:text-4xl lg:text-6xl font-black text-[#17171A] tracking-tight leading-[1.1]">
+            <h1 className="gsap-hero text-3xl sm:text-4xl lg:text-6xl font-black text-[#2E4057] tracking-tight leading-[1.1]">
               Engineered for <br />
-              <span className="bg-linear-to-r from-[#6B3DB4] to-[#7E56C4] bg-clip-text text-transparent">precision &amp; lifestyle.</span>
+              <span className="bg-linear-to-r from-[#5B7EA6] to-[#7FA1C4] bg-clip-text text-transparent">precision &amp; lifestyle.</span>
             </h1>
 
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">
               <Link
                 href="#catalog"
-                className="bg-[#17171A] hover:bg-[#26262B] text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-xl shadow-[#17171A]/20 active:scale-95 flex items-center gap-2 border border-white/10"
+                className="bg-linear-to-r from-fog-500 to-fog-600 hover:brightness-110 text-white px-6 py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-[0_10px_22px_rgba(70,100,138,0.32)] active:scale-95 flex items-center gap-2"
               >
                 Shop Trending Deals
-                <span className="w-5 h-5 bg-[#7E56C4] rounded-full flex items-center justify-center text-[10px] text-white"><GlassIcon i="zap" size="xs" /></span>
+                <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[10px] text-white"><GlassIcon i="zap" size="xs" /></span>
               </Link>
 
               <Link
                 href="/categories"
-                className="bg-white hover:bg-gray-50 text-[#17171A] border border-[#6B3DB4]/30 px-5 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                className="bg-white hover:bg-fog-50 text-fog-700 border-[1.5px] border-fog-300 px-5 py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-sm active:scale-95"
               >
                 All Departments
               </Link>
@@ -379,7 +379,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         </div>
 
         {/* الشريط السفلي — 🧹 3 spans خاويين تحيدو (كانو كيرندرو والو) */}
-        <div className="relative z-20 w-full pt-8 pb-4 border-t border-gray-200/60 flex justify-between items-center text-[10px] font-bold text-gray-400 flex-wrap gap-3">
+        <div className="relative z-20 w-full pt-8 pb-4 border-t border-fog-200 flex justify-between items-center text-[10px] font-bold text-temu-gray-light flex-wrap gap-3">
           <span className="flex items-center gap-1.5">
             100% Buyer Protection
           </span>
@@ -397,8 +397,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
             <div className="space-y-3 max-w-sm">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#6B3DB4]">
-                <span className="w-2 h-2 rounded-full bg-[#7E56C4]"></span>
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#5B7EA6]">
+                <span className="w-2 h-2 rounded-full bg-[#7FA1C4]"></span>
                 The Laclarc Standard
               </div>
               <p className="text-xs text-gray-500 leading-relaxed font-medium">
@@ -406,9 +406,9 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
               </p>
             </div>
             <div className="max-w-xl space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-[#17171A] leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-[#2E4057] leading-snug">
                 Premium curated quality meets accessibility:<br />
-                <span className="text-[#6B3DB4]">Speed, style, and </span> excellence without compromise.
+                <span className="text-[#5B7EA6]">Speed, style, and </span> excellence without compromise.
               </h2>
             </div>
           </div>

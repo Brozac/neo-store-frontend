@@ -57,7 +57,7 @@ export default function FloatingSupport() {
 
         {/* Tooltip — ديسكتوب */}
         <span className="hidden md:block absolute left-full ml-3 top-1/2 -translate-y-1/2
-                         bg-[#17171A] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
+                         bg-[#2E4057] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
                          whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
                          shadow-xl pointer-events-none border border-white/10">
           Need help? Chat with us <GlassIcon ch="💬" size="xs" />
@@ -72,8 +72,8 @@ export default function FloatingSupport() {
         aria-label="Open AI assistant"
         title="Chat with Laclarc AI"
         className="group relative flex h-11 w-11 items-center justify-center rounded-full
-                   bg-linear-to-br from-[#17171A] via-[#26262B] to-[#6B3DB4]
-                   shadow-xl shadow-[#6B3DB4]/30
+                   bg-linear-to-br from-[#2E4057] via-[#33475B] to-[#5B7EA6]
+                   shadow-xl shadow-[#5B7EA6]/30
                    border-2 border-white/25
                    transition-transform duration-300
                    hover:scale-110 active:scale-90
@@ -85,7 +85,7 @@ export default function FloatingSupport() {
 
         {/* Tooltip — ديسكتوب */}
         <span className="hidden md:block absolute left-full ml-3 top-1/2 -translate-y-1/2
-                         bg-[#17171A] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
+                         bg-[#2E4057] text-white text-[11px] font-bold py-2 px-3.5 rounded-xl
                          whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity
                          shadow-xl pointer-events-none border border-white/10">
           Ask Laclarc AI <GlassIcon ch="💬" size="xs" />

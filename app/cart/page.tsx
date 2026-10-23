@@ -68,9 +68,14 @@ export default function CartPage() {
   const finalTotalNumber = Math.max(0, cartTotal - totalDiscount);
   const finalTotalString = finalTotalNumber.toFixed(2);
 
+  // ✨ SERENE — شريط تقدم الشحن المجاني (ship-progress تاع المعاينة — FREE = $35)
+  const FREE_SHIP = 35;
+  const shipRemain = Math.max(0, FREE_SHIP - finalTotalNumber);
+  const shipPct = Math.min(100, (finalTotalNumber / FREE_SHIP) * 100);
+
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+      <div className="min-h-screen flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -86,7 +91,7 @@ export default function CartPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-5 pb-32 font-sans">
+    <main className="min-h-screen p-5 pb-32 font-sans">
       <div className="max-w-md mx-auto">
         <button
           onClick={() => router.push('/')}
@@ -101,16 +106,39 @@ export default function CartPage() {
         <div className="flex items-end justify-between mb-5">
           <h1 className="text-2xl font-black text-temu-black tracking-tight">My Cart</h1>
           {cart.length > 0 && (
-            <span className="text-[11px] font-bold text-fog-600 bg-coral-100 px-3 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-fog-700 bg-fog-200 px-3 py-1 rounded-full">
               {cart.reduce((n, i) => n + (i.quantity || 1), 0)} item{cart.length > 1 ? 's' : ''}
             </span>
           )}
         </div>
 
+        {/* ✨ SERENE — ship-progress: شريط التقدم نحو الشحن المجاني (طبق الأصل من المعاينة) */}
+        {cart.length > 0 && (
+          <div className="bg-white rounded-2xl border border-fog-100 shadow-[0_4px_18px_rgba(91,126,166,0.09)] px-4 py-3.5 mb-4">
+            <p className="text-xs font-bold text-temu-black mb-2.5">
+              {shipRemain > 0 ? (
+                <>Add <b className="text-fog-600">${shipRemain.toFixed(2)}</b> more to unlock <b className="text-fog-600">free shipping</b></>
+              ) : (
+                <><b className="text-maroccan-tea-600">Excellent!</b> You&apos;ve unlocked free shipping</>
+              )}
+            </p>
+            <div className="h-[7px] rounded-full bg-fog-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-linear-to-r from-fog-300 to-fog-600 transition-all duration-700"
+                style={{ width: `${shipPct}%` }}
+                role="progressbar"
+                aria-valuenow={Math.round(shipPct)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              />
+            </div>
+          </div>
+        )}
+
         {cart.length === 0 ? (
           /* ✨ REPLICA_V3 — حالة فارغة بنفس روح المعاينة: دائرة ناعمة + عنوان + تلميح + CTA */
           <div className="flex flex-col items-center text-center bg-white p-12 sm:p-16 rounded-2xl border border-fog-100 shadow-sm mb-6">
-            <div className="w-20 h-20 rounded-full bg-fog-50 text-[#6B3DB4] flex items-center justify-center mb-4">
+            <div className="w-20 h-20 rounded-full bg-fog-50 text-[#5B7EA6] flex items-center justify-center mb-4">
               <GlassIcon ch="🛒" size="md" />
             </div>
             <h2 className="text-lg font-black text-temu-black">Your cart is empty</h2>
@@ -121,7 +149,7 @@ export default function CartPage() {
             </p>
             <button
               onClick={() => router.push('/')}
-              className="mt-5 bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer touch-manipulation"
+              className="mt-5 bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer touch-manipulation"
             >
               Start Shopping &rarr;
             </button>
@@ -185,7 +213,7 @@ export default function CartPage() {
                         </button>
                       </div>
 
-                      <p className="text-sm font-black text-coral-600">
+                      <p className="text-sm font-extrabold text-fog-600">
                         ${(safePrice * qty).toFixed(2)}
                       </p>
                     </div>
@@ -252,12 +280,12 @@ export default function CartPage() {
 
             <div className="flex justify-between items-center mb-4 pt-3 border-t border-fog-100">
               <span className="text-temu-gray-text font-medium">Total:</span>
-              <span className="text-2xl font-black text-coral-600">${finalTotalString}</span>
+              <span className="text-2xl font-black text-fog-600">${finalTotalString}</span>
             </div>
 
             <button
               onClick={handleCheckout}
-              className="w-full bg-linear-to-r from-[#6B3DB4] to-[#5B2F9E] hover:brightness-110 text-white font-extrabold p-4 rounded-xl transition flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md shadow-fog-500/25"
+              className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold p-4 rounded-xl transition flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md shadow-fog-500/25"
             >
               Proceed to Checkout
             </button>

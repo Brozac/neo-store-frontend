@@ -76,7 +76,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+      <div className="min-h-screen flex justify-center items-center">
         {/* 🎯 SEO (Task 21-f): h1 حقيقي فالـ SSR HTML حتى فحالة التحميل —
             كيتبدل بالمرئي (نفس النص) من بعد ما الـ feed يجي — h1 واحد فأي لحظة */}
         {h1Text && <h1 className="sr-only">{h1Text}</h1>}
@@ -86,7 +86,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
+    <main className="min-h-screen p-6 pb-32 font-sans">
       <div className="max-w-7xl mx-auto">
         <button
           onClick={() => router.push('/categories')}
@@ -165,7 +165,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
             {loadingMore && (
               <div className="text-center py-6">
-                <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             )}
 

@@ -75,15 +75,15 @@ export default function CountdownTimer({ hoursLeft = 0 }: { hoursLeft?: number }
       </div>
 
       <div className="flex gap-1 items-center font-mono tabular-nums select-none">
-        <span className="bg-[#17171A] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
+        <span className="bg-[#2E4057] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
           {pad(timeLeft.h)}
         </span>
-        <span className="text-[#17171A] font-black text-xs">:</span>
-        <span className="bg-[#17171A] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
+        <span className="text-[#2E4057] font-black text-xs">:</span>
+        <span className="bg-[#2E4057] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
           {pad(timeLeft.m)}
         </span>
-        <span className="text-[#17171A] font-black text-xs">:</span>
-        <span className="bg-[#17171A] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
+        <span className="text-[#2E4057] font-black text-xs">:</span>
+        <span className="bg-[#2E4057] text-white text-xs font-black px-2 py-1 rounded-md shadow-sm min-w-[26px] text-center">
           {pad(timeLeft.s)}
         </span>
       </div>

@@ -238,7 +238,7 @@ function HomeContent() {
   const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
 
   return (
-    <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
+    <main className="min-h-screen pb-32 font-sans relative pt-4">
       <div className="max-w-7xl mx-auto px-4">
 
         {/* 1. Hero Section */}
@@ -261,13 +261,12 @@ function HomeContent() {
                 }}
                 className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
-                {/* 🎨 REPLICA_V4 — حلقة الأقسام طبق الأصل من المعاينة (.cat-ring):
-                    النشط = حلقة بنفسجية + هالة fog-100 (0 0 0 4px) + ظل عميق · الضغطة = scale .92 */}
+                {/* ✨ SERENE — حلقة الأقسام: النشط حلقة ضبابية + هالة fog-100 · الضغطة scale .92 */}
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-200 group-active:scale-90
                                  ${isActive
-                                   ? 'ring-[#6B3DB4] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
-                                   : 'ring-transparent group-hover:ring-[#6B3DB4]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
-                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#6B3DB4]/70">
+                                   ? 'ring-fog-500 shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(46,64,87,0.28)]'
+                                   : 'ring-transparent group-hover:ring-fog-400/40 shadow-[0_2px_10px_rgba(46,64,87,0.07)]'}`}>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-fog-500/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
                   {img && (
@@ -280,7 +279,7 @@ function HomeContent() {
                   )}
                 </div>
                 <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
-                                  ${isActive ? 'text-[#6B3DB4]' : 'text-temu-black'}`}>
+                                  ${isActive ? 'text-fog-600' : 'text-temu-black'}`}>
                   {label}
                 </span>
               </button>
@@ -288,7 +287,15 @@ function HomeContent() {
           })}
         </div>
 
-        {/* 2.5 🎨 MERGE_MOCKUP — بانر العروض الناعم (Special Offer / Shop Now) */}
+        {/* 2.4 ✨ SERENE — shipbar مطبّع (border dashed fog من المعاينة) */}
+        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
+          <div className="mb-3 border-[1.5px] border-dashed border-fog-300 bg-linear-to-r from-fog-200 via-white to-white rounded-2xl px-4 py-3 flex items-center gap-2.5 text-xs font-bold text-fog-600">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><rect x="1" y="5" width="13" height="11" rx="2" /><path d="M14 8h4l3 3v5h-7z" /><circle cx="6" cy="18.5" r="2" /><circle cx="17.5" cy="18.5" r="2" /></svg>
+            Free shipping on all orders over $35
+          </div>
+        )}
+
+        {/* 2.5 🎨 SERENE — بانر العروض الناعم (Special Offer / Shop Now) */}
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
           <PromoBanner products={dealsProducts} />
         )}
@@ -316,10 +323,10 @@ function HomeContent() {
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
           <div className="mb-8 mt-6">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-black text-temu-black flex items-center gap-2">
+              <h2 className="text-base font-extrabold text-temu-black flex items-center gap-2">
                 <span>🔥</span> Trending Now
               </h2>
-              <span className="text-xs text-temu-orange font-bold cursor-pointer active:scale-95 transition-transform">
+              <span className="text-xs font-bold text-fog-600 bg-fog-100 px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-transform">
                 Top Picks
               </span>
             </div>
@@ -367,7 +374,7 @@ function HomeContent() {
         )}
 
         {/* 🧭 شريط الفرز والفلترة */}
-        <div className="bg-white p-4 rounded-2xl border border-temu-gray-border-light shadow-xs mb-6 space-y-3.5">
+        <div className="bg-white p-4 rounded-2xl border border-fog-100 shadow-[0_4px_18px_rgba(91,126,166,0.09)] mb-6 space-y-3.5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h2 className="text-lg font-black text-temu-black tracking-tight">
@@ -384,7 +391,7 @@ function HomeContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#6B3DB4] cursor-pointer w-full sm:w-auto shadow-2xs"
+                className="bg-fog-50 border border-fog-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5B7EA6] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
                 <option value="default">✨ Top Recommendations</option>
                 <option value="price-asc">💵 Price: Low to High</option>
@@ -412,8 +419,8 @@ function HomeContent() {
                   onClick={() => setPriceRange(pill.id as PriceRangeOption)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
                     priceRange === pill.id
-                      ? 'bg-[#17171A] text-white shadow-xs'
-                      : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
+                      ? 'bg-fog-600 text-white shadow-[0_6px_14px_rgba(70,100,138,0.3)]'
+                      : 'bg-fog-50 hover:bg-fog-100 text-temu-gray-text border border-fog-200'
                   }`}
                 >
                   {pill.label}
@@ -428,7 +435,7 @@ function HomeContent() {
                   setSortBy('default');
                   setPriceRange('all');
                 }}
-                className="text-xs text-[#7E56C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
+                className="text-xs text-[#7FA1C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
               >
                 Reset Filters ✕
               </button>
@@ -500,7 +507,7 @@ function HomeContent() {
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
             <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (
@@ -513,17 +520,17 @@ function HomeContent() {
         {/* 7. 🎨 REPLICA_V5 — شريط الثقة (trust strip تاع المعاينة)
             3 بطاقات بيضاء بأيقونات زجاجية — آخر حاجة قبل الـ footer */}
         <div className="grid grid-cols-3 gap-2.5 mt-4 mb-2">
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
             <GlassIcon i="truck" tone="brand" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Free Express</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Worldwide</small>
           </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
             <GlassIcon i="shield" tone="success" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">30-Day Guarantee</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Easy returns</small>
           </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
             <GlassIcon i="lock" tone="brand" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Secure Checkout</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">100% protected</small>
