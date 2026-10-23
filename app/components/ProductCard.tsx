@@ -12,7 +12,7 @@
  *      variants) → دابا كيصيفط vid تاع اللون المختار/المعاين — نفس
  *      الحماية اللي في ProductDetailsClient (vid خاطئ = بضاعة خاطئة)
  *    · +N للألوان الزايدة · title/aria-label لكل سواتش · بلا CLS
- *    · [swatch-ring v3.1] حلقة الاختيار = temu-black (#1D1E3C) + ring-offset أبيض:
+ *    · [swatch-ring v3.1] حلقة الاختيار = temu-black (#22364A) + ring-offset أبيض:
  *      السواتشات صور حقيقية فيها بنفسجي (مثال 28701 Purple) → حلقة بنفسجي
  *      كتخفي — الداكن المحايد كيتقرا على أي لون (بنترن Temu/Amazon/SHEIN)
  *      ويزال من نفس باليت الموقع · البنفسجي يبقى للـ CTA/الروابط/الأسعار
@@ -215,7 +215,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
               }}
               className={`w-5 h-5 rounded-full overflow-hidden border-2 border-transparent transition-all duration-150 cursor-pointer p-0 ${
                 activeIdx === idx
-                  ? '[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(135deg,#FF6B9D,#e11d48)_border-box] shadow-[0_0_6px_1px_rgba(255,107,157,0.30)]'
+                  ? '[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(135deg,#E2836B,#C96A52)_border-box] shadow-[0_0_6px_1px_rgba(226,131,107,0.30)]'
                   : 'border-temu-gray-border-light hover:border-temu-gray-light'
               }`}
             >

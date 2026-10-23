@@ -125,7 +125,7 @@ export default function CartWidget() {
               </div>
             )}
             {couponCode && (
-              <div className="bg-purple-50 text-[#8B78C6] text-[10px] font-bold p-1.5 rounded mb-2 text-center">
+              <div className="bg-fog-50 text-[#5B7EA6] text-[10px] font-bold p-1.5 rounded mb-2 text-center">
                 <GlassIcon ch="🎟️" size="xs" /> Coupon: {couponCode}
               </div>
             )}
@@ -149,7 +149,7 @@ export default function CartWidget() {
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-linear-to-r from-[#1D1E3C] to-[#8B78C6] text-white p-3.5 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition flex items-center justify-center cursor-pointer relative active:scale-90 border-2 border-white/20"
+        className="bg-linear-to-r from-[#22364A] to-[#5B7EA6] text-white p-3.5 sm:p-4 rounded-full shadow-2xl hover:scale-105 transition flex items-center justify-center cursor-pointer relative active:scale-90 border-2 border-white/20"
         aria-label="Toggle Shopping Bag"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -159,7 +159,7 @@ export default function CartWidget() {
         </svg>
 
         {totalItemsCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-[#FF6B9D] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#1D1E3C] shadow">
+          <span className="absolute -top-1.5 -right-1.5 bg-[#E2836B] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#22364A] shadow">
             {totalItemsCount > 99 ? '99+' : totalItemsCount}
           </span>
         )}

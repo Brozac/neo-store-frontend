@@ -1,31 +1,64 @@
-/* app/globals.css - Laclarc Enterprise Design System */
+/* app/globals.css - Laclarc Enterprise Design System
+   ═══════════════════════════════════════════════════════════
+   LACLARC — Serene Edition · v2.0 (ضباب أزرق)
+   الهوية الجديدة كاملة: هدوء + نعومة + رقي تجاري
+   · fog  = عائلة الضباب الأزرق (Primary #5B7EA6)
+   · coral= مرجاني هادئ للأسعار والخصم والاستعجال (#E2836B)
+   · خلفية #F7FAFC · ظلال ناعمة · زوايا كبيرة
+   ملاحظة: أسماء توكنات temu-* القديمة بقيت كما هي (689 استعمالاً)
+   وقيمها فقط هي التي تحولت — صفر كسر، انسجام كامل.
+   ═══════════════════════════════════════════════════════════ */
 @import "tailwindcss";
 
 @theme {
-  /* 1. الألوان الأساسية (البنفسجي الملكي) */
-  --color-temu-orange: #8B78C6;
-  --color-temu-orange-bright: #7A68AF;
+  /* 1. الألوان الأساسية (الضباب الأزرق — الهوية) */
+  --color-temu-orange: #5B7EA6;
+  --color-temu-orange-bright: #46688C;
 
-  /* 2. ألوان الإلحاح والخصم والأسعار */
-  --color-temu-error: #FF6B9D;
-  --color-temu-yellow: #FFE0F0;
-  --color-temu-yellow-soft: #FFEFF5;
-  --color-temu-gold: #FF6B9D;
+  /* 2. ألوان الإلحاح والخصم والأسعار (مرجاني هادئ) */
+  --color-temu-error: #E2836B;
+  --color-temu-yellow: #FAEAE2;
+  --color-temu-yellow-soft: #FDF4F0;
+  --color-temu-gold: #E2836B;
 
   /* 3. ألوان الثقة والهوية العميقة */
-  --color-temu-green: #1D1E3C;
-  --color-temu-green-light: #8B78C6;
+  --color-temu-green: #22364A;
+  --color-temu-green-light: #5B7EA6;
 
-  /* 4. الألوان المحايدة والخلفيات */
-  --color-temu-black: #1D1E3C;
-  --color-temu-dark: #2D2E5C;
-  --color-temu-gray-text: #4B5563;
-  --color-temu-gray-light: #6B7280;
-  --color-temu-gray-border: #E5E7EB;
-  --color-temu-gray-border-light: #F3F4F6;
-  --color-temu-offwhite: #F9F8FC;
+  /* 4. الألوان المحايدة والخلفيات (ضبابية) */
+  --color-temu-black: #22364A;
+  --color-temu-dark: #33475C;
+  --color-temu-gray-text: #52657A;
+  --color-temu-gray-light: #7A8CA0;
+  --color-temu-gray-border: #DCE5EE;
+  --color-temu-gray-border-light: #EAF1F7;
+  --color-temu-offwhite: #F7FAFC;
 
-  --radius-temu-sm: 8px;
+  /* 5. Serene v2.0 — مقياس الضباب fog (تدرجات الهوية)
+     fog-500 = PRIMARY · fog-800 = Ink (نصوص رئيسية) */
+  --color-fog-50: #F0F5FA;
+  --color-fog-100: #E3EDF5;
+  --color-fog-200: #CFDFEC;
+  --color-fog-300: #B4CDE2;
+  --color-fog-400: #8FB1CD;
+  --color-fog-500: #5B7EA6;
+  --color-fog-600: #46688C;
+  --color-fog-700: #3A5676;
+  --color-fog-800: #22364A;
+  --color-fog-900: #16222E;
+
+  /* 6. Serene v2.0 — مرجاني هادئ (أسعار · خصم · استعجال) */
+  --color-coral-50: #FDF4F0;
+  --color-coral-100: #FAEAE2;
+  --color-coral-200: #F4D5C7;
+  --color-coral-300: #F0B49E;
+  --color-coral-400: #E99C7F;
+  --color-coral-500: #E2836B;
+  --color-coral-600: #C96A52;
+  --color-coral-700: #A85440;
+
+  /* 7. زوايا أنعم (Serene = انسياب) */
+  --radius-temu-sm: 10px;
   --radius-temu-pill: 9999px;
 }
 
@@ -39,7 +72,7 @@
   }
 
   body {
-    background-color: #F9F8FC;
+    background-color: #F7FAFC;
     touch-action: manipulation;
     overscroll-behavior-y: contain;
   }
@@ -85,8 +118,8 @@
 .product-card-animated:active {
   transform: translateY(-4px);
   z-index: 10;
-  box-shadow: 0 12px 28px -6px rgba(139, 120, 198, 0.25);
-  border-color: #8B78C6 !important;
+  box-shadow: 0 12px 28px -6px rgba(91,126,166, 0.25);
+  border-color: #5B7EA6 !important;
 }
 
 /* ==========================================
@@ -154,7 +187,7 @@
 
 .t-accordion-head {
   color: white;
-  background: rgba(29, 30, 60, 0.85);
+  background: rgba(34,54,74, 0.85);
   backdrop-filter: blur(4px);
   padding: 0.5rem 1rem;
   transition: all 0.4s ease-in-out;
@@ -171,7 +204,7 @@
 .t-accordion-head .acc-price {
   display: block;
   font-size: 0.95rem;
-  color: #FF6B9D;
+  color: #E2836B;
   font-weight: 900;
   margin-top: 0.2rem;
 }
@@ -196,7 +229,7 @@
   scroll-snap-align: center;
   flex: 0 0 280px;
   background: white;
-  border: 1px solid #F3F4F6;
+  border: 1px solid #EAF1F7;
   border-radius: 12px;
   padding: 1.25rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -206,10 +239,10 @@
    ✨ تأثير الحدود الكهربائية المسرعة عتادياً (Lightning Deals)
    ========================================== */
 :root {
-  --electric-border-color: #8B78C6;
-  --electric-light-color: #FF6B9D;
-  --gradient-color: rgba(139, 120, 198, 0.35);
-  --color-neutral-900: #1D1E3C;
+  --electric-border-color: #5B7EA6;
+  --electric-light-color: #E2836B;
+  --gradient-color: rgba(91,126,166, 0.35);
+  --color-neutral-900: #22364A;
 }
 
 .lightning-main-container {
@@ -234,13 +267,13 @@
   width: 100%;
   max-width: 1240px;
   background: linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)), linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
-  box-shadow: 0 20px 40px -15px rgba(29, 30, 60, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(34,54,74, 0.4);
 }
 
 .lightning-inner-container { position: relative; }
 
 .lightning-border-outer {
-  border: 2px solid rgba(139, 120, 198, 0.4);
+  border: 2px solid rgba(91,126,166, 0.4);
   border-radius: 24px;
   padding: 2px;
 }
@@ -251,12 +284,12 @@
   border-radius: 22px;
   border: 2px solid var(--electric-border-color);
   filter: url(#turbulent-displace);
-  background: #1D1E3C;
+  background: #22364A;
   transform: translateZ(0);
 }
 
 .lightning-glow-layer-1 {
-  border: 2px solid rgba(255, 107, 157, 0.5);
+  border: 2px solid rgba(226,131,107, 0.5);
   border-radius: 24px;
   width: 100%;
   height: 100%;
@@ -337,7 +370,7 @@
   font-weight: 900;
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: #FF6B9D;
+  color: #E2836B;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -345,7 +378,7 @@
   font-size: 24px;
   font-weight: 900;
   color: white;
-  text-shadow: 0 0 20px rgba(139, 120, 198, 0.7);
+  text-shadow: 0 0 20px rgba(91,126,166, 0.7);
   letter-spacing: 0.05em;
 }
 
@@ -381,7 +414,7 @@
   font-size: 14px;
   min-width: 36px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+  box-shadow: 0 2px 8px rgba(226,131,107, 0.3);
 }
 
 /* ==========================================
@@ -410,7 +443,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   cursor: pointer;
-  background-color: #E8E5F2; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
+  background-color: #E3EDF5; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
   touch-action: manipulation;
 }
 
@@ -486,7 +519,7 @@
 .hero-card-price {
   font-size: 0.95rem;
   font-weight: 900;
-  color: #FF9EC4;
+  color: #F0A98E;
 }
 
 .hero-card-description {
@@ -559,7 +592,7 @@
     width: 26px;
     height: 26px;
     background: rgba(255, 255, 255, 0.92);
-    color: #1D1E3C;
+    color: #22364A;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -612,8 +645,8 @@
     padding-bottom: 1.5rem;
     background: linear-gradient(
       to top,
-      rgba(29, 30, 60, 0.92) 20%,
-      rgba(29, 30, 60, 0.45) 55%,
+      rgba(34,54,74, 0.92) 20%,
+      rgba(34,54,74, 0.45) 55%,
       transparent
     );
   }
@@ -686,12 +719,12 @@
 /* ═══ Tab strip — مؤشر سكرول رقيق (Mission #9 UX) ═══ */
 .tabstrip::-webkit-scrollbar { height: 6px; }
 .tabstrip::-webkit-scrollbar-track { background: transparent; }
-.tabstrip::-webkit-scrollbar-thumb { background: rgba(139,120,198,.4); border-radius: 999px; }
-.tabstrip { scrollbar-width: thin; scrollbar-color: rgba(139,120,198,.4) transparent; }
+.tabstrip::-webkit-scrollbar-thumb { background: rgba(91,126,166,.4); border-radius: 999px; }
+.tabstrip { scrollbar-width: thin; scrollbar-color: rgba(91,126,166,.4) transparent; }
 
 /* ═══ Image Beast — Guard against CLS on lazy images ═══ */
 img[loading="lazy"] {
-  background-color: #f3f1f8;
+  background-color: #F0F5FA;
 }
 img {
   content-visibility: auto;

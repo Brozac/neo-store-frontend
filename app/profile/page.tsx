@@ -212,7 +212,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -235,7 +235,7 @@ export default function ProfilePage() {
         {/* User Card */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
 
-          <div className="relative p-1 rounded-full bg-linear-to-tr from-[#8B78C6] to-[#FF6B9D] mb-4 shadow-md">
+          <div className="relative p-1 rounded-full bg-linear-to-tr from-[#5B7EA6] to-[#E2836B] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
               {user?.profile_picture ? (
                 <img
@@ -247,14 +247,14 @@ export default function ProfilePage() {
                   }}
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-purple-50 flex items-center justify-center text-3xl font-black text-[#8B78C6]">
+                <div className="w-24 h-24 rounded-full bg-fog-50 flex items-center justify-center text-3xl font-black text-[#5B7EA6]">
                   {user ? user.name.charAt(0).toUpperCase() : '?'}
                 </div>
               )}
             </div>
 
             <label
-              className="absolute bottom-1 right-1 flex items-center justify-center w-8 h-8 text-white bg-[#8B78C6] hover:bg-[#7A67B5] border-2 border-white rounded-full cursor-pointer transition shadow-md active:scale-90"
+              className="absolute bottom-1 right-1 flex items-center justify-center w-8 h-8 text-white bg-[#5B7EA6] hover:bg-[#46688C] border-2 border-white rounded-full cursor-pointer transition shadow-md active:scale-90"
               title="Upload New Avatar"
             >
               {uploadingImage ? (
@@ -267,7 +267,7 @@ export default function ProfilePage() {
           </div>
 
           {uploadError && (
-            <p className="text-xs text-rose-600 font-bold mb-2">{uploadError}</p>
+            <p className="text-xs text-coral-600 font-bold mb-2">{uploadError}</p>
           )}
 
           <h2 className="text-xl font-black text-gray-900">{user ? user.name : 'Guest Shopper'}</h2>
@@ -276,7 +276,7 @@ export default function ProfilePage() {
           {user && (
             <button
               onClick={() => { setEditName(user.name); setEditError(''); setIsEditOpen(true); }}
-              className="inline-flex items-center gap-1.5 text-[#8B78C6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 text-[#5B7EA6] font-bold text-xs hover:underline cursor-pointer active:scale-95 transition"
             >
               <span><GlassIcon ch="✏️" size="xs" /></span> Edit Profile Details
             </button>
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#FF6B9D]"><GlassIcon ch="❤️" size="xs" /></span>
+                  <span className="text-base text-[#E2836B]"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -304,7 +304,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
-                  <span className="text-base text-[#8B78C6]"><GlassIcon ch="📦" size="xs" /></span>
+                  <span className="text-base text-[#5B7EA6]"><GlassIcon ch="📦" size="xs" /></span>
                   Order History & Invoices
                 </span>
                 <span className="text-gray-400 text-xs">&rarr;</span>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-between p-4 hover:bg-rose-50 rounded-xl transition text-rose-600 cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-coral-50 rounded-xl transition text-coral-600 cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-3">
                   <span className="text-base"><GlassIcon ch="🔒" size="xs" /></span>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => router.push('/auth')}
-              className="w-full bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md active:scale-95"
+              className="w-full bg-[#22364A] hover:bg-[#33475C] text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md active:scale-95"
             >
               Sign In / Register &rarr;
             </button>
@@ -371,7 +371,7 @@ export default function ProfilePage() {
 
             {/* 🆕 v1.1 — uploadError داخل المودال أيضاً (كان خارجاً فقط — الزبون ما يشوفش) */}
             {uploadError && (
-              <div className="p-3 bg-red-50 text-rose-600 rounded-xl text-xs font-bold" role="alert">
+              <div className="p-3 bg-red-50 text-coral-600 rounded-xl text-xs font-bold" role="alert">
                 <GlassIcon ch="⚠️" size="xs" /> {uploadError}
               </div>
             )}
@@ -384,7 +384,7 @@ export default function ProfilePage() {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition"
                 />
               </div>
 
@@ -403,7 +403,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={updating}
-                className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+                className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 mt-2 transition disabled:opacity-50 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
               >
                 {updating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Save Profile Changes'}
               </button>

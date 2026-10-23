@@ -112,10 +112,10 @@ const SIZES: Record<GlassSize, { chip: string; icon: number; text: string }> = {
 };
 
 const TONES: Record<Tone, string> = {
-  brand: '#8B78C6',
+  brand: '#5B7EA6',
   success: '#059669',
   warn: '#D97706',
-  danger: '#E11D48',
+  danger: '#C96A52',
   neutral: '#64748B',
 };
 
@@ -123,7 +123,7 @@ const TONES: Record<Tone, string> = {
 const GLASS_CHIP =
   'relative inline-flex items-center justify-center shrink-0 border border-white/70 ' +
   'bg-gradient-to-b from-white/85 to-white/40 backdrop-blur-md ' +
-  'shadow-[0_2px_10px_-2px_rgba(139,120,198,0.30),inset_0_1px_0_0_rgba(255,255,255,0.85)]';
+  'shadow-[0_2px_10px_-2px_rgba(91,126,166,0.30),inset_0_1px_0_0_rgba(255,255,255,0.85)]';
 
 export interface GlassIconProps {
   i?: string;          // اسم الأيقونة (truck, zap, package…)

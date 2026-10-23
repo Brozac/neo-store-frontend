@@ -101,7 +101,7 @@ export default function CjProductPage() {
           <GlassIcon i="arrowLeft" size="xs" /> Back
         </button>
 
-        <div className="bg-purple-50/60 border border-[#8B78C6]/25 rounded-xl p-3 text-xs font-bold text-[#8B78C6] text-center">
+        <div className="bg-fog-50/60 border border-[#5B7EA6]/25 rounded-xl p-3 text-xs font-bold text-[#5B7EA6] text-center">
           <GlassIcon ch="🌍" size="xs" /> Global Catalog Item — ships directly via CJ Dropshipping
         </div>
 
@@ -115,7 +115,7 @@ export default function CjProductPage() {
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {(product.images as string[]).map((img: string, i: number) => (
                   <button key={i} onClick={() => setMainImg(img)}
-                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 ${mainImg === img ? 'border-[#8B78C6]' : 'border-gray-200'}`}>
+                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 ${mainImg === img ? 'border-[#5B7EA6]' : 'border-gray-200'}`}>
                     <img src={img} className="w-full h-full object-cover" alt="" />
                   </button>
                 ))}

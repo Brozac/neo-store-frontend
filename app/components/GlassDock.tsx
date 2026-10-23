@@ -130,7 +130,7 @@ export default function GlassDock() {
                 )}
 
                 {/* Tooltip — يظهر مع hover */}
-                <span className="gdock-tip absolute -top-9 bg-[#1D1E3C] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap pointer-events-none opacity-0 transition-opacity">
+                <span className="gdock-tip absolute -top-9 bg-[#22364A] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap pointer-events-none opacity-0 transition-opacity">
                   {item.label}
                 </span>
               </Link>
@@ -147,7 +147,7 @@ export default function GlassDock() {
           -webkit-backdrop-filter: blur(20px) saturate(180%);
           border: 1px solid rgba(255, 255, 255, 0.6);
           box-shadow:
-            0 8px 32px rgba(29, 30, 60, 0.12),
+            0 8px 32px rgba(34,54,74, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
         }
 

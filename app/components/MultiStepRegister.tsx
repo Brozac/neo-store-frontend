@@ -134,12 +134,12 @@ export default function MultiStepRegister() {
           </div>
           <h2 className="text-2xl font-black text-gray-900">Registration Successful! <GlassIcon ch="🎉" size="xs" /></h2>
           <p className="text-gray-600 text-sm max-w-md mx-auto leading-relaxed">
-            We have dispatched an activation link to <strong className="text-[#8B78C6]">{formData.email}</strong>. Please verify your inbox to activate your account.
+            We have dispatched an activation link to <strong className="text-[#5B7EA6]">{formData.email}</strong>. Please verify your inbox to activate your account.
           </p>
           <div className="pt-4">
             <Link 
               href="/"
-              className="inline-block bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white font-extrabold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+              className="inline-block bg-[#22364A] hover:bg-[#33475C] text-white font-extrabold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Return to Storefront
             </Link>
@@ -151,7 +151,7 @@ export default function MultiStepRegister() {
           {/* Progress Header */}
           <div className="border-b border-gray-100 pb-5 mb-6">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#8B78C6]">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#5B7EA6]">
                 Step {step} of 3
               </span>
               <span className="text-xs font-mono font-bold text-gray-400">{progress}% Complete</span>
@@ -159,7 +159,7 @@ export default function MultiStepRegister() {
             
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-3">
               <div 
-                className="bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] h-full rounded-full transition-all duration-500 ease-out" 
+                className="bg-linear-to-r from-[#5B7EA6] to-[#E2836B] h-full rounded-full transition-all duration-500 ease-out" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
@@ -181,7 +181,7 @@ export default function MultiStepRegister() {
           {step === 1 && (
             <div className="space-y-4">
               <div className="text-center mb-6">
-                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto bg-gray-100 border-2 border-[#8B78C6]/30 mb-3 relative shadow-sm">
+                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto bg-gray-100 border-2 border-[#5B7EA6]/30 mb-3 relative shadow-sm">
                   <img src={image} alt="Profile" className="w-full h-full object-cover" />
                 </div>
                 <label 
@@ -219,7 +219,7 @@ export default function MultiStepRegister() {
                   onChange={handleChange} 
                   required
                   placeholder="e.g. Sarah Connor" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#8B78C6] transition" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#5B7EA6] transition" 
                 />
               </div>
 
@@ -232,7 +232,7 @@ export default function MultiStepRegister() {
                   onChange={handleChange} 
                   required
                   placeholder="name@example.com" 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#8B78C6] transition" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#5B7EA6] transition" 
                 />
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function MultiStepRegister() {
                     value={formData.password} 
                     onChange={(e) => handlePasswordChange(e.target.value)} 
                     placeholder="Minimum 8 characters..." 
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 pr-12 focus:outline-none focus:border-[#8B78C6] transition" 
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 pr-12 focus:outline-none focus:border-[#5B7EA6] transition" 
                   />
                   <button 
                     type="button"
@@ -288,7 +288,7 @@ export default function MultiStepRegister() {
                       key={g}
                       className={`flex items-center justify-center p-3.5 rounded-xl border-2 font-bold text-xs cursor-pointer transition active:scale-95 ${
                         formData.gender === g 
-                          ? 'border-[#8B78C6] bg-purple-50 text-[#1D1E3C]' 
+                          ? 'border-[#5B7EA6] bg-fog-50 text-[#22364A]' 
                           : 'border-gray-200 bg-white text-gray-500'
                       }`}
                     >
@@ -314,7 +314,7 @@ export default function MultiStepRegister() {
                   value={formData.profession} 
                   onChange={handleChange} 
                   placeholder="e.g. Designer, Entrepreneur..." 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#8B78C6] transition" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#5B7EA6] transition" 
                 />
               </div>
             </div>
@@ -336,7 +336,7 @@ export default function MultiStepRegister() {
               <button 
                 type="button" 
                 onClick={handleNextStep} 
-                className="px-8 py-3 bg-[#1D1E3C] hover:bg-[#2D2E5C] text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-md"
+                className="px-8 py-3 bg-[#22364A] hover:bg-[#33475C] text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-md"
               >
                 Continue &rarr;
               </button>
@@ -345,7 +345,7 @@ export default function MultiStepRegister() {
                 type="button" 
                 onClick={handleComplete} 
                 disabled={loading}
-                className="px-8 py-3 bg-linear-to-r from-[#8B78C6] to-[#FF6B9D] hover:brightness-110 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-lg disabled:opacity-50 flex items-center gap-2"
+                className="px-8 py-3 bg-linear-to-r from-[#5B7EA6] to-[#E2836B] hover:brightness-110 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-lg disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Create Laclarc Account'}
               </button>

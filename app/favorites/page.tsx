@@ -63,7 +63,7 @@ export default function FavoritesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center gap-3">
-        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-bold text-gray-400">Loading saved items...</p>
       </div>
     );
@@ -92,7 +92,7 @@ export default function FavoritesPage() {
 
         {favoriteProducts.length === 0 ? (
           <div className="bg-white p-12 sm:p-16 rounded-2xl border border-gray-200 text-center shadow-sm max-w-lg mx-auto space-y-4">
-            <div className="w-16 h-16 bg-pink-50 text-[#FF6B9D] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">
+            <div className="w-16 h-16 bg-coral-50 text-[#E2836B] rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">
               <GlassIcon ch="❤️" size="xs" />
             </div>
             <h2 className="text-lg font-black text-gray-900">Your Wishlist is Empty</h2>
@@ -102,7 +102,7 @@ export default function FavoritesPage() {
             <div className="pt-2">
               <Link 
                 href="/" 
-                className="inline-block bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 shadow-md"
+                className="inline-block bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer active:scale-95 shadow-md"
               >
                 Explore Trending Catalog &rarr;
               </Link>

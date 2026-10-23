@@ -35,7 +35,7 @@ export default function TiltCard({ children }: { children: ReactNode }) {
         radial-gradient(
           circle 350px at ${mouseX}px ${mouseY}px,
           rgba(255, 255, 255, 0.9),
-          rgba(139, 120, 198, 0.2) 50%,
+          rgba(91,126,166, 0.2) 50%,
           rgba(0, 0, 0, 0) 100%
         )
       `;
@@ -87,7 +87,7 @@ export default function TiltCard({ children }: { children: ReactNode }) {
       style={{
         transition: 'transform 150ms ease-out, box-shadow 150ms ease-out',
         transformStyle: 'preserve-3d',
-        boxShadow: hovering ? '0 10px 30px 10px rgba(139, 120, 198, 0.4)' : '0 1px 5px rgba(0,0,0,0.1)',
+        boxShadow: hovering ? '0 10px 30px 10px rgba(91,126,166, 0.4)' : '0 1px 5px rgba(0,0,0,0.1)',
         position: 'relative',
         willChange: 'transform',
         touchAction: 'pan-x pan-y',

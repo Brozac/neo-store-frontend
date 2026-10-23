@@ -108,7 +108,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setIsDropdownOpen(true)}
           placeholder="Search products, brands, and categories..."
-          className="w-full bg-white/95 text-temu-black border border-white/20 rounded-full py-2.5 sm:py-3 pl-11 pr-24 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8B78C6] shadow-md transition touch-manipulation"
+          className="w-full bg-white/95 text-temu-black border border-white/20 rounded-full py-2.5 sm:py-3 pl-11 pr-24 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B7EA6] shadow-md transition touch-manipulation"
         />
         
         {/* Search Icon */}
@@ -133,7 +133,7 @@ export default function SearchBar() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider"
+          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-r from-[#E2836B] to-coral-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider"
         >
           Search
         </button>
@@ -144,7 +144,7 @@ export default function SearchBar() {
         <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[65vh] overflow-y-auto scrollbar-hide">
           {isLoading ? (
             <div className="p-5 text-center text-gray-400 text-xs font-bold flex justify-center items-center gap-2 animate-pulse">
-              <div className="w-4 h-4 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
               Scanning Catalog...
             </div>
           ) : results.length > 0 ? (
@@ -174,7 +174,7 @@ export default function SearchBar() {
                     </div>
                     <div className="grow min-w-0">
                       <p className="text-xs font-bold text-temu-black truncate">{product.title}</p>
-                      <p className="text-xs font-black text-[#FF6B9D] mt-0.5">${safePrice.toFixed(2)}</p>
+                      <p className="text-xs font-black text-[#E2836B] mt-0.5">${safePrice.toFixed(2)}</p>
                     </div>
                     <span className="text-xs text-gray-400 font-bold">&rarr;</span>
                   </div>
@@ -184,7 +184,7 @@ export default function SearchBar() {
               <div className="p-2.5 bg-gray-50 text-center">
                 <button 
                   onClick={handleSubmit}
-                  className="w-full text-xs font-extrabold text-[#8B78C6] hover:underline cursor-pointer active:scale-95"
+                  className="w-full text-xs font-extrabold text-[#5B7EA6] hover:underline cursor-pointer active:scale-95"
                 >
                   View all results for &ldquo;{query}&rdquo; &rarr;
                 </button>

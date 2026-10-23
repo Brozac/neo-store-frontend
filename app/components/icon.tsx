@@ -9,7 +9,7 @@ export default function Icon() {
       <div
         style={{
           fontSize: 90, // ✨ تم تصغير حجم الخط ليتسع الاسم كاملاً
-          background: '#1D1E3C', // الكحلي
+          background: '#22364A', // الكحلي
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -18,16 +18,16 @@ export default function Icon() {
           borderRadius: '115px',
           letterSpacing: '-2px', // ✨ تقليل المسافة بين الحروف
           fontFamily: 'sans-serif',
-          boxShadow: '0 0 50px rgba(139, 120, 198, 0.5)',
+          boxShadow: '0 0 50px rgba(91,126,166, 0.5)',
         }}
       >
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>L</span>
-        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>a</span>
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>c</span>
-        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>l</span>
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>a</span>
-        <span style={{ color: '#FF6B9D', fontWeight: 900 }}>r</span>
-        <span style={{ color: '#8B78C6', fontWeight: 900 }}>c</span>
+        <span style={{ color: '#5B7EA6', fontWeight: 900 }}>L</span>
+        <span style={{ color: '#E2836B', fontWeight: 900 }}>a</span>
+        <span style={{ color: '#5B7EA6', fontWeight: 900 }}>c</span>
+        <span style={{ color: '#E2836B', fontWeight: 900 }}>l</span>
+        <span style={{ color: '#5B7EA6', fontWeight: 900 }}>a</span>
+        <span style={{ color: '#E2836B', fontWeight: 900 }}>r</span>
+        <span style={{ color: '#5B7EA6', fontWeight: 900 }}>c</span>
       </div>
     ),
     { ...size }

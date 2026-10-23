@@ -396,7 +396,7 @@ function ManageProductsContent() {
                       {/* Edit Button */}
                       <button 
                         onClick={() => openEditModal(product)} 
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-fog-50 hover:bg-fog-100 text-fog-500 border border-fog-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Edit Price & Details"
                       >
                         ✏️
@@ -433,11 +433,11 @@ function ManageProductsContent() {
                       <button 
                         onClick={() => handleSendToSourcing(product)} 
                         disabled={sourcingId === product.id} 
-                        className="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
+                        className="bg-fog-50 hover:bg-fog-100 text-fog-600 border border-fog-200 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
                         title="Request CJ Sourcing Quote"
                       >
                         {sourcingId === product.id ? (
-                          <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-fog-600 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           '🏭'
                         )}
@@ -629,7 +629,7 @@ function ManageProductsContent() {
 
               <button 
                 type="submit" 
-                className="w-full bg-linear-to-r from-temu-error to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-md"
+                className="w-full bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-md"
               >
                 Inject Verified Review
               </button>

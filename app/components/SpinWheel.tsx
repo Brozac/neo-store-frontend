@@ -23,14 +23,14 @@ export default function SpinWheel() {
 
   // ✨ نسب خصم واقعية ومحفزة للشراء (تم إلغاء ثغرة Free Ship 100% التي كانت تصفر الحساب!)
   const segments = [
-    { text: '5% OFF', value: 5, color: '#8B78C6', icon: '⭐' },
-    { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
-    { text: '10% OFF', value: 10, color: '#FF6B9D', icon: '🎁' },
+    { text: '5% OFF', value: 5, color: '#5B7EA6', icon: '⭐' },
+    { text: 'Try Again', value: 0, color: '#22364A', icon: '😭' },
+    { text: '10% OFF', value: 10, color: '#E2836B', icon: '🎁' },
     { text: '7% OFF', value: 7, color: '#357A8B', icon: '🔥' },
-    { text: 'Try Again', value: 0, color: '#1D1E3C', icon: '😭' },
+    { text: 'Try Again', value: 0, color: '#22364A', icon: '😭' },
     { text: '15% VIP', value: 15, color: '#FFA500', icon: '👑' },
-    { text: '5% OFF', value: 5, color: '#8B78C6', icon: '🎉' },
-    { text: '8% LUCKY', value: 8, color: '#FF6B9D', icon: '🍀' },
+    { text: '5% OFF', value: 5, color: '#5B7EA6', icon: '🎉' },
+    { text: '8% LUCKY', value: 8, color: '#E2836B', icon: '🍀' },
   ];
 
   const handleSpin = (e: React.FormEvent) => {

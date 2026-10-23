@@ -83,7 +83,7 @@ export default function AllProducts() {
           </div>
           <Link
             href="/"
-            className="text-xs font-bold text-[#8B78C6] hover:underline"
+            className="text-xs font-bold text-[#5B7EA6] hover:underline"
           >
             <GlassIcon i="arrowLeft" size="xs" /> Home
           </Link>
@@ -121,7 +121,7 @@ export default function AllProducts() {
                 {/* 🩹 FIX-ZERO + FIX-TRUST — بلا سعر = بلا صف · بلا سقف 90% = بلا anchor مزيف */}
                 {price > 0 && (
                   <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <span className="text-sm font-black text-[#FF6B9D]">
+                    <span className="text-sm font-black text-[#E2836B]">
                       ${price.toFixed(2)}
                     </span>
                     {showOrig && (
@@ -142,7 +142,7 @@ export default function AllProducts() {
 
         {loading && (
           <div className="text-center py-6">
-            <div className="w-6 h-6 border-2 border-[#8B78C6] border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         )}
 
@@ -152,7 +152,7 @@ export default function AllProducts() {
             <p className="text-xs font-bold text-temu-black"><GlassIcon ch="⚠️" size="xs" /> {error}</p>
             <button
               onClick={retry}
-              className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
+              className="text-xs font-bold bg-[#5B7EA6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
             >
               <GlassIcon i="refresh" size="xs" /> Retry
             </button>
@@ -166,7 +166,7 @@ export default function AllProducts() {
             <p className="text-xs font-bold text-temu-black"><GlassIcon ch="⚠️" size="xs" /> {moreError}</p>
             <button
               onClick={loadMore}
-              className="text-xs font-bold bg-[#8B78C6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
+              className="text-xs font-bold bg-[#5B7EA6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
             >
               <GlassIcon i="refresh" size="xs" /> Retry
             </button>

@@ -8,7 +8,7 @@ export default function CancelPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#F9F8FC] p-4 sm:p-6 text-center font-sans">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#F7FAFC] p-4 sm:p-6 text-center font-sans">
       <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full space-y-6">
         
         {/* Reassurance Badge */}
@@ -17,7 +17,7 @@ export default function CancelPage() {
         </div>
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1D1E3C]">Checkout Incomplete</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#22364A]">Checkout Incomplete</h1>
           <p className="text-xs text-gray-500 mt-2 leading-relaxed">
             No charges were made to your account. Your cart items are still safely reserved for you.
           </p>
@@ -34,7 +34,7 @@ export default function CancelPage() {
         <div className="space-y-2.5 pt-2">
           <Link 
             href="/cart" 
-            className="block w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#8B78C6]/20 active:scale-95"
+            className="block w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#5B7EA6]/20 active:scale-95"
           >
             Review Cart & Try Again &rarr;
           </Link>
@@ -49,7 +49,7 @@ export default function CancelPage() {
 
         <div className="pt-2 border-t border-gray-100 text-[11px] text-gray-400">
           Need assistance? Reach our 24/7 team at{' '}
-          <a href="mailto:support@laclarc.com" className="text-[#8B78C6] font-bold hover:underline">
+          <a href="mailto:support@laclarc.com" className="text-[#5B7EA6] font-bold hover:underline">
             support@laclarc.com
           </a>
         </div>

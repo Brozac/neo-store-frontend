@@ -61,7 +61,7 @@ function ResetPasswordContent() {
     <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
         
-        <div className="w-14 h-14 bg-purple-100 text-[#8B78C6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+        <div className="w-14 h-14 bg-fog-100 text-[#5B7EA6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
           <GlassIcon ch="🔒" size="xs" />
         </div>
         <h1 className="text-2xl font-black text-gray-900 mb-1">Set New Password</h1>
@@ -88,7 +88,7 @@ function ResetPasswordContent() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 placeholder="Minimum 6 characters..."
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition"
               />
             </div>
 
@@ -100,14 +100,14 @@ function ResetPasswordContent() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 placeholder="Repeat password..."
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#8B78C6] transition"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition"
               />
             </div>
 
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-linear-to-r from-[#8B78C6] to-[#7A67B5] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
+              className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46688C] hover:brightness-110 text-white font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center cursor-pointer active:scale-95 shadow-md text-xs uppercase tracking-wider"
             >
               {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Update Password & Sign In'}
             </button>
@@ -123,7 +123,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#8B78C6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <ResetPasswordContent />

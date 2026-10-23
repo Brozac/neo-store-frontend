@@ -227,7 +227,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                     className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center font-black text-xs">
+                      <div className="w-10 h-10 bg-fog-500/10 text-fog-600 rounded-xl flex items-center justify-center font-black text-xs">
                         🇪🇺
                       </div>
                       <div>

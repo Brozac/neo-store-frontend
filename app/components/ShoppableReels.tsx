@@ -173,12 +173,12 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
           <span className="text-xl animate-pulse"><GlassIcon ch="🎬" size="xs" /></span>
           <div>
             <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
-              Watch & Shop <span className="text-[#FF6B9D]">&bull; Reels</span>
+              Watch & Shop <span className="text-[#E2836B]">&bull; Reels</span>
             </h2>
             <p className="text-xs text-gray-500">See trending innovations tested live in action</p>
           </div>
         </div>
-        <span className="text-xs font-bold text-[#8B78C6] uppercase tracking-wider bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+        <span className="text-xs font-bold text-[#5B7EA6] uppercase tracking-wider bg-fog-50 px-3 py-1 rounded-full border border-fog-100">
           Tap to Watch
         </span>
       </div>
@@ -212,7 +212,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                 </div>
               </div>
 
-              <span className="absolute top-3 right-3 bg-[#FF6B9D] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
+              <span className="absolute top-3 right-3 bg-[#E2836B] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase shadow-lg tracking-wider">
                 <GlassInline text={reel.badge || 'Live Drop'} />
               </span>
 
@@ -340,7 +340,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   <div className="min-w-0">
                     <h4 className="text-xs font-bold text-white truncate">{currentReel.title}</h4>
                     <div className="flex items-baseline gap-1.5 mt-0.5">
-                      <span className="text-sm font-black text-[#FF6B9D]">${safePrice.toFixed(2)}</span>
+                      <span className="text-sm font-black text-[#E2836B]">${safePrice.toFixed(2)}</span>
                       {Number(currentReel.original_price) > safePrice && (
                         <span className="text-[10px] text-gray-400 line-through">
                           ${Number(currentReel.original_price).toFixed(2)}
@@ -363,7 +363,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                     }
                     setIsPaymentOpen(true);
                   }}
-                  className="bg-linear-to-r from-[#FF6B9D] to-rose-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-pink-500/30 flex items-center gap-1.5 cursor-pointer"
+                  className="bg-linear-to-r from-[#E2836B] to-coral-600 hover:brightness-110 text-white font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shrink-0 active:scale-95 transition shadow-lg shadow-coral-500/30 flex items-center gap-1.5 cursor-pointer"
                 >
                   <span><GlassIcon i="zap" size="xs" /></span> Buy Now
                 </button>

@@ -220,7 +220,7 @@ export default function DisputesPage() {
 
             <button 
               onClick={() => setIsModalOpen(true)} 
-              className="bg-linear-to-r from-temu-error to-rose-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer active:scale-95 shadow-md"
+              className="bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer active:scale-95 shadow-md"
             >
               + File New Dispute
             </button>
@@ -370,7 +370,7 @@ export default function DisputesPage() {
               <button 
                 type="submit" 
                 disabled={creating} 
-                className="w-full bg-linear-to-r from-temu-error to-rose-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-md flex justify-center items-center gap-2 text-xs uppercase"
+                className="w-full bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-md flex justify-center items-center gap-2 text-xs uppercase"
               >
                 {creating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'File Dispute Claim with CJ'}
               </button>
