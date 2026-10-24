@@ -31,7 +31,9 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#22303F] text-gray-300 border-t border-white/10 mt-16 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      {/* 🎨 F#27 Responsive — pb-36 في الموبايل: الدوك الزجاجي (78px) + الفقاعات العائمة
+          ما يغطيوش على صف طرق الدفع وأزرار التثبيت وقت أسفل التمرير (الديسكتوب ما عندوش الدوك) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-36 md:pb-12 lg:pt-16 lg:pb-16">
         
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">

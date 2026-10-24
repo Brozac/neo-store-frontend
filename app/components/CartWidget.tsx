@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from './PaymentModal';
 import GlassIcon from '@/components/ui/GlassIcon';
 
 export default function CartWidget() {
   const { cart, removeFromCart, updateQuantity, finalTotal, wheelDiscount, totalItemsCount, isMounted } = useCart();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // 🔑 coupon bridge — نفس مصدر exit-intent/CartPage (sessionStorage) — السيرفر كيعاود يتصادقو fail-closed
@@ -27,7 +29,11 @@ export default function CartWidget() {
   }, [isMounted]);
 
   // 🔒 الـ hooks كاملين قبل الـ early return (قواعد React — درس CartPage)
-  if (!isMounted || cart.length === 0) return null;
+  // 🎨 F#27 Responsive — الـ widget مخبّي فالصفحات اللي عندها أداة دفع دائمة ديالها
+  // (/cart الشريط اللاصق · /checkout زر Stripe · /products/[id] الـ sticky CTA) —
+  // الفقاعة كانت كتغطي على أزرار الدفع في الموبايل (z-40 فوق الشريط z-30)
+  const hideWidget = pathname === '/cart' || pathname === '/checkout' || /^\/products\/[^/]+$/.test(pathname || '');
+  if (!isMounted || cart.length === 0 || hideWidget) return null;
 
   const dec = (itemKey: string, currentQty: number) => {
     // 🔒 حد أدنى: 1 — إلا بغيتي تحيد، استعمل زر ✕ (نمط Amazon)

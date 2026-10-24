@@ -86,7 +86,8 @@ export default function CartPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-6 pb-44 md:pb-32 font-sans">
+      {/* 🎨 F#27 — pb-44 في الموبايل: مساحة تنفّس للشريط اللاصق الجديد فوق الدوك */}
       <div className="max-w-md mx-auto">
         <button
           onClick={() => router.push('/')}
@@ -173,7 +174,7 @@ export default function CartPage() {
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder="Enter code..."
                   disabled={couponApplied}
-                  className="flex-1 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition disabled:opacity-50 touch-manipulation"
+                  className="flex-1 min-w-0 bg-white border border-temu-gray-border-light rounded-temu-sm px-4 py-3 text-sm focus:outline-none focus:border-temu-orange transition disabled:opacity-50 touch-manipulation"
                 />
                 <button
                   onClick={handleApplyCoupon}
@@ -223,6 +224,26 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* 🎨 F#27 Responsive — شريط دفع لاصق للموبايل فوق الدوك (نفس باتيرن REPLICA_V4 تاع صفحة المنتج)
+          الدوك الزجاجي (z-40) كيغطي 78px — الشريط مرفوع بـ calc(78px + safe-area) باش زر الدفع
+          ما يتنكاشش وقت التمرير؛ الديسكتوب ما عندوش الدوك أصلاً فما يبانش هنا (md:hidden) */}
+      {cart.length > 0 && (
+        <div className="fixed left-0 right-0 z-30 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] md:hidden bg-white/95 backdrop-blur-md border-t border-temu-gray-border-light shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col leading-tight shrink-0">
+              <small className="text-[10px] uppercase tracking-wider text-temu-gray-text font-bold">Total</small>
+              <b className="text-lg font-black text-temu-black">${finalTotalString}</b>
+            </div>
+            <button
+              onClick={handleCheckout}
+              className="flex-1 bg-temu-orange text-white font-extrabold py-3.5 rounded-temu-sm hover:bg-temu-orange-bright transition flex justify-center items-center cursor-pointer active:scale-95 touch-manipulation shadow-md"
+            >
+              Proceed to Checkout
+            </button>
+          </div>
+        </div>
+      )}
 
       <PaymentModal
         isOpen={isModalOpen}
