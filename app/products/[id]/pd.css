@@ -40,17 +40,21 @@
 .pd-gbtn.on svg{fill:var(--rose);animation:pd-pop .35s}
 @keyframes pd-pop{0%{transform:scale(.6)}55%{transform:scale(1.25)}100%{transform:scale(1)}}
 
-/* ── المعرض: سلايدر 330px بمسار ينزلق + دائرة زاجاج خلف الصورة ── */
+/* ── المعرض: سلايدر 330px بمسار ينزلق — صورة كاملة بلا صندوق أبيض ──
+   🩹 Task 26 — «صورة المنتج تبان كامل ونحلها صندوق الأبيض»:
+   قبل: الصورة 72% (max 300px) وسط تدرج أزرق = مربع أبيض عائم فالوسط.
+   دابا: الصورة contain بعرض/طول كامل فوق خلفية بيضاء مدمجة →
+   خلفية الصورة البيضاء كتندمج مع المعرض = صندوق مختفي، المنتج
+   كيبان كامل (بلا قص) وأكبر (عرض كامل بدل 72%).
+   الفيديو كيبقى cover كيما كان (كيعمّر أصلاً). */
 .pd-gallery{height:330px;position:relative;overflow:hidden}
 .pd-track{display:flex;height:100%;transition:transform .5s cubic-bezier(.22,.8,.28,1)}
-.pd-slide{min-width:100%;height:100%;display:grid;place-items:center;position:relative}
-.pd-slide::after{content:'';position:absolute;width:235px;height:235px;border-radius:50%;border:1.5px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15)}
-.pd-slide.vid::after{display:none}
-.pd-slide img{width:72%;max-width:300px;height:72%;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 14px 22px rgba(46,64,87,.16))}
+.pd-slide{min-width:100%;height:100%;display:grid;place-items:center;position:relative;background:#fff}
+.pd-slide img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1}
 .pd-slide video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;background:#2e4057}
-.pd-dots{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:5}
-.pd-dots i{width:6px;height:6px;border-radius:99px;background:rgba(255,255,255,.55);box-shadow:0 1px 4px rgba(46,64,87,.2);transition:all .3s;cursor:pointer}
-.pd-dots i.on{width:18px;background:#fff}
+.pd-dots{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:5;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:6px 10px;border-radius:99px;box-shadow:0 2px 10px rgba(46,64,87,.16)}
+.pd-dots i{width:6px;height:6px;border-radius:99px;background:rgba(46,64,87,.28);transition:all .3s;cursor:pointer}
+.pd-dots i.on{width:18px;background:var(--primary)}
 
 /* ── الشيت: جسم أبيض يركب على المعرض بـ -26px وزوايا 26px ── */
 .pd-sheet{position:relative;margin-top:-26px;background:var(--surface);border-radius:26px 26px 0 0;padding:18px 20px 26px;box-shadow:0 -8px 24px rgba(91,126,166,.10)}
@@ -141,8 +145,9 @@
    (viewport-fit=cover مفعّل فالـ layout) — فالمتصفح العادي = 12px عادي */
 .pd-immersive .pd-float{top:calc(12px + env(safe-area-inset-top, 0px))}
 
-/* عداد الصور «1/5» — يمين تحت، أبيض بظل (نفس mockup الحقيبة) */
-.pd-count{position:absolute;bottom:34px;right:16px;z-index:6;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-shadow:0 1px 6px rgba(46,64,87,.5);font-variant-numeric:tabular-nums;pointer-events:none}
+/* عداد الصور «1/5» — يمين تحت، حبّة زاجاج مقروءة على أي خلفية
+   (كانت أبيض بظل — كتغيب على صور بخلفية بيضاء) */
+.pd-count{position:absolute;bottom:34px;right:16px;z-index:6;color:var(--ink);font-size:11.5px;font-weight:800;letter-spacing:.05em;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:3px 9px;border-radius:99px;box-shadow:0 2px 10px rgba(46,64,87,.16);font-variant-numeric:tabular-nums;pointer-events:none}
 
 /* سلة زاجاج بـ badge — نفس لغة .pd-gbtn (الـ badge كيتغطى بالـ context) */
 .pd-gcart{position:relative}

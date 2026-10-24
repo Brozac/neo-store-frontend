@@ -544,7 +544,10 @@ export default function ProductDetailsClient({
               </div>
             </div>
 
-            {/* المسار المنزلق — نفس انتقال mockup cubic-bezier(.22,.8,.28,1) + دائرة زاجاج خلف الصورة */}
+            {/* المسار المنزلق — نفس انتقال mockup cubic-bezier(.22,.8,.28,1)
+                🩹 Task 26 — تحياد التدرجات الزرقاء inline (كانت هي «الصندوق الأبيض»:
+                صورة بخلفية بيضاء فوق تدرج أزرق = مربع أبيض عائم) — الخلفية البيضاء
+                المدمجة جاية من pd.css (.pd-slide{background:#fff}) والصورة contain كامل */}
             <div
               className="pd-track"
               style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
@@ -556,15 +559,7 @@ export default function ProductDetailsClient({
                 </div>
               ) : (
                 galleryImages.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="pd-slide"
-                    style={{ background: idx % 3 === 0
-                      ? 'linear-gradient(150deg,#dce9f4,#f4f8fb)'
-                      : idx % 3 === 1
-                        ? 'linear-gradient(135deg,#f4f8fb,#dce9f4)'
-                        : 'linear-gradient(160deg,#FFFFFF,#dce9f4)' }}
-                  >
+                  <div key={idx} className="pd-slide">
                     <img
                       src={IMG.detail(img)}
                       srcSet={`${IMG.card(img)} 400w, ${IMG.detail(img)} 800w`}
