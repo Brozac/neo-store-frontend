@@ -59,7 +59,7 @@ export default function CheckoutPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center p-6 text-center">
+      <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center p-6 pb-32 md:pb-6 text-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 text-2xl">
           <GlassIcon ch="🛒" size="xs" />
         </div>

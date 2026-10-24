@@ -1577,9 +1577,10 @@ export default function ProductDetailsClient({
 
       {/* 🎨 REPLICA_V4 — Sticky CTA طبق الأصل من المعاينة
           🩹 كان bottom-0 و GlassDock (z-40) كيغطي على نص الأزرار في الموبايل —
-          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة */}
+          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة
+          🩹 Responsive (Task 27): الدوك تخبى في الديسكتوب (md:hidden) — الشريط يهبط لـ bottom-0 */}
       <div
-        className={`pd-scope fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-t border-temu-gray-border-light md:shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
+        className={`pd-scope fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-t border-temu-gray-border-light md:shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] md:bottom-0 transition-all duration-300 transform ${
           showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-6 opacity-0 pointer-events-none'
         }`}
       >

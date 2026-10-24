@@ -95,7 +95,10 @@ export default function GlassDock() {
   ];
 
   return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none pb-[env(safe-area-inset-bottom)]">      <div
+      // 🩹 Responsive (Task 27): الدوك للموبايل برك — فالديسكتوب (≥768px) كان كيعوم
+      //    فوق الفوتر وكروت المنتجات وصناديق التوصيل (المحتوى ما عندوش clearance)،
+      //    والديسكتوب عندو Navbar كامل بنفس الوظائف — كنخبيوه md:hidden
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none pb-[env(safe-area-inset-bottom)] md:hidden">      <div
         className="pointer-events-auto gdock-glass rounded-full px-3 py-2.5 flex items-center gap-1"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -174,6 +177,19 @@ export default function GlassDock() {
           .gdock-item {
             width: 3rem;
             height: 3rem;
+          }
+        }
+
+        /* 🩹 شاشات صغيرة بزز (≤359px): الدوك كيولي أعرض من الشاشة (334px > 320px)
+           وكيخرج من جوج جهات — نقصّ الأيقونات باش يدخل كامل */
+        @media (max-width: 359px) {
+          .gdock-item {
+            width: 2.55rem;
+            height: 2.55rem;
+          }
+          .gdock-glass {
+            padding-left: 0.4rem;
+            padding-right: 0.4rem;
           }
         }
       `}</style>
