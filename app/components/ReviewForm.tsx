@@ -156,7 +156,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
         <p className="text-xs text-gray-500 mb-4">Sign in to leave a verified review with real photos and earn reward points.</p>
         <button 
           onClick={() => router.push('/auth')}
-          className="bg-[#2E4057] hover:bg-[#33475B] text-white font-extrabold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-md"
+          className="bg-[#2E4057] hover:bg-[#33475C] text-white font-extrabold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-md"
         >
           Sign In to Review &rarr;
         </button>

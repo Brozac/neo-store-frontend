@@ -206,14 +206,14 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
 
         <button
@@ -242,7 +242,7 @@ export default function OrdersPage() {
             <p className="text-xs text-gray-500 max-w-sm mx-auto">Once you complete a purchase, your shipment tracking and invoice details will appear here.</p>
             <button
               onClick={() => router.push('/')}
-              className="bg-[#2E4057] hover:bg-[#33475B] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+              className="bg-[#2E4057] hover:bg-[#33475C] text-white font-extrabold py-3 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Start Shopping &rarr;
             </button>

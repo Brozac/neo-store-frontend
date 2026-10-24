@@ -72,7 +72,7 @@ export default function FloatingSupport() {
         aria-label="Open AI assistant"
         title="Chat with Laclarc AI"
         className="group relative flex h-11 w-11 items-center justify-center rounded-full
-                   bg-linear-to-br from-[#2E4057] via-[#33475B] to-[#5B7EA6]
+                   bg-linear-to-br from-[#2E4057] via-[#33475C] to-[#5B7EA6]
                    shadow-xl shadow-[#5B7EA6]/30
                    border-2 border-white/25
                    transition-transform duration-300

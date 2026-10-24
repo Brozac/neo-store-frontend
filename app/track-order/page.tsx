@@ -189,7 +189,7 @@ function TrackOrderContent() {
   };
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-lg mx-auto pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 max-w-lg mx-auto pb-24 font-sans">
 
       {/* Header */}
       <div className="text-center mb-6 pt-4">
@@ -288,7 +288,7 @@ function TrackOrderContent() {
 
               {/* ✨ رقم التتبع — بطاقة بارزة مع النسخ والأحداث الحية */}
               {hasTracking && (
-                <div className="bg-linear-to-br from-[#F7FAFC] to-fog-50 border border-[#5B7EA6]/25 rounded-xl p-3.5">
+                <div className="bg-linear-to-br from-[#F4F8FB] to-fog-50 border border-[#5B7EA6]/25 rounded-xl p-3.5">
                   <div className="flex justify-between items-center gap-2">
                     <div className="min-w-0">
                       <span className="text-[10px] font-black uppercase text-[#5B7EA6] block">Tracking Number</span>
@@ -299,7 +299,7 @@ function TrackOrderContent() {
                       className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition active:scale-90 touch-manipulation ${
                         copiedId === order.id
                           ? 'bg-maroccan-tea-600 text-white'
-                          : 'bg-[#2E4057] text-white hover:bg-[#33475B]'
+                          : 'bg-[#2E4057] text-white hover:bg-[#33475C]'
                       }`}
                     >
                       {copiedId === order.id ? 'Copied ✓' : 'Copy'}
@@ -362,7 +362,7 @@ function TrackOrderContent() {
 export default function TrackOrderPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>

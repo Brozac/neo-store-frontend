@@ -2,6 +2,16 @@ import './globals.css';
 import { Providers } from './providers';
 import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
+import { Marcellus } from 'next/font/google';
+
+// ✨ SERENE V2 — خط البراند Marcellus (mockup .brandname/.brandtag)
+// next/font = self-hosted في البناء — بلا FOUT وبلا طلب خارجي وقت التشغيل
+const marcellus = Marcellus({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-marcellus',
+  display: 'swap',
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // 🩹 AUDIT v2.0 — Task 13 (app/layout.tsx)
@@ -71,7 +81,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#F4F8FB',
+  themeColor: '#5B7EA6',
 };
 
 export default function RootLayout({
@@ -80,20 +90,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="font-sans antialiased text-temu-black" suppressHydrationWarning>
+    <html lang="en" className={`scroll-smooth ${marcellus.variable}`}>
+      <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
 
-        {/* ✨ SERENE — دوائر الضباب المضبّبة فالخلفية (زخرفة بلا تفاعل) */}
-        <div className="serene-blobs" aria-hidden="true">
-          <i className="b1" /><i className="b2" /><i className="b3" />
-        </div>
+        {/* ✨ JSON-LD Structured Data (FIX-ESCAPE مطبق) */}
 
-        {/* ✨ SERENE — المحتوى فوق الضباب (z-10 wrapper) */}
-        <div className="relative z-10">
-          <Providers>
-            {children}
-          </Providers>
-        </div>
+        <Providers>
+          {children}
+        </Providers>
 
         {/* Meta Pixel — ⚡ Phase 3: lazyOnload — التتبع لا يزاحم تفاعل الزبون الأول (INP) */}
         {/* ✓ Task 13: الـ ID منقّى بأرقام فقط [^\d] — ما فيهاش XSS */}

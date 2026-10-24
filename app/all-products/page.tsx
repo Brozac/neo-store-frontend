@@ -68,7 +68,7 @@ export default function AllProducts() {
   } = feed;
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-temu-offwhite">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -121,7 +121,7 @@ export default function AllProducts() {
                 {/* 🩹 FIX-ZERO + FIX-TRUST — بلا سعر = بلا صف · بلا سقف 90% = بلا anchor مزيف */}
                 {price > 0 && (
                   <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <span className="text-sm font-black text-fog-600">
+                    <span className="text-sm font-black text-coral-600">
                       ${price.toFixed(2)}
                     </span>
                     {showOrig && (

@@ -139,7 +139,7 @@ export default function MultiStepRegister() {
           <div className="pt-4">
             <Link 
               href="/"
-              className="inline-block bg-[#2E4057] hover:bg-[#33475B] text-white font-extrabold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
+              className="inline-block bg-[#2E4057] hover:bg-[#33475C] text-white font-extrabold py-3.5 px-8 rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95"
             >
               Return to Storefront
             </Link>
@@ -336,7 +336,7 @@ export default function MultiStepRegister() {
               <button 
                 type="button" 
                 onClick={handleNextStep} 
-                className="px-8 py-3 bg-[#2E4057] hover:bg-[#33475B] text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-md"
+                className="px-8 py-3 bg-[#2E4057] hover:bg-[#33475C] text-white rounded-xl text-xs font-extrabold uppercase tracking-wider transition active:scale-95 shadow-md"
               >
                 Continue &rarr;
               </button>

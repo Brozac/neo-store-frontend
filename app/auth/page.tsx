@@ -91,7 +91,7 @@ function AuthContent() {
   // واجهة إنشاء حساب جديد (MultiStep)
   if (mode === 'register') {
     return (
-      <main className="min-h-screen py-8 sm:py-12 font-sans">
+      <main className="min-h-screen bg-temu-offwhite py-8 sm:py-12 font-sans">
         <div className="max-w-2xl mx-auto px-4">
           <button 
             onClick={() => setMode('login')} 
@@ -108,7 +108,7 @@ function AuthContent() {
   // واجهة استرجاع كلمة المرور (Forgot Password)
   if (mode === 'forgot') {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 font-sans">
+      <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-4 sm:p-6 font-sans">
         <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
           
           <div className="text-center mb-6">
@@ -169,7 +169,7 @@ function AuthContent() {
 
   // واجهة تسجيل الدخول الأساسية (Login)
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 font-sans">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-4 sm:p-6 font-sans">
       <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200">
         
         <div className="text-center mb-6">
@@ -276,7 +276,7 @@ function AuthContent() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>

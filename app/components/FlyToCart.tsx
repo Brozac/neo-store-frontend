@@ -83,7 +83,7 @@ export default function FlyToCart() {
         overflow: hidden;
         pointer-events: none;
         background: #fff;
-        box-shadow: 0 12px 30px rgba(46, 64, 87, 0.28), 0 0 0 2px #fff;
+        box-shadow: 0 12px 30px rgba(46,64,87, 0.28), 0 0 0 2px #fff;
         will-change: transform, opacity;
       }
       .laclarc-fly-bubble img {
@@ -108,7 +108,7 @@ export default function FlyToCart() {
         width: 38px;
         height: 38px;
         border-radius: 50%;
-        border: 2.5px solid var(--color-fog-500, #5b7ea6);
+        border: 2.5px solid var(--color-fog-500, #5B7EA6);
         pointer-events: none;
         animation: laclarcBurst 0.55s ease-out forwards;
       }
@@ -165,7 +165,7 @@ export default function FlyToCart() {
         left: 50%;
         bottom: calc(96px + env(safe-area-inset-bottom, 0px));
         transform: translateX(-50%) translateY(16px);
-        background: rgba(46, 64, 87, 0.94);
+        background: rgba(46,64,87, 0.94);
         color: #fff;
         display: flex;
         align-items: center;
@@ -178,7 +178,7 @@ export default function FlyToCart() {
         opacity: 0;
         pointer-events: none;
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        box-shadow: 0 12px 30px rgba(46, 64, 87, 0.4);
+        box-shadow: 0 12px 30px rgba(46,64,87, 0.4);
         white-space: nowrap;
       }
       .laclarc-toast.show {

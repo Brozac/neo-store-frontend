@@ -137,7 +137,7 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
   };
 
   return (
-    <div className="min-h-screen bg-[#F7FAFC] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#F4F8FB] flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
 
         {phase === 'loading' && (
@@ -164,7 +164,7 @@ export default function ExchangeClient({ orderId, token }: { orderId: number; to
             <div className="text-4xl mb-3"><GlassIcon ch="🔄" size="xs" /></div>
             <h1 className="text-xl font-black text-[#2E4057] mb-2">Your item can't ship to your country</h1>
             {notice && (
-              <p role="status" className="text-xs font-bold text-[#5B7EA6] bg-[#EDF3F8] rounded-lg px-3 py-2 mb-4">{notice}</p>
+              <p role="status" className="text-xs font-bold text-[#5B7EA6] bg-[#F4F8FB] rounded-lg px-3 py-2 mb-4">{notice}</p>
             )}
             <p className="text-sm text-gray-600 mb-6">We're sorry! Pick a free replacement from the same category and we'll ship it right away — or get a full automatic refund after 72 hours.</p>
             <div className="space-y-3 text-right">

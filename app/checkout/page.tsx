@@ -51,7 +51,7 @@ export default function CheckoutPage() {
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function CheckoutPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center p-6 text-center">
+      <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center p-6 text-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 text-2xl">
           <GlassIcon ch="🛒" size="xs" />
         </div>
@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   const payableTotal = finalTotal > 0 ? finalTotal : cartTotal;
 
   return (
-    <main className="min-h-screen p-6 pb-32 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-6 pb-32 font-sans">
       <div className="max-w-md mx-auto">
         
         {/* Navigation */}
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between items-center pt-3 border-t border-temu-gray-border-light text-base">
               <span className="font-extrabold text-temu-black">Total to Pay:</span>
-              <span className="text-2xl font-black text-temu-error">${payableTotal.toFixed(2)}</span>
+              <span className="text-2xl font-black text-fog-600">${payableTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>

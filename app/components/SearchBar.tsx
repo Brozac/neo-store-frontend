@@ -108,11 +108,11 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setIsDropdownOpen(true)}
           placeholder="Search products, brands, and categories..."
-          className="w-full bg-white text-temu-black border border-fog-200 rounded-full py-2.5 sm:py-3 pl-11 pr-24 text-xs sm:text-sm placeholder-temu-gray-light focus:outline-none focus:ring-2 focus:ring-fog-400 focus:border-fog-300 shadow-[0_4px_18px_rgba(91,126,166,0.09)] transition touch-manipulation"
+          className="w-full bg-white/95 text-temu-black border border-white/20 rounded-full py-2.5 sm:py-3 pl-11 pr-24 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B7EA6] shadow-md transition touch-manipulation"
         />
         
         {/* Search Icon */}
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fog-400 pointer-events-none">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -133,7 +133,7 @@ export default function SearchBar() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-r from-fog-400 to-fog-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-[0_10px_22px_rgba(70,100,138,0.32)] uppercase tracking-wider"
+          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider"
         >
           Search
         </button>
@@ -141,14 +141,14 @@ export default function SearchBar() {
 
       {/* Live Search Dropdown */}
       {isDropdownOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-[0_14px_34px_rgba(91,126,166,0.18)] border border-fog-200 overflow-hidden max-h-[65vh] overflow-y-auto scrollbar-hide">
+        <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[65vh] overflow-y-auto scrollbar-hide">
           {isLoading ? (
-            <div className="p-5 text-center text-temu-gray-text text-xs font-bold flex justify-center items-center gap-2 animate-pulse">
-              <div className="w-4 h-4 border-2 border-fog-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="p-5 text-center text-gray-400 text-xs font-bold flex justify-center items-center gap-2 animate-pulse">
+              <div className="w-4 h-4 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
               Scanning Catalog...
             </div>
           ) : results.length > 0 ? (
-            <div className="py-2 divide-y divide-fog-50">
+            <div className="py-2 divide-y divide-gray-50">
               {results.map((product) => {
                 const imgSrc = product.image_url || product.image || '/placeholder.jpg';
                 const safePrice = Number(product.price) || 0;
@@ -161,9 +161,9 @@ export default function SearchBar() {
                       setIsDropdownOpen(false);
                       setQuery('');
                     }}
-                    className="flex items-center gap-3 p-3 hover:bg-fog-50 active:bg-fog-100 cursor-pointer transition active:scale-[0.99]"
+                    className="flex items-center gap-3 p-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition active:scale-[0.99]"
                   >
-                    <div className="relative w-12 h-12 shrink-0 bg-fog-100 rounded-xl overflow-hidden border border-fog-100">
+                    <div className="relative w-12 h-12 shrink-0 bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
                       <Image
                         src={imgSrc}
                         alt={product.title || 'Product'}
@@ -176,15 +176,15 @@ export default function SearchBar() {
                       <p className="text-xs font-bold text-temu-black truncate">{product.title}</p>
                       <p className="text-xs font-black text-fog-600 mt-0.5">${safePrice.toFixed(2)}</p>
                     </div>
-                    <span className="text-xs text-fog-300 font-bold">&rarr;</span>
+                    <span className="text-xs text-gray-400 font-bold">&rarr;</span>
                   </div>
                 );
               })}
               
-              <div className="p-2.5 bg-fog-50 text-center">
+              <div className="p-2.5 bg-gray-50 text-center">
                 <button 
                   onClick={handleSubmit}
-                  className="w-full text-xs font-extrabold text-fog-600 hover:underline cursor-pointer active:scale-95"
+                  className="w-full text-xs font-extrabold text-[#5B7EA6] hover:underline cursor-pointer active:scale-95"
                 >
                   View all results for &ldquo;{query}&rdquo; &rarr;
                 </button>

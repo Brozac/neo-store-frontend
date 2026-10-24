@@ -58,7 +58,7 @@ function ResetPasswordContent() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 font-sans">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
         
         <div className="w-14 h-14 bg-fog-100 text-[#5B7EA6] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
@@ -122,7 +122,7 @@ function ResetPasswordContent() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>

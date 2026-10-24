@@ -224,7 +224,7 @@ function SuccessContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-6 text-center font-sans">
+      <main className="min-h-screen bg-[#F4F8FB] flex flex-col items-center justify-center p-6 text-center font-sans">
         <div className="w-12 h-12 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mb-4"></div>
         <h2 className="text-xl font-black text-[#2E4057]">Confirming Order Settlement...</h2>
         <p className="text-xs text-gray-500 mt-1">Securing dispatch protocol with international air logistics...</p>
@@ -233,7 +233,7 @@ function SuccessContent() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7FAFC] flex flex-col items-center justify-center p-4 sm:p-6 font-sans py-12">
+    <main className="min-h-screen bg-[#F4F8FB] flex flex-col items-center justify-center p-4 sm:p-6 font-sans py-12">
       <div className="max-w-md w-full space-y-6">
         
         {/* بطاقة تأكيد الطلب الأساسية */}
@@ -262,7 +262,7 @@ function SuccessContent() {
             <GlassIcon ch="🔥" size="xs" /> عرض الـ 1-Click Upsell الذكي (ينبثق بحواف نيون وعد تنازلي)
            ========================================================================= */}
         {!upsellDismissed && (
-          <div className="bg-linear-to-br from-[#2E4057] to-[#33475B] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#5B7EA6] relative overflow-hidden space-y-4 animate-scale">
+          <div className="bg-linear-to-br from-[#2E4057] to-[#33475C] text-white p-6 rounded-3xl shadow-2xl border-2 border-[#5B7EA6] relative overflow-hidden space-y-4 animate-scale">
             
             {/* مؤقت الـ 5 دقائق المتناقص */}
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -296,7 +296,7 @@ function SuccessContent() {
               <div className="min-w-0 flex-1 text-left">
                 <h4 className="text-xs font-bold text-white line-clamp-2">{UPSELL_PRODUCT.title}</h4>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-base font-black text-[#A8C3DC]">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
+                  <span className="text-base font-black text-fog-600">${UPSELL_PRODUCT.dealPrice.toFixed(2)}</span>
                   <span className="text-xs text-gray-400 line-through">${UPSELL_PRODUCT.originalPrice.toFixed(2)}</span>
                   <span className="text-[10px] font-black bg-coral-500/20 text-coral-600 px-1.5 py-0.5 rounded">
                     Save {UPSELL_PRODUCT.discountPct}%
@@ -311,7 +311,7 @@ function SuccessContent() {
                 type="button"
                 onClick={handleClaimUpsell}
                 disabled={isUpsellProcessing}
-                className="w-full bg-linear-to-r from-fog-400 to-fog-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-full text-xs uppercase tracking-wider transition active:scale-95 shadow-[0_10px_22px_rgba(70,100,138,0.4)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-coral-500/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isUpsellProcessing ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -338,7 +338,7 @@ function SuccessContent() {
         <div className="space-y-2.5">
           <button 
             onClick={() => router.push('/track-order')}
-            className="w-full bg-[#2E4057] hover:bg-[#33475B] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
+            className="w-full bg-[#2E4057] hover:bg-[#33475C] text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-md active:scale-95 cursor-pointer"
           >
             Track Parcel Shipment &rarr;
           </button>
@@ -359,7 +359,7 @@ function SuccessContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#F7FAFC]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F8FB]">
         <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>

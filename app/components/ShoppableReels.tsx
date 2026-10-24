@@ -340,7 +340,7 @@ export default function ShoppableReels({ products = [] }: { products?: Product[]
                   <div className="min-w-0">
                     <h4 className="text-xs font-bold text-white truncate">{currentReel.title}</h4>
                     <div className="flex items-baseline gap-1.5 mt-0.5">
-                      <span className="text-sm font-black text-[#A8C3DC]">${safePrice.toFixed(2)}</span>
+                      <span className="text-sm font-black text-fog-600">${safePrice.toFixed(2)}</span>
                       {Number(currentReel.original_price) > safePrice && (
                         <span className="text-[10px] text-gray-400 line-through">
                           ${Number(currentReel.original_price).toFixed(2)}

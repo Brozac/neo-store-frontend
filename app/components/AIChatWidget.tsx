@@ -150,18 +150,18 @@ export default function AIChatWidget() {
             aria-label="Laclarc AI Assistant"
           >
             {/* مقبض السحب (موبايل فقط) */}
-            <div className="sm:hidden pt-2.5 pb-1 flex justify-center bg-linear-to-r from-[#2E4057] via-[#33475B] to-[#5B7EA6]">
+            <div className="sm:hidden pt-2.5 pb-1 flex justify-center bg-linear-to-r from-[#2E4057] via-[#33475C] to-[#5B7EA6]">
               <div className="w-10 h-1 rounded-full bg-white/40" />
             </div>
 
             {/* الهيدر */}
-            <div className="bg-linear-to-r from-[#2E4057] via-[#33475B] to-[#5B7EA6] text-white px-4 py-3.5 flex items-center justify-between shrink-0">
+            <div className="bg-linear-to-r from-[#2E4057] via-[#33475C] to-[#5B7EA6] text-white px-4 py-3.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative w-11 h-11 rounded-full bg-white/10 border border-white/25 flex items-center justify-center shadow-inner">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                     <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
                   </svg>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-maroccan-tea-400 rounded-full border-2 border-[#33475B]" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-maroccan-tea-400 rounded-full border-2 border-[#33475C]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-black tracking-wide flex items-center gap-1.5">
@@ -183,7 +183,7 @@ export default function AIChatWidget() {
             </div>
 
             {/* الرسائل */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 bg-[#EDF3F8] scrollbar-hide">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 bg-[#F4F8FB] scrollbar-hide">
               {messages.map((m) => (
                 <div key={m.id} className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {m.sender === 'bot' && (

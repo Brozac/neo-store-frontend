@@ -77,7 +77,7 @@ export default function CjProductPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen bg-temu-offwhite flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin" />
       </main>
     );
@@ -85,7 +85,7 @@ export default function CjProductPage() {
 
   if (error || !product) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6">
         <div className="text-center">
           <p className="text-temu-black font-bold mb-4">{error || 'Product not available'}</p>
           <button onClick={() => router.back()} className="text-temu-orange font-bold text-sm underline">Back</button>
@@ -95,7 +95,7 @@ export default function CjProductPage() {
   }
 
   return (
-    <main className="min-h-screen pb-32 font-sans">
+    <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
         <button onClick={() => router.back()} className="text-temu-gray-light hover:text-temu-black font-medium text-sm">
           <GlassIcon i="arrowLeft" size="xs" /> Back

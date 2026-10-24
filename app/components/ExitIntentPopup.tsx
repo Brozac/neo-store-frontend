@@ -111,7 +111,7 @@ export default function ExitIntentPopup() {
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="bg-linear-to-br from-[#2E4057] to-[#33475B] text-white border-2 border-[#5B7EA6] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center overflow-hidden animate-scale"
+        className="bg-linear-to-br from-[#2E4057] to-[#33475C] text-white border-2 border-[#5B7EA6] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center overflow-hidden animate-scale"
         onClick={(e) => e.stopPropagation()}
       >
         <button

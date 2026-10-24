@@ -62,13 +62,13 @@ export default function ReviewPage() {
   };
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center">
       <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
   if (error && !order) return (
-    <main className="min-h-screen flex items-center justify-center p-6">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center">
         <span className="text-5xl mb-4 block"><GlassIcon ch="🔗" size="xs" /></span>
         <h1 className="text-xl font-black text-temu-black mb-2">Link Invalid</h1>
@@ -78,7 +78,7 @@ export default function ReviewPage() {
   );
 
   if (submitted) return (
-    <main className="min-h-screen flex items-center justify-center p-6">
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md text-center">
         <div className="text-5xl mb-4"><GlassIcon ch="🎉" size="xs" /></div>
         <h1 className="text-xl font-black text-temu-black mb-2">Thank You!</h1>
@@ -95,7 +95,7 @@ export default function ReviewPage() {
   if (!order) return null;
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen bg-temu-offwhite p-6">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white p-8 rounded-2xl shadow-xl">
           <div className="text-center mb-6">

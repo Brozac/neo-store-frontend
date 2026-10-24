@@ -248,7 +248,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   };
 
   return (
-    <div className="w-full font-sans text-[#2E4057] overflow-hidden bg-[#F7FAFC] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
+    <div className="w-full font-sans text-[#2E4057] overflow-hidden bg-[#F4F8FB] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" onLoad={initGSAP} />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP} />
 
@@ -362,15 +362,15 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
             <div className="gsap-hero flex items-center gap-3 flex-wrap pt-2 justify-center lg:justify-start">
               <Link
                 href="#catalog"
-                className="bg-linear-to-r from-fog-500 to-fog-600 hover:brightness-110 text-white px-6 py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-[0_10px_22px_rgba(70,100,138,0.32)] active:scale-95 flex items-center gap-2"
+                className="bg-[#2E4057] hover:bg-[#33475C] text-white px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-xl shadow-[#2E4057]/20 active:scale-95 flex items-center gap-2 border border-white/10"
               >
                 Shop Trending Deals
-                <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[10px] text-white"><GlassIcon i="zap" size="xs" /></span>
+                <span className="w-5 h-5 bg-[#7FA1C4] rounded-full flex items-center justify-center text-[10px] text-white"><GlassIcon i="zap" size="xs" /></span>
               </Link>
 
               <Link
                 href="/categories"
-                className="bg-white hover:bg-fog-50 text-fog-700 border-[1.5px] border-fog-300 px-5 py-3 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                className="bg-white hover:bg-gray-50 text-[#2E4057] border border-[#5B7EA6]/30 px-5 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-sm active:scale-95"
               >
                 All Departments
               </Link>
@@ -379,7 +379,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         </div>
 
         {/* الشريط السفلي — 🧹 3 spans خاويين تحيدو (كانو كيرندرو والو) */}
-        <div className="relative z-20 w-full pt-8 pb-4 border-t border-fog-200 flex justify-between items-center text-[10px] font-bold text-temu-gray-light flex-wrap gap-3">
+        <div className="relative z-20 w-full pt-8 pb-4 border-t border-gray-200/60 flex justify-between items-center text-[10px] font-bold text-gray-400 flex-wrap gap-3">
           <span className="flex items-center gap-1.5">
             100% Buyer Protection
           </span>

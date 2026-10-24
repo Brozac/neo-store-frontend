@@ -8,7 +8,7 @@ export default function CancelPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#F7FAFC] p-4 sm:p-6 text-center font-sans">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#F4F8FB] p-4 sm:p-6 text-center font-sans">
       <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full space-y-6">
         
         {/* Reassurance Badge */}

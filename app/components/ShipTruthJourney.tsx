@@ -106,7 +106,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
       className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden my-6 border border-gray-100"
     >
       {/* Header — الحالة الحية */}
-      <div className="bg-linear-to-br from-[#2E4057] via-[#33475B] to-[#5B7EA6] p-6 text-white">
+      <div className="bg-linear-to-br from-[#2E4057] via-[#33475C] to-[#5B7EA6] p-6 text-white">
         <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-maroccan-tea-300 flex items-center gap-1.5 mb-1">

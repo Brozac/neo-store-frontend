@@ -211,29 +211,29 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-md mx-auto space-y-6">
 
         {/* Navigation */}
-        <div className="flex justify-between items-center border-b border-fog-200 pb-4">
-          <h1 className="text-2xl font-black text-temu-black tracking-tight">Account Dashboard</h1>
+        <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Account Dashboard</h1>
           <button
             onClick={() => router.push('/')}
-            className="text-xs font-bold text-temu-gray-text hover:text-fog-600 transition"
+            className="text-xs font-bold text-gray-500 hover:text-black transition"
           >
             &larr; Storefront
           </button>
         </div>
 
         {/* User Card */}
-        <div className="p-8 rounded-3xl shadow-[0_4px_18px_rgba(91,126,166,0.09)] border border-fog-200 flex flex-col items-center text-center relative overflow-hidden bg-linear-to-br from-white via-white to-fog-200/70">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center relative overflow-hidden">
 
           <div className="relative p-1 rounded-full bg-linear-to-tr from-[#5B7EA6] to-[#7FA1C4] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
@@ -270,8 +270,8 @@ export default function ProfilePage() {
             <p className="text-xs text-coral-600 font-bold mb-2">{uploadError}</p>
           )}
 
-          <h2 className="text-xl font-black text-temu-black">{user ? user.name : 'Guest Shopper'}</h2>
-          <p className="text-xs text-temu-gray-light font-medium mb-3">{user ? user.email : 'Sign in to sync your cart and orders'}</p>
+          <h2 className="text-xl font-black text-gray-900">{user ? user.name : 'Guest Shopper'}</h2>
+          <p className="text-xs text-gray-400 font-medium mb-3">{user ? user.email : 'Sign in to sync your cart and orders'}</p>
 
           {user && (
             <button
@@ -284,41 +284,41 @@ export default function ProfilePage() {
         </div>
 
         {/* Action Menu */}
-        <div className="bg-white rounded-2xl shadow-sm p-2 border border-fog-100 divide-y divide-fog-100">
+        <div className="bg-white rounded-2xl shadow-sm p-2 border border-gray-200 divide-y divide-gray-100">
           {user ? (
             <>
               <button
                 onClick={() => router.push('/favorites')}
-                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center shrink-0"><GlassIcon ch="❤️" size="xs" /></span>
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-coral-600"><GlassIcon ch="❤️" size="xs" /></span>
                   My Saved Wishlist
                 </span>
-                <span className="text-temu-gray-light text-xs">&rarr;</span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
               </button>
 
               {/* 🩹 M#29 — Order History button يحمل الإيميل لصفحة الطلبات */}
               <button
                 onClick={getUserOrders}
-                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-fog-100 text-fog-600 flex items-center justify-center shrink-0"><GlassIcon ch="📦" size="xs" /></span>
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-[#5B7EA6]"><GlassIcon ch="📦" size="xs" /></span>
                   Order History & Invoices
                 </span>
-                <span className="text-temu-gray-light text-xs">&rarr;</span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
               </button>
 
               <button
                 onClick={() => router.push('/track-order')}
-                className="w-full flex items-center justify-between p-4 hover:bg-fog-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition cursor-pointer active:scale-[0.99]"
               >
-                <span className="font-bold text-xs uppercase tracking-wider text-temu-black flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-maroccan-tea-100 text-maroccan-tea-700 flex items-center justify-center shrink-0"><GlassIcon ch="🚚" size="xs" /></span>
+                <span className="font-bold text-xs uppercase tracking-wider text-gray-800 flex items-center gap-3">
+                  <span className="text-base text-maroccan-tea-600"><GlassIcon ch="🚚" size="xs" /></span>
                   Track Live Shipment
                 </span>
-                <span className="text-temu-gray-light text-xs">&rarr;</span>
+                <span className="text-gray-400 text-xs">&rarr;</span>
               </button>
 
               <button
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-coral-50 rounded-xl transition text-coral-600 cursor-pointer active:scale-[0.99]"
               >
                 <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-coral-100 flex items-center justify-center shrink-0"><GlassIcon ch="🔒" size="xs" /></span>
+                  <span className="text-base"><GlassIcon ch="🔒" size="xs" /></span>
                   Sign Out of Laclarc
                 </span>
                 <span className="text-xs">&rarr;</span>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => router.push('/auth')}
-              className="w-full bg-linear-to-r from-fog-500 to-fog-600 hover:brightness-110 text-white font-extrabold p-4 rounded-full transition text-xs uppercase tracking-wider shadow-[0_10px_22px_rgba(70,100,138,0.32)] active:scale-95"
+              className="w-full bg-[#2E4057] hover:bg-[#33475C] text-white font-extrabold p-4 rounded-xl transition text-xs uppercase tracking-wider shadow-md active:scale-95"
             >
               Sign In / Register &rarr;
             </button>
