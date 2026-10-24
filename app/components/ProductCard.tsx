@@ -17,6 +17,16 @@
  *    · CSS كامل في ProductCardGlass.css (كومبوننت CSS بعد globals —
  *      globals.css ما تلمسش)
  * ───────────────────────────────────────────────────────────────
+ * ✨ [frameless] — Task 21: «نح كارت أبيض، خلي المنتج كامل في بلاصتو،
+ *    حاجة ماتحدو» — الكتالوج المفتوح:
+ *    · الكارت الأبيض تحيّد (bg-white + ظل + radius) — بلاصة الصورة كاملة
+ *      edge-to-edge: بلا هوامش داخلية (p-3→0) وبلا بئر بتدرج ولا حواف
+ *    · النصوص (قسم/سعر/سواتشات/pills) على خلفية الصفحة مباشرة
+ *    · التوهج البنفسجي القديم تاع hover في globals (product-card-animated
+ *      من عصر Aurora) تنقّى في ProductCardGlass.css — صفر حاجة ترسم
+ *      إطار حول المنتج (الرفعة translateY(-4px) كتبقى = لمسة تفاعلية)
+ *    · [glasscard] القلب/البانل الزجاجي/الـ QV modal كيما هوما
+ * ───────────────────────────────────────────────────────────────
  * ✨ [homecard] — تصميم بطاقة المنتج من mockup المستخدم (صفحة رئيسية):
  *    · كارت أبيض بحواف كبيرة (20px) بلا حدود + ظل ضبابي ناعم
  *    · بئر صورة مدوّر بتدرج fog ناعم (توكنات حية = SERENE V2)
@@ -254,7 +264,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
   return (
     <div
       data-product-id={String(product.id)}
-      className={`product-card-wrapper product-card-animated bg-white rounded-[20px] overflow-hidden flex flex-col group relative cursor-pointer transition-all duration-300 active:scale-[0.98] shadow-[0_4px_16px_rgba(46,64,87,.07)] ${
+      className={`product-card-wrapper product-card-animated overflow-hidden flex flex-col group relative cursor-pointer transition-transform duration-300 active:scale-[0.98] ${
         isTouched ? 'is-active' : ''
       }`}
       onClick={handleCardClick}
@@ -267,16 +277,19 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         onClick={(e) => e.stopPropagation()}
         className="block"
       >
-        {/* ✨ [homecard] بئر الصورة المدوّر — تدرج fog ناعم كيما mockup (توكنات حية) */}
-        <div className="relative aspect-square m-2 mb-0 rounded-[14px] overflow-hidden [background:linear-gradient(165deg,#ffffff_0%,var(--color-temu-offwhite)_48%,var(--color-fog-100)_100%)]">
+        {/* ✨ [homecard] بئر الصورة المدوّر — تدرج fog ناعم كيما mockup (توكنات حية)
+            ✨ [frameless] البئر تحيّد: بلا هوامش ولا حواف ولا تدرج —
+            الصورة edge-to-edge كاملة في بلاصتها، حاجة ما تحدّها */}
+        <div className="relative aspect-square overflow-hidden">
           {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري)
-              ✨ [card-swatches]: activeSw?.i = صورة اللون المختار (نفس OSS transform) */}
+              ✨ [card-swatches]: activeSw?.i = صورة اللون المختار (نفس OSS transform)
+              ✨ [frameless] p-3 تحيّد — المنتج كامل في بلاصتو */}
           <img
             src={imgSrc}
             alt={product.title || 'Product'}
             loading={eager ? 'eager' : 'lazy'}
             decoding="async"
-            className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
           {/* ✨ [homecard] scrim حبري — الاسم الأبيض يقرا على أي صورة (كما في mockup)
               ✨ [glasscard] pc-scrim = مخبي في الديسكتوب (البانل الزجاجي عوضو) */}

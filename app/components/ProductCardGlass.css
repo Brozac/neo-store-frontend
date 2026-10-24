@@ -217,3 +217,22 @@
     transition-delay: 0s !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Task 21 [FRAMELESS] — الكتالوج المفتوح
+   «نح كارت أبيض، خلي المنتج كامل في بلاصتو، حاجة ماتحدو»
+   ═══════════════════════════════════════════════════════════════
+   الكارت ولّى بلا خلفية ولا ظل ولا إيطار (في ProductCard.tsx).
+   ⚠️ globals.css فيها توهج قديم من عصر Aurora على hover/is-active/
+   :active تاع .product-card-animated: box-shadow بنفسجي
+   rgba(107,61,180,.25) + border-color #6B3DB4 !important — مع كارت
+   بلا إطار كان غادي يرسم مستطيل ملون حول المنتج = «حاجة تحدّو»
+   بالضبط. التنقية هنا: نفس الـ specificity + الملف كيتحمّل بعد
+   globals = الأخير يربح. الرفعة translateY(-4px) كتبقى (لمسة
+   تفاعلية بلا رسم إطار). */
+.product-card-animated:hover,
+.product-card-animated.is-active,
+.product-card-animated:active {
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
