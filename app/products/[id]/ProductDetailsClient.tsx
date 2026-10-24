@@ -12,6 +12,7 @@ import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 import GlassIcon from '@/components/ui/GlassIcon';
+import './pd.css'; // 📱 Task 17 — SERENE product mockup (mobile) — كلاسات pd-* معزولة بالكامل
 
 // ════════════════════════════════════════════════════════════════
 // ProductDetailsClient v1.1 — مراجعة عميقة سطر بسطر (Task 9)
@@ -100,7 +101,7 @@ interface Review {
 }
 
 const TABS = [
-  { key: 'details', label: 'Description' },
+  { key: 'details', label: 'Details' },
   { key: 'materials', label: 'Materials' },
   { key: 'size', label: 'Size & Fit' },
   { key: 'shipping', label: 'Shipping & Returns' },
@@ -131,7 +132,7 @@ export default function ProductDetailsClient({
   const [quantity, setQuantity] = useState(1);
   const [selectedColorName, setSelectedColorName] = useState('');   // 🆕 [variant-truth] اسم عائلة اللون (من variantKey) — hex بقى legacy فقط
   const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
-  const [openAcc, setOpenAcc] = useState<TabKey | null>('details'); // ✨ SERENE — أكورديون بدل التابات (mockup .acc، الأول مفتوح)
+  const [activeTab, setActiveTab] = useState<TabKey>('details');
   const [reviews, setReviews] = useState(initialReviews);
   // ⭐ [cj-reviews v2] — فلتر النجوم + Load more + الإجمالي الحقيقي (meta.total من CJ)
   const [starFilter, setStarFilter] = useState(0); // 0 = الكل · 1..5 فلتر نجمي
@@ -178,18 +179,24 @@ export default function ProductDetailsClient({
     setReviewsMeta(null);
   };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  // ✨ V2.1 — مفتاح نبضة القلب (mockup .glassbtn.on svg{animation:pop .35s}):
-  //    كل تبديل كيزيد الكي → الـ svg كيتعاود يتركب والحركة كتشتغل مرة وحدة
-  const [heartPop, setHeartPop] = useState(0);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
   const [mainAdded, setMainAdded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
+  // 📱 Task 17 — الأكورديونات تاع الموبايل (mockup: أول واحدة مفتوحة دايماً)
+  const [openAcc, setOpenAcc] = useState<string | null>('details');
+  const sizeAccRef = useRef<HTMLDivElement>(null);
+  const openSizeGuide = () => {
+    setOpenAcc('size');
+    setTimeout(() => sizeAccRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+  };
+
   const touchStartX = useRef(0);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
   const mainCtaRef = useRef<HTMLDivElement>(null);
+  const mobileCtaRef = useRef<HTMLDivElement>(null); // 📱 Task 17 — هدف الموبايل (الديسكتوب مخفي display:none → IO ما يخدمش عليه)
 
   const defaultImage = '/icon-512.png';
 
@@ -347,8 +354,10 @@ export default function ProductDetailsClient({
   }, [product.id, API_BASE_URL]);
 
   useEffect(() => {
-    const target = mainCtaRef.current;
-    if (!target) return;
+    // 📱 Task 17: نراقبو زوج الأهداف — ديابا الكتلة الديسكتوب display:none فالموبايل،
+    // والكتلة الموبايل display:none فالديسكتوب — اللي يبان هو اللي يقدّر الإشارة
+    const targets = [mainCtaRef.current, mobileCtaRef.current].filter(Boolean) as HTMLElement[];
+    if (targets.length === 0) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -357,7 +366,7 @@ export default function ProductDetailsClient({
       { threshold: 0.1 }
     );
 
-    observer.observe(target);
+    targets.forEach(t => observer.observe(t));
     return () => observer.disconnect();
   }, []);
 
@@ -365,8 +374,6 @@ export default function ProductDetailsClient({
   const parsePrice = (price: any) => Number(price) || 0;
   const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
   const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
-  // ✨ SERENE — حروف الأفاتار للمراجعات (mockup .rava)
-  const initials = (n?: string) => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
@@ -388,7 +395,6 @@ export default function ProductDetailsClient({
       : [...favorites, idStr];
     localStorage.setItem('favorites', JSON.stringify(newFavorites.slice(0, 100)));
     setFavoriteIds(newFavorites);
-    setHeartPop(k => k + 1); // ✨ V2.1 — نبضة pop عند كل تبديل (mockup سطر 170)
   };
 
   const handleAddToCart = () => {
@@ -438,7 +444,266 @@ export default function ProductDetailsClient({
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
   return (
     <main className="min-h-screen bg-temu-offwhite pb-48 font-sans">
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
+
+      {/* ══════════════════════════════════════════════════════════
+          📱 MOBILE — SERENE mockup port (Task 17 «ديرو في الهاتف يبان كيما هاك»)
+          float-head زاجاج + معرض 330px كينزلق + شيت أبيض بـ -26px + أكورديونات
+          الكلاسات pd-* من pd.css — نفس القيم الحيّة (fog-500 #5b7ea6 …)
+          ══════════════════════════════════════════════════════════ */}
+      <div className="md:hidden pd-scope pb-10">
+        <div className="max-w-[560px] mx-auto">
+
+          {/* المعرض — سلايدر كامل بلا إطار */}
+          <div
+            className="pd-gallery touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* float head: رجوع + (فيديو) + قلب — زجاج 38px */}
+            <div className="pd-float">
+              <div className="pd-float-side">
+                <button type="button" onClick={() => router.back()} className="pd-gbtn" aria-label="Back">
+                  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+              </div>
+              <div className="pd-float-side">
+                {product.video_url && (
+                  <button type="button" onClick={() => setShowVideo(v => !v)} className="pd-gbtn" aria-label="Product video">
+                    <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8" strokeLinejoin="round"></polygon></svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleToggleFavorite(product.id)}
+                  className={`pd-gbtn ${isCurrentProductFavorited ? 'on' : ''}`}
+                  aria-label="Save to Wishlist"
+                >
+                  <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* المسار المنزلق — نفس انتقال mockup cubic-bezier(.22,.8,.28,1) + دائرة زاجاج خلف الصورة */}
+            <div
+              className="pd-track"
+              style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              onClick={() => { if (!showVideo) { setIsLightboxOpen(true); setIsZoomed(false); } }}
+            >
+              {showVideo && product.video_url ? (
+                <div className="pd-slide vid">
+                  <video src={product.video_url} controls autoPlay playsInline />
+                </div>
+              ) : (
+                galleryImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="pd-slide"
+                    style={{ background: idx % 3 === 0
+                      ? 'linear-gradient(150deg,#dce9f4,#f4f8fb)'
+                      : idx % 3 === 1
+                        ? 'linear-gradient(135deg,#f4f8fb,#dce9f4)'
+                        : 'linear-gradient(160deg,#FFFFFF,#dce9f4)' }}
+                  >
+                    <img
+                      src={IMG.detail(img)}
+                      srcSet={`${IMG.card(img)} 400w, ${IMG.detail(img)} 800w`}
+                      sizes="100vw"
+                      fetchPriority={idx === 0 ? 'high' : undefined}
+                      loading={idx === 0 ? undefined : 'lazy'}
+                      decoding="async"
+                      alt={product.title}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* النقاط — النشطة تتفرد وطويلة بيضاء (mockup gdots) */}
+            {!showVideo && galleryImages.length > 1 && (
+              <div className="pd-dots">
+                {galleryImages.map((_, idx) => (
+                  <i key={idx} className={currentImageIndex === idx ? 'on' : ''} onClick={() => setCurrentImageIndex(idx)} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* الشيت الأبيض اللي يركب على المعرض بـ -26px */}
+          <div className="pd-sheet">
+            <div className="pd-toprow">
+              <span className="pd-brand">LACLARC</span>
+              <span className="pd-sku">REF-{product.id}</span>
+            </div>
+
+            <h1 className="pd-title">{product.title}</h1>
+
+            <div className="pd-meta">
+              {reviews.length > 0 ? (
+                <>
+                  <span className="pd-stars">
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                  </span>
+                  <span>({realTotal} verified rating{realTotal !== 1 ? 's' : ''})</span>
+                </>
+              ) : (
+                <span>New in catalog — be the first to review</span>
+              )}
+            </div>
+
+            <div className="pd-pricerow">
+              <b>${safePrice.toFixed(2)}</b>
+              {safeOriginalPrice > safePrice && (
+                <>
+                  <s>${safeOriginalPrice.toFixed(2)}</s>
+                  <span className="pd-off">-{discountPct}%</span>
+                </>
+              )}
+            </div>
+
+            {/* 🩹 TRUST — الكاونتر فقط للعروض الممولة الحقيقية */}
+            {product.is_sourced === true && <div className="mt-3"><CountdownTimer /></div>}
+
+            {/* الألوان — محرك الفاريانت الحقيقي (نفس منطق الديسكتوب) */}
+            {variantEngine.groups.length > 1 && (
+              <div className="pd-opt">
+                <p>Color: <b>{selectedGroup?.name}</b></p>
+                <div className="pd-swatches">
+                  {variantEngine.groups.map((g) => (
+                    <button
+                      key={g.name}
+                      type="button"
+                      onClick={() => setSelectedColorName(g.name)}
+                      title={g.name}
+                      aria-label={`Color ${g.name}`}
+                      aria-pressed={selectedGroup?.name === g.name}
+                      className={`pd-swatch ${selectedGroup?.name === g.name ? 'on' : ''}`}
+                    >
+                      {g.image ? (
+                        <img src={IMG.thumb(g.image)} alt={g.name} loading="lazy" decoding="async" />
+                      ) : (
+                        <i style={{ backgroundColor: getColorHex(g.hex || g.name) }}></i>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* fallback قديم — دوائر hex بلا variants صالحين */}
+            {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
+              <div className="pd-opt">
+                <p>Color: <b>{selectedColorName || product.colors[0]}</b></p>
+                <div className="pd-swatches">
+                  {product.colors.map((col, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedColorName(col)}
+                      aria-label={`Color ${col}`}
+                      aria-pressed={selectedColorName === col}
+                      className={`pd-swatch ${selectedColorName === col ? 'on' : ''}`}
+                    >
+                      <i style={{ backgroundColor: getColorHex(col) }}></i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* المقاسات — شيبات mockup + دليل المقاسات يهز الأكورديون */}
+            {availableSizes.length > 0 && (
+              <div className="pd-opt">
+                <p>Size: <b>{effectiveSize}</b></p>
+                <div className="pd-sizes">
+                  {availableSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSelectedSize(sz)}
+                      className={`pd-size ${effectiveSize === sz ? 'on' : ''}`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={openSizeGuide} className="mt-2.5 text-[11px] font-bold text-temu-orange cursor-pointer">
+                  Size Guide ↗
+                </button>
+              </div>
+            )}
+
+            {/* الكمية — ستيبر حبة (1..9) كيما mockup */}
+            <div className="pd-qtyrow">
+              <p>Quantity</p>
+              <div className="pd-stepper">
+                <button type="button" onClick={() => setQuantity(q => Math.max(1, q - 1))} aria-label="Decrease quantity">−</button>
+                <b>{quantity}</b>
+                <button type="button" onClick={() => setQuantity(q => Math.min(9, q + 1))} aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+
+            {/* Buy Now المباشر — نفس الـ PaymentModal (الإيراد محفوظ) */}
+            <div className="mt-3" ref={mobileCtaRef}>
+              <BuyButton
+                product={{
+                  id: product.id,
+                  title: product.title,
+                  name: product.title,
+                  price: safePrice,
+                  image: mainImageSrc,
+                  color: selectedGroup?.name || selectedColorName || '',
+                  size: effectiveSize || '',
+                  quantity: quantity,
+                  vid: matchedVariant?.vid || ''
+                }}
+              />
+            </div>
+
+            <div className="mt-3">
+              <DeliveryEstimator productId={product.id} />
+            </div>
+
+            {/* الثقة الحقيقية */}
+            <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] font-semibold" style={{ color: 'var(--ink-soft)' }}>
+              <div className="flex flex-col items-center gap-1"><GlobeShippingIcon size={16} active /> Free Shipping</div>
+              <div className="flex flex-col items-center gap-1"><ReturnsIcon size={16} active /> 30-Day Guarantee</div>
+              <div className="flex flex-col items-center gap-1"><LockIcon size={16} active /> Secure Checkout</div>
+            </div>
+
+            {/* الأكورديونات — mockup: أول وحدة مفتوحة + شيفرونة تلف */}
+            {[
+              { key: 'details', label: 'Details', body: (
+                <>
+                  <p>{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
+                  {detailBullets.length > 0 && <ul>{detailBullets.map((b, i) => <li key={i}>{b}</li>)}</ul>}
+                </>
+              )},
+              { key: 'materials', label: 'Materials', body: <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p> },
+              { key: 'size', label: 'Size & Fit', body: <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p> },
+              { key: 'shipping', label: 'Shipping & Returns', body: (
+                <>
+                  <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
+                  <p style={{ fontSize: 11, marginTop: 4, opacity: .85 }}>Typical transit time: 7–15 business days depending on destination country.</p>
+                </>
+              )},
+            ].map(acc => (
+              <div key={acc.key} ref={acc.key === 'size' ? sizeAccRef : undefined} className={`pd-acc ${openAcc === acc.key ? 'open' : ''}`}>
+                <button type="button" className="pd-acc-head" onClick={() => setOpenAcc(o => o === acc.key ? null : acc.key)}>
+                  {acc.label}
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div className="pd-acc-body"><div className="pd-acc-inner">{acc.body}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════
+          🖥️ DESKTOP — نفس التصميم المعتمد (REPLICA v3/v4/v5) بلا أي تبدال
+          ══════════════════════════════════════════════════════════ */}
+      <div className="hidden md:block max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
 
         {/* Breadcrumbs */}
         <div className="flex flex-col gap-2 mb-6">
@@ -450,9 +715,9 @@ export default function ProductDetailsClient({
             Back
           </button>
           <div className="text-sm text-temu-gray-light flex items-center gap-2 flex-wrap">
-            <Link href="/" className="hover:text-fog-600 cursor-pointer">Home</Link>
+            <Link href="/" className="hover:text-temu-orange cursor-pointer">Home</Link>
             <span>/</span>
-            <Link href={`/category/${product.category?.split('/')[0] || 'all'}`} className="hover:text-fog-600 cursor-pointer capitalize">
+            <Link href={`/category/${product.category?.split('/')[0] || 'all'}`} className="hover:text-temu-orange cursor-pointer capitalize">
               {product.category?.split('/')[0] || 'Catalog'}
             </Link>
             <span>/</span>
@@ -463,66 +728,27 @@ export default function ProductDetailsClient({
         {/* Product Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
 
-          {/* ✨ SERENE V2 — المعرض المنزلق طبق الأصل من mockup (.gallery/.gtrack سطر 172-176):
-              مسار واحد ينزلق بمنحنى cubic-bezier(.22,.8,.28,1) + دائرة زجاجية خلف الصورة
-              + زجاج القلب العايم (.glassbtn) + نقاط داخل المعرض (.gdots) */}
+          {/* Visual Gallery */}
           <div className="flex flex-col gap-4">
             <div
-              className="relative w-full aspect-square sm:min-h-[440px] rounded-[26px] overflow-hidden bg-gradient-to-br from-fog-50 via-white to-fog-100 border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-[var(--sh-card)] flex items-center justify-center"
+              className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onClick={() => { setIsLightboxOpen(true); setIsZoomed(false); }}
             >
-              {/* ✨ الدائرة الزجاجية خلف الصورة (mockup .gslide::after) */}
-              <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[62%] aspect-square rounded-full border-[1.5px] border-white/70 bg-white/40" />
-
               {showVideo && product.video_url ? (
-                <video src={product.video_url} controls autoPlay className="relative z-10 w-full h-full object-cover" />
+                <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
               ) : (
-                <div
-                  className="serene-slide-ease flex h-full w-full"
-                  style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
-                >
-                  {galleryImages.map((img, idx) => (
-                    <div key={idx} className="relative min-w-full h-full flex items-center justify-center">
-                      <img
-                        src={IMG.detail(img)}
-                        srcSet={`${IMG.card(img)} 400w, ${IMG.detail(img)} 800w`}
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        fetchPriority={idx === 0 ? 'high' : undefined}
-                        loading={idx === 0 ? undefined : 'lazy'}
-                        decoding="async"
-                        alt={idx === currentImageIndex ? product.title : ''}
-                        className="relative z-10 w-full h-full object-contain p-6 transition-transform duration-500 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  ))}
-                </div>
+                <img
+                  src={IMG.detail(mainImageSrc)}
+                  srcSet={`${IMG.card(mainImageSrc)} 400w, ${IMG.detail(mainImageSrc)} 800w`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  fetchPriority="high"
+                  decoding="async"
+                  alt={product.title}
+                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+                />
               )}
-
-              {/* ✨ SERENE V2.1 — زجاج الرجوع العايم (mockup .float-head سطر 166-168:
-                  [رجوع] ... [قلب] justify-between فوق المعرض) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); router.back(); }}
-                className="serene-glass absolute top-3.5 left-3.5 z-20 w-10 h-10 rounded-full grid place-items-center text-temu-black transition cursor-pointer active:scale-90"
-                aria-label="Go Back"
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              </button>
-
-              {/* ✨ زجاج القلب العايم فوق المعرض (mockup .float-head/.glassbtn سطر 167-171) */}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(product.id); }}
-                className={`serene-glass absolute top-3.5 right-3.5 z-20 w-10 h-10 rounded-full grid place-items-center transition cursor-pointer active:scale-90 ${
-                  isCurrentProductFavorited ? 'text-coral-500' : 'text-temu-black'
-                }`}
-                aria-label="Save to Wishlist"
-                aria-pressed={isCurrentProductFavorited}
-              >
-                <svg key={heartPop} width="17" height="17" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isCurrentProductFavorited ? 'serene-pop' : ''}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
-              </button>
 
               {galleryImages.length > 1 && !showVideo && (
                 <>
@@ -532,10 +758,10 @@ export default function ProductDetailsClient({
                       e.stopPropagation();
                       setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
                     }}
-                    className="serene-glass absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full grid place-items-center text-temu-black transition cursor-pointer z-20 active:scale-90"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Previous Image"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
                   <button
                     type="button"
@@ -543,38 +769,16 @@ export default function ProductDetailsClient({
                       e.stopPropagation();
                       setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
                     }}
-                    className="serene-glass absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full grid place-items-center text-temu-black transition cursor-pointer z-20 active:scale-90"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Next Image"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                 </>
               )}
 
-              {/* ✨ نقاط المعرض داخل الإطار (mockup .gdots bottom:40px) — 40px في الموبايل حيت الورقة كتغطي البوتوم
-                  🆕 V2.1 — >8 صور: العدّاد الزجاجي "n / total" بدل شجرة النقاط (18 صورة = ضجيج بصري)
-                  ≤8: نقاط الـ mockup كما هي */}
-              {galleryImages.length > 1 && !showVideo && (galleryImages.length > 8 ? (
-                <div className="absolute max-md:bottom-10 md:bottom-4 left-1/2 -translate-x-1/2 z-20 serene-glass text-temu-black text-[10px] font-bold px-2.5 py-1 rounded-full pointer-events-none tabular-nums">
-                  {currentImageIndex + 1} / {galleryImages.length}
-                </div>
-              ) : (
-                <div className="absolute max-md:bottom-10 md:bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pointer-events-none">
-                  {galleryImages.map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        currentImageIndex === idx ? 'w-5 bg-fog-600' : 'w-1.5 bg-fog-300/80'
-                      }`}
-                    />
-                  ))}
-                </div>
-              ))}
-
-              {/* ✨ V2.1 — "Tap to Zoom" هبط لتحت اليسار (المكتبة تاع الرجوع زاحت من مكانه —
-                  mockup ما فيهاش التاغ أصلاً؛ الموضع السفلي = نمط Temu المعتمد) */}
               {!showVideo && (
-                <div className="absolute max-md:bottom-[72px] md:bottom-4 left-3.5 z-20 bg-white/80 backdrop-blur-md text-fog-700 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm pointer-events-none">
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
                   Tap to Zoom
                 </div>
               )}
@@ -600,7 +804,7 @@ export default function ProductDetailsClient({
                 {product.video_url && (
                   <div
                     onClick={() => setShowVideo(true)}
-                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-fog-500' : 'border-transparent opacity-70'}`}
+                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
                   >
                     <span className="text-white text-xl"><GlassIcon ch="▶" size="xs" /></span>
                   </div>
@@ -611,7 +815,7 @@ export default function ProductDetailsClient({
                     onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
-                        ? 'border-[#5B7EA6] shadow-md ring-2 ring-[#5B7EA6]/30 scale-95'
+                        ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
@@ -639,49 +843,37 @@ export default function ProductDetailsClient({
             </div>
           </div>
 
-          {/* Pricing & Customization Box — ✨ SERENE: ورقة منزلقة فوق المعرض في الموبايل (mockup .pd-body سطر 178) */}
-          <div className="space-y-6 max-md:relative max-md:z-10 max-md:-mt-7 max-md:rounded-t-[26px] max-md:bg-white max-md:pt-6 max-md:shadow-[0_-8px_24px_rgba(91,126,166,0.10)]">
+          {/* Pricing & Customization Box */}
+          <div className="space-y-6">
             <div>
-              {/* ✨ SERENE — صف العلامة: Marcellus + SKU (mockup .pd-toprow سطر 179-181) */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-brand text-[10.5px] text-temu-gray-text uppercase">Laclarc</span>
-                <span className="text-[10px] text-temu-gray-text tracking-[0.08em]">SKU-LC-{product.id}</span>
-              </div>
-              <h1 className="text-xl md:text-2xl font-extrabold text-temu-black tracking-tight mb-2 leading-snug">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">
                 {product.title}
               </h1>
 
-              {/* ✨ SERENE — سطر الميتا: نجمة ذهبية + تقييم + مبيعات + ضمان (mockup .pd-meta سطر 183-185) */}
-              <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mb-4 text-[11.5px] text-temu-gray-text">
+              <div className="flex items-center gap-2 mb-4">
                 {reviews.length > 0 ? (
                   <>
-                    <span className="flex items-center gap-1 text-[#C9A96A] font-extrabold">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
+                    <span className="text-temu-orange text-sm">
+                      {'★'.repeat(Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length))}
+                    </span>
+                    <span className="text-sm font-bold text-temu-black">
                       {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
                     </span>
-                    <span aria-hidden>·</span>
-                    <span>{realTotal} verified rating{realTotal !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-temu-gray-light">
+                      ({realTotal} verified rating{realTotal !== 1 ? 's' : ''})
+                    </span>
                   </>
                 ) : (
-                  <span className="font-semibold"><GlassIcon ch="✨" size="xs" /> New in catalog — be the first to review</span>
+                  <span className="text-xs font-bold text-temu-gray-text"><GlassIcon ch="✨" size="xs" /> New in catalog — be the first to review</span>
                 )}
-                {product.sales_count ? (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span>{product.sales_count}+ sold</span>
-                  </>
-                ) : null}
-                <span aria-hidden>·</span>
-                <span>30-Day Returns</span>
               </div>
 
-              {/* ✨ SERENE — صف السعر: أزرق عميق 22px + مشطوب + شارة الوردي (mockup .pd-price/.off سطر 186-189) */}
-              <div className="flex items-baseline gap-2.5 mb-6">
-                <span className="text-[22px] leading-none font-black text-fog-600">${safePrice.toFixed(2)}</span>
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className="text-3xl font-black text-temu-error">${safePrice.toFixed(2)}</span>
                 {safeOriginalPrice > safePrice && (
                   <>
-                    <span className="text-[13px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
-                    <span className="bg-coral-500/15 text-coral-600 text-[10.5px] font-extrabold px-2 py-1 rounded-full">{discountPct}% OFF</span>
+                    <span className="text-lg text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
+                    <span className="bg-temu-black text-white text-xs font-black px-2.5 py-1 rounded-temu-sm">{discountPct}% OFF</span>
                   </>
                 )}
               </div>
@@ -689,7 +881,7 @@ export default function ProductDetailsClient({
               {variantEngine.groups.length > 1 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-fog-600 font-bold">{selectedGroup?.name}</span>
+                    Color: <span className="text-temu-gray-text font-semibold">{selectedGroup?.name}</span>
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {variantEngine.groups.map((g) => (
@@ -700,10 +892,10 @@ export default function ProductDetailsClient({
                         title={g.name}
                         aria-label={`Color ${g.name}`}
                         aria-pressed={selectedGroup?.name === g.name}
-                        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 border-transparent active:scale-90 ${
+                        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 active:scale-90 ${
                           selectedGroup?.name === g.name
-                            ? 'serene-swatch-ring'
-                            : 'hover:ring-2 hover:ring-fog-200'
+                            ? 'border-temu-orange scale-110 shadow ring-2 ring-temu-orange/30'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         {g.image ? (
@@ -727,7 +919,7 @@ export default function ProductDetailsClient({
               {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-fog-600 font-bold">{selectedColorName || product.colors[0]}</span>
+                    Color: <span className="text-temu-gray-text font-semibold">{selectedColorName || product.colors[0]}</span>
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {product.colors.map((col, idx) => (
@@ -735,7 +927,7 @@ export default function ProductDetailsClient({
                         key={idx}
                         type="button"
                         onClick={() => setSelectedColorName(col)}
-                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 border-transparent active:scale-90 ${selectedColorName === col ? 'serene-swatch-ring' : 'hover:ring-2 hover:ring-fog-200'}`}
+                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColorName === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
                       >
                         <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/10"></span>
                       </button>
@@ -748,7 +940,7 @@ export default function ProductDetailsClient({
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
-                    <button type="button" onClick={() => setOpenAcc('size')} className="text-xs text-fog-600 font-bold cursor-pointer hover:underline">
+                    <button type="button" onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
                       Size Guide <GlassIcon ch="↗" size="xs" />
                     </button>
                   </div>
@@ -758,11 +950,7 @@ export default function ProductDetailsClient({
                         key={sz}
                         type="button"
                         onClick={() => setSelectedSize(sz)}
-                        className={`min-w-[46px] h-[38px] px-3.5 rounded-[13px] font-bold text-[12.5px] transition cursor-pointer border border-transparent active:scale-95 ${
-                          effectiveSize === sz
-                            ? 'bg-fog-600 text-white shadow-[var(--sh-btn)]'
-                            : 'bg-[#EDF3F8] text-temu-gray-text hover:bg-fog-100'
-                        }`}
+                        className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${effectiveSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
                       >
                         {sz}
                       </button>
@@ -789,13 +977,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 1
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -807,36 +995,36 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 2
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#5B7EA6]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-[#6B3DB4]">Duo</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-fog-600 mt-1">${(safePrice * 2).toFixed(2)}</span>
+                    <span className="text-sm font-black text-coral-600 mt-1">${(safePrice * 2).toFixed(2)}</span>
                   </div>
 
                   <div
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity >= 3
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-fog-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-fog-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
+                    <span className="text-sm font-black text-maroccan-tea-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -845,10 +1033,10 @@ export default function ProductDetailsClient({
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className={`flex-1 text-white font-black py-4 px-6 rounded-full transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-[.96] shadow-[var(--sh-btn)] ${
+                  className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
                     mainAdded
-                      ? 'bg-linear-to-br from-[#6E93BC] to-fog-600' // ✨ mockup .btn-primary.done سطر 97 — ماشي أخضر
-                      : 'bg-linear-to-br from-fog-500 to-fog-600'
+                      ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/20'
+                      : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
                   }`}
                 >
                   {mainAdded ? (
@@ -902,78 +1090,58 @@ export default function ProductDetailsClient({
           </div>
         </div>
 
-        {/* ✨ SERENE — أكورديون بدل التابات (mockup .acc سطر 204-210):
-            سهم يدور 180° + grid-rows للتمدد السلس — الوصف مفتوح بعمده */}
+        {/* Tabbed Specifications */}
         <div className="border-t border-temu-gray-border-light pt-8">
-          <div className="space-y-3">
-            {TABS.map((tab) => {
-              const open = openAcc === tab.key;
-              return (
-                <div
-                  key={tab.key}
-                  className={`border rounded-2xl bg-white overflow-hidden transition-colors duration-200 ${
-                    open ? 'border-fog-300' : 'border-temu-gray-border'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenAcc(open ? null : tab.key)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 text-[13px] font-bold text-temu-black cursor-pointer"
-                    aria-expanded={open}
-                  >
-                    {tab.label}
-                    <svg
-                      className={`w-3.5 h-3.5 text-temu-gray-light transition-transform duration-300 shrink-0 ${open ? 'rotate-180' : ''}`}
-                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div
-                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                      open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      {/* ✨ V2.1 — cap 240px في الموبايل (mockup .acc.open .acc-body سطر 208:
-                          max-height:240px) + سكرول داخلي خفي — وصف CJ الطويل ما يغرقش الصفحة */}
-                      <div className="px-4 pb-4 text-[12.5px] text-temu-gray-text leading-loose max-md:max-h-60 max-md:overflow-y-auto max-md:scrollbar-hide">
-                        {tab.key === 'details' && (
-                          <div>
-                            <p className="mb-3">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
-                            {detailBullets.length > 0 && (
-                              <ul className="space-y-1.5 list-disc list-inside">
-                                {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
-                              </ul>
-                            )}
-                          </div>
-                        )}
+          <div className="flex gap-6 border-b border-temu-gray-border-light mb-6 overflow-x-auto scrollbar-hide">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`pb-3 text-xs uppercase font-extrabold whitespace-nowrap transition border-b-2 -mb-px cursor-pointer ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-black'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-                        {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
-                        {tab.key === 'materials' && (
-                          <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
-                        )}
+          <div className="text-sm text-temu-gray-text leading-relaxed">
+            {activeTab === 'details' && (
+              <div>
+                <p className="mb-4">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
+                {detailBullets.length > 0 && (
+                  <ul className="space-y-1.5 list-disc list-inside">
+                    {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
 
-                        {tab.key === 'size' && (
-                          <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
-                        )}
+            {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
+            {activeTab === 'materials' && (
+              <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
+            )}
 
-                        {tab.key === 'shipping' && (
-                          <div className="space-y-2">
-                            {/* ⚠️ M#45 backlog (توثيق — قرار المالك): "insured" بلا سند + "24–48h"
-                                خاصو يتقاطع مع predictDelivery الحقيقي (shipTruth median) */}
-                            <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
-                            <p className="text-xs text-temu-gray-light">Typical transit time: 7–15 business days depending on destination country.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {activeTab === 'size' && (
+              <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
+            )}
+
+            {activeTab === 'shipping' && (
+              <div className="space-y-2">
+                {/* ⚠️ M#45 backlog (توثيق — قرار المالك): "insured" بلا سند + "24–48h"
+                    خاصو يتقاطع مع predictDelivery الحقيقي (shipTruth median) */}
+                <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
+                <p className="text-xs text-temu-gray-light">Typical transit time: 7–15 business days depending on destination country.</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════
+          🔄 SHARED — FBT + مقترحات + المراجعات (زوج المستويات — كلاسات pd-scope للمراجعات)
+          ══════════════════════════════════════════════════════════ */}
+      <div className="pd-scope max-w-6xl mx-auto px-4 md:px-8 pb-6 space-y-12">
 
         {relatedProducts.length > 0 && (
           <FrequentlyBoughtTogether
@@ -1000,8 +1168,8 @@ export default function ProductDetailsClient({
                       />
                     </div>
                     <div className="p-3 pt-2 flex flex-col justify-between flex-1">
-                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-fog-600">{p.title}</h3>
-                      <p className="text-fog-600 font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
+                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
+                      <p className="text-temu-error font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
                     </div>
                   </Link>
                 </TiltCard>
@@ -1025,8 +1193,8 @@ export default function ProductDetailsClient({
               <button
                 onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
                 className={starFilter === 0
-                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-fog-600 text-white shadow-[0_6px_14px_rgba(70,100,138,0.30)] transition-all duration-200'
-                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-temu-gray-text border border-temu-gray-border hover:border-fog-300 hover:text-fog-600 transition-all duration-200'}
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
               >
                 All ({realTotal})
               </button>
@@ -1035,8 +1203,8 @@ export default function ProductDetailsClient({
                   key={s}
                   onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
                   className={starFilter === s
-                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-fog-600 text-white shadow-[0_6px_14px_rgba(70,100,138,0.30)] transition-all duration-200'
-                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-temu-gray-text border border-temu-gray-border hover:border-fog-300 hover:text-fog-600 transition-all duration-200'}
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
                 >
                   {s}★ ({starCounts[s]})
                 </button>
@@ -1044,28 +1212,55 @@ export default function ProductDetailsClient({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="md:grid md:grid-cols-2 md:gap-4 mb-8">
             {shownReviews.map((rev) => (
-              <div key={rev.id} className="p-4 bg-white rounded-2xl border border-temu-gray-border shadow-[var(--sh-card)] flex gap-3">
-                {/* ✨ SERENE — أفاتار الحروف (mockup .rava سطر 212: bg primary-fog + لون primary-deep) */}
-                <div className="w-9 h-9 rounded-full bg-fog-100 text-fog-600 grid place-items-center font-extrabold text-xs shrink-0">
-                  {initials(rev.author)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex justify-between items-center gap-2">
-                    <span className="font-bold text-xs text-temu-black truncate">
-                      {rev.author} <span className="font-medium text-temu-gray-light">({rev.country || 'Verified Buyer'})</span>
-                    </span>
-                    <span className="text-[#C9A96A] text-[10.5px] tracking-[1px] shrink-0">{'★'.repeat(rev.rating)}</span>
+              <div key={rev.id}>
+                {/* 📱 mockup rev — أفاتار دائري fog + نجوم ذهبية + نص 11.5 */}
+                <div className="pd-rev md:hidden">
+                  <div className="pd-rava">{(rev.author || '?').charAt(0).toUpperCase()}</div>
+                  <div className="pd-rmain">
+                    <div className="pd-rname">
+                      {rev.author}
+                      {rev.country ? (
+                        <span style={{ fontWeight: 500, fontSize: 10.5, color: 'var(--ink-soft)' }}> · {rev.country}</span>
+                      ) : null}
+                    </div>
+                    <div className="pd-rstars">{'★'.repeat(Math.round(rev.rating))}</div>
+                    <p className="pd-rtext">{rev.content}</p>
+
+                    {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
+                      <div className="pd-rphotos">
+                        {rev.images.map((photoUrl, pIdx) => (
+                          <img
+                            key={pIdx}
+                            src={IMG.thumb(photoUrl)}
+                            alt="Buyer proof photo"
+                            loading="lazy"
+                            className="cursor-pointer"
+                            onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <span className="pd-rdate">{new Date(rev.created_at).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-[11.5px] text-temu-gray-text leading-relaxed mt-1">{rev.content}</p>
+                </div>
+
+                {/* 🖥️ الكارت المعتمد — بلا تبدال */}
+                <div className="hidden md:block p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
+                    <span className="text-butter-up-400 text-xs">{'★'.repeat(rev.rating)}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
 
                   {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
-                    <div className="flex gap-2 pt-1.5">
+                    <div className="flex gap-2 pt-1">
                       {rev.images.map((photoUrl, pIdx) => (
                         <div
                           key={pIdx}
-                          className="relative w-14 h-14 rounded-xl overflow-hidden border border-temu-gray-border bg-fog-50 cursor-pointer hover:scale-105 transition"
+                          className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
                           onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
                           title="Click to view full photo"
                         >
@@ -1080,7 +1275,7 @@ export default function ProductDetailsClient({
                     </div>
                   )}
 
-                  <span className="text-[10px] text-temu-gray-light block font-mono mt-1.5">
+                  <span className="text-[10px] text-gray-400 block font-mono">
                     {new Date(rev.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -1100,7 +1295,7 @@ export default function ProductDetailsClient({
             <div className="flex flex-col items-center gap-2 mb-8">
               <button
                 onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
-                className="px-8 py-3 rounded-full text-sm font-black bg-linear-to-br from-fog-500 to-fog-600 text-white shadow-[var(--sh-btn)] active:scale-[.97] transition-all duration-300 cursor-pointer"
+                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(126,86,196,0.3)] transition-all duration-300"
               >
                 Load more reviews ({filteredReviews.length - shownReviews.length} more)
               </button>
@@ -1211,7 +1406,7 @@ export default function ProductDetailsClient({
                   key={idx}
                   onClick={() => { setCurrentImageIndex(idx); setIsZoomed(false); }}
                   className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 transition shrink-0 ${
-                    currentImageIndex === idx ? 'border-fog-500 scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
+                    currentImageIndex === idx ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
                   }`}
                 >
                   <img
@@ -1229,62 +1424,102 @@ export default function ProductDetailsClient({
 
       {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
 
-      {/* 🎨 SERENE V2 — Sticky CTA طبق الأصل من mockup .cta (سطر 216-220):
-          بلوك الإجمالي (الإجمالي + السعر) + زر أساسي متدرج · مرفوع فوق GlassDock */}
+      {/* 🎨 REPLICA_V4 — Sticky CTA طبق الأصل من المعاينة
+          🩹 كان bottom-0 و GlassDock (z-40) كيغطي على نص الأزرار في الموبايل —
+          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة */}
       <div
-        className={`fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-t border-temu-gray-border shadow-[0_-8px_24px_rgba(91,126,166,0.10)] px-4 pt-2.5 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
+        className={`pd-scope fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-t border-temu-gray-border-light md:shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
           showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-6 opacity-0 pointer-events-none'
         }`}
       >
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
+        <div className="max-w-[560px] md:max-w-6xl mx-auto flex items-center gap-3">
 
-          {/* ✨ بلوك الإجمالي الحي (mockup .cta-price) — كيتبدل مع الكمية */}
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-            className="flex flex-col items-start leading-tight shrink-0 cursor-pointer"
-            title="Tap to review choices"
-          >
-            <span className="text-[9.5px] font-semibold text-temu-gray-text uppercase tracking-wide">Total</span>
-            <b className="text-base text-fog-600">${(safePrice * quantity).toFixed(2)}</b>
-            <span className="text-[9px] text-temu-gray-light max-w-[110px] truncate">
-              {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' · ') || `${quantity} unit${quantity > 1 ? 's' : ''}`}
-            </span>
-          </button>
-
-          {/* ✨ الزر الأساسي المتدرج (mockup .btn-primary: 135° primary→deep) */}
+          {/* 📱 mockup CTA — المجموع يسار + زر كبير واحد يمين (pd-cta-price من pd.css) */}
+          <div className="pd-cta-price md:hidden">
+            <small>Total</small>
+            <b>${(safePrice * quantity).toFixed(2)}</b>
+          </div>
           <button
             type="button"
             onClick={() => {
-              // 🩹 Tenet #31: كاتب واحد للإلحاق — نفس handleAddToCart (مع الحركة fly-to-cart)
               handleAddToCart();
               setStickyAdded(true);
               setTimeout(() => setStickyAdded(false), 1200);
             }}
-            className={`flex-1 text-white font-black text-[14px] py-3.5 px-5 rounded-full transition active:scale-[.96] cursor-pointer shadow-[var(--sh-btn)] flex items-center justify-center gap-2 whitespace-nowrap ${
-              stickyAdded ? 'bg-linear-to-br from-[#6E93BC] to-fog-600' : 'bg-linear-to-br from-fog-500 to-fog-600'
+            className={`flex-1 md:hidden text-white font-black text-[14px] py-3.5 rounded-2xl transition active:scale-[.97] cursor-pointer shadow-[0_10px_22px_rgba(70,100,138,0.32)] bg-linear-to-r from-fog-600 via-fog-500 to-coral-400 flex items-center justify-center gap-2 ${
+              stickyAdded ? '!bg-linear-to-r !from-maroccan-tea-600 !via-maroccan-tea-600 !to-maroccan-tea-600' : ''
             }`}
           >
             {stickyAdded ? (
-              <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added — in your cart</span>
+              <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added</span>
             ) : (
-              <>Add to Cart</>
+              'Add to Cart'
             )}
           </button>
 
-          {/* ✨ الشراء السريع — مسار الدفع المباشر محفوظ ( أيقونة مدمجة كيما .glassbtn) */}
-          <button
-            type="button"
-            onClick={() => {
-              handleAddToCart();
-              router.push('/checkout');
-            }}
-            className="shrink-0 w-12 h-12 rounded-full bg-fog-100 text-fog-700 grid place-items-center cursor-pointer active:scale-90 transition hover:bg-fog-200/70"
-            aria-label="Buy Now — go to checkout"
-            title="Buy Now"
+          {/* ملخص المنتج — ديسكتوب فقط (المعاينة: الموبايل فيه زوز أزرار برك) */}
+          <div
+            onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
+            className="hidden md:flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+            title="Tap to review choices"
           >
-            <GlassIcon i="zap" size="sm" />
-          </button>
+            <div className="relative w-12 h-12 rounded-xl bg-fog-50 overflow-hidden border border-temu-gray-border-light shrink-0">
+              <img
+                src={IMG.thumb(mainImageSrc)}
+                alt={product.title}
+                loading="lazy"
+                className="w-full h-full object-contain p-1"
+              />
+            </div>
+
+            <div className="min-w-0 pr-1">
+              <p className="text-xs font-black text-temu-black truncate">{product.title}</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
+                {safeOriginalPrice > safePrice && (
+                  <span className="text-[10px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
+                )}
+              </div>
+              <p className="text-[10px] text-temu-gray-text font-semibold truncate">
+                {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' • ')} • Qty: {quantity}
+              </p>
+            </div>
+          </div>
+
+          {/* الزوز أزرار — نفس المعاينة: ghost + primary متدرج */}
+          <div className="hidden md:flex items-center gap-2.5 flex-1 md:flex-none">
+            <button
+              type="button"
+              onClick={() => {
+                handleAddToCart();
+                setStickyAdded(true);
+                setTimeout(() => setStickyAdded(false), 1200);
+              }}
+              className={`flex-1 sm:flex-none font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
+                stickyAdded
+                  ? 'bg-maroccan-tea-600 text-white shadow-md shadow-maroccan-tea-600/25'
+                  : 'bg-fog-100 text-fog-700 hover:bg-fog-200/70'
+              }`}
+            >
+              {stickyAdded ? (
+                <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added</span>
+              ) : (
+                'Add to Cart'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                // 🩹 Tenet #31: كاتب واحد للإلحاق — نفس handleAddToCart (مع الحركة fly-to-cart)
+                handleAddToCart();
+                router.push('/cart');
+              }}
+              className="flex-1 sm:flex-none bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 text-white font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm shadow-lg shadow-fog-500/40 active:scale-[.97] transition flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+            >
+              <GlassIcon i="zap" size="xs" /> Buy Now • ${(safePrice * quantity).toFixed(2)}
+            </button>
+          </div>
 
         </div>
       </div>

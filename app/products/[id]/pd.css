@@ -1,0 +1,116 @@
+/* ============================================================
+   LACLARC — Product Page · SERENE mockup port (Task 17)
+   المصدر: mockup CSS تاع صفحة المنتج («ديرو في الهاتف يبان كيما هاك»)
+   ════════════════════════════════════════════════════════════
+   · كل الكلاسات مبدّلين بـ pd- باش ما يضروش مع شي كلاس موجود فالموقع
+   · الـ vars مربوطين على القيم الحيّة من الموقع المنفوذ (SERENE V2):
+       --primary      = fog-500  #5b7ea6
+       --primary-deep = fog-600  #46648a  (= --color-temu-orange الحيّة)
+       --primary-fog  = fog-100  #dce9f4
+       --rose         = coral-500 #d98a8a
+       --off-text     = coral-600 #b05c5c  (= --color-temu-error الحيّة)
+       --gold         = butter-up-400 #d0ac48
+       --ink          = #2e4057 · --ink-soft = #7a8ca0
+       --surface-2    = fog-50 #f4f8fb · --line = #e2ebf3
+       --sh-btn       = 0 10px 22px #46648a52 (القيمة الحيّة)
+   · هاد الملف يخدم غير على الموبايل (البلوك md:hidden فالـ TSX)
+   ============================================================ */
+
+.pd-scope{
+  --primary:#5b7ea6;
+  --primary-deep:#46648a;
+  --primary-fog:#dce9f4;
+  --rose:#d98a8a;
+  --gold:#d0ac48;
+  --ink:#2e4057;
+  --ink-soft:#7a8ca0;
+  --surface:#ffffff;
+  --surface-2:#f4f8fb;
+  --line:#e2ebf3;
+  --sh-btn:0 10px 22px #46648a52;
+}
+
+/* ── float head: زر الرجوع + القلب زاجاج فوق المعرض ── */
+.pd-float{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;z-index:20;align-items:center;gap:8px}
+.pd-float-side{display:flex;align-items:center;gap:8px}
+.pd-gbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:grid;place-items:center;color:var(--ink);box-shadow:0 4px 14px rgba(46,64,87,.16);transition:transform .2s;border:0;padding:0;cursor:pointer}
+.pd-gbtn:active{transform:scale(.88)}
+.pd-gbtn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pd-gbtn.on{color:var(--rose)}
+.pd-gbtn.on svg{fill:var(--rose);animation:pd-pop .35s}
+@keyframes pd-pop{0%{transform:scale(.6)}55%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+/* ── المعرض: سلايدر 330px بمسار ينزلق + دائرة زاجاج خلف الصورة ── */
+.pd-gallery{height:330px;position:relative;overflow:hidden}
+.pd-track{display:flex;height:100%;transition:transform .5s cubic-bezier(.22,.8,.28,1)}
+.pd-slide{min-width:100%;height:100%;display:grid;place-items:center;position:relative}
+.pd-slide::after{content:'';position:absolute;width:235px;height:235px;border-radius:50%;border:1.5px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15)}
+.pd-slide.vid::after{display:none}
+.pd-slide img{width:72%;max-width:300px;height:72%;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 14px 22px rgba(46,64,87,.16))}
+.pd-slide video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;background:#2e4057}
+.pd-dots{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:5}
+.pd-dots i{width:6px;height:6px;border-radius:99px;background:rgba(255,255,255,.55);box-shadow:0 1px 4px rgba(46,64,87,.2);transition:all .3s;cursor:pointer}
+.pd-dots i.on{width:18px;background:#fff}
+
+/* ── الشيت: جسم أبيض يركب على المعرض بـ -26px وزوايا 26px ── */
+.pd-sheet{position:relative;margin-top:-26px;background:var(--surface);border-radius:26px 26px 0 0;padding:18px 20px 26px;box-shadow:0 -8px 24px rgba(91,126,166,.10)}
+.pd-toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.pd-brand{font-family:var(--font-marcellus),'Marcellus',serif;font-size:10.5px;letter-spacing:.28em;color:var(--ink-soft)}
+.pd-sku{font-size:10px;color:var(--ink-soft);letter-spacing:.08em}
+.pd-title{font-size:19px;font-weight:800;line-height:1.4;color:var(--ink)}
+.pd-meta{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);margin-top:5px;flex-wrap:wrap}
+.pd-stars{color:var(--gold);font-weight:800;display:flex;align-items:center;gap:3px}
+.pd-stars svg{width:12px;height:12px;fill:var(--gold);stroke:none}
+
+/* ── السعر + بادج الخصم الوردية ── */
+.pd-pricerow{display:flex;align-items:baseline;gap:9px;margin:12px 0 2px;flex-wrap:wrap}
+.pd-pricerow b{font-size:22px;font-weight:800;color:var(--primary-deep)}
+.pd-pricerow s{font-size:13px;color:var(--ink-soft)}
+.pd-off{background:rgba(217,138,138,.16);color:#B05C5C;font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:99px}
+
+/* ── الخيارات: ألوان (دوائر) + مقاسات (شيبات) ── */
+.pd-opt{margin-top:14px}
+.pd-opt>p{font-size:12.5px;font-weight:700;margin-bottom:9px;color:var(--ink)}
+.pd-opt>p b{color:var(--primary-deep)}
+.pd-swatches{display:flex;gap:10px;flex-wrap:wrap}
+.pd-swatch{width:34px;height:34px;border-radius:50%;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(46,64,87,.12);transition:box-shadow .2s, transform .2s;padding:0;border:0;cursor:pointer;background:#fff}
+.pd-swatch img{width:100%;height:100%;object-fit:cover;display:block}
+.pd-swatch i{display:block;width:100%;height:100%;border-radius:50%}
+.pd-swatch.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--primary);transform:scale(1.02)}
+.pd-sizes{display:flex;gap:8px;flex-wrap:wrap}
+.pd-size{min-width:42px;height:38px;padding:0 12px;border-radius:13px;background:var(--surface-2);color:var(--ink-soft);font-size:12.5px;font-weight:700;transition:background .2s,color .2s,box-shadow .2s;border:0;cursor:pointer}
+.pd-size.on{background:var(--primary-deep);color:#fff;box-shadow:var(--sh-btn)}
+
+/* ── الكمية: ستيبر حبّة (أزرار بيضاء داخل حبّة رمادية) ── */
+.pd-qtyrow{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.pd-qtyrow>p{font-size:12.5px;font-weight:700;color:var(--ink);margin:0}
+.pd-stepper{display:flex;align-items:center;gap:4px;background:var(--surface-2);border-radius:99px;padding:4px}
+.pd-stepper button{width:32px;height:32px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(46,64,87,.14);font-size:16px;font-weight:800;color:var(--primary-deep);display:grid;place-items:center;line-height:1;border:0;padding:0;cursor:pointer}
+.pd-stepper button:active{transform:scale(.9)}
+.pd-stepper b{min-width:30px;text-align:center;font-size:14px;color:var(--ink)}
+
+/* ─ـ الأكورديونات: تفاصيل / الخامات / المقاسات / الشحن ── */
+.pd-acc{border:1px solid var(--line);border-radius:16px;margin-top:12px;overflow:hidden;background:#fff}
+.pd-acc-head{width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 16px;font-size:13px;font-weight:700;color:var(--ink);background:none;border:0;cursor:pointer;text-align:start}
+.pd-acc-head svg{width:14px;height:14px;stroke:var(--ink-soft);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s;flex-shrink:0}
+.pd-acc.open .pd-acc-head svg{transform:rotate(180deg)}
+.pd-acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.pd-acc.open .pd-acc-body{max-height:640px}
+.pd-acc-inner{padding:0 16px 14px;font-size:12px;line-height:1.95;color:var(--ink-soft)}
+.pd-acc-inner ul{margin:6px 0 0;padding-inline-start:18px;list-style:disc}
+
+/* ── كارت المراجعة (الموبايل): أفاتار + نجوم ذهبية ── */
+.pd-rev{display:flex;gap:11px;padding:13px 16px;border:1px solid var(--line);border-radius:16px;margin-top:12px;background:#fff}
+.pd-rava{width:36px;height:36px;border-radius:50%;background:var(--primary-fog);color:var(--primary-deep);display:grid;place-items:center;font-weight:800;font-size:13px;flex-shrink:0}
+.pd-rmain{min-width:0;flex:1}
+.pd-rname{font-size:12.5px;font-weight:700;color:var(--ink)}
+.pd-rstars{color:var(--gold);font-size:10.5px;margin:2px 0 4px;letter-spacing:1px}
+.pd-rtext{font-size:11.5px;color:var(--ink-soft);line-height:1.8}
+.pd-rphotos{display:flex;gap:8px;margin-top:8px}
+.pd-rphotos img{width:52px;height:52px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
+.pd-rdate{display:block;margin-top:6px;font-size:10px;color:var(--ink-soft);opacity:.75;font-variant-numeric:tabular-nums}
+
+/* ── شريط الشراء السفلي الزاجاج: المجموع + زر كبير ── */
+.pd-cta-price{display:flex;flex-direction:column;line-height:1.35;flex-shrink:0}
+.pd-cta-price small{font-size:9.5px;color:var(--ink-soft);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.pd-cta-price b{font-size:16px;color:var(--primary-deep);font-weight:800}
