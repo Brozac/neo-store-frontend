@@ -185,6 +185,11 @@ export default function ProductDetailsClient({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
+  // 🆕 REVIEWS LIGHTBOX (Task 24) — صور المشترين كينبثقو فنافذة داخل الموقع
+  // (كانت كتفتح فتاب جديد) — سكرول/سوايب/أسهم بين صور المشترين كاملين
+  const [revLightbox, setRevLightbox] = useState<{ photos: string[]; index: number } | null>(null);
+  const revTouchX = useRef(0);
+
   // 📱 Task 17 — الأكورديونات تاع الموبايل (mockup: أول واحدة مفتوحة دايماً)
   const [openAcc, setOpenAcc] = useState<string | null>('details');
   const sizeAccRef = useRef<HTMLDivElement>(null);
@@ -442,6 +447,52 @@ export default function ProductDetailsClient({
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
+
+  // ═══ 🆕 REVIEWS LIGHTBOX (Task 24) ═══
+  // صور المشترين كاملين من المراجعات المعروضة (flat list) + بداية كل مراجعة
+  const revPhotoIdx = useMemo(() => {
+    const list: string[] = [];
+    const starts = new Map<string, number>();
+    shownReviews.forEach((r) => {
+      if (Array.isArray(r.images)) {
+        r.images.forEach((u, i) => {
+          starts.set(`${r.id}:${i}`, list.length);
+          list.push(u);
+        });
+      }
+    });
+    return { list, starts };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviews, visibleReviews, starFilter]);
+
+  const revNav = (dir: 1 | -1) =>
+    setRevLightbox((l) => (l ? { photos: l.photos, index: (l.index + dir + l.photos.length) % l.photos.length } : l));
+
+  // سوايب أفقي داخل النافذة (موبايل) — handlers مستقلين على المعرض الرئيسي
+  const handleRevTouchStart = (e: React.TouchEvent) => { revTouchX.current = e.touches[0].clientX; };
+  const handleRevTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - revTouchX.current;
+    if (Math.abs(dx) > 48) revNav(dx < 0 ? 1 : -1);
+  };
+
+  // 🔒 body scroll lock + كيبورد (سهم يمين/يسار · Escape) ملي النافذة محلولة
+  useEffect(() => {
+    if (!revLightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRevLightbox(null);
+      else if (e.key === 'ArrowRight') revNav(1);
+      else if (e.key === 'ArrowLeft') revNav(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revLightbox !== null]);
+
   return (
     <main className="min-h-screen bg-temu-offwhite pb-48 font-sans">
 
@@ -1251,8 +1302,12 @@ export default function ProductDetailsClient({
                             src={IMG.thumb(photoUrl)}
                             alt="Buyer proof photo"
                             loading="lazy"
-                            className="cursor-pointer"
-                            onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
+                            className="cursor-pointer transition active:scale-90"
+                            title="View photo"
+                            onClick={() => {
+                              const gi = revPhotoIdx.starts.get(`${rev.id}:${pIdx}`);
+                              if (gi !== undefined) setRevLightbox({ photos: revPhotoIdx.list, index: gi });
+                            }}
                           />
                         ))}
                       </div>
@@ -1276,7 +1331,10 @@ export default function ProductDetailsClient({
                         <div
                           key={pIdx}
                           className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
-                          onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
+                          onClick={() => {
+                            const gi = revPhotoIdx.starts.get(`${rev.id}:${pIdx}`);
+                            if (gi !== undefined) setRevLightbox({ photos: revPhotoIdx.list, index: gi });
+                          }}
                           title="Click to view full photo"
                         >
                           <img
@@ -1430,6 +1488,89 @@ export default function ProductDetailsClient({
                     loading="lazy"
                     className="w-full h-full object-cover"
                   />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 REVIEWS LIGHTBOX (Task 24) — «صور المشترين ينبثقو في نافذة داخل الموقع
+          ونسكرولي بينهم» — كانت كتفتح فتاب جديد (window.open).
+          نفس لغة الـ Lightbox تاع المعرض: عداد + أسهم + سوايب + شريط مصغرات */}
+      {revLightbox && revLightbox.photos.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[200] flex flex-col justify-between p-4 sm:p-6 backdrop-blur-md animate-fade-in select-none"
+          onClick={() => setRevLightbox(null)}
+        >
+          <div className="flex justify-between items-center w-full max-w-6xl mx-auto z-20" onClick={e => e.stopPropagation()}>
+            <div className="bg-white/10 backdrop-blur-md text-white font-mono text-xs px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm">
+              {revLightbox.index + 1} / {revLightbox.photos.length}
+            </div>
+
+            <span className="bg-white/10 backdrop-blur-md text-white/80 text-[10px] font-bold px-3 py-1.5 rounded-full border border-white/10 hidden sm:block">
+              Buyer photo — Customer Reviews
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setRevLightbox(null)}
+              className="bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
+              aria-label="Close Photos"
+            >
+              <GlassIcon i="x" size="xs" />
+            </button>
+          </div>
+
+          <div
+            className="relative flex-1 w-full max-w-4xl mx-auto flex items-center justify-center overflow-hidden my-2"
+            onClick={e => e.stopPropagation()}
+            onTouchStart={handleRevTouchStart}
+            onTouchEnd={handleRevTouchEnd}
+          >
+            <img
+              key={revLightbox.photos[revLightbox.index]}
+              src={revLightbox.photos[revLightbox.index]}
+              alt="Buyer proof photo"
+              decoding="async"
+              className="max-w-full max-h-full object-contain animate-fade-in"
+              onClick={e => e.stopPropagation()}
+            />
+
+            {revLightbox.photos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); revNav(-1); }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Previous Buyer Photo"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); revNav(1); }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Next Buyer Photo"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* شريط المصغرات — سكرول أفقي، النشطة كتتفرد (نفس أسلوب معرض المنتج) */}
+          <div className="w-full max-w-xl mx-auto z-20 overflow-x-auto scrollbar-hide py-1" onClick={e => e.stopPropagation()}>
+            <div className="flex gap-2 justify-center">
+              {revLightbox.photos.map((p, i) => (
+                <div
+                  key={i}
+                  onClick={() => setRevLightbox({ photos: revLightbox.photos, index: i })}
+                  className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 transition shrink-0 ${
+                    i === revLightbox.index ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  <img src={IMG.thumb(p)} alt="Thumb" loading="lazy" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
