@@ -147,3 +147,17 @@
 /* سلة زاجاج بـ badge — نفس لغة .pd-gbtn (الـ badge كيتغطى بالـ context) */
 .pd-gcart{position:relative}
 .pd-gbadge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--primary);color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(46,64,87,.28);font-variant-numeric:tabular-nums;line-height:1}
+
+/* ════════════════════════════════════════════════════════════
+   🩹 FIX REVIEWS DUPLICATED (Task 25) — «review يبان متكرر»
+   السبب: Tailwind v4 كيحبس الـ utilities داخل @layer، وأي CSS بلا
+   layer (بحال .pd-rev{display:flex} هنا) كيربح الـ layer مهما كان
+   الترتيب → md:hidden ما كانتش تقدر تخبّي كارت الموبايل فالديسكتوب
+   = كل مراجعة كتبان جوج مرات (كارت موبايل + كارت ديسكتوب معاً).
+   الحل: قاعدة حارسة صريحة ≥768px بـ !important — ما تتغلبش بأي
+   شكل (لا ترتيب ولا layers ولا !utilities مستقبلية).
+   الموبايل (<768px) ما يتساسش — القاعدة كتخدم غير فالديسكتوب.
+   ════════════════════════════════════════════════════════════ */
+@media (min-width: 768px){
+  .pd-rev{ display:none !important }
+}
