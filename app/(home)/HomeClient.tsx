@@ -232,9 +232,16 @@ function HomeContent() {
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* 1. Hero Section */}
+        {/* 1. Hero Section
+            📱 [mobile-lite] Task 22 — المستخدم: «كي يدخل من الهاتف مايبانلوش
+            herosection و trending now — من الكمبيوتر والتابلت يبان الموقع عادي»
+            hidden sm:block = الهاتف (أقل من 640px) ما يشارفهوش · التابلت/
+            الكمبيوتر (640px+) عاديين — CSS صافي بلا JS = صفر flicker،
+            والـ DOM/SSEO كيبقى كامل (المحتوى موجود في الصفحة) */}
         {activeCategory === 'All' && searchQuery === '' && (
-          <HeroSection trendingProducts={trendingProducts} />
+          <div className="hidden sm:block">
+            <HeroSection trendingProducts={trendingProducts} />
+          </div>
         )}
 
         {/* 2. Categories Bar — Temu-style rail */}
@@ -256,9 +263,9 @@ function HomeContent() {
                     النشط = حلقة بنفسجية + هالة fog-100 (0 0 0 4px) + ظل عميق · الضغطة = scale .92 */}
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-200 group-active:scale-90
                                  ${isActive
-                                   ? 'ring-[#5B7EA6] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(46,64,87,0.28)]'
-                                   : 'ring-transparent group-hover:ring-[#5B7EA6]/40 shadow-[0_2px_10px_rgba(46,64,87,0.07)]'}`}>
-                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#5B7EA6]/70">
+                                   ? 'ring-[#6B3DB4] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
+                                   : 'ring-transparent group-hover:ring-[#6B3DB4]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#6B3DB4]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
                   {img && (
@@ -271,7 +278,7 @@ function HomeContent() {
                   )}
                 </div>
                 <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
-                                  ${isActive ? 'text-[#5B7EA6]' : 'text-temu-black'}`}>
+                                  ${isActive ? 'text-[#6B3DB4]' : 'text-temu-black'}`}>
                   {label}
                 </span>
               </button>
@@ -293,9 +300,10 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 5. Trending Now */}
+        {/* 5. Trending Now — 📱 [mobile-lite] Task 22: مخبي في الهاتف (hidden sm:block)
+            التابلت/الكمبيوتر كيشارفوه عادي */}
         {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
-          <div className="mb-8 mt-6">
+          <div className="hidden sm:block mb-8 mt-6">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-black text-temu-black flex items-center gap-2">
                 <span>🔥</span> Trending Now
@@ -365,7 +373,7 @@ function HomeContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5B7EA6] cursor-pointer w-full sm:w-auto shadow-2xs"
+                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#6B3DB4] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
                 <option value="default">✨ Top Recommendations</option>
                 <option value="price-asc">💵 Price: Low to High</option>
@@ -393,7 +401,7 @@ function HomeContent() {
                   onClick={() => setPriceRange(pill.id as PriceRangeOption)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
                     priceRange === pill.id
-                      ? 'bg-[#2E4057] text-white shadow-xs'
+                      ? 'bg-[#17171A] text-white shadow-xs'
                       : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
                   }`}
                 >
@@ -409,7 +417,7 @@ function HomeContent() {
                   setSortBy('default');
                   setPriceRange('all');
                 }}
-                className="text-xs text-[#7FA1C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
+                className="text-xs text-[#7E56C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
               >
                 Reset Filters ✕
               </button>
@@ -481,7 +489,7 @@ function HomeContent() {
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
             <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (
@@ -494,17 +502,17 @@ function HomeContent() {
         {/* 7. 🎨 REPLICA_V5 — شريط الثقة (trust strip تاع المعاينة)
             3 بطاقات بيضاء بأيقونات زجاجية — آخر حاجة قبل الـ footer */}
         <div className="grid grid-cols-3 gap-2.5 mt-4 mb-2">
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
             <GlassIcon i="truck" tone="brand" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Free Express</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Worldwide</small>
           </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
             <GlassIcon i="shield" tone="success" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">30-Day Guarantee</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Easy returns</small>
           </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(46,64,87,0.05)]">
+          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
             <GlassIcon i="lock" tone="brand" size="md" className="mx-auto" />
             <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Secure Checkout</b>
             <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">100% protected</small>
