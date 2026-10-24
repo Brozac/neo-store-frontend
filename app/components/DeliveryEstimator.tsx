@@ -224,7 +224,9 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
 
       {/* 🆕 [cj-eta-v6] عنوان التوصيل المجاني — النجمة ديال الصندوق */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-maroccan-tea-500 text-white text-[13px] font-black uppercase tracking-wide shadow-sm">
+        {/* ✨ SERENE — الأخضر الهادئ #7C9E85 (القانون: أخضر «مجاني» وحيد فالنظام —
+            maroccan-tea-500 الليموني كان خارج الهوية) */}
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#7C9E85] text-white text-[13px] font-black uppercase tracking-wide shadow-sm">
           <Truck size={14} strokeWidth={2.5} /> Free Delivery
         </span>
         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
@@ -246,7 +248,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
                   {live.start} – {live.end}
                 </span>
                 {' '}
-                <span className="inline-block align-middle ml-1 px-1.5 py-0.5 rounded-full bg-maroccan-tea-50 border border-maroccan-tea-200 text-[10px] font-black text-maroccan-tea-700 uppercase tracking-wide">
+                <span className="inline-block align-middle ml-1 px-1.5 py-0.5 rounded-full bg-[#7C9E85]/10 border border-[#7C9E85]/25 text-[10px] font-black text-[#587B62] uppercase tracking-wide">
                   <Zap size={11} strokeWidth={2.6} className="inline-block align-[-2px] mr-0.5" /> live CJ window · {live.raw} days
                 </span>
               </p>
@@ -263,7 +265,7 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
                 </span>
               </p>
               <p className="text-[11px] text-gray-500 mt-0.5 font-medium">
-                Order within <strong className="text-maroccan-tea-700 font-bold">{deliveryDates.hoursLeft}h {deliveryDates.minsLeft}m</strong> — ships within 24–48h via CJ.
+                Order within <strong className="text-[#587B62] font-bold">{deliveryDates.hoursLeft}h {deliveryDates.minsLeft}m</strong> — ships within 24–48h via CJ.
               </p>
             </>
           )}
@@ -273,19 +275,19 @@ export default function DeliveryEstimator({ cjPid }: EstimatorProps = {}) {
       {/* شريط مؤشرات الثقة الأربعة */}
       <div className="pt-3 border-t border-[#5B7EA6]/15 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-700">
         <div className="flex items-center gap-1.5">
-          <Check size={14} strokeWidth={3} className="text-maroccan-tea-600 shrink-0" />
+          <Check size={14} strokeWidth={3} className="text-[#7C9E85] shrink-0" />
           <span>Free Worldwide Shipping</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Check size={14} strokeWidth={3} className="text-maroccan-tea-600 shrink-0" />
+          <Check size={14} strokeWidth={3} className="text-[#7C9E85] shrink-0" />
           <span>30-Day Money-Back Guarantee</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Check size={14} strokeWidth={3} className="text-maroccan-tea-600 shrink-0" />
+          <Check size={14} strokeWidth={3} className="text-[#7C9E85] shrink-0" />
           <span>Direct Factory Insured</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Check size={14} strokeWidth={3} className="text-maroccan-tea-600 shrink-0" />
+          <Check size={14} strokeWidth={3} className="text-[#7C9E85] shrink-0" />
           <span>256-Bit SSL Encrypted</span>
         </div>
       </div>

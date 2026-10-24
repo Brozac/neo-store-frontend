@@ -178,6 +178,9 @@ export default function ProductDetailsClient({
     setReviewsMeta(null);
   };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  // ✨ V2.1 — مفتاح نبضة القلب (mockup .glassbtn.on svg{animation:pop .35s}):
+  //    كل تبديل كيزيد الكي → الـ svg كيتعاود يتركب والحركة كتشتغل مرة وحدة
+  const [heartPop, setHeartPop] = useState(0);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyAdded, setStickyAdded] = useState(false);
   const [mainAdded, setMainAdded] = useState(false);
@@ -385,6 +388,7 @@ export default function ProductDetailsClient({
       : [...favorites, idStr];
     localStorage.setItem('favorites', JSON.stringify(newFavorites.slice(0, 100)));
     setFavoriteIds(newFavorites);
+    setHeartPop(k => k + 1); // ✨ V2.1 — نبضة pop عند كل تبديل (mockup سطر 170)
   };
 
   const handleAddToCart = () => {
@@ -496,6 +500,17 @@ export default function ProductDetailsClient({
                 </div>
               )}
 
+              {/* ✨ SERENE V2.1 — زجاج الرجوع العايم (mockup .float-head سطر 166-168:
+                  [رجوع] ... [قلب] justify-between فوق المعرض) */}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); router.back(); }}
+                className="serene-glass absolute top-3.5 left-3.5 z-20 w-10 h-10 rounded-full grid place-items-center text-temu-black transition cursor-pointer active:scale-90"
+                aria-label="Go Back"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+
               {/* ✨ زجاج القلب العايم فوق المعرض (mockup .float-head/.glassbtn سطر 167-171) */}
               <button
                 type="button"
@@ -506,7 +521,7 @@ export default function ProductDetailsClient({
                 aria-label="Save to Wishlist"
                 aria-pressed={isCurrentProductFavorited}
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                <svg key={heartPop} width="17" height="17" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isCurrentProductFavorited ? 'serene-pop' : ''}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
               </button>
 
               {galleryImages.length > 1 && !showVideo && (
@@ -536,8 +551,14 @@ export default function ProductDetailsClient({
                 </>
               )}
 
-              {/* ✨ نقاط المعرض داخل الإطار (mockup .gdots bottom:40px) — 40px في الموبايل حيت الورقة كتغطي البوتوم */}
-              {galleryImages.length > 1 && !showVideo && (
+              {/* ✨ نقاط المعرض داخل الإطار (mockup .gdots bottom:40px) — 40px في الموبايل حيت الورقة كتغطي البوتوم
+                  🆕 V2.1 — >8 صور: العدّاد الزجاجي "n / total" بدل شجرة النقاط (18 صورة = ضجيج بصري)
+                  ≤8: نقاط الـ mockup كما هي */}
+              {galleryImages.length > 1 && !showVideo && (galleryImages.length > 8 ? (
+                <div className="absolute max-md:bottom-10 md:bottom-4 left-1/2 -translate-x-1/2 z-20 serene-glass text-temu-black text-[10px] font-bold px-2.5 py-1 rounded-full pointer-events-none tabular-nums">
+                  {currentImageIndex + 1} / {galleryImages.length}
+                </div>
+              ) : (
                 <div className="absolute max-md:bottom-10 md:bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 pointer-events-none">
                   {galleryImages.map((_, idx) => (
                     <span
@@ -548,10 +569,12 @@ export default function ProductDetailsClient({
                     />
                   ))}
                 </div>
-              )}
+              ))}
 
+              {/* ✨ V2.1 — "Tap to Zoom" هبط لتحت اليسار (المكتبة تاع الرجوع زاحت من مكانه —
+                  mockup ما فيهاش التاغ أصلاً؛ الموضع السفلي = نمط Temu المعتمد) */}
               {!showVideo && (
-                <div className="absolute top-3.5 left-3.5 z-20 bg-white/80 backdrop-blur-md text-fog-700 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm pointer-events-none">
+                <div className="absolute max-md:bottom-[72px] md:bottom-4 left-3.5 z-20 bg-white/80 backdrop-blur-md text-fog-700 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-sm pointer-events-none">
                   Tap to Zoom
                 </div>
               )}
@@ -622,7 +645,7 @@ export default function ProductDetailsClient({
               {/* ✨ SERENE — صف العلامة: Marcellus + SKU (mockup .pd-toprow سطر 179-181) */}
               <div className="flex items-center justify-between mb-2">
                 <span className="font-brand text-[10.5px] text-temu-gray-text uppercase">Laclarc</span>
-                <span className="text-[10px] text-temu-gray-text tracking-wider">SKU-LC-{product.id}</span>
+                <span className="text-[10px] text-temu-gray-text tracking-[0.08em]">SKU-LC-{product.id}</span>
               </div>
               <h1 className="text-xl md:text-2xl font-extrabold text-temu-black tracking-tight mb-2 leading-snug">
                 {product.title}
@@ -666,7 +689,7 @@ export default function ProductDetailsClient({
               {variantEngine.groups.length > 1 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-temu-gray-text font-semibold">{selectedGroup?.name}</span>
+                    Color: <span className="text-fog-600 font-bold">{selectedGroup?.name}</span>
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {variantEngine.groups.map((g) => (
@@ -704,7 +727,7 @@ export default function ProductDetailsClient({
               {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-temu-gray-text font-semibold">{selectedColorName || product.colors[0]}</span>
+                    Color: <span className="text-fog-600 font-bold">{selectedColorName || product.colors[0]}</span>
                   </label>
                   <div className="flex gap-2.5 flex-wrap">
                     {product.colors.map((col, idx) => (
@@ -807,13 +830,13 @@ export default function ProductDetailsClient({
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
+                      <span className="font-extrabold text-xs text-fog-600">Trio</span>
                       <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-maroccan-tea-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
+                    <span className="text-sm font-black text-fog-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -824,7 +847,7 @@ export default function ProductDetailsClient({
                   onClick={handleAddToCart}
                   className={`flex-1 text-white font-black py-4 px-6 rounded-full transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-[.96] shadow-[var(--sh-btn)] ${
                     mainAdded
-                      ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/20'
+                      ? 'bg-linear-to-br from-[#6E93BC] to-fog-600' // ✨ mockup .btn-primary.done سطر 97 — ماشي أخضر
                       : 'bg-linear-to-br from-fog-500 to-fog-600'
                   }`}
                 >
@@ -912,7 +935,9 @@ export default function ProductDetailsClient({
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <div className="px-4 pb-4 text-[12.5px] text-temu-gray-text leading-loose">
+                      {/* ✨ V2.1 — cap 240px في الموبايل (mockup .acc.open .acc-body سطر 208:
+                          max-height:240px) + سكرول داخلي خفي — وصف CJ الطويل ما يغرقش الصفحة */}
+                      <div className="px-4 pb-4 text-[12.5px] text-temu-gray-text leading-loose max-md:max-h-60 max-md:overflow-y-auto max-md:scrollbar-hide">
                         {tab.key === 'details' && (
                           <div>
                             <p className="mb-3">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
@@ -1022,8 +1047,8 @@ export default function ProductDetailsClient({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {shownReviews.map((rev) => (
               <div key={rev.id} className="p-4 bg-white rounded-2xl border border-temu-gray-border shadow-[var(--sh-card)] flex gap-3">
-                {/* ✨ SERENE — أفاتار الحروف (mockup .rava سطر 212) */}
-                <div className="w-9 h-9 rounded-full bg-fog-100 text-fog-700 grid place-items-center font-extrabold text-xs shrink-0">
+                {/* ✨ SERENE — أفاتار الحروف (mockup .rava سطر 212: bg primary-fog + لون primary-deep) */}
+                <div className="w-9 h-9 rounded-full bg-fog-100 text-fog-600 grid place-items-center font-extrabold text-xs shrink-0">
                   {initials(rev.author)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1237,7 +1262,7 @@ export default function ProductDetailsClient({
               setTimeout(() => setStickyAdded(false), 1200);
             }}
             className={`flex-1 text-white font-black text-[14px] py-3.5 px-5 rounded-full transition active:scale-[.96] cursor-pointer shadow-[var(--sh-btn)] flex items-center justify-center gap-2 whitespace-nowrap ${
-              stickyAdded ? 'bg-maroccan-tea-600' : 'bg-linear-to-br from-fog-500 to-fog-600'
+              stickyAdded ? 'bg-linear-to-br from-[#6E93BC] to-fog-600' : 'bg-linear-to-br from-fog-500 to-fog-600'
             }`}
           >
             {stickyAdded ? (

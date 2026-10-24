@@ -133,7 +133,7 @@ export default function SearchBar() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider"
+          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-br from-fog-400 to-fog-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider"
         >
           Search
         </button>
