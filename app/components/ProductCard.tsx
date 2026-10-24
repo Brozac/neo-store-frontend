@@ -2,8 +2,21 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * Laclarc ProductCard — v4.0 (HOMECARD · mockup Task 18)
+ * Laclarc ProductCard — v5.0 (HOMECARD Task 18 + GLASSCARD Task 20)
  * ═══════════════════════════════════════════════════════════════
+ * ✨ [glasscard] — بانل الزجاج تاع mockup المستخدم (نفس وصفة Task 19
+ *    تاع بطاقات hero = لغة موحّدة):
+ *    · ديسكتوب (hover+mouse): صورة نقيّة في الراحة + سعر + سواتشات،
+ *      وعلى hover/is-active/focus-within بانل زجاجي كيطلع من لتحت
+ *      (.4s ease-in + blur 15px + border-top بيضاء) فيه العنوان
+ *      uppercase + سطر القسم + أيقونات (👁 Quick View / 🛒 Add)
+ *      بدخول متدرج calc(0.12s + 0.15s × i) — بلاصة pills السفلية
+ *      (اللي كيتخباو في الديسكتوب)
+ *    · موبايل/لمس: البانل display:none — تصميم HOMECARD كيما هو
+ *      (scrim + عنوان + سطر القسم + pills) — صفر تغيير
+ *    · CSS كامل في ProductCardGlass.css (كومبوننت CSS بعد globals —
+ *      globals.css ما تلمسش)
+ * ───────────────────────────────────────────────────────────────
  * ✨ [homecard] — تصميم بطاقة المنتج من mockup المستخدم (صفحة رئيسية):
  *    · كارت أبيض بحواف كبيرة (20px) بلا حدود + ظل ضبابي ناعم
  *    · بئر صورة مدوّر بتدرج fog ناعم (توكنات حية = SERENE V2)
@@ -44,6 +57,8 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import { IMG } from '../../lib/imageOptimizer';
 import GlassIcon from '@/components/ui/GlassIcon';
+// ✨ [glasscard] — بانل الزجاج (hover) — component CSS كيتحمّل بعد globals
+import './ProductCardGlass.css';
 
 interface Product {
   id: string | number;
@@ -263,20 +278,71 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
             decoding="async"
             className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
           />
-          {/* ✨ [homecard] scrim حبري — الاسم الأبيض يقرا على أي صورة (كما في mockup) */}
+          {/* ✨ [homecard] scrim حبري — الاسم الأبيض يقرا على أي صورة (كما في mockup)
+              ✨ [glasscard] pc-scrim = مخبي في الديسكتوب (البانل الزجاجي عوضو) */}
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-[48%] pointer-events-none [background:linear-gradient(to_top,rgba(46,64,87,.84)_0%,rgba(46,64,87,.34)_42%,rgba(46,64,87,0)_72%)]"
+            className="pc-scrim absolute inset-x-0 bottom-0 h-[48%] pointer-events-none [background:linear-gradient(to_top,rgba(46,64,87,.84)_0%,rgba(46,64,87,.34)_42%,rgba(46,64,87,0)_72%)]"
           />
-          <h3 className="absolute inset-x-0 bottom-0 px-3 pb-2.5 text-[12.5px] leading-[1.35] font-extrabold text-white line-clamp-2 pointer-events-none [text-shadow:0_1px_10px_rgba(23,37,54,.25)]">
+          <h3 className="pc-imgtitle absolute inset-x-0 bottom-0 px-3 pb-2.5 text-[12.5px] leading-[1.35] font-extrabold text-white line-clamp-2 pointer-events-none [text-shadow:0_1px_10px_rgba(23,37,54,.25)]">
             {product.title}
           </h3>
+
+          {/* ✨ [glasscard] بانل الزجاج — mockup hover (ديسكتوب برك):
+              كيطلع من لتحت .4s ease-in + blur 15px + دخول متدرج
+              title → قسم → أيقونات calc(0.12s + 0.15s × i).
+              داخل الـ well (overflow-hidden كيقصّو وهو مخبي للتحت).
+              الأزرار داخل الـ Link = نفس نمط HeroSection (preventDefault
+              في openQV/handleAddToCart كيمنع التنقل المزدوج) */}
+          <div className="pc-glass">
+            <p className="pc-gtitle">{product.title}</p>
+            {catLine && <p className="pc-gcat">{catLine}</p>}
+            <div className="pc-gicons">
+              <span className="pc-gslot" style={{ '--i': 0 } as React.CSSProperties}>
+                <button
+                  type="button"
+                  onClick={openQV}
+                  aria-haspopup="dialog"
+                  aria-label="Quick view"
+                  className="pc-gicon"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </span>
+              <span className="pc-gslot" style={{ '--i': 1 } as React.CSSProperties}>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  aria-live="polite"
+                  aria-label={isAdded ? 'Added to cart' : 'Add to cart'}
+                  className={`pc-gicon${isAdded ? ' is-added' : ''}`}
+                >
+                  {isAdded ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <path d="M16 10a4 4 0 0 1-8 0" />
+                    </svg>
+                  )}
+                </button>
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* ✨ [homecard] الجسم — سطر القسم + صف السعر (بلا نجوم: الـ API ما فيهش rating) */}
-        <div className="px-3 pt-2.5 pb-0.5">
+        {/* ✨ [homecard] الجسم — سطر القسم + صف السعر (بلا نجوم: الـ API ما فيهش rating)
+            ✨ [glasscard] pc-body/pc-bodycat = تنفس سفلي + اخفاء القسم في الديسكتوب
+            (ولّى في البانل الزجاجي) — السعر باقي ظاهر دايماً */}
+        <div className="pc-body px-3 pt-2.5 pb-0.5">
           {catLine && (
-            <p className="text-[9.5px] text-temu-gray-text font-semibold tracking-[0.02em] truncate">
+            <p className="pc-bodycat text-[9.5px] text-temu-gray-text font-semibold tracking-[0.02em] truncate">
               {catLine}
             </p>
           )}
@@ -324,7 +390,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
           ✨ [homecard] حلقة الاختيار = نمط mockup (2px أبيض + 4px fog-500) */}
       {hasSwatches && (
         <div
-          className="px-3 pt-1.5 pb-1 flex items-center gap-1.5 flex-wrap"
+          className="pc-swatches px-3 pt-1.5 pb-1 flex items-center gap-1.5 flex-wrap"
           onMouseLeave={() => setSwHover(-1)}
         >
           {swList.map((s, idx) => (
@@ -366,8 +432,10 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         </div>
       )}
 
-      {/* ✨ [homecard] زوج الأزرار pill — Add غامق + Quick View مفرغ (كما في mockup) */}
-      <div className="p-3 pt-2 mt-auto flex items-center gap-2">
+      {/* ✨ [homecard] زوج الأزرار pill — Add غامق + Quick View مفرغ (كما في mockup)
+          ✨ [glasscard] pc-pills = مخبي في الديسكتوب (أيقونات البانل عوضاتو) —
+          موبايل كيما هو */}
+      <div className="pc-pills p-3 pt-2 mt-auto flex items-center gap-2">
         <button
           type="button"
           onClick={handleAddToCart}

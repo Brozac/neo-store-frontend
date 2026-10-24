@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════
+   ProductCardGlass.css — Task 20 [GLASSCARD]
+   ═══════════════════════════════════════════════════════════════
+   بانل الزجاج تاع mockup المستخدم مطبق على بطاقة المنتج:
+     · بانل يطلع من لتحت على hover — transform .4s ease-in (mockup)
+     · زجاج حبري rgba(23,37,54,.78) + backdrop-blur(15px) + border-top
+       بيضاء (نفس قيم HeroCards.css تاع Task 19 = لغة موحّدة للموقع)
+     · دخول متدرج: title (0.15s) → قسم (0.22s) → أيقونات
+       calc(0.12s + 0.15s × --i) — كيما social-icons تاع mockup
+   ─────────────────────────────────────────────────────────────
+   ⚠️ استراتيجية الجهازين:
+     · ديسكتوب (hover + mouse): التصميم الصافي تاع mockup — صورة
+       نقيّة + سعر + سواتشات في الراحة، والبانل كيجيب العنوان +
+       القسم + الأيقونات (👁 Quick View / 🛒 Add) على hover
+       ولا is-active ولا focus-within (كيبورد). أزرار pill السفلية
+       كيتخباو — الأيقونات في البانل هي لي كتأدي نفس الخدمة.
+     · موبايل / لمس: البانل display:none — تصميم Task 18 (HOMECARD)
+       كيما هو: scrim + عنوان أبيض + سطر القسم + pills. صفر تغيير.
+   ─────────────────────────────────────────────────────────────
+   ⚠️ visibility متباعة transition مع تأخير باش أنيميشن الخروج
+      (الطيران للتحت) يتبان كامل قبل ما البانل يختفي من الـ a11y tree.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── الافتراضي = لمس / بلا hover: البانل مخبي تماماً ── */
+.pc-glass {
+  display: none;
+}
+
+/* ══════════ ديسكتوب — hover حقيقي + مؤشر دقيق ══════════ */
+@media (hover: hover) and (pointer: fine) {
+
+  /* راحة الكارت = mockup صافي: الصورة نقيّة بلا scrim/عنوان —
+     العنوان والقسم والأزرار عايشين في البانل الزجاجي */
+  .pc-scrim,
+  .pc-imgtitle,
+  .pc-bodycat,
+  .pc-pills {
+    display: none;
+  }
+
+  /* الكارت كيتقصر (بلا pills) — تنفس سفلي للعنصر الأخير */
+  .pc-body {
+    padding-bottom: 0.9rem;
+  }
+  .pc-swatches {
+    padding-bottom: 0.9rem;
+  }
+
+  /* ── البانل الزجاجي — نفس وصفة Task 19 بالضبط ── */
+  .pc-glass {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.9rem 0.7rem 0.85rem;
+    background: rgba(23, 37, 54, 0.78);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 -10px 10px rgba(23, 37, 54, 0.12);
+    text-align: center;
+    transform: translateY(calc(100% + 16px));
+    visibility: hidden;
+    transition: transform 0.4s ease-in, visibility 0s linear 0.4s;
+    will-change: transform;
+  }
+
+  /* متصفح بلا backdrop-filter — زجاج صلب مقروء (تدهور رشيق) */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pc-glass {
+      background: rgba(23, 37, 54, 0.9);
+    }
+  }
+
+  /* ── العنوان (h4 تاع mockup): uppercase + تباعد + دخول متأخر ── */
+  .pc-gtitle {
+    width: 100%;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #ffffff;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s;
+  }
+
+  /* ── سطر القسم (h5 تاع mockup): خفيف + متباعد + دخول بعد العنوان ── */
+  .pc-gcat {
+    width: 100%;
+    margin: 0.3rem 0 0;
+    font-size: 8.5px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.88);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease 0.22s, transform 0.5s ease 0.22s;
+  }
+
+  /* ── صف الأيقونات — بلاصة social-icons تاع mockup ──
+     الدخول المتدرج على الـ slot (غلاف) والأيقونة نفسها بلا تأخير
+     باش hover الدينامي تاعها يبقى فوري (نفس الفصل تاع Task 19) */
+  .pc-gicons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin: 0.6rem 0 0;
+    padding: 0;
+  }
+
+  .pc-gslot {
+    display: block;
+    opacity: 0;
+    transform: translateY(42px);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    transition-delay: calc(0.12s + 0.15s * var(--i, 0));
+  }
+
+  .pc-gicon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s ease, transform 0.2s ease,
+      border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .pc-gicon:hover {
+    background: rgba(255, 255, 255, 0.32);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .pc-gicon:active {
+    transform: scale(0.88);
+  }
+
+  /* الإضافة تمّات — أخضر النجاح (نفس .hicon-btn.is-added) */
+  .pc-gicon.is-added {
+    color: #7fb069;
+    border-color: rgba(127, 176, 105, 0.6);
+  }
+
+  /* ── حالات الظهور: hover / is-active (نظام is-touched) /
+     focus-within (كيبورد — الـ Link هو أول focusable) ── */
+  .product-card-wrapper:hover .pc-glass,
+  .product-card-wrapper.is-active .pc-glass,
+  .product-card-wrapper:focus-within .pc-glass {
+    transform: translateY(0);
+    visibility: visible;
+    transition: transform 0.4s ease-in, visibility 0s;
+  }
+
+  .product-card-wrapper:hover .pc-gtitle,
+  .product-card-wrapper.is-active .pc-gtitle,
+  .product-card-wrapper:focus-within .pc-gtitle {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .product-card-wrapper:hover .pc-gcat,
+  .product-card-wrapper.is-active .pc-gcat,
+  .product-card-wrapper:focus-within .pc-gcat {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .product-card-wrapper:hover .pc-gslot,
+  .product-card-wrapper.is-active .pc-gslot,
+  .product-card-wrapper:focus-within .pc-gslot {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── احترام prefers-reduced-motion — كل شي ظاهر بلا حركة ── */
+@media (prefers-reduced-motion: reduce) {
+  .pc-glass,
+  .pc-gtitle,
+  .pc-gcat,
+  .pc-gslot,
+  .pc-gicon {
+    transition: none !important;
+  }
+  .pc-glass {
+    transform: none !important;
+    visibility: visible !important;
+  }
+  .pc-gtitle,
+  .pc-gcat,
+  .pc-gslot {
+    transform: none !important;
+    opacity: 1 !important;
+    transition-delay: 0s !important;
+  }
+}
