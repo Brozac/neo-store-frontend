@@ -14,7 +14,13 @@ import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/Lac
 import GlassIcon from '@/components/ui/GlassIcon';
 
 // ════════════════════════════════════════════════════════════════
-// ProductDetailsClient v1.1 — مراجعة عميقة سطر بسطر (Task 9)
+// ProductDetailsClient v1.3 — SERENE_MOCKUP (صفحة المنتج تاع laclarc-serene-v2)
+// · معرض بشرائح + نقاط + glassbtn زجاجية (رجوع/قلب) فوق — بلا شريط thumbnails
+// · ورقة بيضاء مدورة (rounded-t-[26px] −mt-6): LACLARC + SKU + نجوم ذهبية
+//   + سعر fog-600 + بادج خصم وردي + swatches + مقاسات chips + ستيبر دائري
+// · أكورديونات (Description/Materials/Size/Shipping) بلا Tabs
+// · مراجعات بطاقة .rev (أفاتار دائري بحرف + نجوم butter) + CTA ثابت بالإجمالي
+// ─── التحديثات التقنية القديمة (ما تبدلتش):
 //
 // 🩹 P0 مالي: tiers الخصم (15%/25%) كانوا client-only — prepareSecureItems كيجيب
 //    الأسعار من DB (client price مهمل كلياً — Bank-Grade) → السلة كتعرض خصم
@@ -99,14 +105,15 @@ interface Review {
   images?: string[];
 }
 
-const TABS = [
-  { key: 'details', label: 'Details' },
-  { key: 'materials', label: 'Materials' },
+// ✨ SERENE_MOCKUP — أكورديونات بلاصة الـ Tabs (طبق الأصل .acc تاع المعاينة)
+const ACCORDIONS = [
+  { key: 'desc', label: 'Description' },
+  { key: 'materials', label: 'Materials & Care' },
   { key: 'size', label: 'Size & Fit' },
   { key: 'shipping', label: 'Shipping & Returns' },
 ] as const;
 
-type TabKey = (typeof TABS)[number]['key'];
+type AccKey = (typeof ACCORDIONS)[number]['key'];
 
 // ⭐ [cj-reviews v2] — «Load more» كيزيد بـ 6 كل ضغطة (نفس حجم الشبكة، نفس بداية v1)
 const REVIEWS_PAGE = 6;
@@ -129,11 +136,10 @@ export default function ProductDetailsClient({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  // ✨ MERGE_MOCKUP — Read More للوصف الطويل (كيما الموكاب)
-  const [descExpanded, setDescExpanded] = useState(false);
   const [selectedColorName, setSelectedColorName] = useState('');   // 🆕 [variant-truth] اسم عائلة اللون (من variantKey) — hex بقى legacy فقط
   const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
-  const [activeTab, setActiveTab] = useState<TabKey>('details');
+  // ✨ SERENE_MOCKUP — أكورديون مفتوح ('desc' مفتوح اصلاً كيما المعاينة) بلاصة activeTab
+  const [openAcc, setOpenAcc] = useState<AccKey | 'none'>('desc');
   const [reviews, setReviews] = useState(initialReviews);
   // ⭐ [cj-reviews v2] — فلتر النجوم + Load more + الإجمالي الحقيقي (meta.total من CJ)
   const [starFilter, setStarFilter] = useState(0); // 0 = الكل · 1..5 فلتر نجمي
@@ -187,19 +193,11 @@ export default function ProductDetailsClient({
   const [isZoomed, setIsZoomed] = useState(false);
 
   const touchStartX = useRef(0);
-  const thumbnailsRef = useRef<HTMLDivElement>(null);
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
   const defaultImage = '/icon-512.png';
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-
-  const scrollThumbnails = (direction: 'left' | 'right') => {
-    if (thumbnailsRef.current) {
-      const scrollAmount = direction === 'left' ? -180 : 180;
-      thumbnailsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   // ═══ 🆕 [variant-truth] Kit 29j — محرّك الفاريانت الحقيقي ═══
   // الحقيقة من variantKey نفسو ("Black-XS" → لون Black + حجم XS) — colors[] من DB مش موثوقة.
@@ -357,7 +355,20 @@ export default function ProductDetailsClient({
     );
 
     observer.observe(target);
-    return () => observer.disconnect();
+
+    // 🩹 SERENE_MOCKUP — fallback بالـ scroll (قياس rect مباشر): الـ IO بوحدو ما كافيش
+    //    فبعض الحالات (scroll سريع/برمجي) — الحساب من rect دقيق دايماً و passive = رخيص
+    const onScroll = () => {
+      const r = target.getBoundingClientRect();
+      setShowStickyBar((r.bottom < 0) && window.scrollY > 400);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
 
@@ -367,8 +378,11 @@ export default function ProductDetailsClient({
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
-  // ✨ MERGE_MOCKUP — الوصف الطويل (أكثر من 220 حرف) هو اللي يستحق Read More
-  const descIsLong = (stripHtml(product.description) || '').length > 220;
+  // ✨ SERENE_MOCKUP — صف .pd-meta: نجمة ذهبية + مبيعات حقيقية (sales_count من DB)
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : (typeof product.rating === 'number' && product.rating > 0 ? product.rating : null);
+  const soldCount = typeof product.sales_count === 'number' && product.sales_count > 0 ? product.sales_count : 0;
   const discountPct = safeOriginalPrice > safePrice
     ? Math.round(((safeOriginalPrice - safePrice) / safeOriginalPrice) * 100)
     : 0;
@@ -435,452 +449,367 @@ export default function ProductDetailsClient({
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
   return (
-    <main className="min-h-screen pb-48 font-sans">
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
+    <main className="min-h-screen pb-44 font-sans">
+      <div className="max-w-md mx-auto">
 
-        {/* Breadcrumbs */}
-        <div className="flex flex-col gap-2 mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-temu-gray-light hover:text-temu-black font-medium text-sm transition cursor-pointer active:scale-95 w-fit"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back
-          </button>
-          <div className="text-sm text-temu-gray-light flex items-center gap-2 flex-wrap">
-            <Link href="/" className="hover:text-temu-orange cursor-pointer">Home</Link>
-            <span>/</span>
-            <Link href={`/category/${product.category?.split('/')[0] || 'all'}`} className="hover:text-temu-orange cursor-pointer capitalize">
-              {product.category?.split('/')[0] || 'Catalog'}
-            </Link>
-            <span>/</span>
-            <span className="text-temu-black font-medium truncate max-w-[200px] sm:max-w-none">{product.title}</span>
-          </div>
-        </div>
+        {/* ═══ 🎨 SERENE_MOCKUP — المعرض (.gallery): شرائح + نقاط + float-head زجاجي ═══ */}
+        <div
+          className="relative h-[340px] sm:h-[440px] overflow-hidden bg-linear-to-b from-fog-100 via-fog-50 to-white touch-pan-y cursor-zoom-in"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => { setIsLightboxOpen(true); setIsZoomed(false); }}
+        >
+          {showVideo && product.video_url ? (
+            <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
+          ) : (
+            <img
+              src={IMG.detail(mainImageSrc)}
+              srcSet={`${IMG.card(mainImageSrc)} 400w, ${IMG.detail(mainImageSrc)} 800w`}
+              sizes="(max-width: 768px) 100vw, 448px"
+              fetchPriority="high"
+              decoding="async"
+              alt={product.title}
+              className="w-full h-full object-contain p-7 transition-transform duration-500"
+            />
+          )}
 
-        {/* Product Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
-
-          {/* Visual Gallery */}
-          <div className="flex flex-col gap-4">
-            <div
-              className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onClick={() => { setIsLightboxOpen(true); setIsZoomed(false); }}
+          {/* float-head — glassbtn 38px: رجوع | تشغيل+قلب (rgba(255,255,255,.88) + blur 8px) */}
+          <div className="absolute top-3 inset-x-3 flex justify-between items-center z-20" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-[38px] h-[38px] rounded-full bg-white/88 backdrop-blur-[8px] grid place-items-center text-fog-700 shadow-[0_4px_14px_rgba(46,64,87,0.16)] transition cursor-pointer active:scale-90"
+              aria-label="Go back"
             >
-              {showVideo && product.video_url ? (
-                <video src={product.video_url} controls autoPlay className="w-full h-full object-cover" />
-              ) : (
-                <img
-                  src={IMG.detail(mainImageSrc)}
-                  srcSet={`${IMG.card(mainImageSrc)} 400w, ${IMG.detail(mainImageSrc)} 800w`}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  fetchPriority="high"
-                  decoding="async"
-                  alt={product.title}
-                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
-                />
-              )}
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
 
-              {galleryImages.length > 1 && !showVideo && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
-                    }}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
-                    aria-label="Previous Image"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
-                    aria-label="Next Image"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                  </button>
-                </>
-              )}
-
-              {!showVideo && (
-                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md pointer-events-none">
-                  Tap to Zoom
-                </div>
-              )}
-            </div>
-
-            <div className="relative w-full flex items-center group/thumbs">
-
-              {galleryImages.length > 4 && (
+            <div className="flex items-center gap-2">
+              {product.video_url && (
                 <button
                   type="button"
-                  onClick={() => scrollThumbnails('left')}
-                  className="absolute -left-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
-                  aria-label="Scroll Left"
+                  onClick={() => setShowVideo((v) => !v)}
+                  className="w-[38px] h-[38px] rounded-full bg-white/88 backdrop-blur-[8px] grid place-items-center text-fog-700 shadow-[0_4px_14px_rgba(46,64,87,0.16)] transition cursor-pointer active:scale-90"
+                  aria-label={showVideo ? 'Close video' : 'Play product video'}
+                  title={showVideo ? 'Close video' : 'Play video'}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-              )}
-
-              <div
-                ref={thumbnailsRef}
-                className="flex gap-2.5 w-full overflow-x-auto p-2 scrollbar-hide touch-pan-x items-center scroll-smooth"
-              >
-                {product.video_url && (
-                  <div
-                    onClick={() => setShowVideo(true)}
-                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition flex items-center justify-center bg-black shrink-0 ${showVideo ? 'border-temu-orange' : 'border-transparent opacity-70'}`}
-                  >
-                    <span className="text-white text-xl"><GlassIcon ch="▶" size="xs" /></span>
-                  </div>
-                )}
-                {galleryImages.map((img, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
-                    className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
-                      !showVideo && currentImageIndex === idx
-                        ? 'border-[#5B7EA6] shadow-md ring-2 ring-[#5B7EA6]/30 scale-95'
-                        : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
-                    }`}
-                  >
-                    <img
-                      src={IMG.thumb(img)}
-                      alt="Thumbnail"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-contain p-1"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {galleryImages.length > 4 && (
-                <button
-                  type="button"
-                  onClick={() => scrollThumbnails('right')}
-                  className="absolute -right-2 z-10 bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-md border border-gray-200 flex items-center justify-center cursor-pointer transition-all opacity-80 hover:opacity-100 active:scale-90"
-                  aria-label="Scroll Right"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Pricing & Customization Box */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-temu-black tracking-tight mb-3 leading-tight">
-                {product.title}
-              </h1>
-
-              <div className="flex items-center gap-2 mb-4">
-                {reviews.length > 0 ? (
-                  <>
-                    <span className="text-temu-orange text-sm">
-                      {'★'.repeat(Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length))}
-                    </span>
-                    <span className="text-sm font-bold text-temu-black">
-                      {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
-                    </span>
-                    <span className="text-xs text-temu-gray-light">
-                      ({realTotal} verified rating{realTotal !== 1 ? 's' : ''})
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs font-bold text-temu-gray-text"><GlassIcon ch="✨" size="xs" /> New in catalog — be the first to review</span>
-                )}
-              </div>
-
-              <div className="flex items-baseline gap-3 mb-6">
-                <span className="text-3xl font-black text-temu-error">${safePrice.toFixed(2)}</span>
-                {safeOriginalPrice > safePrice && (
-                  <>
-                    <span className="text-lg text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
-                    <span className="bg-temu-black text-white text-xs font-black px-2.5 py-1 rounded-temu-sm">{discountPct}% OFF</span>
-                  </>
-                )}
-              </div>
-
-              {variantEngine.groups.length > 1 && (
-                <div className="mb-6">
-                  <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-temu-gray-text font-semibold">{selectedGroup?.name}</span>
-                  </label>
-                  <div className="flex gap-2.5 flex-wrap">
-                    {variantEngine.groups.map((g) => (
-                      <button
-                        key={g.name}
-                        type="button"
-                        onClick={() => setSelectedColorName(g.name)}
-                        title={g.name}
-                        aria-label={`Color ${g.name}`}
-                        aria-pressed={selectedGroup?.name === g.name}
-                        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 active:scale-90 ${
-                          selectedGroup?.name === g.name
-                            ? 'border-temu-orange scale-110 shadow ring-2 ring-temu-orange/30'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {g.image ? (
-                          <img
-                            src={IMG.thumb(g.image)}
-                            alt={g.name}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span style={{ backgroundColor: getColorHex(g.hex || g.name) }} className="block w-full h-full rounded-full border border-black/10"></span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* fallback قديم — بلا variants صالحين: دوائر hex كيما قبل (بلا أثر على الـ vid) */}
-              {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
-                <div className="mb-6">
-                  <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
-                    Color: <span className="text-temu-gray-text font-semibold">{selectedColorName || product.colors[0]}</span>
-                  </label>
-                  <div className="flex gap-2.5 flex-wrap">
-                    {product.colors.map((col, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedColorName(col)}
-                        className={`w-9 h-9 rounded-full transition cursor-pointer border-2 active:scale-90 ${selectedColorName === col ? 'border-temu-orange scale-110 shadow' : 'border-gray-200'}`}
-                      >
-                        <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full border border-black/10"></span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {availableSizes.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs uppercase font-extrabold text-temu-black">Size</label>
-                    <button type="button" onClick={() => setActiveTab('size')} className="text-xs text-temu-orange font-bold cursor-pointer hover:underline">
-                      Size Guide <GlassIcon ch="↗" size="xs" />
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSizes.map((sz) => (
-                      <button
-                        key={sz}
-                        type="button"
-                        onClick={() => setSelectedSize(sz)}
-                        className={`h-11 px-4 rounded-temu-sm font-bold text-xs transition cursor-pointer border-2 active:scale-95 ${effectiveSize === sz ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 text-temu-black hover:border-gray-400 bg-white'}`}
-                      >
-                        {sz}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* CTA Controls */}
-            <div ref={mainCtaRef} className="space-y-4 pt-2 border-t border-gray-200">
-              {/* 🩹 TRUST — Flash timer فقط للعرضات الممولة الحقيقية (is_sourced) — لا إلحاح وهمي على كل منتج */}
-              {product.is_sourced === true && <CountdownTimer />}
-              <DeliveryEstimator productId={product.id} />
-
-              <div className="space-y-2.5 my-6">
-                {/* 🩹 P0 مالي: "Bundle Savings" كان خصم وهمي — كيتعرض فالسلة ويختفى فالـ checkout */}
-                <label className="block text-xs uppercase font-black text-gray-800 tracking-wider">
-                  <GlassIcon i="zap" size="xs" /> Quantity:
-                </label>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div
-                    onClick={() => setQuantity(1)}
-                    className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity === 1
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
-                        {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-gray-600">Buy 1 Unit</span>
-                    <span className="text-sm font-black text-gray-900 mt-1">${safePrice.toFixed(2)}</span>
-                  </div>
-
-                  <div
-                    onClick={() => setQuantity(2)}
-                    className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity === 2
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#5B7EA6]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
-                        {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-fog-600 mt-1">${(safePrice * 2).toFixed(2)}</span>
-                  </div>
-
-                  <div
-                    onClick={() => setQuantity(3)}
-                    className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
-                      quantity >= 3
-                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
-                        {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-maroccan-tea-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
-                    mainAdded
-                      ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/20'
-                      : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
-                  }`}
-                >
-                  {mainAdded ? (
-                    <><span><GlassIcon i="check" size="xs" /></span> Added to Bag — View Cart <GlassIcon i="arrowRight" size="xs" /></>
+                  {showVideo ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   ) : (
-                    <>Add to Cart</>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                   )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleFavorite(product.id)}
-                  className={`w-14 h-14 shrink-0 flex items-center justify-center border-2 rounded-temu-sm transition cursor-pointer active:scale-90 ${isCurrentProductFavorited ? 'border-temu-error bg-temu-error text-white' : 'border-temu-gray-border bg-white text-temu-gray-text hover:text-temu-error'}`}
-                  aria-label="Save to Wishlist"
+              )}
+              <button
+                type="button"
+                onClick={() => handleToggleFavorite(product.id)}
+                aria-pressed={isCurrentProductFavorited}
+                aria-label="Save to Wishlist"
+                className={`w-[38px] h-[38px] rounded-full bg-white/88 backdrop-blur-[8px] grid place-items-center shadow-[0_4px_14px_rgba(46,64,87,0.16)] transition cursor-pointer active:scale-90 ${
+                  isCurrentProductFavorited ? 'text-coral-500' : 'text-fog-700'
+                }`}
+              >
+                <svg
+                  key={String(isCurrentProductFavorited)}
+                  className={isCurrentProductFavorited ? 'animate-scale' : ''}
+                  width="17" height="17" viewBox="0 0 24 24"
+                  fill={isCurrentProductFavorited ? 'currentColor' : 'none'}
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill={isCurrentProductFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
-                </button>
-              </div>
-
-              <BuyButton
-                product={{
-                  id: product.id,
-                  title: product.title,
-                  name: product.title,
-                  price: safePrice, // 🩹 P0: DB-true — السيرفر هو الحكم (prepareSecureItems)
-                  image: mainImageSrc,
-                  color: selectedGroup?.name || selectedColorName || '',
-                  size: effectiveSize || '',
-                  quantity: quantity,
-                  vid: matchedVariant?.vid || ''
-                }}
-              />
-
-              {/* 🩹 TRUST — بلوك "48 shoppers" المحذوف نهائياً (كان purchaseCount عشوائي 18-120 متقلب
-                  + Static Avatars من Unsplash) — البديل الحقيقي: sold_count من DB — Backlog */}
-
-              <div className="grid grid-cols-3 gap-2 pt-2 text-[10px] text-temu-gray-text font-semibold border-t border-temu-gray-border-light">
-                <div className="flex flex-col items-center gap-1">
-                  <GlobeShippingIcon size={18} active />
-                  Free Shipping
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <ReturnsIcon size={18} active />
-                  30-Day Guarantee
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <LockIcon size={18} active />
-                  Secure Checkout
-                </div>
-              </div>
+                  <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>
+                </svg>
+              </button>
             </div>
           </div>
+
+          {/* gdots — نقاط فوق الورقة (bottom-9 ≈ 40px تاع المعاينة) — ضبابية على الخلفية الفاتحة */}
+          {galleryImages.length > 1 && !showVideo && (
+            <div className="absolute bottom-9 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {galleryImages.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i); setShowVideo(false); }}
+                  aria-label={`Image ${i + 1} of ${galleryImages.length}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    currentImageIndex === i ? 'w-4 bg-fog-600' : 'w-1.5 bg-fog-300/80 hover:bg-fog-400'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Tabbed Specifications */}
-        <div className="border-t border-temu-gray-border-light pt-8">
-          <div className="flex gap-6 border-b border-temu-gray-border-light mb-6 overflow-x-auto scrollbar-hide">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`pb-3 text-xs uppercase font-extrabold whitespace-nowrap transition border-b-2 -mb-px cursor-pointer ${activeTab === tab.key ? 'border-temu-orange text-temu-orange' : 'border-transparent text-temu-gray-light hover:text-temu-black'}`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        {/* ═══ 🎨 SERENE_MOCKUP — ورقة المنتج (.pd-body): rounded-t-[26px] + −mt-6 فوق المعرض ═══ */}
+        <div className="relative -mt-6 bg-white rounded-t-[26px] shadow-[0_-8px_24px_rgba(91,126,166,0.10)] px-5 pt-4 pb-6">
+
+          {/* pd-toprow — براند Marcellus (.28em) + SKU */}
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="font-brand text-[10.5px] tracking-[0.28em] text-temu-gray-text">LACLARC</span>
+            <span className="text-[10px] tracking-[0.08em] text-temu-gray-text">SKU: LAC-{product.id}</span>
           </div>
 
-          <div className="text-sm text-temu-gray-text leading-relaxed">
-            {activeTab === 'details' && (
-              <div>
-                {/* 🎨 MERGE_MOCKUP — وصف مقصوص 3 أسطر + Read More كيما الموكاب */}
-                <p className={`mb-4 ${!descExpanded && descIsLong ? 'line-clamp-3' : ''}`}>
-                  {stripHtml(product.description) || 'Full specifications available — contact support for any question.'}
-                </p>
-                {descIsLong && (
+          <h1 className="text-[19px] font-extrabold leading-[1.4] text-temu-black">{product.title}</h1>
+
+          {/* pd-meta — نجمة ذهبية butter + تقييم حقيقي + مبيعات DB */}
+          <div className="flex items-center gap-1.5 mt-1.5 text-[11.5px] text-temu-gray-text flex-wrap">
+            {avgRating != null ? (
+              <>
+                <span className="flex items-center gap-0.5 text-butter-up-600 font-extrabold">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6z"></path></svg>
+                  {avgRating.toFixed(1)}
+                </span>
+                <span>· {realTotal} verified rating{realTotal !== 1 ? 's' : ''}</span>
+              </>
+            ) : (
+              <span className="font-bold"><GlassIcon ch="✨" size="xs" /> New in catalog — be the first to review</span>
+            )}
+            {soldCount > 0 && <span>· {soldCount.toLocaleString('en-US')}+ sold</span>}
+          </div>
+
+          {/* pd-price — 22px fog-600 + شطب + بادج −X% وردي (.off تاع المعاينة) */}
+          <div className="flex items-baseline gap-2.5 mt-3">
+            <b className="text-[22px] font-extrabold text-fog-600">${safePrice.toFixed(2)}</b>
+            {safeOriginalPrice > safePrice && (
+              <>
+                <s className="text-[13px] text-temu-gray-text">${safeOriginalPrice.toFixed(2)}</s>
+                <span className="bg-coral-500/15 text-coral-600 text-[10.5px] font-extrabold px-2.5 py-1 rounded-full">-{discountPct}%</span>
+              </>
+            )}
+          </div>
+
+          {/* .swatches — دوائر 34px، النشطة ring fog-500 (0 0 0 2px #fff + 4px primary تاع المعاينة) */}
+          {variantEngine.groups.length > 1 && (
+            <div className="mt-4">
+              <p className="text-[12.5px] font-bold text-temu-black mb-2">
+                Color: <b className="text-fog-600">{selectedGroup?.name}</b>
+              </p>
+              <div className="flex gap-2.5 flex-wrap">
+                {variantEngine.groups.map((g) => (
                   <button
+                    key={g.name}
                     type="button"
-                    onClick={() => setDescExpanded((v) => !v)}
-                    className="text-sm font-bold text-fog-600 hover:underline cursor-pointer -mt-2 mb-4 block"
-                    aria-expanded={descExpanded}
+                    onClick={() => setSelectedColorName(g.name)}
+                    title={g.name}
+                    aria-label={`Color ${g.name}`}
+                    aria-pressed={selectedGroup?.name === g.name}
+                    className={`w-[34px] h-[34px] rounded-full overflow-hidden transition cursor-pointer active:scale-90 ${
+                      selectedGroup?.name === g.name
+                        ? 'ring-2 ring-fog-500 ring-offset-2 ring-offset-white'
+                        : 'ring-1 ring-fog-200 hover:ring-fog-300'
+                    }`}
                   >
-                    {descExpanded ? 'Read Less' : 'Read More'}
+                    {g.image ? (
+                      <img
+                        src={IMG.thumb(g.image)}
+                        alt={g.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span style={{ backgroundColor: getColorHex(g.hex || g.name) }} className="block w-full h-full"></span>
+                    )}
                   </button>
-                )}
-                {detailBullets.length > 0 && (
-                  <ul className="space-y-1.5 list-disc list-inside">
-                    {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
-                  </ul>
-                )}
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
-            {activeTab === 'materials' && (
-              <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
-            )}
-
-            {activeTab === 'size' && (
-              <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
-            )}
-
-            {activeTab === 'shipping' && (
-              <div className="space-y-2">
-                {/* ⚠️ M#45 backlog (توثيق — قرار المالك): "insured" بلا سند + "24–48h"
-                    خاصو يتقاطع مع predictDelivery الحقيقي (shipTruth median) */}
-                <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
-                <p className="text-xs text-temu-gray-light">Typical transit time: 7–15 business days depending on destination country.</p>
+          {/* fallback قديم — بلا variants صالحين: دوائر hex كيما قبل (بلا أثر على الـ vid) */}
+          {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[12.5px] font-bold text-temu-black mb-2">
+                Color: {!(selectedColorName || product.colors[0] || '').startsWith('#') && (
+                  <b className="text-fog-600">{selectedColorName || product.colors[0]}</b>
+                )}
+              </p>
+              <div className="flex gap-2.5 flex-wrap">
+                {product.colors.map((col, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedColorName(col)}
+                    title={col}
+                    aria-label={`Color ${col}`}
+                    className={`w-[34px] h-[34px] rounded-full transition cursor-pointer active:scale-90 ${
+                      selectedColorName === col
+                        ? 'ring-2 ring-fog-500 ring-offset-2 ring-offset-white'
+                        : 'ring-1 ring-fog-200 hover:ring-fog-300'
+                    }`}
+                  >
+                    <span style={{ backgroundColor: getColorHex(col) }} className="block w-full h-full rounded-full"></span>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* .sizes — chips 38px، النشط fog-600 أبيض بظل (طبق المعاينة) */}
+          {availableSizes.length > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[12.5px] font-bold text-temu-black">
+                  Size: <b className="text-fog-600">{effectiveSize || '—'}</b>
+                </p>
+                <button type="button" onClick={() => setOpenAcc('size')} className="text-[11px] font-bold text-fog-600 cursor-pointer hover:underline">
+                  Size Guide
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setSelectedSize(sz)}
+                    className={`min-w-[42px] h-[38px] px-3 rounded-[13px] text-[12.5px] font-bold transition cursor-pointer active:scale-95 ${
+                      effectiveSize === sz
+                        ? 'bg-fog-600 text-white shadow-[0_4px_14px_rgba(70,100,138,0.35)]'
+                        : 'bg-fog-100 text-temu-gray-text hover:bg-fog-200/60'
+                    }`}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Countdown للعرضات الحقيقية فقط + مقدّر التوصيل */}
+          {product.is_sourced === true && <div className="mt-4"><CountdownTimer /></div>}
+          <div className="mt-4"><DeliveryEstimator productId={product.id} /></div>
+
+          {/* qtyrow — ستيبر دائري (.stepper تاع المعاينة: أزرار بيضاء 32px على حبة fog) */}
+          <div className="flex items-center justify-between mt-5">
+            <p className="text-[12.5px] font-bold text-temu-black">Quantity</p>
+            <div className="flex items-center gap-1 bg-fog-100 rounded-full p-1" role="group" aria-label="Quantity">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1}
+                aria-label="Decrease quantity"
+                className="w-8 h-8 rounded-full bg-white text-fog-600 font-extrabold text-base grid place-items-center shadow-[0_2px_8px_rgba(46,64,87,0.14)] transition active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed leading-none"
+              >
+                −
+              </button>
+              <b className="min-w-[30px] text-center text-sm text-temu-black tabular-nums" aria-live="polite">{quantity}</b>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                aria-label="Increase quantity"
+                className="w-8 h-8 rounded-full bg-white text-fog-600 font-extrabold text-base grid place-items-center shadow-[0_2px_8px_rgba(46,64,87,0.14)] transition active:scale-90 cursor-pointer leading-none"
+              >
+                +
+              </button>
+            </div>
           </div>
+
+          {/* CTA الرئيسية — mainCtaRef كيشغّل الـ sticky observer */}
+          <div ref={mainCtaRef} className="mt-5 space-y-2.5">
+
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className={`w-full text-white font-extrabold text-[15px] py-3.5 rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer active:scale-[.98] shadow-lg ${
+                mainAdded
+                  ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/25'
+                  : 'bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 shadow-fog-500/35'
+              }`}
+            >
+              {mainAdded ? (
+                <><GlassIcon i="check" size="xs" /> Added to Bag — View Cart</>
+              ) : (
+                <>Add to Cart</>
+              )}
+            </button>
+
+            <BuyButton
+              product={{
+                id: product.id,
+                title: product.title,
+                name: product.title,
+                price: safePrice, // 🩹 P0: DB-true — السيرفر هو الحكم (prepareSecureItems)
+                image: mainImageSrc,
+                color: selectedGroup?.name || selectedColorName || '',
+                size: effectiveSize || '',
+                quantity: quantity,
+                vid: matchedVariant?.vid || ''
+              }}
+            />
+
+            {/* 🩹 TRUST — بلوك "48 shoppers" المحذوف نهائياً — البديل الحقيقي: sold_count من DB (فوق فـ pd-meta) */}
+
+            {/* صف الثقة — M#45 موثق (النصوص ما تبدلتش) */}
+            <div className="grid grid-cols-3 gap-2 pt-3 text-[10px] text-temu-gray-text font-semibold border-t border-fog-100">
+              <div className="flex flex-col items-center gap-1">
+                <GlobeShippingIcon size={18} active />
+                Free Shipping
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <ReturnsIcon size={18} active />
+                30-Day Guarantee
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <LockIcon size={18} active />
+                Secure Checkout
+              </div>
+            </div>
+          </div>{/* ← نهاية CTA */}
+        </div>{/* ← نهاية ورقة المنتج (.pd-body) */}
+
+        {/* ═══ 🎨 SERENE_MOCKUP — أكورديونات (.acc) بلاصة الـ Tabs ═══ */}
+        <div className="mt-4 space-y-2.5">
+          {ACCORDIONS.map((acc) => {
+            const isOpen = openAcc === acc.key;
+            return (
+              <div key={acc.key} className="border border-fog-100 rounded-2xl bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenAcc(isOpen ? 'none' : acc.key)}
+                  aria-expanded={isOpen}
+                  className="w-full flex justify-between items-center px-4 py-3 text-[13px] font-bold text-temu-black cursor-pointer"
+                >
+                  {acc.label}
+                  <svg className={`w-3.5 h-3.5 shrink-0 text-temu-gray-text transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-out ${isOpen ? 'max-h-[1400px]' : 'max-h-0'}`}>
+                  <div className="px-4 pb-3.5 text-xs leading-[1.95] text-temu-gray-text">
+                    {acc.key === 'desc' && (
+                      <>
+                        <p className="mb-2">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
+                        {detailBullets.length > 0 && (
+                          <ul className="space-y-1 list-disc list-inside">
+                            {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
+                          </ul>
+                        )}
+                      </>
+                    )}
+
+                    {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
+                    {acc.key === 'materials' && (
+                      <>
+                        <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
+                        {product.composition && <p className="mt-1.5">Composition: {product.composition}</p>}
+                      </>
+                    )}
+
+                    {acc.key === 'size' && (
+                      <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
+                    )}
+
+                    {acc.key === 'shipping' && (
+                      <>
+                        {/* ⚠️ M#45 backlog (توثيق — قرار المالك): "insured" بلا سند + "24–48h"
+                            خاصو يتقاطع مع predictDelivery الحقيقي (shipTruth median) */}
+                        <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
+                        <p className="mt-1.5 text-[11px]">Typical transit time: 7–15 business days depending on destination country.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {relatedProducts.length > 0 && (
@@ -890,15 +819,15 @@ export default function ProductDetailsClient({
           />
         )}
 
-        {/* You May Also Like */}
+        {/* You May Also Like — كروت fog مدورة (نفس كروت الموكاب) */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-temu-gray-border-light pt-10">
-            <h2 className="text-lg font-black text-temu-black mb-6">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="border-t border-fog-100 pt-8 mt-6">
+            <h2 className="text-base font-extrabold text-temu-black mb-4">You May Also Like</h2>
+            <div className="grid grid-cols-2 gap-3">
               {relatedProducts.map((p) => (
                 <TiltCard key={p.id}>
-                  <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
-                    <div className="relative aspect-square overflow-hidden bg-gray-50">
+                  <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-fog-100 rounded-2xl overflow-hidden active:scale-[.97] transition shadow-[0_4px_18px_rgba(91,126,166,0.07)]">
+                    <div className="relative aspect-square overflow-hidden bg-fog-50">
                       <img
                         src={IMG.card(p.image_url || p.image || defaultImage)}
                         alt={p.title}
@@ -908,8 +837,8 @@ export default function ProductDetailsClient({
                       />
                     </div>
                     <div className="p-3 pt-2 flex flex-col justify-between flex-1">
-                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
-                      <p className="text-temu-error font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
+                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-fog-600 transition-colors">{p.title}</h3>
+                      <p className="text-fog-600 font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
                     </div>
                   </Link>
                 </TiltCard>
@@ -919,22 +848,22 @@ export default function ProductDetailsClient({
         )}
 
         {/* Customer Reviews — 🩹 TRUST: مراجعات حقيقية فقط (بعد تنضيف 237,627 وهمية) */}
-        <div className="border-t border-temu-gray-border-light pt-10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-black text-temu-black">Customer Reviews ({realTotal})</h2>
+        <div className="border-t border-fog-100 pt-8 mt-6">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-base font-extrabold text-temu-black">Customer Reviews ({realTotal})</h2>
             {reviews.length > 0 && (
-              <span className="text-xs font-bold text-temu-green"><GlassIcon i="check" size="xs" /> Verified Purchases</span>
+              <span className="text-[11px] font-bold text-maroccan-tea-600"><GlassIcon i="check" size="xs" /> Verified</span>
             )}
           </div>
 
           {/* ⭐ [cj-reviews v2] — فلتر النجوم بعدادات حية (الكل + 5★…1★) */}
           {reviews.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div className="flex flex-wrap items-center gap-2 mb-5">
               <button
                 onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
                 className={starFilter === 0
-                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7FA1C4] to-coral-600 text-white shadow-sm transition-all duration-200'
-                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7FA1C4]/50 hover:text-[#7FA1C4] transition-all duration-200'}
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-fog-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-temu-gray-text border border-fog-200 hover:border-fog-400 hover:text-fog-600 transition-all duration-200 cursor-pointer'}
               >
                 All ({realTotal})
               </button>
@@ -943,8 +872,8 @@ export default function ProductDetailsClient({
                   key={s}
                   onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
                   className={starFilter === s
-                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7FA1C4] to-coral-600 text-white shadow-sm transition-all duration-200'
-                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7FA1C4]/50 hover:text-[#7FA1C4] transition-all duration-200'}
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-fog-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-temu-gray-text border border-fog-200 hover:border-fog-400 hover:text-fog-600 transition-all duration-200 cursor-pointer'}
                 >
                   {s}★ ({starCounts[s]})
                 </button>
@@ -952,60 +881,66 @@ export default function ProductDetailsClient({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="space-y-3 mb-6">
             {shownReviews.map((rev) => (
-              <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
-                  <span className="text-butter-up-400 text-xs">{'★'.repeat(rev.rating)}</span>
+              <div key={rev.id} className="rev flex gap-3 p-3.5 bg-white border border-fog-100 rounded-2xl">
+                {/* .rava — أفاتار دائري بحرف البداية (fog Well) */}
+                <div className="w-9 h-9 rounded-full bg-fog-100 text-fog-700 grid place-items-center font-extrabold text-[13px] shrink-0" aria-hidden="true">
+                  {(rev.author || '?').charAt(0).toUpperCase()}
                 </div>
-                <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
-
-                {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
-                  <div className="flex gap-2 pt-1">
-                    {rev.images.map((photoUrl, pIdx) => (
-                      <div
-                        key={pIdx}
-                        className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
-                        onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
-                        title="Click to view full photo"
-                      >
-                        <img
-                          src={IMG.thumb(photoUrl)}
-                          alt="Buyer proof photo"
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                <div className="min-w-0 flex-1">
+                  <div className="flex justify-between items-center gap-2">
+                    <b className="text-[12.5px] text-temu-black truncate">{rev.author} <span className="font-normal text-temu-gray-text">({rev.country || 'Verified Buyer'})</span></b>
+                    <span className="text-butter-up-600 text-[10.5px] tracking-[1px] shrink-0">{'★'.repeat(rev.rating)}</span>
                   </div>
-                )}
+                  <p className="text-[11.5px] text-temu-gray-text leading-[1.8] mt-1">{rev.content}</p>
 
-                <span className="text-[10px] text-gray-400 block font-mono">
-                  {new Date(rev.created_at).toLocaleDateString()}
-                </span>
+                  {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
+                    <div className="flex gap-2 pt-1.5">
+                      {rev.images.map((photoUrl, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="relative w-14 h-14 rounded-xl overflow-hidden border border-fog-100 bg-fog-50 cursor-pointer hover:scale-105 transition"
+                          onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
+                          title="Click to view full photo"
+                        >
+                          <img
+                            src={IMG.thumb(photoUrl)}
+                            alt="Buyer proof photo"
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <span className="text-[10px] text-temu-gray-text/70 block mt-1.5">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
 
           {/* ⭐ [cj-reviews v2] — حالة خاوية للفلتر النشيط */}
           {reviews.length > 0 && filteredReviews.length === 0 && (
-            <div className="text-center py-10 mb-8 border border-dashed border-gray-200 rounded-2xl text-sm text-gray-400">
+            <div className="text-center py-10 mb-6 border border-dashed border-fog-200 rounded-2xl text-sm text-temu-gray-text">
               No reviews with this star rating yet.
             </div>
           )}
 
           {/* ⭐ [cj-reviews v2] — Load more + العدد المتبقي */}
           {filteredReviews.length > shownReviews.length && (
-            <div className="flex flex-col items-center gap-2 mb-8">
+            <div className="flex flex-col items-center gap-2 mb-6">
               <button
                 onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
-                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#7FA1C4] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(127,161,196,0.3)] transition-all duration-300"
+                className="px-8 py-3 rounded-full text-sm font-extrabold bg-linear-to-r from-fog-600 to-fog-400 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(91,126,166,0.3)] transition-all duration-300 cursor-pointer active:scale-[.97]"
               >
                 Load more reviews ({filteredReviews.length - shownReviews.length} more)
               </button>
               {reviewsMeta?.hasMore && (
-                <span className="text-[11px] text-gray-400">
+                <span className="text-[11px] text-temu-gray-text">
                   Showing {reviews.length} of {realTotal} reviews
                 </span>
               )}
@@ -1129,71 +1064,24 @@ export default function ProductDetailsClient({
 
       {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
 
-      {/* 🎨 REPLICA_V4 — Sticky CTA طبق الأصل من المعاينة
-          🩹 كان bottom-0 و GlassDock (z-40) كيغطي على نص الأزرار في الموبايل —
-          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة */}
+      {/* 🎨 SERENE_MOCKUP — Sticky CTA (.cta تاع المعاينة): عمود الإجمالي + Add + Buy
+          🩹 مرفوع فوق GlassDock بـ calc(78px + safe-area) — الإجمالي كيتحدث مع الكمية
+          (كيما ctaTotal تاع المعاينة) */}
       <div
-        className={`fixed left-0 right-0 z-30 bg-white/90 backdrop-blur-xl border-t border-temu-gray-border-light shadow-[0_-10px_30px_rgba(46,64,87,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
+        data-testid="sticky-cta"
+        className={`fixed left-0 right-0 z-30 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] transition-all duration-300 transform ${
           showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-6 opacity-0 pointer-events-none'
         }`}
       >
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
+        <div className="max-w-md mx-auto bg-white/95 backdrop-blur-xl border-t border-fog-100 shadow-[0_-10px_30px_rgba(46,64,87,0.08)] px-4 pt-2.5 pb-3 flex items-center gap-3">
 
-          {/* ملخص المنتج — ديسكتوب فقط (المعاينة: الموبايل فيه زوز أزرار برك) */}
-          <div
-            onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-            className="hidden sm:flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-            title="Tap to review choices"
-          >
-            <div className="relative w-12 h-12 rounded-xl bg-fog-50 overflow-hidden border border-temu-gray-border-light shrink-0">
-              <img
-                src={IMG.thumb(mainImageSrc)}
-                alt={product.title}
-                loading="lazy"
-                className="w-full h-full object-contain p-1"
-              />
-            </div>
-
-            <div className="min-w-0 pr-1">
-              <p className="text-xs font-black text-temu-black truncate">{product.title}</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-sm font-black text-fog-600">${safePrice.toFixed(2)}</span>
-                {safeOriginalPrice > safePrice && (
-                  <span className="text-[10px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
-                )}
-              </div>
-              <p className="text-[10px] text-temu-gray-text font-semibold truncate">
-                {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' • ')} • Qty: {quantity}
-              </p>
-            </div>
+          {/* cta-price — small + b (9.5px/16px تاع المعاينة) */}
+          <div className="shrink-0 leading-tight">
+            <small className="block text-[9.5px] font-semibold text-temu-gray-text">Total</small>
+            <b className="text-base text-fog-600 tabular-nums">${(safePrice * quantity).toFixed(2)}</b>
           </div>
 
-          {/* الزوز أزرار — نفس المعاينة: ghost + primary متدرج */}
-          <div className="flex items-center gap-2.5 flex-1 sm:flex-none">
-            {/* 🎨 MERGE_MOCKUP — ستيبر الكمية (− 1 +) في البار السفلي كيما الموكاب:
-                الكمية كانت تتضبط غير من كروت Standard/Duo/Trio اللي فوق — دابا
-                متاحة حتى والمسخدم في آخر الصفحة، و Buy Now كيتحدث فوري */}
-            <div className="flex items-center gap-1 bg-fog-100 rounded-temu-sm p-1 shrink-0" role="group" aria-label="Quantity">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                disabled={quantity <= 1}
-                aria-label="Decrease quantity"
-                className="w-8 h-8 rounded-lg bg-white text-temu-black font-black text-sm flex items-center justify-center shadow-xs transition active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                −
-              </button>
-              <span className="w-7 text-center font-black text-sm text-temu-black tabular-nums" aria-live="polite">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                aria-label="Increase quantity"
-                className="w-8 h-8 rounded-lg bg-white text-temu-black font-black text-sm flex items-center justify-center shadow-xs transition active:scale-90 cursor-pointer"
-              >
-                +
-              </button>
-            </div>
-
+          <div className="flex items-center gap-2.5 flex-1">
             <button
               type="button"
               onClick={() => {
@@ -1201,7 +1089,7 @@ export default function ProductDetailsClient({
                 setStickyAdded(true);
                 setTimeout(() => setStickyAdded(false), 1200);
               }}
-              className={`flex-1 sm:flex-none font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
+              className={`flex-1 font-extrabold text-[13px] uppercase tracking-wide py-3.5 px-4 rounded-2xl transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
                 stickyAdded
                   ? 'bg-maroccan-tea-600 text-white shadow-md shadow-maroccan-tea-600/25'
                   : 'bg-fog-100 text-fog-700 hover:bg-fog-200/70'
@@ -1221,9 +1109,9 @@ export default function ProductDetailsClient({
                 handleAddToCart();
                 router.push('/cart');
               }}
-              className="flex-1 sm:flex-none bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 text-white font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm shadow-lg shadow-fog-500/40 active:scale-[.97] transition flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+              className="flex-1 bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 text-white font-extrabold text-[13px] uppercase tracking-wide py-3.5 px-4 rounded-2xl shadow-lg shadow-fog-500/40 active:scale-[.97] transition cursor-pointer whitespace-nowrap"
             >
-              <GlassIcon i="zap" size="xs" /> Buy Now • ${(safePrice * quantity).toFixed(2)}
+              Buy Now
             </button>
           </div>
 
