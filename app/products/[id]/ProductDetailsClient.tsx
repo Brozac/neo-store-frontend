@@ -125,7 +125,7 @@ export default function ProductDetailsClient({
   relatedProducts: Product[];
 }) {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { addToCart, totalItemsCount, isMounted } = useCart(); // 🆕 IMMERSIVE — badge السلة الزاجاج فوق المعرض
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
@@ -447,10 +447,12 @@ export default function ProductDetailsClient({
 
       {/* ══════════════════════════════════════════════════════════
           📱 MOBILE — SERENE mockup port (Task 17 «ديرو في الهاتف يبان كيما هاك»)
-          float-head زاجاج + معرض 330px كينزلق + شيت أبيض بـ -26px + أكورديونات
+          float-head زاجاج + معرض كينزلق + شيت أبيض بـ -26px + أكورديونات
           الكلاسات pd-* من pd.css — نفس القيم الحيّة (fog-500 #5b7ea6 …)
+          🆕 IMMERSIVE (Task 23) — pd-immersive: المنتج كامل من فوق الصفحة
+             في بلاصة الـ navbar وشريط الثقة (موبايل برك — التفاصيل فـ pd.css)
           ══════════════════════════════════════════════════════════ */}
-      <div className="md:hidden pd-scope pb-10">
+      <div className="md:hidden pd-scope pd-immersive pb-10">
         <div className="max-w-[560px] mx-auto">
 
           {/* المعرض — سلايدر كامل بلا إطار */}
@@ -480,6 +482,14 @@ export default function ProductDetailsClient({
                 >
                   <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
                 </button>
+                {/* 🆕 IMMERSIVE — سلة زاجاج بـ badge (نفس mockup الحقيبة):
+                    الـ navbar مخفي فالموبايل → السلة دايماً في متناول اليد */}
+                <Link href="/cart" className="pd-gbtn pd-gcart" aria-label="Shopping Cart" title="Shopping Cart">
+                  <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                  {isMounted && totalItemsCount > 0 && (
+                    <span className="pd-gbadge">{totalItemsCount > 99 ? '99+' : totalItemsCount}</span>
+                  )}
+                </Link>
               </div>
             </div>
 
@@ -525,6 +535,11 @@ export default function ProductDetailsClient({
                   <i key={idx} className={currentImageIndex === idx ? 'on' : ''} onClick={() => setCurrentImageIndex(idx)} />
                 ))}
               </div>
+            )}
+
+            {/* 🆕 IMMERSIVE — عداد «1/5» يمين تحت (نفس mockup الحقيبة) */}
+            {!showVideo && galleryImages.length > 1 && (
+              <div className="pd-count">{currentImageIndex + 1}/{galleryImages.length}</div>
             )}
           </div>
 

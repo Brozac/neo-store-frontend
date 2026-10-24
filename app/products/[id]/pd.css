@@ -114,3 +114,36 @@
 .pd-cta-price{display:flex;flex-direction:column;line-height:1.35;flex-shrink:0}
 .pd-cta-price small{font-size:9.5px;color:var(--ink-soft);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .pd-cta-price b{font-size:16px;color:var(--primary-deep);font-weight:800}
+
+/* ════════════════════════════════════════════════════════════
+   🆕 IMMERSIVE (Task 23) — «المنتج يبان كامل في بلاصة navbar واللي وفوقها»
+   الموبايل: شريط الثقة + الـ navbar + البحث كيتخفو، والمعرض كيبدا من
+   الصفر الحقيقي (y=0) — زي mockup الحقيبة (صورة كاملة + أزرار عائمة).
+   · body:has(.pd-immersive) = CSS صافي بلا JS → صفر flicker فأول paint
+     (القاعدة كتطبق من الـ SSR قبل ما يوصل الـ hydration)
+   · المتصفحات اللي ما تفهمش :has() تبقى بالـ navbar = degradation آمن
+   · الديسكتوب/التابلت (768px+) ما يتساسش — media query + md:hidden معاً
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767.98px){
+  body:has(.pd-immersive) header{display:none}
+}
+
+/* المعرض كيولي طويل و immersive — clamp: عمره ما يقصّ 330px وما يفوت 560px
+   (svh مدعوم فالمتصفحات الحديثة؛ القديمة كيرجعو لـ 330px تاع القاعدة)
+   + full-bleed حقيقي حتى فالشاشات الواسعة (560–767px) عبر الـ breakout */
+.pd-immersive .pd-gallery{
+  height:clamp(330px, 62svh, 560px);
+  width:100vw;
+  margin-left:calc(50% - 50vw);
+}
+
+/* أزرار الزجاج كتنزل تحت النتش/ستاتوس بار فالـ PWA standalone
+   (viewport-fit=cover مفعّل فالـ layout) — فالمتصفح العادي = 12px عادي */
+.pd-immersive .pd-float{top:calc(12px + env(safe-area-inset-top, 0px))}
+
+/* عداد الصور «1/5» — يمين تحت، أبيض بظل (نفس mockup الحقيبة) */
+.pd-count{position:absolute;bottom:34px;right:16px;z-index:6;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-shadow:0 1px 6px rgba(46,64,87,.5);font-variant-numeric:tabular-nums;pointer-events:none}
+
+/* سلة زاجاج بـ badge — نفس لغة .pd-gbtn (الـ badge كيتغطى بالـ context) */
+.pd-gcart{position:relative}
+.pd-gbadge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--primary);color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(46,64,87,.28);font-variant-numeric:tabular-nums;line-height:1}
