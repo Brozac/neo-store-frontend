@@ -4,10 +4,13 @@ import ProductDetailsClient from './ProductDetailsClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
 // ═══ ⚡ PHASE 2 — ISR Beast (High-Performance UI Runtime) ═══
-// المنتج يتبدل في CJ sync (03:00) فقط → ساعة revalidate كافية
+// v3.0 ISR-BUDGET — ساعة revalidate = 235K ISR writes/شهر (200K ديال Hobby) →
+//       Vercel طفى المشروع كامل حتى 24 نوفمبر. المنتج كيتبدل غير في CJ sync
+//       اليومي (03:00) → 24h كافية + webhook /api/revalidate (REVALIDATE_SECRET)
+//       كيحدّث المنتوج فوراً بعد أي تغيير فالباك = ~96% من الكتابات طاحو (24/يوم → 1/يوم)
 // أول 100 منتج: pre-rendered وقت الـ build — الباقي: ISR on-demand
 // المراجعات: client-side حية (ProductDetailsClient useEffect)
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // ═══ v2.1 (Task 15) — الفروق على v2.0 ═══
 // FIX-SITEURL  — https://laclarc.com كانت مكتوبة بيدك ×7 (canonical · og:url · fallback · JSON-LD)
@@ -49,7 +52,7 @@ function httpsify(u: unknown): string {
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_URL}/api/products?limit=100`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400 },
     });
     if (!res.ok) {
       console.warn('generateStaticParams: HTTP', res.status, '— ISR on-demand covers the rest');
@@ -68,7 +71,7 @@ export async function generateStaticParams() {
 async function getProduct(id: string) {
   try {
     const res = await fetch(`${API_URL}/api/products/${id}`, {
-      next: { revalidate: 3600, tags: [`product-${id}`] },
+      next: { revalidate: 86400, tags: [`product-${id}`] },
     });
     if (!res.ok) {
       console.warn(`getProduct(${id}): HTTP`, res.status); // 🛡️ بلا صمت — الفلسفة
@@ -84,7 +87,7 @@ async function getProduct(id: string) {
 async function getRelatedProducts(id: string) {
   try {
     const res = await fetch(`${API_URL}/api/products/${id}/related`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400, tags: ['products-index'] },
     });
     if (!res.ok) {
       console.warn(`getRelatedProducts(${id}): HTTP`, res.status);

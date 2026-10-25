@@ -29,7 +29,8 @@ export const fetchCategorySeo = cache(
       const res = await fetch(
         `${base}/api/categories/seo?slug=${encodeURIComponent(last)}`,
         {
-          next: { revalidate: 3600 },
+          // ISR-BUDGET: 1h → 24h — SEO كيتبدل باليوم، ماشي بالساعة
+          next: { revalidate: 86400, tags: ['categories-tree'] },
           headers: { Accept: 'application/json' },
         }
       );

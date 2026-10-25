@@ -19,8 +19,9 @@ import CategoriesClient from './CategoriesClient';
 import CategoriesJsonLd from './CategoriesJsonLd';
 import { fetchCategoriesHub, type HubNode } from '@/lib/categoriesHub';
 
-// ISR — الأقسام كيتبدلو نادراً؛ 6 سوايع = توازن بين الطزاجة وحمل Render
-export const revalidate = 21600;
+// ISR-BUDGET — الأقسام كيتبدلو فـ CJ sync اليومي (03:00) → 24h = نفس الإيقاع
+// (كانت 6 سوايع — مع /api/revalidate webhook الطزاجة فورية إلا احتاجتها)
+export const revalidate = 86400;
 
 export async function generateMetadata(): Promise<Metadata> {
   // أعداد حقيقية معروفة غير بعد الـ fetch — العنوان/الوصف ثابتين وخايبين

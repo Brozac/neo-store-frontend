@@ -48,7 +48,8 @@ const API_BASE =
 async function getJSON(path: string): Promise<unknown> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
-      next: { revalidate: 21600 },
+      // ISR-BUDGET: 6h → 24h — نفس إيقاع CJ sync اليومي، نقص كبير فالكتابات
+      next: { revalidate: 86400, tags: ['categories-tree'] },
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) return null;

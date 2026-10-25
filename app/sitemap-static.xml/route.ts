@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 
+// ISR-BUDGET — محتوى ثابت: caching يومي بلا function كل طلبية
+export const revalidate = 86400;
+
 export async function GET() {
   const pages = [
     { url: `${SITE_URL}`, priority: '1.0', freq: 'daily' },

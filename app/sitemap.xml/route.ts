@@ -6,13 +6,15 @@ const CHUNK = 20000;
 
 // 🆕 Sitemap Index — فهرس قياسي: static + categories + product chunks
 // الـ count كيتجلب حياً — chunks جداد كيتضافو أوتوماتيكياً مع نمو الكاتالوغ
-export const dynamic = 'force-dynamic';
+// ISR-BUDGET — كان force-dynamic: كل طلبية دياال Googlebot كتشرا function +
+// data-cache write (Fluid CPU + ISR writes). دابا route ISR: أقصى كتابة وحدة/يوم
+export const revalidate = 86400;
 
 export async function GET() {
   let productChunks = 1;
   try {
     const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=1`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400 },
     });
     if (res.ok) {
       const data = await res.json();
@@ -36,7 +38,7 @@ export async function GET() {
   return new NextResponse(xml, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, s-maxage=3600',
+      'Cache-Control': 'public, s-maxage=86400',
     },
   });
 }

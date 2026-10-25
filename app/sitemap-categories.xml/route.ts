@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
 
+// ISR-BUDGET — ISR يومي صريح: الـ route ماعندوش داعي يخدم كل طلبية
+export const revalidate = 86400;
+
 interface CategoryNode {
   slug?: string;
   children?: CategoryNode[];

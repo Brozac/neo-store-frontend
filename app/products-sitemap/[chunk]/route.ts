@@ -4,7 +4,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
 const CHUNK = 20000;
 
-export const dynamic = 'force-dynamic';
+// ISR-BUDGET — كان force-dynamic: كل زحفة ديال Googlebot = function invocation +
+// كتابة data-cache. دابا ISR يومي: أقصى كتابة وحدة/يوم لكل chunk
+export const revalidate = 86400;
 
 // 🆕 product chunk sitemap — يدوي كامل (بلا generateSitemaps تاع Next اللي كيتخطف)
 export async function GET(
@@ -16,7 +18,7 @@ export async function GET(
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=${chunkId + 1}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 86400 },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -35,7 +37,7 @@ export async function GET(
     return new NextResponse(xml, {
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400',
       },
     });
   } catch (e) {
