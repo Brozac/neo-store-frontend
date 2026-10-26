@@ -95,7 +95,25 @@ interface ProductCardProps {
   isTouched?: boolean;
   /** 🩹 FIX-LAZY: true = eager للصورة (أول كروت أول شاشة — مرشحو LCP) */
   eager?: boolean;
+  /** ✨ [masonry] نتائج Google (طلب المستخدم): بئر الصورة يولي بطول متغير
+   *    لكل منتج (نسبة ثابتة من hash ديال id) + object-cover — موبايل برك */
+  masonry?: boolean;
 }
+
+// ✨ [masonry] — «كل صورة بطول مختلف، بحال نتائج بحث Google» (F#30-masonry):
+//    طقم نسب مدروس (مربع ↔ بورتريه، 2/3 نادر) — القص مع object-cover يبقى
+//    في الهوامش البيض تاع صور CJ (المنتج في الوسط = ما يتقصش).
+//    · النسبة ثابتة لكل منتج (hash ديال id) → SSR = hydration صفر mismatch،
+//      والمنتج كيبقى بنفس الشكل في كل زيارة (ما كاينش رجعة ولا قفزات).
+//    · aspectRatio inline style = صفر خطر purge من Tailwind + صفر CLS
+//      (الارتفاع معروف قبل ما تتحمل الصورة — نفس حماية aspect-square).
+const MASONRY_RATIOS = ['4 / 5', '1 / 1', '3 / 4', '5 / 6', '1 / 1', '3 / 4', '4 / 5', '2 / 3'];
+const masonryRatio = (id: string | number): string => {
+  const s = String(id);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return MASONRY_RATIOS[Math.abs(h) % MASONRY_RATIOS.length];
+};
 
 // 🛡️ [homecard] قراءة المفضلة parse-safe — localStorage فاسد ما يكسرش القلب
 //    (نفس نمط ProductDetailsClient) + cap 100 = مطابق لـ by-ids LIMIT 100
@@ -121,7 +139,7 @@ const popHeart = (el: Element | null) => {
   } catch { /* بيئة بلا WAAPI — التنقل يبقى خدام */ }
 };
 
-export default function ProductCard({ product, isTouched, eager = false }: ProductCardProps) {
+export default function ProductCard({ product, isTouched, eager = false, masonry = false }: ProductCardProps) {
   const router = useRouter();
   const { addToCart } = useCart();
   const [isAdded, setIsAdded] = useState(false);
@@ -249,6 +267,9 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
   //    لصورة الـ variant المختار (نفس الـ transform → نفس الأداء) — والمودال كياخد نفس src
   const imgSrc = IMG.card(activeSw?.i || product.image_url || product.image || '/placeholder.jpg');
 
+  // ✨ [masonry] — النسبة الخاصة بهاد المنتج (null = الوضع العادي aspect-square)
+  const ratio = masonry ? masonryRatio(product.id) : null;
+
   const productUrl = `/products/${product.id}`;
 
   // ✨ [homecard] — سطر القسم الحقيقي (خانة الوصف تاع mockup ببيانات حقيقية):
@@ -280,7 +301,10 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
         {/* ✨ [homecard] بئر الصورة المدوّر — تدرج fog ناعم كيما mockup (توكنات حية)
             ✨ [frameless] البئر تحيّد: بلا هوامش ولا حواف ولا تدرج —
             الصورة edge-to-edge كاملة في بلاصتها، حاجة ما تحدّها */}
-        <div className="relative aspect-square overflow-hidden">
+        <div
+          className={`relative overflow-hidden ${masonry ? '' : 'aspect-square'}`}
+          style={ratio ? { aspectRatio: ratio } : undefined}
+        >
           {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري)
               ✨ [card-swatches]: activeSw?.i = صورة اللون المختار (نفس OSS transform)
               ✨ [frameless] p-3 تحيّد — المنتج كامل في بلاصتو */}
@@ -289,7 +313,7 @@ export default function ProductCard({ product, isTouched, eager = false }: Produ
             alt={product.title || 'Product'}
             loading={eager ? 'eager' : 'lazy'}
             decoding="async"
-            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+            className={`${masonry ? 'object-cover' : 'object-contain'} w-full h-full transition-transform duration-500 group-hover:scale-105`}
           />
           {/* ✨ [homecard] scrim حبري — الاسم الأبيض يقرا على أي صورة (كما في mockup)
               ✨ [glasscard] pc-scrim = مخبي في الديسكتوب (البانل الزجاجي عوضو) */}

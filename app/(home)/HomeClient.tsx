@@ -446,7 +446,6 @@ function HomeContent() {
             </div>
           ) : displayProducts.length > 0 ? (
             <div
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
                 if (touch) {
@@ -461,9 +460,30 @@ function HomeContent() {
               }}
               onTouchEnd={() => setTouchedProductId(null)}
             >
-              {products.map((p, i) => (
-                <ProductCard key={p.id} product={p} eager={i < 4} />
-              ))}
+              {/* ✨ [masonry] الموبايل — «كل صورة بطول مختلف، بحال نتائج بحث Google»
+                  (طلب المستخدم F#30-masonry): عمودين مستقلين (زوج/فرد) — Masonry حقيقي،
+                  الشبكة grid كانت كتقفص الصفوف = فراغات قبيحة. بلا JS بلا قياس = SSR-safe،
+                  والنسب ثابتة لكل منتج (في ProductCard) = صفر CLS ورجعة مستقرة.
+                  · infinite scroll: الباجات كتتراكم → الزوجية ثابتة → ما كاينش قفز أعمدة
+                  · الديسكتوب/التابلت (md+) ما تلمسش — الشبكة الموحدة كيما كانت */}
+              <div className="md:hidden flex gap-4 items-start">
+                <div className="flex-1 min-w-0 flex flex-col gap-4">
+                  {products.map((p, i) => (i % 2 === 0 ? (
+                    <ProductCard key={p.id} product={p} eager={i < 4} masonry />
+                  ) : null))}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-4">
+                  {products.map((p, i) => (i % 2 === 1 ? (
+                    <ProductCard key={p.id} product={p} eager={i < 4} masonry />
+                  ) : null))}
+                </div>
+              </div>
+              {/* تابلت/ديسكتوب (md+) — الشبكة الموحدة كيما كانت */}
+              <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {products.map((p, i) => (
+                  <ProductCard key={p.id} product={p} eager={i < 4} />
+                ))}
+              </div>
             </div>
           ) : !feed.error ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-temu-gray-border-light shadow-sm space-y-3">

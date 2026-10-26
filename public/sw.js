@@ -7,7 +7,7 @@
 //   • /api/ و /admin       → مستثناة تماماً من الـ SW
 // ============================================================
 
-const CACHE_NAME = 'laclarc-pwa-v26';
+const CACHE_NAME = 'laclarc-pwa-v28';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -21,7 +21,11 @@ const NEVER_CACHE_ROUTES = ['/success', '/cancel', '/checkout'];
 
 // ✨ سقف الكاش الديناميكي — مع حماية الأصول الأساسية (Precache) من الحذف
 // بحيث لا يختفي الـ Offline Fallback ('/') تحت الضغط أبداً
-const MAX_DYNAMIC_ENTRIES = 120;
+// 🔧 F#30 — كان 120: سقف ضيق — صفحة Next.js واحدة كتسحب ~20-30 أصل hashed،
+// وفترات التصفح الطويلة + تبديل الـ builds (23-25 أكتوبر) قصفو CSS chunks
+// والـ HTML باقي يشير ليهم → الصور تطلع بطولها الطبيعي (كل صورة بطول)
+// = بلاغ «بحال نتائج بحث Google». 300 = ~12-15 صفحة كاملة بأصولها — هامش مريح
+const MAX_DYNAMIC_ENTRIES = 300;
 
 async function trimCache(cacheName, maxEntries) {
   try {
