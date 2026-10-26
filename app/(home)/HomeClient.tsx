@@ -216,15 +216,17 @@ function HomeContent() {
     return list;
   }, [filteredProducts, sortBy]);
 
-  // ✨ العرض: default feed = accumulated (بلا trending) · الفرز = sorted — بلا slice
+  // 🩹 SORTFIX — العرض الموحد اللي الشبكة كتقرا منه. كان محسوب من v3.8 وما عمرو
+  //    استعمل في الـ render (الشبكة كانت كترندر products الخام) → الفرز (Sort By)
+  //    والفلترة (Budget) وكلاهما ما كيأثروش على اللي كيبان — bug صامت مقفول دابا.
+  //    · default feed = accumulated كما هو (trending يبقى في الشبكة كما الشيب الحي —
+  //      حذفو كان غادي يحيّد 5 منتجات من الموبايل حيث قسم Trending مخبي فيه)
+  //    · أي فرز/فلترة/قسم = filteredProducts + sorted (الشبكة كتولي متجاوبة)
+  //    · الحالة الفارغة (No products found) ولّت خدامة مع الفلاتر
   const displayProducts = useMemo(() => {
     const isDefaultFeed = activeCategory === 'All' && !searchQuery && sortBy === 'default' && priceRange === 'all';
-    if (isDefaultFeed) {
-      const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
-      return products.filter(p => !trendingIdSet.has(String(p.id)));
-    }
-    return sortedProducts;
-  }, [products, sortedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange]);
+    return isDefaultFeed ? products : sortedProducts;
+  }, [products, sortedProducts, activeCategory, searchQuery, sortBy, priceRange]);
 
   const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
 
@@ -465,22 +467,23 @@ function HomeContent() {
                   الشبكة grid كانت كتقفص الصفوف = فراغات قبيحة. بلا JS بلا قياس = SSR-safe،
                   والنسب ثابتة لكل منتج (في ProductCard) = صفر CLS ورجعة مستقرة.
                   · infinite scroll: الباجات كتتراكم → الزوجية ثابتة → ما كاينش قفز أعمدة
+                  · 🩹 SORTFIX: كتقرا displayProducts — الفرز/الفلترة كيخدمو هنا
                   · الديسكتوب/التابلت (md+) ما تلمسش — الشبكة الموحدة كيما كانت */}
               <div className="md:hidden flex gap-4 items-start">
                 <div className="flex-1 min-w-0 flex flex-col gap-4">
-                  {products.map((p, i) => (i % 2 === 0 ? (
+                  {displayProducts.map((p, i) => (i % 2 === 0 ? (
                     <ProductCard key={p.id} product={p} eager={i < 4} masonry />
                   ) : null))}
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col gap-4">
-                  {products.map((p, i) => (i % 2 === 1 ? (
+                  {displayProducts.map((p, i) => (i % 2 === 1 ? (
                     <ProductCard key={p.id} product={p} eager={i < 4} masonry />
                   ) : null))}
                 </div>
               </div>
-              {/* تابلت/ديسكتوب (md+) — الشبكة الموحدة كيما كانت */}
+              {/* تابلت/ديسكتوب (md+) — الشبكة الموحدة كيما كانت · 🩹 SORTFIX */}
               <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {products.map((p, i) => (
+                {displayProducts.map((p, i) => (
                   <ProductCard key={p.id} product={p} eager={i < 4} />
                 ))}
               </div>
