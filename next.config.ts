@@ -1,4 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 import type { NextConfig } from "next";
 
 /**
@@ -109,17 +110,30 @@ const nextConfig: NextConfig = {
    */
 };
 
+// ──── [LACLARC::OPENNEXT-CF] MIGRATION-CF v1 ────
+// كيشدّ bindings ديال Cloudflare فـ `next dev` المحلي (كيتطلب wrangler مثبّت)
+// فالإنتاج ما كيدير والو — كيتنشّط غير فوضع التطوير (دوك OpenNext get-started خطوة 12)
+initOpenNextCloudflareForDev();
+// ──── [/LACLARC::OPENNEXT-CF] ────
+
 // ──── [LACLARC::SENTRY-NEXTCONFIG] v1 (Task 16) ────
 // withSentryConfig — sourcemaps كيرفعو غير إلا كان SENTRY_AUTH_TOKEN فالبيئة
 // (Vercel: SENTRY_ORG + SENTRY_PROJECT + SENTRY_AUTH_TOKEN — اختياريين فالمرحلة 1)
-export default withSentryConfig(
-  nextConfig,
-  {
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-    authToken: process.env.SENTRY_AUTH_TOKEN,
-    sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
-    disableLogger: true,
-  }
-);
+//
+// 🚀 MIGRATION-CF — CF_SLIM=1 (حيطو فـ scripts/cf-build.mjs):
+//    حد الـ Worker المجاني = 3MB gzip — Sentry+OTel كيعبروه، فكيتهيداو من باندل CF.
+//    Vercel بلا تبديل: Sentry باقي كامل там. التفاصيل فـ MIGRATION-CF.md.
+const CF_SLIM = process.env.CF_SLIM === '1';
+export default CF_SLIM
+  ? nextConfig
+  : withSentryConfig(
+      nextConfig,
+      {
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+        disableLogger: true,
+      }
+    );
 // ──── [/LACLARC::SENTRY-NEXTCONFIG] ────

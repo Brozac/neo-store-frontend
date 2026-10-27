@@ -1,0 +1,9 @@
+# ═══ MIGRATION-CF v1 — كاش الأصول الثابتة على Cloudflare Workers ═══
+# الـ HTML والصفحات ISR كيجيو من الـ Worker (بالكاش ديالو) — هاد الملف
+# كيتحكم غير فالأصول الثابتة (JS/CSS chunks, sw.js, icons).
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# الـ Service Worker خاصو يكون طازج دائماً — بلا كاش طويل
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate

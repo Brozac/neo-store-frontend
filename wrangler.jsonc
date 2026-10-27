@@ -1,0 +1,93 @@
+// ═══════════════════════════════════════════════════════════════
+// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1)
+// ═══════════════════════════════════════════════════════════════
+// الوثيقة الأم: MIGRATION-CF.md (في جذر الريبو) — اقراها قبل ما تخدم هنا.
+//
+// 🔑 قبل أول deploy لازم تعمّر مكانين في هذا الملف:
+//    1) r2_buckets[0].bucket_name → صنعته بـ: npx wrangler r2 bucket create laclarc-isr-cache
+//    2) d1_databases[0].database_id → صنعته بـ: npx wrangler d1 create laclarc-tag-cache
+//       (الأمر كيخرج لك UUID — الصقه في الأسفل)
+//
+// 📦 واش كيمثل كل binding (كلها في حدود المجاني):
+//    NEXT_INC_CACHE_R2_BUCKET → كاش ISR (الصفحات المولّدة) — R2 مجاني 10GB
+//    NEXT_TAG_CACHE_D1        → كاش الوسوم (revalidateTag) — D1 مجاني 5GB
+//    NEXT_CACHE_DO_QUEUE      → طابور إعادة التوليد (revalidate 86400) — DO مجاني
+//    ASSETS                   → الملفات الثابتة (/_next/static, sw.js, icons)
+//    WORKER_SELF_REFERENCE    → مرجع داخلي كيطلبو OpenNext — ما تلمسوش
+// ═══════════════════════════════════════════════════════════════
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // اسم الـ Worker — الرابط التجريبي: https://laclarc.<subdomain>.workers.dev
+  "name": "laclarc",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": [
+    // Node.js APIs داخل الـ Worker (Buffer, crypto — كيستعملهم /api/revalidate وNextAuth)
+    "nodejs_compat",
+    // fetch للدومينات العمومية فقط (الباك على Render) — موصى بها من OpenNext
+    "global_fetch_strictly_public",
+  ],
+
+  // ─── الملفات الثابتة ───
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+
+  // ─── مرجع داخلي إجباري (يجب أن يطابق "name" فوق) ───
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "laclarc",
+    },
+  ],
+
+  // ─── كاش ISR (R2) ───
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "laclarc-isr-cache",
+    },
+  ],
+
+  // ─── كاش الوسوم (D1) — ضروري حيت كتستعمل revalidateTag فالـ webhook ───
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "laclarc-tag-cache",
+      "database_id": "REPLACE_WITH_D1_UUID_FROM_d1_create",
+    },
+  ],
+
+  // ─── طابور إعادة التوليد (DO) — ضروري للـ revalidate الزمني 86400 ───
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"],
+    },
+  ],
+
+  // ─── متغيرات البيئة (غير السرّات! السرّات بـ wrangler secret put) ───
+  "vars": {
+    // الباك يبقى على Render كما هو — الفرونت كيهضر معاه HTTPS
+    "NEXT_PUBLIC_API_URL": "https://neo-store-backend.onrender.com",
+    // NextAuth خلف بروكسي (Workers) — بلا هادا Google login كيفشل
+    "AUTH_TRUST_HOST": "true",
+  },
+
+  // ─── تحسين الصور (مستقبلي — اليوم images.unoptimized:true فـ next.config) ───
+  "images": {
+    "binding": "IMAGES",
+  },
+
+  // ─── الكرونات: الفرونت ماعندو حتى cron (كلها فالباك على Render) ───
+  // إلا زدت cron فالمستقبل: "triggers": { "crons": ["0 3 * * *"] }
+}

@@ -118,3 +118,8 @@ next-env.d.ts.bak
 
 # ─── 🩹 v2 — Sentry (إن كان مفعلاً) ───
 .sentryclirc
+# ─── 🚀 MIGRATION-CF v1 — Cloudflare ───
+.open-next/
+.wrangler/
+.dev.vars
+cloudflare-env.d.ts
