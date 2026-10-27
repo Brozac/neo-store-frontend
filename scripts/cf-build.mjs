@@ -9,7 +9,6 @@
 // الاستعمال: npm run cf:build   (ولا cf:deploy / cf:preview)
 // ═══════════════════════════════════════════════════════════════
 import { spawnSync } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -46,22 +45,22 @@ writeFileSync(INSTR, CF_INSTRUMENTATION);
 
 let exitCode = 0;
 try {
-  const require = createRequire(import.meta.url);
-  // exports ديال الحزمة كيمنع require('.../package.json') — نمشي للأعلى من المدخل الرئيسي
-  const mainEntry = require.resolve('opennextjs-cloudflare');
-  let pkgDir = path.dirname(mainEntry);
-  let pkg = null;
-  for (let i = 0; i < 8; i++) {
-    const candidate = path.join(pkgDir, 'package.json');
+  // الحزمة المثبتة scoped: node_modules/@opennextjs/cloudflare — نقرا package.json مباشرة
+  // (الاسم غير المقيد opennextjs-cloudflare = احتياط للتثبيت اليدوي القديم فقط)
+  // ✅ محتم على Windows/Linux/Mac — بلا require.resolve وبلا قيود exports
+  let pkg = null, pkgDir = null;
+  for (const base of [
+    path.join(process.cwd(), 'node_modules', '@opennextjs', 'cloudflare'),
+    path.join(process.cwd(), 'node_modules', 'opennextjs-cloudflare'),
+  ]) {
+    const candidate = path.join(base, 'package.json');
     if (existsSync(candidate)) {
-      const data = JSON.parse(readFileSync(candidate, 'utf8'));
-      if (data.name === '@opennextjs/cloudflare' || data.name === 'opennextjs-cloudflare') { pkg = data; break; }
+      pkg = JSON.parse(readFileSync(candidate, 'utf8'));
+      pkgDir = base;
+      break;
     }
-    const parent = path.dirname(pkgDir);
-    if (parent === pkgDir) break;
-    pkgDir = parent;
   }
-  if (!pkg) throw new Error('opennextjs-cloudflare package.json ما تلقاش');
+  if (!pkg) throw new Error('opennextjs-cloudflare ما تلقاش في node_modules — دير: npm install --legacy-peer-deps');
   const binPath = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin['opennextjs-cloudflare'];
   if (!binPath) throw new Error('opennextjs-cloudflare bin ما تلقاش');
   const cli = path.join(pkgDir, binPath);
