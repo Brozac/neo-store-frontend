@@ -53,7 +53,7 @@
 		{
 			"binding": "NEXT_TAG_CACHE_D1",
 			"database_name": "laclarc-tag-cache",
-			"database_id": "REPLACE_WITH_D1_UUID_FROM_d1_create",
+			"database_id": "ef5d0d6a-9e23-473a-89b5-3923516fe0a6",
 		},
 	],
 	// ─── طابور إعادة التوليد (DO) — ضروري للـ revalidate الزمني 86400 ───
