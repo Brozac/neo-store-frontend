@@ -26,7 +26,7 @@
 |---|---|---|
 | Requests | **100,000 / يوم** (~3 مليون/شهر) | كافي بزاف — الموقع ISR كاشي |
 | Bandwidth للأصول الثابتة | **غير محدود** | ✅ |
-| R2 (كاش ISR) | 10GB تخزين + مليون عملية كتابة/شهر | ISR-BUDGET خلاّ كتابات قليلة ✅ |
+| KV (كاش ISR) | 1GB + 100K قراءة/يوم + 1K كتابة/يوم — **بلا كارت** | ISR-BUDGET خلاّ كتابات قليلة ✅ |
 | D1 (كاش الوسوم) | 5GB + 5 مليون قراءة/يوم | ✅ |
 | Builds | 500/شهر | ✅ |
 | CPU | 10ms/request | ⚠️ الحد الوحيد اللي راقبه — الكاش يخفّفه (شوف Troubleshooting) |
@@ -59,14 +59,17 @@ npm install
 # الدخول — كيفتح المتصفح
 npx wrangler login
 
-# كاش ISR (R2) — الاسم مطابق لـ wrangler.jsonc
-npx wrangler r2 bucket create laclarc-isr-cache
+# كاش ISR (KV) — الاسم مطابق لـ wrangler.jsonc — بلا كارت، يخدم مباشرة
+# (R2 رفضناه: كيتطلب تفعيل بالكارت من الداشبورد)
+npx wrangler kv namespace create NEXT_INC_CACHE_KV
 
 # كاش الوسوم (D1) — ⚠️ انسخ من النتيجة "database_id" (UUID)
 npx wrangler d1 create laclarc-tag-cache
 ```
 
-**افتح `wrangler.jsonc` وعوّض** `REPLACE_WITH_D1_UUID_FROM_d1_create` بالـ UUID اللي خرج.
+**افتح `wrangler.jsonc` وعوّض المكانين:**
+1. `REPLACE_WITH_KV_ID_FROM_kv_namespace_create` → بالـ **id** ديال KV اللي خرج.
+2. `REPLACE_WITH_D1_UUID_FROM_d1_create` → بالـ **database_id** (UUID) اللي خرج.
 
 ## الخطوة 3 — السرّات (مرة واحدة)
 
@@ -183,7 +186,7 @@ Render Dashboard → الخدمة متاعك → **Environment** → `DATABASE_U
 | البيلد طاح عند Sentry | `withSentryConfig` فبيئة جديدة | نبعثلي الإيرور — پتش سطرين جاهز عندي |
 | `redirect_uri_mismatch` في Google | الـ callback ما مسجلش | Google Console → أضف `https://<domain>/api/auth/callback/google` |
 | `unauthorized` من `/api/revalidate` | السر ما حطيتوش | `npx wrangler secret put REVALIDATE_SECRET` |
-| صفحات قديمة ما تتبدلش | كاش ISR في R2 قديم | نفس curl ديال التحقق #4 بالوسوم |
+| صفحات قديمة ما تتبدلش | كاش ISR في KV قديم | نفس curl ديال التحقق #4 بالوسوم |
 | `Worker exceeded CPU time` (نادر) | route تقيلة SSR | قولي — نفعّلو `withRegionalCache` ولا نحبو الـ route |
 | Supabase `too many connections` | استعملت direct بلا pooler | استعمل رابط **pooler** (5432/6543) ماشي `db.<ref>.supabase.co` |
 
@@ -191,7 +194,7 @@ Render Dashboard → الخدمة متاعك → **Environment** → `DATABASE_U
 
 # 📝 ملاحظات تقنية (للأرشيف)
 
-- الكونفيغ كامل مبني على دوك OpenNext الرسمية: `defineCloudflareConfig` + R2 incremental cache + DO queue + D1 tag cache (وصفة "small site with revalidation").
+- الكونفيغ كامل مبني على دوك OpenNext الرسمية: `defineCloudflareConfig` + KV incremental cache + DO queue + D1 tag cache (وصفة "small site with revalidation").
 - `initOpenNextCloudflareForDev()` في `next.config.ts` — تنشط غير في `next dev`، ما كتأثر لا على Vercel build لا على CF build.
 - Vercel يقدر يبقى مضيف أساسي حتى لل أبَد — هاد الكيت ما يحيد والدو شي حاجة منه.
 - `public/_headers`: كاش immutable للأصول + sw.js بلا كاش (تحديث PWA فوري) — نفس سلوك Vercel.

@@ -1,15 +1,16 @@
 // ═══════════════════════════════════════════════════════════════
-// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1)
+// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1.1 — KV edition)
 // ═══════════════════════════════════════════════════════════════
 // الوثيقة الأم: MIGRATION-CF.md (في جذر الريبو) — اقراها قبل ما تخدم هنا.
 //
 // 🔑 قبل أول deploy لازم تعمّر مكانين في هذا الملف:
-//    1) r2_buckets[0].bucket_name → صنعته بـ: npx wrangler r2 bucket create laclarc-isr-cache
+//    1) kv_namespaces[0].id → صنعته بـ: npx wrangler kv namespace create NEXT_INC_CACHE_KV
+//       (الأمر كيخرج لك id — الصقه في الأسفل)
 //    2) d1_databases[0].database_id → صنعته بـ: npx wrangler d1 create laclarc-tag-cache
 //       (الأمر كيخرج لك UUID — الصقه في الأسفل)
 //
 // 📦 واش كيمثل كل binding (كلها في حدود المجاني):
-//    NEXT_INC_CACHE_R2_BUCKET → كاش ISR (الصفحات المولّدة) — R2 مجاني 10GB
+//    NEXT_INC_CACHE_KV        → كاش ISR (الصفحات المولّدة) — KV مجاني 1GB/100K قراءة+1K كتابة يومياً، بلا كارت
 //    NEXT_TAG_CACHE_D1        → كاش الوسوم (revalidateTag) — D1 مجاني 5GB
 //    NEXT_CACHE_DO_QUEUE      → طابور إعادة التوليد (revalidate 86400) — DO مجاني
 //    ASSETS                   → الملفات الثابتة (/_next/static, sw.js, icons)
@@ -42,11 +43,11 @@
     },
   ],
 
-  // ─── كاش ISR (R2) ───
-  "r2_buckets": [
+  // ─── كاش ISR (KV) — بلا كارت، يخدم مباشرة (R2 كيتطلب تفعيل بالكارت) ───
+  "kv_namespaces": [
     {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "laclarc-isr-cache",
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "REPLACE_WITH_KV_ID_FROM_kv_namespace_create",
     },
   ],
 
