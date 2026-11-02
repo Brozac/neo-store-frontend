@@ -1215,7 +1215,41 @@ export default function ProductDetailsClient({
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
             <h2 className="text-lg font-black text-temu-black mb-6">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {/* 📱 F#64 — الموبايل: بطاقة كبيرة + سكة أفقية بلمسة snap (الكارت الجاي يبان من الشفة) */}
+            <div className="ymal-rail md:hidden flex gap-3.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-3">
+              {relatedProducts.map((p) => {
+                const onSale = parsePrice(p.price) > 0 && parsePrice(p.original_price) > parsePrice(p.price);
+                return (
+                  <div key={p.id} className="ymal-cell w-[76vw] max-w-[300px] shrink-0">
+                    <TiltCard>
+                      <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-2xl overflow-hidden active:scale-95 transition">
+                        <div className="relative aspect-square overflow-hidden bg-gray-50">
+                          {onSale && (
+                            <span className="absolute top-3 left-3 z-10 rounded-temu-pill bg-temu-error px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">Sale</span>
+                          )}
+                          <img
+                            src={IMG.card(p.image_url || p.image || defaultImage)}
+                            alt={p.title}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-contain p-5 transition group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="flex flex-1 flex-col p-4 pt-3">
+                          <h3 className="mb-1 line-clamp-2 text-sm font-bold text-temu-black group-hover:text-temu-orange">{p.title}</h3>
+                          <p className="text-base font-extrabold text-temu-error">${parsePrice(p.price).toFixed(2)}</p>
+                          <span className="mt-3 inline-flex w-full items-center justify-center rounded-temu-pill border border-temu-black/70 py-2 text-[11px] font-black uppercase tracking-wider text-temu-black transition group-active:bg-temu-black group-active:text-white">Shop now</span>
+                        </div>
+                      </Link>
+                    </TiltCard>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 🖥️ الديسكتوب — الجريد القديم (grid-cols-4) بلا مساس */}
+            <div className="hidden md:grid grid-cols-4 gap-4">
               {relatedProducts.map((p) => (
                 <TiltCard key={p.id}>
                   <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">

@@ -166,3 +166,12 @@
 @media (min-width: 768px){
   .pd-rev{ display:none !important }
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   🛒 YMAL RAIL (F#64) — سكة "You May Also Like" تاع الموبايل
+   بطاقة كبيرة + سكرول أفقي بلمسة snap (الكارت الجاي يبان من الشفة)
+   — قواعد snap فقط؛ scrollbar-hide جاية من globals.css —
+   ════════════════════════════════════════════════════════════ */
+.ymal-rail{ scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.ymal-cell{ scroll-snap-align: start; scroll-snap-stop: always; }
