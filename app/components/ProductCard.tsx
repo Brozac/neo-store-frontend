@@ -413,7 +413,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
         aria-label={fav ? 'Remove from wishlist' : 'Save to wishlist'}
         aria-pressed={fav}
         onClick={toggleFav}
-        className={`absolute top-4 right-4 z-10 w-7 h-7 rounded-full bg-white/85 backdrop-blur-md shadow-[0_4px_14px_rgba(46,64,87,.16)] flex items-center justify-center cursor-pointer transition-colors duration-200 active:scale-90 ${
+        className={`absolute top-4 right-4 z-10 w-7 h-7 rounded-full bg-white/85 backdrop-blur-md shadow-[0_4px_14px_rgba(46,64,87,.16)] flex items-center justify-center cursor-pointer transition-colors duration-200 active:scale-90 after:absolute after:-inset-2.5 after:content-[''] ${
           fav ? 'text-coral-500' : 'text-temu-black'
         }`}
       >

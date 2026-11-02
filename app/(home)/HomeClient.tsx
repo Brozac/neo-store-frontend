@@ -401,7 +401,7 @@ function HomeContent() {
                   key={pill.id}
                   type="button"
                   onClick={() => setPriceRange(pill.id as PriceRangeOption)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 relative after:absolute after:-inset-y-2 after:-inset-x-1.5 after:content-[''] ${
                     priceRange === pill.id
                       ? 'bg-[#17171A] text-white shadow-xs'
                       : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
