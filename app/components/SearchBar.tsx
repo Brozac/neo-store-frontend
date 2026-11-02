@@ -132,7 +132,7 @@ export default function SearchBar() {
           <button
             type="button"
             onClick={() => { setQuery(''); setResults([]); setIsDropdownOpen(false); }}
-            className="absolute right-20 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 text-xs cursor-pointer active:scale-90 relative after:absolute after:-inset-2 after:content-['']"
+            className="absolute right-20 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 text-xs cursor-pointer active:scale-90 after:absolute after:-inset-2 after:content-['']"
           >
             <GlassIcon i="x" size="xs" />
           </button>
@@ -141,7 +141,7 @@ export default function SearchBar() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-br from-fog-400 to-fog-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider relative after:absolute after:-inset-y-2.5 after:-inset-x-1 after:content-['']"
+          className="absolute right-1 top-1/2 -translate-y-1/2 bg-linear-to-br from-fog-400 to-fog-600 hover:brightness-110 text-white text-xs font-black px-4 sm:px-5 py-2 rounded-full transition cursor-pointer active:scale-95 shadow-md uppercase tracking-wider after:absolute after:-inset-y-2.5 after:-inset-x-1 after:content-['']"
         >
           Search
         </button>
