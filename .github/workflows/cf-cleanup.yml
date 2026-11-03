@@ -6,8 +6,8 @@ name: CF Deployments GC
 #   1. Repo > Settings > Secrets and variables > Actions > New repository secret:
 #        CLOUDFLARE_API_TOKEN  = value of the "rmv" token (Workers Scripts: Edit)
 #        CLOUDFLARE_ACCOUNT_ID = account id (same one used in the PowerShell script)
-#   2. First runs stay in preview mode (DRY_RUN = true) - watch the Actions log.
-#   3. After 1-2 clean dry-runs, flip DRY_RUN to "false" and commit.
+#   2. First runs stayed in preview mode (DRY_RUN = true).
+#   3. DRY_RUN is now "false" - scheduled runs really delete (keep 2).
 
 on:
   schedule:
@@ -24,7 +24,7 @@ permissions: {}
 
 env:
   KEEP: "2"
-  DRY_RUN: "false # <<< scheduled runs read this; flip to "false" when ready
+  DRY_RUN: "false" # scheduled runs read this; set to "true" to go back to preview
 
 jobs:
   gc:
