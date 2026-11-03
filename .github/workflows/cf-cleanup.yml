@@ -1,0 +1,41 @@
+name: CF Deployments GC
+
+# Weekly cleanup of old Cloudflare Workers deployments (keeps the newest N).
+#
+# One-time setup:
+#   1. Repo > Settings > Secrets and variables > Actions > New repository secret:
+#        CLOUDFLARE_API_TOKEN  = value of the "rmv" token (Workers Scripts: Edit)
+#        CLOUDFLARE_ACCOUNT_ID = account id (same one used in the PowerShell script)
+#   2. First runs stay in preview mode (DRY_RUN = true) - watch the Actions log.
+#   3. After 1-2 clean dry-runs, flip DRY_RUN to "false" and commit.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # every Monday 03:00 UTC (~04:00 Casablanca)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = preview only, false = really delete"
+        type: choice
+        options: ["true", "false"]
+        default: "true"
+
+permissions: {}
+
+env:
+  KEEP: "2"
+  DRY_RUN: "true" # <<< scheduled runs read this; flip to "false" when ready
+
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purge old Cloudflare deployments
+        uses: thuva4/cloudflare-deploy-gc@v1
+        with:
+          api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          service-type: workers
+          script-name: laclarc
+          keep: ${{ env.KEEP }}
+          dry-run: ${{ inputs.dry_run || env.DRY_RUN }}
