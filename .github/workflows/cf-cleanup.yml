@@ -24,7 +24,7 @@ permissions: {}
 
 env:
   KEEP: "2"
-  DRY_RUN: "true" # <<< scheduled runs read this; flip to "false" when ready
+  DRY_RUN: "false # <<< scheduled runs read this; flip to "false" when ready
 
 jobs:
   gc:
