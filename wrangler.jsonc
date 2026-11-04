@@ -76,7 +76,7 @@
 	// ─── متغيرات البيئة (غير السرّات! السرّات بـ wrangler secret put) ───
 	"vars": {
 		// الباك يبقى على Render كما هو — الفرونت كيهضر معاه HTTPS
-		"NEXT_PUBLIC_API_URL": "https://neo-store-backend.onrender.com",
+		"NEXT_PUBLIC_API_URL": "https://api.laclarc.com",
 		// NextAuth خلف بروكسي (Workers) — بلا هادا Google login كيفشل
 		"AUTH_TRUST_HOST": "true",
 	},
