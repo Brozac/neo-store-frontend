@@ -265,9 +265,9 @@ function HomeContent() {
                     النشط = حلقة بنفسجية + هالة fog-100 (0 0 0 4px) + ظل عميق · الضغطة = scale .92 */}
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-200 group-active:scale-90
                                  ${isActive
-                                   ? 'ring-[#6B3DB4] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
-                                   : 'ring-transparent group-hover:ring-[#6B3DB4]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
-                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#6B3DB4]/70">
+                                   ? 'ring-[#5B7EA6] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
+                                   : 'ring-transparent group-hover:ring-[#5B7EA6]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#5B7EA6]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
                   {img && (
@@ -280,7 +280,7 @@ function HomeContent() {
                   )}
                 </div>
                 <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
-                                  ${isActive ? 'text-[#6B3DB4]' : 'text-temu-black'}`}>
+                                  ${isActive ? 'text-[#5B7EA6]' : 'text-temu-black'}`}>
                   {label}
                 </span>
               </button>
@@ -375,7 +375,7 @@ function HomeContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#6B3DB4] cursor-pointer w-full sm:w-auto shadow-2xs"
+                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5B7EA6] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
                 <option value="default">✨ Top Recommendations</option>
                 <option value="price-asc">💵 Price: Low to High</option>
@@ -512,7 +512,7 @@ function HomeContent() {
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
             <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#6B3DB4] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (

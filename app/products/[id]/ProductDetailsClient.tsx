@@ -875,7 +875,7 @@ export default function ProductDetailsClient({
                     onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
-                        ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'
+                        ? 'border-[#5B7EA6] shadow-md ring-2 ring-[#5B7EA6]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
@@ -1037,13 +1037,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 1
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
                         {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -1055,13 +1055,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 2
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#6B3DB4]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-[#5B7EA6]">Duo</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -1073,13 +1073,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity >= 3
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#5B7EA6] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5B7EA6] bg-[#5B7EA6]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
