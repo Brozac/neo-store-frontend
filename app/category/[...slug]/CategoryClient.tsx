@@ -23,6 +23,8 @@ import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import GlassIcon from '@/components/ui/GlassIcon';
+import { useSiteConfig, UnavailablePanel } from '../../components/SiteConfigProvider';
+import { isCategoryHidden } from '@/lib/siteConfig';
 
 interface Product {
   id: string | number;
@@ -40,6 +42,9 @@ const PER_PAGE = 24;
 export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const params = useParams();
   const router = useRouter();
+
+  // 👁️ F#93 — كونفيگ الظهور (fail-open)
+  const { cfg: siteCfg, ready: siteCfgReady } = useSiteConfig();
 
   const slugArray = params.slug as string[];
   const slugPath = slugArray.join('/');
@@ -73,6 +78,11 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   } = feed;
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
+
+  // 👁️ F#93 — القسم مخفي من الكونفيگ → لوحة "غير متاح مؤقتاً" (بعد كل الـ hooks)
+  if (siteCfgReady && isCategoryHidden(slugPath, siteCfg?.hiddenCategories)) {
+    return <UnavailablePanel refLabel={slugPath} />;
+  }
 
   if (loading) {
     return (
@@ -165,7 +175,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
             {loadingMore && (
               <div className="text-center py-6">
-                <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             )}
 

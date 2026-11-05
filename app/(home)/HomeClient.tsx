@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '../components/ProductCard';
 import LightningDeals from '../components/LightningDeals';
 import HeroSection from '../components/HeroSection';
-import GlassIcon from '../components/ui/GlassIcon';
 import dynamic from 'next/dynamic';
 
 // 🚀 PERF (Task 20) — Reels تحتها الـ fold = lazy (كيتحمّل غير ملي يوصلو الزائر)
@@ -14,6 +13,8 @@ const ShoppableReels = dynamic(() => import('../components/ShoppableReels'), {
 });
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import { useSiteConfig } from '../components/SiteConfigProvider';
+import { isCategoryHidden } from '@/lib/siteConfig';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -53,6 +54,11 @@ function HomeContent() {
   const [activeTrendingId, setActiveTrendingId] = useState<string | null>(null);
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
   const [showReels, setShowReels] = useState(true);
+
+  // 👁️ F#93 — كونفيگ الظهور (fail-open: null = كلشي ظاهر)
+  const { cfg } = useSiteConfig();
+  const sec = cfg?.sections;
+  const hiddenCats = cfg?.hiddenCategories;
 
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [priceRange, setPriceRange] = useState<PriceRangeOption>('all');
@@ -167,21 +173,23 @@ function HomeContent() {
   // ✨ Trending (آلات الحلاقة أولاً + Fallback)
   const trendingProducts = useMemo(() => {
     if (products.length === 0) return [];
-    const shavers = products.filter(p =>
+    const visible = products.filter((p) => !isCategoryHidden(p.category, hiddenCats)); // 👁️ F#93
+    const shavers = visible.filter(p =>
       p.category?.startsWith('shavers') ||
       p.title?.toLowerCase().includes('shaver') ||
       p.title?.toLowerCase().includes('clipper') ||
       p.title?.toLowerCase().includes('trimmer')
     );
     if (shavers.length > 0) return shavers.slice(0, 5);
-    return products.slice(0, 5);
-  }, [products]);
+    return visible.slice(0, 5);
+  }, [products, hiddenCats]);
 
   // ✨ فلترة client-side المتبقية: price فقط (+ category safety net — السيرفر فلتر أصلاً)
   //    ⚠️ matchesSearch تحيدت: البحث ولّى server-side (والـ SELECT ما فيهش description —
   //    الفلتر client كان كيحذف نتائج صحيحة مطابقة بالوصف — bug صامت مقفول)
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      if (isCategoryHidden(product.category, hiddenCats)) return false; // 👁️ F#93 — الأقسام المخفية من كل الخلاصات
       let matchesCategory = true;
       if (activeCategory !== 'All') {
         const pCat = (product.category || '').toLowerCase();
@@ -196,7 +204,7 @@ function HomeContent() {
       if (priceRange === 'above35') return price > 35;
       return true;
     });
-  }, [products, activeCategory, categoryStructure, priceRange]);
+  }, [products, activeCategory, categoryStructure, priceRange, hiddenCats]);
 
   // ✨ Sorting Engine (client — على المحمّل)
   const sortedProducts = useMemo(() => {
@@ -216,17 +224,15 @@ function HomeContent() {
     return list;
   }, [filteredProducts, sortBy]);
 
-  // 🩹 SORTFIX — العرض الموحد اللي الشبكة كتقرا منه. كان محسوب من v3.8 وما عمرو
-  //    استعمل في الـ render (الشبكة كانت كترندر products الخام) → الفرز (Sort By)
-  //    والفلترة (Budget) وكلاهما ما كيأثروش على اللي كيبان — bug صامت مقفول دابا.
-  //    · default feed = accumulated كما هو (trending يبقى في الشبكة كما الشيب الحي —
-  //      حذفو كان غادي يحيّد 5 منتجات من الموبايل حيث قسم Trending مخبي فيه)
-  //    · أي فرز/فلترة/قسم = filteredProducts + sorted (الشبكة كتولي متجاوبة)
-  //    · الحالة الفارغة (No products found) ولّت خدامة مع الفلاتر
+  // ✨ العرض: default feed = accumulated (بلا trending) · الفرز = sorted — بلا slice
   const displayProducts = useMemo(() => {
     const isDefaultFeed = activeCategory === 'All' && !searchQuery && sortBy === 'default' && priceRange === 'all';
-    return isDefaultFeed ? products : sortedProducts;
-  }, [products, sortedProducts, activeCategory, searchQuery, sortBy, priceRange]);
+    if (isDefaultFeed) {
+      const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
+      return products.filter(p => !trendingIdSet.has(String(p.id)));
+    }
+    return sortedProducts;
+  }, [products, sortedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange]);
 
   const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
 
@@ -234,21 +240,17 @@ function HomeContent() {
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* 1. Hero Section
-            📱 [mobile-lite] Task 22 — المستخدم: «كي يدخل من الهاتف مايبانلوش
-            herosection و trending now — من الكمبيوتر والتابلت يبان الموقع عادي»
-            hidden sm:block = الهاتف (أقل من 640px) ما يشارفهوش · التابلت/
-            الكمبيوتر (640px+) عاديين — CSS صافي بلا JS = صفر flicker،
-            والـ DOM/SSEO كيبقى كامل (المحتوى موجود في الصفحة) */}
-        {activeCategory === 'All' && searchQuery === '' && (
-          <div className="hidden sm:block">
-            <HeroSection trendingProducts={trendingProducts} />
-          </div>
+        {/* 1. Hero Section */}
+        {sec?.hero !== false && activeCategory === 'All' && searchQuery === '' && (
+          <HeroSection trendingProducts={trendingProducts} />
         )}
 
         {/* 2. Categories Bar — Temu-style rail */}
+        {sec?.categoriesRail !== false && (
         <div id="catalog" className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide touch-pan-x">
-          {categoryStructure.map((cat) => {
+          {categoryStructure
+            .filter((cat) => cat.slug === 'all' || !isCategoryHidden(cat.slug, hiddenCats)) // 👁️ F#93
+            .map((cat) => {
             const isActive = activeCategory === cat.name;
             const label = cat.name === 'Shavers' ? 'Electric Grooming' : cat.name;
             const img = cat.image_url ? IMG.thumb(cat.image_url) : null;
@@ -261,13 +263,9 @@ function HomeContent() {
                 }}
                 className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
-                {/* 🎨 REPLICA_V4 — حلقة الأقسام طبق الأصل من المعاينة (.cat-ring):
-                    النشط = حلقة بنفسجية + هالة fog-100 (0 0 0 4px) + ظل عميق · الضغطة = scale .92 */}
-                <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-200 group-active:scale-90
-                                 ${isActive
-                                   ? 'ring-[#5B7EA6] shadow-[0_0_0_4px_var(--color-fog-100),0_10px_22px_-8px_rgba(23,23,26,0.28)]'
-                                   : 'ring-transparent group-hover:ring-[#5B7EA6]/40 shadow-[0_2px_10px_rgba(23,23,26,0.07)]'}`}>
-                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#5B7EA6]/70">
+                <div className={`relative w-16 h-16 rounded-full overflow-hidden bg-white ring-2 transition-all duration-300
+                                 ${isActive ? 'ring-[#5F8271] shadow-md' : 'ring-transparent group-hover:ring-[#5F8271]/40'}`}>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-black text-[#5F8271]/70">
                     {cat.name === 'All' ? '🛍️' : (label?.[0] || '?')}
                   </span>
                   {img && (
@@ -280,32 +278,33 @@ function HomeContent() {
                   )}
                 </div>
                 <span className={`text-[11px] font-bold text-center leading-tight line-clamp-2 transition-colors
-                                  ${isActive ? 'text-[#5B7EA6]' : 'text-temu-black'}`}>
+                                  ${isActive ? 'text-temu-green' : 'text-temu-black'}`}>
                   {label}
                 </span>
               </button>
             );
           })}
         </div>
+        )}
 
         {/* 3. Lightning Deals */}
-        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
+        {sec?.deals !== false && activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
           <div className="mb-6">
-            <LightningDeals products={dealsProducts} />
+            {/* 👁️ F#93 — منتجات الأقسام المخفية خارج العروض */}
+            <LightningDeals products={dealsProducts.filter((p) => !isCategoryHidden(p.category, hiddenCats))} />
           </div>
         )}
 
-        {/* 4. Shoppable Reels */}
-        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && showReels && (
+        {/* 4. Shoppable Reels — مزدوج: كونفيگ الظهور + مفتاح الباك show_reels */}
+        {sec?.reels !== false && showReels && activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && (
           <div className="mb-8 mt-6">
             <ShoppableReels products={products} />
           </div>
         )}
 
-        {/* 5. Trending Now — 📱 [mobile-lite] Task 22: مخبي في الهاتف (hidden sm:block)
-            التابلت/الكمبيوتر كيشارفوه عادي */}
-        {activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
-          <div className="hidden sm:block mb-8 mt-6">
+        {/* 5. Trending Now */}
+        {sec?.trending !== false && activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
+          <div className="mb-8 mt-6">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-black text-temu-black flex items-center gap-2">
                 <span>🔥</span> Trending Now
@@ -375,7 +374,7 @@ function HomeContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5B7EA6] cursor-pointer w-full sm:w-auto shadow-2xs"
+                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5F8271] cursor-pointer w-full sm:w-auto shadow-2xs"
               >
                 <option value="default">✨ Top Recommendations</option>
                 <option value="price-asc">💵 Price: Low to High</option>
@@ -401,9 +400,9 @@ function HomeContent() {
                   key={pill.id}
                   type="button"
                   onClick={() => setPriceRange(pill.id as PriceRangeOption)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 relative after:absolute after:-inset-y-2 after:-inset-x-1.5 after:content-[''] ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
                     priceRange === pill.id
-                      ? 'bg-[#17171A] text-white shadow-xs'
+                      ? 'bg-[#5F8271] text-white shadow-xs'
                       : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
                   }`}
                 >
@@ -419,7 +418,7 @@ function HomeContent() {
                   setSortBy('default');
                   setPriceRange('all');
                 }}
-                className="text-xs text-[#7E56C4] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
+                className="text-xs text-[#C86F4E] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
               >
                 Reset Filters ✕
               </button>
@@ -448,6 +447,7 @@ function HomeContent() {
             </div>
           ) : displayProducts.length > 0 ? (
             <div
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
                 if (touch) {
@@ -462,31 +462,9 @@ function HomeContent() {
               }}
               onTouchEnd={() => setTouchedProductId(null)}
             >
-              {/* ✨ [masonry] الموبايل — «كل صورة بطول مختلف، بحال نتائج بحث Google»
-                  (طلب المستخدم F#30-masonry): عمودين مستقلين (زوج/فرد) — Masonry حقيقي،
-                  الشبكة grid كانت كتقفص الصفوف = فراغات قبيحة. بلا JS بلا قياس = SSR-safe،
-                  والنسب ثابتة لكل منتج (في ProductCard) = صفر CLS ورجعة مستقرة.
-                  · infinite scroll: الباجات كتتراكم → الزوجية ثابتة → ما كاينش قفز أعمدة
-                  · 🩹 SORTFIX: كتقرا displayProducts — الفرز/الفلترة كيخدمو هنا
-                  · الديسكتوب/التابلت (md+) ما تلمسش — الشبكة الموحدة كيما كانت */}
-              <div className="md:hidden flex gap-4 items-start">
-                <div className="flex-1 min-w-0 flex flex-col gap-4">
-                  {displayProducts.map((p, i) => (i % 2 === 0 ? (
-                    <ProductCard key={p.id} product={p} eager={i < 4} masonry />
-                  ) : null))}
-                </div>
-                <div className="flex-1 min-w-0 flex flex-col gap-4">
-                  {displayProducts.map((p, i) => (i % 2 === 1 ? (
-                    <ProductCard key={p.id} product={p} eager={i < 4} masonry />
-                  ) : null))}
-                </div>
-              </div>
-              {/* تابلت/ديسكتوب (md+) — الشبكة الموحدة كيما كانت · 🩹 SORTFIX */}
-              <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {displayProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} eager={i < 4} />
-                ))}
-              </div>
+              {products.map((p, i) => (
+                <ProductCard key={p.id} product={p} eager={i < 4} />
+              ))}
             </div>
           ) : !feed.error ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-temu-gray-border-light shadow-sm space-y-3">
@@ -512,7 +490,7 @@ function HomeContent() {
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
             <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (
@@ -520,26 +498,6 @@ function HomeContent() {
               🏁 You&apos;ve reached the end — {displayProducts.length.toLocaleString()} products
             </p>
           )}
-        </div>
-
-        {/* 7. 🎨 REPLICA_V5 — شريط الثقة (trust strip تاع المعاينة)
-            3 بطاقات بيضاء بأيقونات زجاجية — آخر حاجة قبل الـ footer */}
-        <div className="grid grid-cols-3 gap-2.5 mt-4 mb-2">
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
-            <GlassIcon i="truck" tone="brand" size="md" className="mx-auto" />
-            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Free Express</b>
-            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Worldwide</small>
-          </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
-            <GlassIcon i="shield" tone="success" size="md" className="mx-auto" />
-            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">30-Day Guarantee</b>
-            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">Easy returns</small>
-          </div>
-          <div className="bg-white rounded-temu-sm py-3 px-2 text-center shadow-[0_2px_10px_rgba(23,23,26,0.05)]">
-            <GlassIcon i="lock" tone="brand" size="md" className="mx-auto" />
-            <b className="block text-[11px] font-black text-temu-black mt-1.5 leading-tight">Secure Checkout</b>
-            <small className="block text-[9.5px] text-temu-gray-text font-semibold mt-0.5">100% protected</small>
-          </div>
         </div>
       </div>
     </main>

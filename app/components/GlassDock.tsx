@@ -8,6 +8,7 @@ import {
   HomeIcon, SearchIcon, BagIcon, TrackIcon,
   ProfileIcon, HeartIcon,
 } from './icons/LaclarcIcons';
+import { useSiteConfig } from './SiteConfigProvider';
 
 interface DockItem {
   href: string;
@@ -20,6 +21,9 @@ interface DockItem {
 export default function GlassDock() {
   const pathname = usePathname();
   const { totalItemsCount, isMounted } = useCart();
+  // 👁️ F#93 — عناصر الدوك ديال الفروع المخفية كيختفوا (الصفحات محجوبة أصلاً)
+  const { cfg } = useSiteConfig();
+  const vis = (id: string) => (cfg?.branches as Record<string, boolean> | undefined)?.[id] !== false;
   const itemsRef = useRef<HTMLDivElement>(null);
 
   // 🖱️ حساب المسافة من الماوس لكل عنصر — يحدّث --d على كل عنصر
@@ -57,12 +61,13 @@ export default function GlassDock() {
       label: 'Home',
       activeMatch: (p) => p === '/',
     },
-    {
+    // 👁️ F#93 — Browse/Track/Wishlist/Profile كيتحيدو ملي الفروع ديالهم مخفيين
+    ...(vis('categories') ? [{
       href: '/categories',
       icon: <SearchIcon size={24} active={pathname?.startsWith('/categories') || false} />,
       label: 'Browse',
-      activeMatch: (p) => p.startsWith('/categories'),
-    },
+      activeMatch: (p: string) => p.startsWith('/categories'),
+    }] : []),
     {
       href: '/cart',
       icon: <BagIcon
@@ -73,32 +78,29 @@ export default function GlassDock() {
       label: 'Cart',
       badge: isMounted && totalItemsCount > 0 ? totalItemsCount : undefined,
     },
-    {
+    ...(vis('track-order') ? [{
       href: '/track-order',
       icon: <TrackIcon size={24} active={pathname?.startsWith('/track') || false} />,
       label: 'Track',
-      activeMatch: (p) => p.startsWith('/track'),
-    },
-    {
+      activeMatch: (p: string) => p.startsWith('/track'),
+    }] : []),
+    ...(vis('favorites') ? [{
       href: '/favorites',
       icon: <HeartIcon size={24} active={pathname?.startsWith('/favorites') || false} />,
       label: 'Wishlist',
-      activeMatch: (p) => p.startsWith('/favorites'),
-    },
+      activeMatch: (p: string) => p.startsWith('/favorites'),
+    }] : []),
 
-    {
+    ...(vis('profile') ? [{
       href: '/profile',
       icon: <ProfileIcon size={24} active={pathname?.startsWith('/profile') || false} />,
       label: 'Profile',
-      activeMatch: (p) => p.startsWith('/profile') || p.startsWith('/orders'),
-    },
+      activeMatch: (p: string) => p.startsWith('/profile') || p.startsWith('/orders'),
+    }] : []),
   ];
 
   return (
-      // 🩹 Responsive (Task 27): الدوك للموبايل برك — فالديسكتوب (≥768px) كان كيعوم
-      //    فوق الفوتر وكروت المنتجات وصناديق التوصيل (المحتوى ما عندوش clearance)،
-      //    والديسكتوب عندو Navbar كامل بنفس الوظائف — كنخبيوه md:hidden
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none pb-[env(safe-area-inset-bottom)] md:hidden">      <div
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none pb-[env(safe-area-inset-bottom)]">      <div
         className="pointer-events-auto gdock-glass rounded-full px-3 py-2.5 flex items-center gap-1"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -127,13 +129,13 @@ export default function GlassDock() {
 
                 {/* Badge السلة */}
                 {typeof item.badge === 'number' && (
-                  <span data-cart-badge="" className="absolute -top-0.5 -right-0.5 bg-temu-error text-white text-[9px] font-black min-w-4.5 h-4.5 flex items-center justify-center rounded-full border-2 border-white shadow-md">
+                  <span className="absolute -top-0.5 -right-0.5 bg-temu-error text-white text-[9px] font-black min-w-4.5 h-4.5 flex items-center justify-center rounded-full border-2 border-white shadow-md">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
 
                 {/* Tooltip — يظهر مع hover */}
-                <span className="gdock-tip absolute -top-9 bg-[#2E4057] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap pointer-events-none opacity-0 transition-opacity">
+                <span className="gdock-tip absolute -top-9 bg-[#33413A] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap pointer-events-none opacity-0 transition-opacity">
                   {item.label}
                 </span>
               </Link>
@@ -150,7 +152,7 @@ export default function GlassDock() {
           -webkit-backdrop-filter: blur(20px) saturate(180%);
           border: 1px solid rgba(255, 255, 255, 0.6);
           box-shadow:
-            0 8px 32px rgba(46,64,87, 0.12),
+            0 8px 32px rgba(51, 65, 58, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
         }
 
@@ -177,19 +179,6 @@ export default function GlassDock() {
           .gdock-item {
             width: 3rem;
             height: 3rem;
-          }
-        }
-
-        /* 🩹 شاشات صغيرة بزز (≤359px): الدوك كيولي أعرض من الشاشة (334px > 320px)
-           وكيخرج من جوج جهات — نقصّ الأيقونات باش يدخل كامل */
-        @media (max-width: 359px) {
-          .gdock-item {
-            width: 2.55rem;
-            height: 2.55rem;
-          }
-          .gdock-glass {
-            padding-left: 0.4rem;
-            padding-right: 0.4rem;
           }
         }
       `}</style>

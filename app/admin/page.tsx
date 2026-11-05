@@ -575,6 +575,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: 'Orders Hub', desc: 'Unified order lookup, queues & item inspector', link: '/admin/orders', color: 'from-[#3E5E50] to-[#26332C]', icon: '📦' },
+                  { label: 'Visibility Control', desc: 'Hide any homepage section, category or site branch — live', link: '/admin/visibility', color: 'from-[#4E6F60] to-[#26332C]', icon: '👁️' },
                   { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#5F8271] to-indigo-600', icon: '🛍️' },
                   { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-[#C86F4E] to-[#B85F40]', icon: '🎬' },
                   { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#C86F4E] to-[#B85F40]', icon: '🇩🇿' },

@@ -18,10 +18,11 @@ import Link from 'next/link';
 import CategoriesClient from './CategoriesClient';
 import CategoriesJsonLd from './CategoriesJsonLd';
 import { fetchCategoriesHub, type HubNode } from '@/lib/categoriesHub';
+import { getStoredSiteConfig } from '@/lib/siteConfigStore';
+import { sanitizeConfig, isCategoryHidden } from '@/lib/siteConfig';
 
-// ISR-BUDGET — الأقسام كيتبدلو فـ CJ sync اليومي (03:00) → 24h = نفس الإيقاع
-// (كانت 6 سوايع — مع /api/revalidate webhook الطزاجة فورية إلا احتاجتها)
-export const revalidate = 86400;
+// ISR — الأقسام كيتبدلو نادراً؛ 6 سوايع = توازن بين الطزاجة وحمل Render
+export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
   // أعداد حقيقية معروفة غير بعد الـ fetch — العنوان/الوصف ثابتين وخايبين
@@ -44,7 +45,7 @@ function fmt(n: number): string {
 
 function RootSection({ node }: { node: HubNode }) {
   return (
-    <section className="bg-white rounded-2xl p-6 border border-fog-100 shadow-sm">
+    <section className="bg-white rounded-temu-sm p-6 border border-temu-gray-border-light shadow-sm">
       <div className="flex items-center gap-4 mb-4">
         {node.image_url && (
           // صورة تمثيلية من الباكند (نفس نمط /api/categories) — below the fold → lazy
@@ -54,18 +55,18 @@ function RootSection({ node }: { node: HubNode }) {
             loading="lazy"
             width={56}
             height={56}
-            className="w-14 h-14 rounded-xl object-cover bg-fog-50 ring-1 ring-fog-100 flex-shrink-0"
+            className="w-14 h-14 rounded-temu-sm object-cover bg-temu-offwhite flex-shrink-0"
           />
         )}
         <div>
           <Link
             href={`/category/${node.slugPath}`}
-            className="text-xl sm:text-2xl font-black text-temu-black hover:text-fog-600 transition cursor-pointer active:scale-95 touch-manipulation inline-block w-fit"
+            className="text-2xl font-extrabold text-temu-black hover:text-temu-orange transition cursor-pointer active:scale-95 touch-manipulation inline-block w-fit"
           >
             {node.name}
           </Link>
           {node.count !== null && (
-            <p className="text-temu-gray-light text-xs font-semibold mt-0.5">
+            <p className="text-temu-gray-light text-xs mt-0.5">
               {fmt(node.count)} products
             </p>
           )}
@@ -78,18 +79,18 @@ function RootSection({ node }: { node: HubNode }) {
             <div key={sub.id || sub.slug} className="flex flex-col">
               <Link
                 href={`/category/${sub.slugPath}`}
-                className="text-sm font-bold text-temu-black hover:text-fog-600 transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
+                className="text-sm font-bold text-temu-dark hover:text-temu-orange transition cursor-pointer mb-2 active:scale-95 touch-manipulation w-fit"
               >
                 {sub.name}
               </Link>
 
               {sub.children.length > 0 && (
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {sub.children.map((leaf) => (
                     <Link
                       key={leaf.id || leaf.slug}
                       href={`/category/${leaf.slugPath}`}
-                      className="text-xs text-temu-gray-text hover:text-fog-600 transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
+                      className="text-xs text-temu-gray-light hover:text-temu-black transition cursor-pointer block active:scale-95 touch-manipulation w-fit"
                     >
                       {leaf.name}
                     </Link>
@@ -112,10 +113,21 @@ export default async function CategoriesPage() {
     return <CategoriesClient />;
   }
 
-  // عدد الأقسام: من الباكند إلا جا، وإلا الحساب من الشجرة (نفس النتيجة)
+  // 👁️ F#93 — الأقسام المخفية من الكونفيگ — الفايلة fail-open (فشل قراءة = كلشي ظاهر)
+  let hiddenCats: string[] = [];
+  try {
+    hiddenCats = sanitizeConfig(await getStoredSiteConfig())?.hiddenCategories ?? [];
+  } catch { hiddenCats = []; }
+  const pruneCats = (nodes: HubNode[]): HubNode[] =>
+    nodes
+      .filter(n => !isCategoryHidden(n.slugPath, hiddenCats))
+      .map(n => (n.children.length ? { ...n, children: pruneCats(n.children) } : n));
+  const visibleNodes = pruneCats(hub.nodes);
+
+  // عدد الأقسام: من الباكند إلا جا، وإلا الحساب من الشجرة (نفس النتيجة) — على الشجرة المرئية
   const totalCategories =
     hub.totals?.categories ??
-    hub.nodes.reduce(
+    visibleNodes.reduce(
       (sum, root) =>
         sum +
         1 +
@@ -126,12 +138,12 @@ export default async function CategoriesPage() {
   const totalProducts = hub.totals?.products ?? null;
 
   return (
-    <main className="min-h-screen pb-24 font-sans">
+    <main className="min-h-screen bg-temu-offwhite pb-24 font-sans">
       <div className="max-w-7xl mx-auto p-6">
 
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-fog-600 font-bold text-sm mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
+          className="flex items-center gap-2 text-temu-orange font-bold mb-6 cursor-pointer z-10 relative active:scale-95 transition touch-manipulation w-fit"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -140,8 +152,8 @@ export default async function CategoriesPage() {
         </Link>
 
         <div className="text-center mb-10 mt-4">
-          <h1 className="text-3xl sm:text-4xl font-black text-temu-black mb-2 tracking-tight">Browse All Categories</h1>
-          <p className="text-temu-gray-text text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
+          <h1 className="text-4xl font-extrabold text-temu-black mb-2">Browse All Categories</h1>
+          <p className="text-temu-gray-light text-sm">Explore every Laclarc department and find exactly what you&apos;re looking for</p>
           {totalProducts !== null && (
             <p className="text-temu-dark text-xs font-bold mt-2">
               {fmt(totalCategories)} departments · {fmt(totalProducts)} products in stock
@@ -150,7 +162,7 @@ export default async function CategoriesPage() {
         </div>
 
         <div className="space-y-8">
-          {hub.nodes.map((node) => (
+          {visibleNodes.map((node) => (
             <RootSection key={node.id || node.slug} node={node} />
           ))}
         </div>
@@ -158,7 +170,7 @@ export default async function CategoriesPage() {
 
       {/* JSON-LD — client component (M#60) · props صغار: 14 جذر برك */}
       <CategoriesJsonLd
-        items={hub.nodes.map((n) => ({ name: n.name, href: `/category/${n.slugPath}` }))}
+        items={visibleNodes.map((n) => ({ name: n.name, href: `/category/${n.slugPath}` }))}
       />
     </main>
   );

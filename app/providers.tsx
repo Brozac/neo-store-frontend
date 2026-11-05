@@ -4,12 +4,14 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { CartProvider } from './context/CartContext';
+import { useSiteConfig } from './components/SiteConfigProvider';
+import SiteConfigProvider, { UnavailablePanel } from './components/SiteConfigProvider';
+import { matchHiddenBranch } from '@/lib/siteConfig';
 import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import UtmTracker from './components/UtmTracker';
 import SessionBridge from './components/SessionBridge';
-import FlyToCart from './components/FlyToCart'; // ✨ FLY_TO_CART_V1 — حركة الطيران للدوك
 
 // 🚀 PERF (Task 20) — الويدجت العائمة الثقيلة ولّاو lazy (dynamic + ssr:false):
 // كانو static imports فالـ providers = JS ديالهم كيتحمل فـ **كل صفحة** (حتى admin/auth).
@@ -49,40 +51,60 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     }
   }, []);
-  
+
 
   return (
-    <CartProvider>
-      {/* ✨ التقاط UTM */}
-      <UtmTracker />
-      <SessionBridge />
+    <SiteConfigProvider>
+      <CartProvider>
+        <StorefrontVisibilityGate isAdminRoute={!!isAdminRoute}>
+          {/* ✨ التقاط UTM */}
+          <UtmTracker />
+          <SessionBridge />
 
-      {/* ✨ Navbar — للزبائن فقط */}
-      {!isAdminRoute && <Navbar />}
+          {/* ✨ Navbar — للزبائن فقط */}
+          {!isAdminRoute && <Navbar />}
 
-      <div className={!isAdminRoute ? 'pb-20 md:pb-0' : ''}>
-        {children}
-      </div>
+          <div className={!isAdminRoute ? 'pb-20 md:pb-0' : ''}>
+            {children}
+          </div>
 
-      {/* ✨ Footer — للزبائن فقط */}
-      {!isAdminRoute && <Footer />}
+          {/* ✨ Footer — للزبائن فقط */}
+          {!isAdminRoute && <Footer />}
 
-      {/* ✨ المكونات العائمة — للزبائن فقط */}
-      {!isAdminRoute && (
-        <>
-          <CartWidget />
-          {/* 🆕 FloatingSupport يحتوي WhatsApp FAB + AI Chat FAB */}
-          <FloatingSupport />
-          <AIChatWidget />       {/* نافذة الشات — بدون FAB مكرر */}
-          {/* 🩹 WHEEL_MOUNT_GATE — مؤقتاً مقفول: العجلة كتوعد بخصم ما كانش كيتنفذ (M#47 probe).
-              يتفعل بعد بناء wheel-token integration كامل + أول بيانات حملة.
-              Backend /api/wheel/claim جاهز — غير رد هاد السطر. */}
-          {/* <SpinWheel /> */}
-          <ExitIntentPopup />
-          <GlassDock />
-          <FlyToCart /> {/* ✨ FLY_TO_CART_V1 — مستمع حركة الطيران */}
-        </>
-      )}
-    </CartProvider>
+          {/* ✨ المكونات العائمة — للزبائن فقط */}
+          {!isAdminRoute && (
+            <>
+              <CartWidget />
+              {/* 🆕 FloatingSupport يحتوي WhatsApp FAB + AI Chat FAB */}
+              <FloatingSupport />
+              <AIChatWidget />       {/* نافذة الشات — بدون FAB مكرر */}
+              {/* 🩹 WHEEL_MOUNT_GATE — مؤقتاً مقفول: العجلة كتوعد بخصم ما كانش كيتنفذ (M#47 probe).
+                  يتفعل بعد بناء wheel-token integration كامل + أول بيانات حملة.
+                  Backend /api/wheel/claim جاهز — غير رد هاد السطر. */}
+              {/* <SpinWheel /> */}
+              <ExitIntentPopup />
+              <GlassDock />
+            </>
+          )}
+        </StorefrontVisibilityGate>
+      </CartProvider>
+    </SiteConfigProvider>
   );
+}
+
+/**
+ * 👁️ F#93 — حاجز الفروع المخفية:
+ * فرع مخفي نشط → الصفحة كاملة (chrome + المحتوى) كتتبدل بلوحة "غير متاح مؤقتاً".
+ * /admin مستثناة دايماً · الكونفيگ لسه ما وصلش → fail-open (ما كاين حتى وميض للزائر العادي).
+ */
+function StorefrontVisibilityGate({ isAdminRoute, children }: { isAdminRoute: boolean; children: React.ReactNode }) {
+  const { cfg, ready } = useSiteConfig();
+  const pathname = usePathname();
+
+  const hiddenBranch = ready && !isAdminRoute && cfg
+    ? matchHiddenBranch(pathname || '', cfg.branches)
+    : null;
+
+  if (hiddenBranch) return <UnavailablePanel branch={hiddenBranch} />;
+  return <>{children}</>;
 }

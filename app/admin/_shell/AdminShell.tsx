@@ -48,6 +48,7 @@ const NAV: NavGroup[] = [
       { id: 'home', href: '/admin', label: 'Operations Room', ar: 'غرفة القيادة', icon: '⚡' },
       { id: 'orders', href: '/admin/orders', label: 'Orders Hub', ar: 'مركز الطلبات', icon: '📦' },
       { id: 'settings', href: '/admin/settings', label: 'Store Settings', ar: 'إعدادات المتجر', icon: '⚙️' },
+      { id: 'visibility', href: '/admin/visibility', label: 'Visibility Control', ar: 'التحكم في الظهور', icon: '👁️' },
     ],
   },
   {
