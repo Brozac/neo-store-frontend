@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
+import AdminShell from '../_shell/AdminShell';
 
 interface Order {
   id: number;
@@ -117,22 +118,11 @@ export default function BaridiMobOrdersAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-temu-offwhite text-temu-black p-6 sm:p-8 font-sans">
+    <AdminShell
+      title="BaridiMob Verification — التحقق اليدوي"
+      subtitle="Algeria Gateway · BaridiMob / CCP receipts · dispatch to CJ"
+    >
       <div className="max-w-5xl mx-auto">
-
-        {/* Navigation */}
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-xs font-bold text-temu-orange hover:brightness-110 transition flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            &larr; Back to Mission Control
-          </button>
-
-          <span className="text-xs font-mono text-gray-500">
-            Algeria Gateway &bull; BaridiMob / CCP
-          </span>
-        </div>
 
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div>
@@ -141,7 +131,7 @@ export default function BaridiMobOrdersAdmin() {
             </h1>
             <p className="text-xs text-gray-500 mt-1">
               Inspect uploaded bank transfer receipts, verify customer amounts, and dispatch orders to CJ.
-              <strong className="text-butter-up-600"> Every approval requires the verified amount.</strong>
+              <strong className="text-amber-600"> Every approval requires the verified amount.</strong>
             </p>
           </div>
 
@@ -175,9 +165,9 @@ export default function BaridiMobOrdersAdmin() {
                       <h3 className="font-black text-temu-black text-base">Order #{order.id}</h3>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                         order.status === 'pending'
-                          ? 'bg-butter-up-50 text-butter-up-600 border border-butter-up-200'
+                          ? 'bg-amber-50 text-amber-600 border border-amber-200'
                           : order.status === 'paid' || order.status === 'completed'
-                          ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border border-maroccan-tea-200'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                           : 'bg-red-50 text-red-500 border border-red-200'
                       }`}>
                         {order.status === 'pending' ? 'Pending Review' : order.status}
@@ -202,7 +192,7 @@ export default function BaridiMobOrdersAdmin() {
                               href={`https://wa.me/${order.customer_phone.replace(/\D/g, '')}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[10px] bg-maroccan-tea-50 text-maroccan-tea-600 px-1.5 py-0.5 rounded hover:bg-maroccan-tea-100 border border-maroccan-tea-200"
+                              className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded hover:bg-emerald-100 border border-emerald-200"
                             >
                               WhatsApp ↗
                             </a>
@@ -231,7 +221,7 @@ export default function BaridiMobOrdersAdmin() {
                         <button
                           onClick={() => handleApprove(order.id, declaredDZD)}
                           disabled={actionLoading === order.id}
-                          className="flex-1 lg:flex-none bg-linear-to-r from-maroccan-tea-500 to-teal-500 hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
+                          className="flex-1 lg:flex-none bg-linear-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
                         >
                           {actionLoading === order.id ? (
                             <>
@@ -300,6 +290,6 @@ export default function BaridiMobOrdersAdmin() {
           </div>
         </div>
       )}
-    </div>
+    </AdminShell>
   );
 }

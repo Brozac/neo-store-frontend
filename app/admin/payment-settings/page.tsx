@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
+import AdminShell from '../_shell/AdminShell';
 
 interface Gateway {
   gateway_key: string;
@@ -11,7 +11,6 @@ interface Gateway {
 }
 
 export default function PaymentSettingsPage() {
-  const router = useRouter();
   const [gateways, setGateways] = useState<Gateway[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -55,17 +54,11 @@ export default function PaymentSettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-temu-offwhite p-6 pb-24 font-sans">
+    <AdminShell
+      title="Payment Gateways — بوابات الدفع"
+      subtitle="Checkout methods on/off — applies instantly to all storefront visitors"
+    >
       <div className="max-w-2xl mx-auto">
-
-        {/* Navigation */}
-        <button
-          onClick={() => router.push('/admin')}
-          className="flex items-center gap-2 text-temu-orange font-bold mb-6 active:scale-95 transition touch-manipulation w-fit text-sm"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          Back to Dashboard
-        </button>
 
         <div className="bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-sm">
           <h1 className="text-xl font-black text-temu-black mb-1">Payment Methods</h1>
@@ -74,8 +67,8 @@ export default function PaymentSettingsPage() {
           </p>
 
           {/* 🆕 v1.1 — in-flight awareness (flag is UI-only — backend verify independent) */}
-          <div className="bg-butter-up-50 border border-butter-up-200 rounded-xl px-3 py-2 mb-5">
-            <p className="text-[10px] text-butter-up-700 font-bold">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-5">
+            <p className="text-[10px] text-amber-700 font-bold">
               ⚠️ Note: Disabling a gateway only hides it at checkout. Payments already in progress
               (verification pending) continue processing normally.
             </p>
@@ -94,7 +87,7 @@ export default function PaymentSettingsPage() {
                   onClick={() => handleToggle(g.gateway_key, g.enabled)}
                   disabled={togglingKey === g.gateway_key}
                   aria-label={`Toggle ${g.display_name}`}
-                  className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${g.enabled ? 'bg-maroccan-tea-500' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${g.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${g.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
                 </button>
@@ -108,6 +101,6 @@ export default function PaymentSettingsPage() {
           </p>
         </div>
       </div>
-    </main>
+    </AdminShell>
   );
 }

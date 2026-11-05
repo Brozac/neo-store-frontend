@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import StarRating from '../../components/StarRating';
 import adminApi from '../../utils/adminApi';
+import AdminShell from '../_shell/AdminShell';
 
 interface Product {
   id: string | number;
@@ -254,25 +255,12 @@ function ManageProductsContent() {
   };
 
   return (
-    <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
+    <AdminShell
+      title="Inventory Management — إدارة المنتجات"
+      subtitle="Prices · stock · lightning deals · categories · reviews"
+    >
       <div className="max-w-5xl mx-auto">
-        
-        {/* Navigation Bar */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-gray-200 pb-4">
-          <button 
-            onClick={() => router.push('/admin')} 
-            className="text-xs font-bold text-temu-orange hover:brightness-110 transition flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            &larr; Back to Mission Control
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 font-mono">
-              Live Buffer: 30 Items / Query
-            </span>
-          </div>
-        </div>
-        
+
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm">
           
           {/* Header & Auto-Categorize */}
@@ -285,10 +273,10 @@ function ManageProductsContent() {
             <button 
               onClick={handleAutoCategorize} 
               disabled={isCategorizing} 
-              className="bg-maroccan-tea-50 hover:bg-maroccan-tea-100 text-maroccan-tea-600 border border-maroccan-tea-200 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 cursor-pointer flex items-center gap-2 whitespace-nowrap active:scale-95"
             >
               {isCategorizing ? (
-                <><div className="w-4 h-4 border-2 border-maroccan-tea-500 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
+                <><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> Processing AI Rules...</>
               ) : (
                 <>🤖 Run Auto-Categorizer</>
               )}
@@ -344,7 +332,7 @@ function ManageProductsContent() {
                       <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                         <img src={imgSrc} alt={product.title} className="w-full h-full object-cover" />
                         {product.is_sourced && (
-                          <span className="absolute top-0.5 right-0.5 bg-butter-up-400 text-black text-[9px] font-black px-1 rounded shadow">
+                          <span className="absolute top-0.5 right-0.5 bg-amber-400 text-black text-[9px] font-black px-1 rounded shadow">
                             ⚡
                           </span>
                         )}
@@ -396,7 +384,7 @@ function ManageProductsContent() {
                       {/* Edit Button */}
                       <button 
                         onClick={() => openEditModal(product)} 
-                        className="bg-fog-50 hover:bg-fog-100 text-fog-500 border border-fog-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Edit Price & Details"
                       >
                         ✏️
@@ -405,7 +393,7 @@ function ManageProductsContent() {
                       {/* Review Button */}
                       <button 
                         onClick={() => openReviewModal(product)} 
-                        className="bg-butter-up-50 hover:bg-butter-up-100 text-butter-up-500 border border-butter-up-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
+                        className="bg-amber-50 hover:bg-amber-100 text-amber-500 border border-amber-200 p-2.5 rounded-xl transition cursor-pointer active:scale-95" 
                         title="Add Verified Review"
                       >
                         ⭐
@@ -417,7 +405,7 @@ function ManageProductsContent() {
                         disabled={togglingDealId === product.id}
                         className={`p-2.5 rounded-xl border transition cursor-pointer active:scale-95 disabled:opacity-50 ${
                           product.is_sourced 
-                            ? 'bg-butter-up-500 text-white border-butter-up-400 font-bold shadow-md shadow-butter-up-500/20' 
+                            ? 'bg-amber-500 text-white border-amber-400 font-bold shadow-md shadow-amber-500/20' 
                             : 'bg-gray-50 hover:bg-gray-100 text-gray-500 border-gray-200'
                         }`}
                         title={product.is_sourced ? 'Active Lightning Deal (Click to Remove)' : 'Activate Lightning Deal'}
@@ -433,11 +421,11 @@ function ManageProductsContent() {
                       <button 
                         onClick={() => handleSendToSourcing(product)} 
                         disabled={sourcingId === product.id} 
-                        className="bg-fog-50 hover:bg-fog-100 text-fog-600 border border-fog-200 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
+                        className="bg-serene-mint hover:bg-serene-mint text-temu-green border border-[#5F8271]/20 p-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95" 
                         title="Request CJ Sourcing Quote"
                       >
                         {sourcingId === product.id ? (
-                          <div className="w-4 h-4 border-2 border-fog-600 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           '🏭'
                         )}
@@ -592,7 +580,7 @@ function ManageProductsContent() {
             {reviewMessage && (
               <div className={`p-3 rounded-xl mb-4 text-xs font-bold ${
                 reviewMessage.includes('✅') 
-                  ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border border-maroccan-tea-200' 
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
                   : 'bg-red-50 text-red-500 border border-red-200'
               }`}>
                 {reviewMessage}
@@ -629,7 +617,7 @@ function ManageProductsContent() {
 
               <button 
                 type="submit" 
-                className="w-full bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-md"
+                className="w-full bg-linear-to-r from-temu-error to-[#B85F40] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer active:scale-95 shadow-md"
               >
                 Inject Verified Review
               </button>
@@ -637,7 +625,7 @@ function ManageProductsContent() {
           </div>
         </div>
       )}
-    </main>
+    </AdminShell>
   );
 }
 

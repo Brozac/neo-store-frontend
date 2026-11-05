@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
+import AdminShell from './_shell/AdminShell';
 
 interface CategoryNode {
   id: number;
@@ -16,6 +17,7 @@ interface TelemetryState {
   backendPing: number;
   pendingBaridiCount: number | null;   // null = مجهول — لا نكذب بـ 0
   failedOrdersCount: number | null;
+  disputesCount: number | null;
   lastChecked: string;
 }
 
@@ -54,8 +56,8 @@ function SystemEventsPanel() {
 
   const sevStyle: Record<string, string> = {
     critical: 'text-red-600 border-red-200 bg-red-50',
-    warning:  'text-butter-up-600 border-butter-up-200 bg-butter-up-50',
-    info:     'text-maroccan-tea-600 border-maroccan-tea-200 bg-maroccan-tea-50',
+    warning:  'text-amber-600 border-amber-200 bg-amber-50',
+    info:     'text-emerald-600 border-emerald-200 bg-emerald-50',
   };
 
   const EVENT_TYPES = [
@@ -72,17 +74,17 @@ function SystemEventsPanel() {
   return (
     <div className="bg-white text-temu-black rounded-2xl p-5 border border-temu-gray-border-light space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black uppercase tracking-wider text-[#5B7EA6] flex items-center gap-2">
+        <h3 className="text-sm font-black uppercase tracking-wider text-[#5F8271] flex items-center gap-2">
           📋 System Events — Automated Decisions
         </h3>
-        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-[#5B7EA6] transition cursor-pointer">↻ Refresh</button>
+        <button onClick={() => load(filter)} className="text-xs text-gray-400 hover:text-[#5F8271] transition cursor-pointer">↻ Refresh</button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         {EVENT_TYPES.map(t => (
           <button key={t} onClick={() => setFilter(t)}
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition cursor-pointer ${
-              filter === t ? 'bg-[#5B7EA6] text-white border-[#5B7EA6]' : 'border-temu-gray-border-light text-gray-500 hover:text-temu-black'
+              filter === t ? 'bg-[#5F8271] text-white border-[#5F8271]' : 'border-temu-gray-border-light text-gray-500 hover:text-temu-black'
             }`}>
             {t || 'All'}
           </button>
@@ -171,6 +173,7 @@ export default function AdminDashboard() {
     backendPing: 0,
     pendingBaridiCount: null,
     failedOrdersCount: null,
+    disputesCount: null,
     lastChecked: '--',
   });
 
@@ -185,10 +188,19 @@ export default function AdminDashboard() {
       setTelemetry(prev => ({ ...prev, backendStatus: 'checking' }));
 
       // null = مجهول — الفشل ما يترجمش لصفر كاذب
-      const [manualOrdersRes, failedOrdersRes] = await Promise.all([
+      const [manualOrdersRes, failedOrdersRes, disputesRes] = await Promise.all([
         adminApi.get('/admin/manual-orders').then(r => r.data).catch(() => null),
         adminApi.get('/admin/failed-orders').then(r => r.data).catch(() => null),
+        adminApi.get('/admin/disputes').then(r => r.data).catch(() => null),
       ]);
+
+      const dList = disputesRes?.data?.list ?? (Array.isArray(disputesRes?.data) ? disputesRes.data : null);
+      const openDisputes = Array.isArray(dList)
+        ? dList.filter((d: any) => {
+            const s = String(d.status || '').toLowerCase();
+            return s === 'processing' || s === 'pending' || s === 'open';
+          }).length
+        : null;
 
       setTelemetry({
         backendStatus: 'healthy',
@@ -197,6 +209,7 @@ export default function AdminDashboard() {
           ? manualOrdersRes.filter((o: any) => o.status === 'pending').length
           : null,
         failedOrdersCount: Array.isArray(failedOrdersRes) ? failedOrdersRes.length : null,
+        disputesCount: openDisputes,
         lastChecked: new Date().toLocaleTimeString(),
       });
     } catch (err: any) {
@@ -242,10 +255,6 @@ export default function AdminDashboard() {
   const handleAdminSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminSearch.trim()) router.push(`/admin/manage?search=${encodeURIComponent(adminSearch.trim())}`);
-  };
-
-  const handleLogout = async () => {
-    try { await adminApi.post('/admin/logout'); } finally { router.push('/admin/login'); }
   };
 
   const handleSyncCategories = async () => {
@@ -418,7 +427,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   const imagePreviews = formData.images.split(',').map(img => img.trim()).filter(Boolean);
 
   const tabs = [
-    { id: 'overview', label: 'Operations Command', icon: '⚡' },
+    { id: 'overview', label: 'Command Modules', icon: '⚡' },
     { id: 'reels', label: 'Watch & Shop Reels', icon: '🎬' },
     { id: 'add', label: 'Add Product', icon: '➕' },
     { id: 'sync', label: 'CJ Sync & Sourcing', icon: '🔄' },
@@ -428,76 +437,22 @@ const handleSubmit = async (e: React.FormEvent) => {
   ];
 
   return (
-    <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
-      <div className="max-w-5xl mx-auto">
+    <AdminShell
+      title="Laclarc Operations Room"
+      subtitle="Enterprise Command Center · غرفة العمليات الشاملة"
+    >
+      <div className="max-w-6xl mx-auto">
 
-        {/* Top Header & Fast Nav */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-temu-gray-border-light pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-tr from-[#5B7EA6] to-[#7FA1C4] rounded-xl flex items-center justify-center font-black text-white shadow-lg">
-              L
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-temu-black tracking-wide">Laclarc Mission Control</h1>
-              <p className="text-[11px] text-gray-500">Enterprise Operations &bull; Global Dropshipping</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* 🐺 مؤقت: تسجيل Webhooks CJ — تحيدو من بعد الاستعمال */}
-            <button
-              onClick={async () => {
-                try {
-                  const res = await adminApi.post('/admin/webhook/register');
-                  alert(`1️⃣ Register:\n${res.data?.message || 'Done'}`);
-                } catch (err: any) {
-                  alert(`❌ Register failed:\n${err.response?.data?.error || err.message}`);
-                }
-              }}
-              className="px-3.5 py-2 bg-fog-50 hover:bg-fog-100 border border-fog-200 rounded-xl text-xs font-bold text-fog-600 transition cursor-pointer"
-            >
-              🐺 Register Webhooks
-            </button>
-
-            <button
-              onClick={async () => {
-                try {
-                  const res = await adminApi.post('/admin/webhook/subscribe');
-                  alert(`2️⃣ Subscribe:\n${res.data?.message || 'Done'}`);
-                } catch (err: any) {
-                  alert(`❌ Subscribe failed:\n${err.response?.data?.error || err.message}`);
-                }
-              }}
-              className="px-3.5 py-2 bg-maroccan-tea-50 hover:bg-maroccan-tea-100 border border-maroccan-tea-200 rounded-xl text-xs font-bold text-maroccan-tea-600 transition cursor-pointer"
-            >
-              📌 Subscribe Products
-            </button>
-
-            <button
-              onClick={() => router.push('/')}
-              className="px-3.5 py-2 bg-white hover:bg-temu-offwhite border border-temu-gray-border-light rounded-xl text-xs font-bold text-temu-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              🌐 Storefront
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold text-red-500 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              🔒 Logout
-            </button>
-          </div>
-        </div>
-
-        {/* 🛰️ Live Infrastructure Pulse */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {/* 🛰️ Live Infrastructure Pulse — التليمتري الحي */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-maroccan-tea-500 animate-pulse' : 'bg-red-500'}`}></span>
-              Render Backend
+              <span className={`w-2 h-2 rounded-full ${telemetry.backendStatus === 'healthy' ? 'bg-emerald-500 animate-pulse' : telemetry.backendStatus === 'checking' ? 'bg-amber-400' : 'bg-red-500'}`}></span>
+              Backend API
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-temu-black">
-                {telemetry.backendStatus === 'healthy' ? 'Operational' : 'Checking'}
+              <span className="text-sm font-black text-temu-black">
+                {telemetry.backendStatus === 'healthy' ? 'Operational' : telemetry.backendStatus === 'checking' ? 'Checking…' : 'Offline'}
               </span>
               <span suppressHydrationWarning className="text-[11px] font-mono text-gray-500">{telemetry.backendPing}ms</span>
             </div>
@@ -505,19 +460,19 @@ const handleSubmit = async (e: React.FormEvent) => {
 
           <div className="bg-white border border-temu-gray-border-light rounded-xl p-3.5 flex flex-col justify-between shadow-xs">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#5B7EA6]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#5F8271]"></span>
               Neon DB
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-temu-black">{telemetry.backendStatus === 'healthy' ? 'Connected' : telemetry.backendStatus === 'checking' ? 'Checking…' : 'Unreachable'}</span>
-              <span className="text-[11px] font-mono text-maroccan-tea-500">{telemetry.backendStatus === 'healthy' ? 'Pool Active' : '—'}</span>
+              <span className="text-sm font-black text-temu-black">{telemetry.backendStatus === 'healthy' ? 'Connected' : telemetry.backendStatus === 'checking' ? 'Checking…' : 'Unreachable'}</span>
+              <span className="text-[11px] font-mono text-emerald-500">{telemetry.backendStatus === 'healthy' ? 'Pool Active' : '—'}</span>
             </div>
           </div>
 
           <div
             onClick={() => router.push('/admin/baridimob')}
             className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md ${
-              (telemetry.pendingBaridiCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-coral-50 border-[#7FA1C4]' : 'bg-white border-temu-gray-border-light'
+              (telemetry.pendingBaridiCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-pink-50 border-[#C86F4E]' : 'bg-white border-temu-gray-border-light'
             }`}
           >
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -525,7 +480,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </span>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-base font-black text-temu-black">{telemetry.pendingBaridiCount === null ? <span className="text-gray-400">—</span> : telemetry.pendingBaridiCount}</span>
-              <span className="text-[11px] text-[#7FA1C4] font-bold">Action Needed &rarr;</span>
+              <span className="text-[11px] text-[#C86F4E] font-bold">Verify &rarr;</span>
             </div>
           </div>
 
@@ -540,9 +495,34 @@ const handleSubmit = async (e: React.FormEvent) => {
             </span>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-base font-black text-temu-black">{telemetry.failedOrdersCount === null ? <span className="text-gray-400">—</span> : telemetry.failedOrdersCount}</span>
-              <span className="text-[11px] text-red-500 font-bold">Resolve Queue &rarr;</span>
+              <span className="text-[11px] text-red-500 font-bold">Rescue &rarr;</span>
             </div>
           </div>
+
+          <div
+            onClick={() => router.push('/admin/disputes')}
+            className={`cursor-pointer border rounded-xl p-3.5 flex flex-col justify-between transition shadow-xs hover:shadow-md col-span-2 sm:col-span-1 ${
+              (telemetry.disputesCount ?? 0) > 0 ? 'bg-linear-to-br from-white to-amber-50 border-amber-400' : 'bg-white border-temu-gray-border-light'
+            }`}
+          >
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+              ⚖️ Open Disputes
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-base font-black text-temu-black">{telemetry.disputesCount === null ? <span className="text-gray-400">—</span> : telemetry.disputesCount}</span>
+              <span className="text-[11px] text-amber-600 font-bold">Arbitrate &rarr;</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Refresh row */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={runDiagnostics}
+            className="text-xs bg-white hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <span suppressHydrationWarning>🔄 Refresh Telemetry ({telemetry.lastChecked})</span>
+          </button>
         </div>
 
         {/* Quick Search */}
@@ -552,9 +532,9 @@ const handleSubmit = async (e: React.FormEvent) => {
             value={adminSearch}
             onChange={(e) => setAdminSearch(e.target.value)}
             placeholder="🔍 Search inventory products by title or ID to edit, price, or mark as deal..."
-            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#5B7EA6] transition shadow-xs"
+            className="w-full bg-white border border-temu-gray-border-light rounded-xl py-3.5 pl-4 pr-12 text-sm text-temu-black placeholder-gray-400 focus:outline-none focus:border-[#5F8271] transition shadow-xs"
           />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5B7EA6] p-1 cursor-pointer">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5F8271] p-1 cursor-pointer">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
@@ -571,7 +551,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition cursor-pointer rounded-xl snap-start shrink-0 ${
                 activeTab === tab.id
-                  ? 'bg-linear-to-r from-[#5B7EA6] to-[#46648A] text-white shadow-lg shadow-[#5B7EA6]/20'
+                  ? 'bg-linear-to-r from-[#5F8271] to-[#4E6F60] text-white shadow-lg shadow-[#5F8271]/20'
                   : 'bg-white text-gray-500 border border-temu-gray-border-light hover:bg-temu-offwhite hover:text-temu-black'
               }`}
             >
@@ -583,88 +563,42 @@ const handleSubmit = async (e: React.FormEvent) => {
         {/* Tab Content Box */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-temu-gray-border-light shadow-xs">
 
-          {/* 1. Overview Operations */}
+          {/* 1. Overview Operations — Quick Launch */}
           {activeTab === 'overview' && (
             <div>
-              <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
-                <div>
-                  <h2 className="text-lg font-black text-temu-black">Operations Center</h2>
-                  <p className="text-xs text-gray-500">Direct modules to manage inventory, payments, and disputes</p>
-                </div>
-                <button
-                  onClick={runDiagnostics}
-                  className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-1.5 rounded-lg border border-temu-gray-border-light transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span suppressHydrationWarning>🔄 Refresh Status ({telemetry.lastChecked})</span>
-                </button>
+              <div className="mb-6">
+                <h2 className="text-lg font-black text-temu-black">Command Modules</h2>
+                <p className="text-xs text-gray-500">Every control surface of the store — all operated from this room</p>
               </div>
 
               {/* بطاقات العمليات */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#5B7EA6] to-fog-600', icon: '📦' },
-                  { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-coral-500 to-coral-600', icon: '🎬' },
-                  { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#7FA1C4] to-coral-600', icon: '🇩🇿' },
-                  { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-butter-up-500 to-red-600', icon: '🚨' },
-                  { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-fog-600', icon: '⚖️' },
-                  { label: 'Advanced Engine Tools', desc: 'Auto-categorization & database maintenance', link: '/admin/advanced', color: 'from-fog-600 to-[#2E4057]', icon: '🛠️' },
+                  { label: 'Orders Hub', desc: 'Unified order lookup, queues & item inspector', link: '/admin/orders', color: 'from-[#3E5E50] to-[#26332C]', icon: '📦' },
+                  { label: 'Manage Products', desc: 'Price updates, stock status & Lightning Deals ⚡', link: '/admin/manage', color: 'from-[#5F8271] to-indigo-600', icon: '🛍️' },
+                  { label: 'Watch & Shop Reels', desc: `Manage ${videoProducts.length} video feeds & visibility`, action: () => setActiveTab('reels'), color: 'from-[#C86F4E] to-[#B85F40]', icon: '🎬' },
+                  { label: 'BaridiMob Approvals', desc: 'Inspect customer bank receipts and approve', link: '/admin/baridimob', color: 'from-[#C86F4E] to-[#B85F40]', icon: '🇩🇿' },
+                  { label: 'Manual & Failed Orders', desc: 'Rescue orders that failed automated CJ fulfillment', link: '/admin/failed-orders', color: 'from-amber-500 to-red-600', icon: '🚨' },
+                  { label: 'CJ Disputes Center', desc: 'Track refunds, damaged shipments & complaints', link: '/admin/disputes', color: 'from-cyan-500 to-blue-600', icon: '⚖️' },
+                  { label: 'Store Settings', desc: 'Storefront behavior, webhooks & integrations', link: '/admin/settings', color: 'from-[#4E6F60] to-[#3E5E50]', icon: '⚙️' },
+                  { label: 'Payment Gateways', desc: 'Enable/disable checkout methods instantly', link: '/admin/payment-settings', color: 'from-emerald-500 to-teal-600', icon: '💳' },
+                  { label: 'Advanced Engine Tools', desc: 'COGS margins, parcel merge & carrier makeup', link: '/admin/advanced', color: 'from-[#4E6F60] to-[#3E5E50]', icon: '🛠️' },
                 ].map((card, i) => (
                   <button
                     key={i}
                     onClick={() => card.link ? router.push(card.link) : card.action?.()}
-                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#5B7EA6]/60 transition group cursor-pointer active:scale-[0.98] shadow-xs"
+                    className="text-left p-5 rounded-xl bg-white border border-temu-gray-border-light hover:border-[#5F8271]/60 transition group cursor-pointer active:scale-[0.98] shadow-xs"
                   >
                     <div className={`w-10 h-10 rounded-xl bg-linear-to-tr ${card.color} flex items-center justify-center text-lg mb-3 shadow-md`}>
                       {card.icon}
                     </div>
-                    <h3 className="font-bold text-temu-black text-sm group-hover:text-[#5B7EA6] transition">{card.label}</h3>
+                    <h3 className="font-bold text-temu-black text-sm group-hover:text-[#5F8271] transition">{card.label}</h3>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">{card.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
-
-          {/* 📈 ويدجت أرباح الإعلانات المباشرة */}
-          <div className="mt-8 bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-xs">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-sm font-black text-temu-black flex items-center gap-2">
-                  <span>📊</span> Ad Campaigns & Revenue Attribution (Last 30 Days)
-                </h3>
-                <p className="text-xs text-gray-500">Track which ad network generates the most paid revenue</p>
-              </div>
-              <span className="text-[10px] font-bold uppercase bg-fog-50 text-[#5B7EA6] border border-[#5B7EA6]/20 px-2.5 py-1 rounded-full">
-                Real-time ROI
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-gray-500 block uppercase">TikTok Ads</span>
-                  <span className="text-xs text-gray-400">Tracked via ttclid</span>
-                </div>
-                <span className="text-sm font-black text-black">Active 🎯</span>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-gray-500 block uppercase">Facebook / Meta</span>
-                  <span className="text-xs text-gray-400">Tracked via fbclid</span>
-                </div>
-                <span className="text-sm font-black text-[#5B7EA6]">Active 🎯</span>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-gray-500 block uppercase">Organic / Direct</span>
-                  <span className="text-xs text-gray-400">Word of mouth</span>
-                </div>
-                <span className="text-sm font-black text-maroccan-tea-600">Free 🌿</span>
-              </div>
-            </div>
-          </div>
 
           {/* ✨ 2. Watch & Shop Reels */}
           {activeTab === 'reels' && (
@@ -704,14 +638,14 @@ const handleSubmit = async (e: React.FormEvent) => {
                       alert('⚠️ Could not save the setting. Check your connection and try again.');
                     }
                   }}
-                  className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-maroccan-tea-500' : 'bg-gray-300'}`}
+                  className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
                   aria-pressed={showReels}
                 >
                   <span className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${showReels ? 'translate-x-7' : 'translate-x-0'}`} />
                 </button>
               </div>
 
-              <div className="bg-fog-50/60 p-5 rounded-2xl border border-[#5B7EA6]/25 flex items-center justify-between flex-wrap gap-4">
+              <div className="bg-serene-mint/70 p-5 rounded-2xl border border-[#5F8271]/25 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h4 className="font-black text-sm text-temu-black">Sync New Video Assets</h4>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -721,7 +655,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <button
                   onClick={handleSyncVideos}
                   disabled={syncingVideos}
-                  className="bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-md"
+                  className="bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-md"
                 >
                   {syncingVideos ? 'Scanning CJ Videos...' : 'Scan & Import Videos'}
                 </button>
@@ -734,8 +668,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </h4>
                   <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full border ${
                     videoProducts.length >= 5
-                      ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border-maroccan-tea-200'
-                      : 'bg-butter-up-50 text-butter-up-600 border-butter-up-200'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      : 'bg-amber-50 text-amber-600 border-amber-200'
                   }`}>
                     {videoProducts.length >= 5 ? '✓ Reels Ready' : 'Need 5+ for full carousel'}
                   </span>
@@ -743,7 +677,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 {loadingVideos ? (
                   <div className="text-center py-10">
-                    <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                     <p className="text-xs text-gray-400 font-bold">Scanning database for video products...</p>
                   </div>
                 ) : videoProducts.length === 0 ? (
@@ -773,7 +707,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-temu-black truncate">{p.title}</p>
-                            <p className="text-[11px] text-[#7FA1C4] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
+                            <p className="text-[11px] text-[#C86F4E] font-black mt-0.5">${Number(p.price || 0).toFixed(2)}</p>
                           </div>
                         </div>
 
@@ -810,25 +744,25 @@ const handleSubmit = async (e: React.FormEvent) => {
               <p className="text-xs text-gray-500 mb-6">Create manual items or auto-fill details via external link</p>
 
               {message && (
-                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-maroccan-tea-50 border border-maroccan-tea-200 text-maroccan-tea-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
+                <div className={`p-4 rounded-xl mb-6 text-sm font-medium ${message.includes('✅') ? 'bg-emerald-50 border border-emerald-200 text-emerald-600' : 'bg-red-50 border border-red-200 text-red-500'}`}>
                   {message}
                 </div>
               )}
 
-              <div className="mb-6 p-4 bg-butter-up-50 rounded-xl border border-butter-up-200">
-                <label className="block text-xs font-bold text-butter-up-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
+              <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">🤖 Auto-Scraper (Alibaba / AliExpress / External)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     value={scrapeUrl}
                     onChange={(e) => setScrapeUrl(e.target.value)}
                     placeholder="Paste product page URL here..."
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-butter-up-400 transition"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-amber-400 transition"
                   />
                   <button
                     onClick={handleScrape}
                     disabled={scraping}
-                    className="bg-butter-up-500 hover:bg-butter-up-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95 cursor-pointer"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-xl transition disabled:opacity-50 active:scale-95 cursor-pointer"
                   >
                     {scraping ? 'Extracting Data...' : 'Scrape Data'}
                   </button>
@@ -843,7 +777,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   multiple
                   onChange={handleFileUpload}
                   disabled={uploading}
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#5B7EA6] file:text-white hover:file:brightness-110 cursor-pointer"
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#5F8271] file:text-white hover:file:brightness-110 cursor-pointer"
                 />
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -859,29 +793,29 @@ const handleSubmit = async (e: React.FormEvent) => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Title *</label>
-                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Cost / Base Price ($) *</label>
-                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Strikethrough Price ($)</label>
-                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                    <input type="number" step="0.01" name="original_price" value={formData.original_price} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Main Image URL *</label>
-                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="url" name="image_url" value={formData.image_url} onChange={handleChange} required className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Gallery Images (Comma Separated)</label>
-                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="text" name="images" value={formData.images} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Category</label>
-                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]">
+                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]">
                     {availableCategories.map(cat => (
                       <option key={cat.value} value={cat.value}>{cat.label}</option>
                     ))}
@@ -890,21 +824,21 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Colors (Hex / Names)</label>
-                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                    <input type="text" name="colors" value={formData.colors} onChange={handleChange} placeholder="#000, #FFF" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Sizes</label>
-                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                    <input type="text" name="sizes" value={formData.sizes} onChange={handleChange} placeholder="S, M, L, XL" className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6] resize-none"></textarea>
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-temu-offwhite border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271] resize-none"></textarea>
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#5B7EA6]/20 active:scale-[0.98]"
+                  className="w-full bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 cursor-pointer shadow-lg shadow-[#5F8271]/20 active:scale-[0.98]"
                 >
                   {loading ? 'Publishing Product...' : 'Publish Product to Storefront'}
                 </button>
@@ -920,8 +854,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <p className="text-xs text-gray-500 mb-6">Synchronize trending inventory or ingest targeted 1688 items</p>
               </div>
 
-              <div className="p-5 bg-fog-50 rounded-xl border border-[#5B7EA6]/30">
-                <label className="block text-xs font-bold text-[#5B7EA6] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
+              <div className="p-5 bg-serene-mint rounded-xl border border-[#5F8271]/30">
+                <label className="block text-xs font-bold text-[#5F8271] uppercase tracking-wider mb-1">⚡ Ingest Single Sourced Product (PID) &bull; Auto Lightning Deal</label>
                 <p className="text-xs text-gray-500 mb-3">Instantly pull product from CJ using its PID and tag it automatically as an active Lightning Deal.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -929,17 +863,17 @@ const handleSubmit = async (e: React.FormEvent) => {
                     value={singlePid}
                     onChange={(e) => setSinglePid(e.target.value)}
                     placeholder="Enter CJ Product PID (e.g. 172938192)..."
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]"
                   />
                   <button
                     onClick={handleSyncSingle}
                     disabled={syncingSingle}
-                    className="bg-[#5B7EA6] hover:bg-[#46648A] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
+                    className="bg-[#5F8271] hover:bg-[#4E6F60] text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 whitespace-nowrap active:scale-95 cursor-pointer"
                   >
                     {syncingSingle ? 'Ingesting...' : 'Ingest & Deploy Deal ⚡'}
                   </button>
                 </div>
-                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-maroccan-tea-500' : 'text-red-500'}`}>{singleMessage}</p>}
+                {singleMessage && <p className={`mt-2 text-xs font-bold ${singleMessage.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}>{singleMessage}</p>}
               </div>
 
               <div className="p-5 bg-temu-offwhite rounded-xl border border-temu-gray-border-light">
@@ -948,7 +882,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <select
                     value={syncCategory}
                     onChange={(e) => setSyncCategory(e.target.value)}
-                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]"
+                    className="flex-1 bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]"
                   >
                     <option value="">🛍️ Trending / General Selection</option>
                     <option value="clipper">🪒 Shavers & Grooming</option>
@@ -969,11 +903,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
 
                 <div className="pt-4 border-t border-temu-gray-border-light">
-                  <label className="block text-xs font-bold text-[#5B7EA6] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
+                  <label className="block text-xs font-bold text-[#5F8271] uppercase tracking-wider mb-2">🚀 Mass Import Engine (1200 Products)</label>
                   <button
                     onClick={handleMassSync}
                     disabled={massSyncing}
-                    className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#5B7EA6]/20 cursor-pointer"
+                    className="w-full bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white font-extrabold py-3 rounded-xl transition disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-[#5F8271]/20 cursor-pointer"
                   >
                     {massSyncing ? 'Engine Starting...' : 'Start Mass Import Engine'}
                   </button>
@@ -991,7 +925,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <button
                     onClick={handleSyncCategories}
                     disabled={syncingCats}
-                    className="bg-maroccan-tea-500 hover:bg-maroccan-tea-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition disabled:opacity-50 cursor-pointer"
                   >
                     {syncingCats ? 'Syncing Tree...' : '1. Rebuild Tree'}
                   </button>
@@ -1028,21 +962,21 @@ const handleSubmit = async (e: React.FormEvent) => {
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Product Title *</label>
-                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="text" name="productName" required placeholder="e.g. Wireless Ergonomic Razor" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">High-Res Product Image URL *</label>
-                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="url" name="productImage" required placeholder="https://..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">1688 Reference Product URL</label>
-                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="url" name="productUrl" placeholder="https://detail.1688.com/..." className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Target Purchase Price ($ USD)</label>
-                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                  <input type="number" step="0.01" name="price" placeholder="12.50" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#5B7EA6]/20 cursor-pointer">
+                <button type="submit" className="w-full bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#5F8271]/20 cursor-pointer">
                   Transmit Sourcing Request to CJ Dropshipping
                 </button>
               </form>
@@ -1073,22 +1007,22 @@ const handleSubmit = async (e: React.FormEvent) => {
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light max-w-lg">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Coupon Code *</label>
-                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6] uppercase" />
+                  <input type="text" name="code" required placeholder="e.g. VIP20OFF" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271] uppercase" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Discount Type</label>
-                    <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]">
+                    <select name="discount_type" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]">
                       <option value="percentage">Percentage (%)</option>
                       <option value="fixed">Fixed Cash ($)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Value *</label>
-                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5B7EA6]" />
+                    <input type="number" step="0.01" name="discount_value" required placeholder="20" className="w-full bg-white border border-temu-gray-border-light rounded-xl px-4 py-3 text-sm text-temu-black focus:outline-none focus:border-[#5F8271]" />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-linear-to-r from-[#7FA1C4] to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#7FA1C4]/20 cursor-pointer">
+                <button type="submit" className="w-full bg-linear-to-r from-[#C86F4E] to-[#B85F40] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition active:scale-95 shadow-lg shadow-[#C86F4E]/20 cursor-pointer">
                   Deploy Discount Code
                 </button>
               </form>
@@ -1102,6 +1036,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
         </div>
       </div>
-    </main>
+    </AdminShell>
   );
 }

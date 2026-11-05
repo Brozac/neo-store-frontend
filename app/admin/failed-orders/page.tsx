@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import adminApi from '../../utils/adminApi';
+import AdminShell from '../_shell/AdminShell';
 
 interface Order {
   id: number;
@@ -133,30 +134,25 @@ export default function FailedOrdersAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center gap-3">
-        <div className="w-8 h-8 border-3 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-3 border-[#5F8271] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-bold text-gray-500">Scanning stalled order queue...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-temu-offwhite text-temu-black p-6 sm:p-8 font-sans">
+    <AdminShell
+      title="Failed & Manual Orders Queue — أطابور الإنقاذ"
+      subtitle="Paid orders stalled in automated CJ fulfillment · HALT 7-day window"
+    >
       <div className="max-w-5xl mx-auto">
-        
-        {/* Navigation */}
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
-          <button 
-            onClick={() => router.push('/admin')} 
-            className="text-xs font-bold text-[#5B7EA6] hover:text-[#46648A] transition flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            &larr; Back to Mission Control
-          </button>
-          
-          <span className="text-xs font-mono font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm text-gray-600">
+
+        <div className="flex justify-end mb-4">
+          <span className="text-xs font-mono font-bold bg-white px-3 py-1 rounded-full border border-temu-gray-border-light shadow-xs text-gray-600">
             Queue: {orders.length} Stalled Orders
           </span>
         </div>
-        
+
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-black text-temu-black tracking-wide flex items-center gap-2.5">
@@ -177,7 +173,7 @@ export default function FailedOrdersAdmin() {
 
         {orders.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm space-y-3">
-            <div className="w-14 h-14 bg-maroccan-tea-50 text-maroccan-tea-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
               ✓
             </div>
             <h3 className="text-base font-bold text-temu-black">Queue is 100% Clean!</h3>
@@ -212,27 +208,27 @@ export default function FailedOrdersAdmin() {
                       {order.customer_phone ? (
                         <span className="font-mono font-bold text-gray-800">{order.customer_phone}</span>
                       ) : (
-                        <span className="text-butter-up-600 font-bold bg-butter-up-50 px-2 py-0.5 rounded border border-butter-up-200 text-[10px]">⚠️ Missing Phone</span>
+                        <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[10px]">⚠️ Missing Phone</span>
                       )}
                     </p>
 
-                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Gateway:</span> <span className="font-mono font-bold text-[#5B7EA6]">{order.payment_method}</span></p>
+                    <p><span className="text-gray-400 font-bold uppercase text-[10px]">Gateway:</span> <span className="font-mono font-bold text-[#5F8271]">{order.payment_method}</span></p>
                     <p><span className="text-gray-400 font-bold uppercase text-[10px]">Total Paid:</span> <span className="text-temu-error font-black text-sm">${Number(order.total_amount).toFixed(2)}</span></p>
                   </div>
                                     {/* 🩹 M#31 — halt_details: سبب توقف CJ الرسمي (يظهر فقط للطلبات الموقوفة) */}
                   {order.halt_details && (
-                    <div className="bg-butter-up-50 border border-butter-up-200 rounded-xl p-3 mt-2 space-y-1">
-                      <p className="text-[10px] font-black text-butter-up-700 uppercase tracking-wider">🛑 CJ Halt Reason:</p>
-                      <p className="text-[11px] text-butter-up-800 font-bold">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-2 space-y-1">
+                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider">🛑 CJ Halt Reason:</p>
+                      <p className="text-[11px] text-amber-800 font-bold">
                         {order.halt_details.reason} — {order.halt_details.number || ''}
                       </p>
                       {order.halt_details.probeStatus && (
-                        <p className="text-[10px] text-butter-up-600 font-mono">
+                        <p className="text-[10px] text-amber-600 font-mono">
                           CJ probe status: {order.halt_details.probeStatus}
                         </p>
                       )}
                       {order.halt_details.probeOrderNum && (
-                        <p className="text-[10px] text-butter-up-600 font-mono">
+                        <p className="text-[10px] text-amber-600 font-mono">
                           CJ order: {order.halt_details.probeOrderNum}
                         </p>
                       )}
@@ -264,7 +260,7 @@ export default function FailedOrdersAdmin() {
                     type="button"
                     onClick={() => handleApprove(order.id)}
                     disabled={actionLoading === order.id}
-                    className="flex-1 lg:flex-none bg-linear-to-r from-[#5B7EA6] to-[#46648A] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#5B7EA6]/20"
+                    className="flex-1 lg:flex-none bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white px-5 py-3 rounded-xl text-xs font-extrabold transition cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-[#5F8271]/20"
                   >
                     {actionLoading === order.id ? (
                       <>
@@ -308,7 +304,7 @@ export default function FailedOrdersAdmin() {
             <div className="overflow-y-auto flex-1 space-y-3 pr-1">
               {loadingItems ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : orderItems.length > 0 ? (
                 orderItems.map((item, idx) => (
@@ -326,7 +322,7 @@ export default function FailedOrdersAdmin() {
                       <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
                       <div className="flex justify-between items-center mt-1 text-[11px] text-gray-500">
                         <span>Qty: {item.quantity}</span>
-                        <span className="font-bold text-[#7FA1C4]">${Number(item.price_at_purchase).toFixed(2)}</span>
+                        <span className="font-bold text-[#C86F4E]">${Number(item.price_at_purchase).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -346,6 +342,6 @@ export default function FailedOrdersAdmin() {
           </div>
         </div>
       )}
-    </div>
+    </AdminShell>
   );
 }

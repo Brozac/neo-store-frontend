@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
+import AdminShell from '../_shell/AdminShell';
 
 interface Dispute {
   id: string;
@@ -128,23 +129,12 @@ export default function DisputesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-temu-offwhite text-temu-black p-6 pb-24 font-sans">
+    <AdminShell
+      title="CJ Arbitration & Claims — النزاعات"
+      subtitle="Disputes · refunds · carrier tracking terminal"
+    >
       <div className="max-w-5xl mx-auto">
-        
-        {/* Navigation */}
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
-          <button 
-            onClick={() => router.push('/admin')} 
-            className="text-xs font-bold text-temu-orange hover:brightness-110 transition flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            &larr; Back to Mission Control
-          </button>
-          
-          <span className="text-xs font-mono text-gray-500">
-            CJ Disputes & Carrier Tracking Terminal
-          </span>
-        </div>
-        
+
         {/* 1. Real-time Shipment Radar (Live Tracking) */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 mb-8 shadow-sm">
           <div className="flex items-center gap-2.5 mb-1">
@@ -177,11 +167,11 @@ export default function DisputesPage() {
           )}
           
           {trackingInfo && (
-            <div className="bg-temu-offwhite p-5 rounded-xl border border-maroccan-tea-200 mt-4">
+            <div className="bg-temu-offwhite p-5 rounded-xl border border-emerald-200 mt-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 <div>
                   <span className="text-gray-400 uppercase font-bold text-[10px] block mb-1">Status</span>
-                  <span className="font-black text-maroccan-tea-600 text-sm bg-maroccan-tea-50 px-2.5 py-1 rounded-md border border-maroccan-tea-200 inline-block">
+                  <span className="font-black text-emerald-600 text-sm bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 inline-block">
                     {trackingInfo.trackingStatus || 'Active'}
                   </span>
                 </div>
@@ -220,7 +210,7 @@ export default function DisputesPage() {
 
             <button 
               onClick={() => setIsModalOpen(true)} 
-              className="bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer active:scale-95 shadow-md"
+              className="bg-linear-to-r from-temu-error to-[#B85F40] hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer active:scale-95 shadow-md"
             >
               + File New Dispute
             </button>
@@ -247,8 +237,8 @@ export default function DisputesPage() {
                       <span className="font-mono font-bold text-temu-black text-xs">Claim ID: {dispute.id}</span>
                       <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
                         dispute.status === 'Processing' || dispute.status === 'Pending' 
-                          ? 'bg-butter-up-50 text-butter-up-600 border-butter-up-200' 
-                          : 'bg-maroccan-tea-50 text-maroccan-tea-600 border-maroccan-tea-200'
+                          ? 'bg-amber-50 text-amber-600 border-amber-200' 
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                       }`}>
                         {dispute.status}
                       </span>
@@ -294,7 +284,7 @@ export default function DisputesPage() {
             {message && (
               <div className={`p-3.5 rounded-xl mb-4 text-xs font-bold ${
                 message.includes('✅') 
-                  ? 'bg-maroccan-tea-50 text-maroccan-tea-600 border border-maroccan-tea-200' 
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
                   : 'bg-red-50 text-red-500 border border-red-200'
               }`}>
                 {message}
@@ -370,7 +360,7 @@ export default function DisputesPage() {
               <button 
                 type="submit" 
                 disabled={creating} 
-                className="w-full bg-linear-to-r from-temu-error to-coral-600 hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-md flex justify-center items-center gap-2 text-xs uppercase"
+                className="w-full bg-linear-to-r from-temu-error to-[#B85F40] hover:brightness-110 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer disabled:opacity-50 active:scale-95 shadow-md flex justify-center items-center gap-2 text-xs uppercase"
               >
                 {creating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'File Dispute Claim with CJ'}
               </button>
@@ -378,6 +368,6 @@ export default function DisputesPage() {
           </div>
         </div>
       )}
-    </main>
+    </AdminShell>
   );
 }
