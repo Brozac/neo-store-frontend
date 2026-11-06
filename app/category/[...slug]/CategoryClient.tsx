@@ -149,7 +149,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         ) : (
           <>
             <div
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              className="columns-2 md:columns-3 lg:columns-4 gap-4"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
                 if (touch) {

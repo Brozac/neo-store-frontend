@@ -1,27 +1,54 @@
 /* ═══════════════════════════════════════════════════════════════
-   ProductCardGlass.css — Task 20 [GLASSCARD]
+   ProductCardGlass.css — v6.1 LIGHT (2026-11-07)
    ═══════════════════════════════════════════════════════════════
-   بانل الزجاج تاع mockup المستخدم مطبق على بطاقة المنتج:
-     · بانل يطلع من لتحت على hover — transform .4s ease-in (mockup)
-     · زجاج حبري rgba(23,37,54,.78) + backdrop-blur(15px) + border-top
-       بيضاء (نفس قيم HeroCards.css تاع Task 19 = لغة موحّدة للموقع)
-     · دخول متدرج: title (0.15s) → قسم (0.22s) → أيقونات
-       calc(0.12s + 0.15s × --i) — كيما social-icons تاع mockup
-   ─────────────────────────────────────────────────────────────
-   ⚠️ استراتيجية الجهازين:
-     · ديسكتوب (hover + mouse): التصميم الصافي تاع mockup — صورة
-       نقيّة + سعر + سواتشات في الراحة، والبانل كيجيب العنوان +
-       القسم + الأيقونات (👁 Quick View / 🛒 Add) على hover
-       ولا is-active ولا focus-within (كيبورد). أزرار pill السفلية
-       كيتخباو — الأيقونات في البانل هي لي كتأدي نفس الخدمة.
-     · موبايل / لمس: البانل display:none — تصميم Task 18 (HOMECARD)
-       كيما هو: scrim + عنوان أبيض + سطر القسم + pills. صفر تغيير.
+   طلب المالك: تصميم عرض المنتجات كيشبه لنتائج صور Google (الصورة
+   المرجعية) — بصح فاتح: «نحوس كلش فاتح ماتبدلش نتاع الهوم وخليها
+   فاتحة نفس لون الموقع نتاعي». بلاطة صورة مدورة (بيضاء + رِنغ خفيف)
+   على خلفية الموقع الفاتحة + العنوان تحت البلاطة (سطرين) + سطر رمادي
+   صغير "Laclarc · $price" + masonry بطول متغير — في كل الصفحات
+   (home/search · categories · favorites · all-products) نفس الخلفية
+   الفاتحة نتاع الموقع، بلا لوح غامق.
+
+   اللي تبدل هنا عن v6 (GOOGLE-GRID):
+     · حيّنا اللوح الغامق (.pc-dark / bg #202124 كيما Google dark)
+       اللي كان فالهوم — المالك رجّعو: الكروت يقراو ألوانهم الفاتحة
+       دايماً (عنوان غامق + ميتا رمادي على خلفية الموقع)، نفس التشريح
+       فكل الصفحات بلا استثناء.
+     · قواعد .pc-dark تمسحو من هنا كامل.
+     · الأيقونات العائمة (QV / Add) والـ pills بالموبايل كما هم —
+       ألوانهم أصلان فاتحة، يخدمو على الفاتح بلا تبديل.
    ─────────────────────────────────────────────────────────────
    ⚠️ visibility متباعة transition مع تأخير باش أنيميشن الخروج
-      (الطيران للتحت) يتبان كامل قبل ما البانل يختفي من الـ a11y tree.
+      يتبان كامل قبل ما الأيقونات تختفي من الـ a11y tree.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── الافتراضي = لمس / بلا hover: البانل مخبي تماماً ── */
+/* ── ألوان سطر المعلومات — فاتحة دايماً (نفس لون الموقع) ── */
+.pc-title {
+  color: var(--color-temu-black, #1a2230);
+}
+.pc-meta {
+  color: #6b7280;
+}
+.pc-sep {
+  opacity: 0.55;
+}
+.pc-orig {
+  color: #6b7280;
+  opacity: 0.7;
+  font-size: 10.5px;
+}
+.pc-disc {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.14);
+  color: #dc2626;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── الافتراضي = لمس / بلا hover: الأيقونات العائمة مخبيين ── */
 .pc-glass {
   display: none;
 }
@@ -29,24 +56,19 @@
 /* ══════════ ديسكتوب — hover حقيقي + مؤشر دقيق ══════════ */
 @media (hover: hover) and (pointer: fine) {
 
-  /* راحة الكارت = mockup صافي: الصورة نقيّة بلا scrim/عنوان —
-     العنوان والقسم والأزرار عايشين في البانل الزجاجي */
-  .pc-scrim,
-  .pc-imgtitle,
-  .pc-bodycat,
+  /* pills مازال مخبيين فالديسكتوب (الأيقونات العائمة كيأديو الخدمة) */
   .pc-pills {
     display: none;
   }
 
-  /* الكارت كيتقصر (بلا pills) — تنفس سفلي للعنصر الأخير */
-  .pc-body {
-    padding-bottom: 0.9rem;
-  }
+  /* تنفس سفلي للسواتشات (آخر عنصر مرئي فالديسكتوب) */
   .pc-swatches {
     padding-bottom: 0.9rem;
   }
 
-  /* ── البانل الزجاجي — نفس وصفة Task 19 بالضبط ── */
+  /* ── الأيقونات العائمة — بلا شريط: QV / Add كيعومو فوق الصورة ──
+     نفس الربط تاع v5 (نفس الكلاسات نفس الحالات) — غير الغلاف ولّى
+     شفاف بلا blur ولا border — الصورة كتبقى صافية كيما Google */
   .pc-glass {
     display: flex;
     flex-direction: column;
@@ -57,11 +79,7 @@
     right: 0;
     bottom: 0;
     padding: 0.9rem 0.7rem 0.85rem;
-    background: rgba(23, 37, 54, 0.78);
-    -webkit-backdrop-filter: blur(15px);
-    backdrop-filter: blur(15px);
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 -10px 10px rgba(23, 37, 54, 0.12);
+    background: transparent;
     text-align: center;
     transform: translateY(calc(100% + 16px));
     visibility: hidden;
@@ -69,53 +87,7 @@
     will-change: transform;
   }
 
-  /* متصفح بلا backdrop-filter — زجاج صلب مقروء (تدهور رشيق) */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .pc-glass {
-      background: rgba(23, 37, 54, 0.9);
-    }
-  }
-
-  /* ── العنوان (h4 تاع mockup): uppercase + تباعد + دخول متأخر ── */
-  .pc-gtitle {
-    width: 100%;
-    margin: 0;
-    font-size: 11px;
-    line-height: 1.45;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: #ffffff;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(-12px);
-    transition: opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s;
-  }
-
-  /* ── سطر القسم (h5 تاع mockup): خفيف + متباعد + دخول بعد العنوان ── */
-  .pc-gcat {
-    width: 100%;
-    margin: 0.3rem 0 0;
-    font-size: 8.5px;
-    font-weight: 300;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.88);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.5s ease 0.22s, transform 0.5s ease 0.22s;
-  }
-
-  /* ── صف الأيقونات — بلاصة social-icons تاع mockup ──
-     الدخول المتدرج على الـ slot (غلاف) والأيقونة نفسها بلا تأخير
-     باش hover الدينامي تاعها يبقى فوري (نفس الفصل تاع Task 19) */
+  /* ── صف الأيقونات — الدخول المتدرج على الـ slot ── */
   .pc-gicons {
     display: flex;
     justify-content: center;
@@ -137,28 +109,31 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.18);
-    color: #ffffff;
+    border: 1px solid rgba(23, 37, 54, 0.16);
+    background: rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    color: #1a2230;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     padding: 0;
+    box-shadow: 0 4px 14px rgba(23, 37, 54, 0.14);
     transition: background 0.2s ease, transform 0.2s ease,
       border-color 0.2s ease, color 0.2s ease;
   }
 
   .pc-gicon:hover {
-    background: rgba(255, 255, 255, 0.32);
-    border-color: rgba(255, 255, 255, 0.6);
+    background: #ffffff;
+    border-color: rgba(23, 37, 54, 0.3);
   }
 
   .pc-gicon:active {
     transform: scale(0.88);
   }
 
-  /* الإضافة تمّات — أخضر النجاح (نفس .hicon-btn.is-added) */
+  /* الإضافة تمّات — أخضر النجاح */
   .pc-gicon.is-added {
     color: #7fb069;
     border-color: rgba(127, 176, 105, 0.6);
@@ -174,20 +149,6 @@
     transition: transform 0.4s ease-in, visibility 0s;
   }
 
-  .product-card-wrapper:hover .pc-gtitle,
-  .product-card-wrapper.is-active .pc-gtitle,
-  .product-card-wrapper:focus-within .pc-gtitle {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .product-card-wrapper:hover .pc-gcat,
-  .product-card-wrapper.is-active .pc-gcat,
-  .product-card-wrapper:focus-within .pc-gcat {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
   .product-card-wrapper:hover .pc-gslot,
   .product-card-wrapper.is-active .pc-gslot,
   .product-card-wrapper:focus-within .pc-gslot {
@@ -199,8 +160,6 @@
 /* ── احترام prefers-reduced-motion — كل شي ظاهر بلا حركة ── */
 @media (prefers-reduced-motion: reduce) {
   .pc-glass,
-  .pc-gtitle,
-  .pc-gcat,
   .pc-gslot,
   .pc-gicon {
     transition: none !important;
@@ -209,8 +168,6 @@
     transform: none !important;
     visibility: visible !important;
   }
-  .pc-gtitle,
-  .pc-gcat,
   .pc-gslot {
     transform: none !important;
     opacity: 1 !important;
@@ -219,17 +176,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Task 21 [FRAMELESS] — الكتالوج المفتوح
-   «نح كارت أبيض، خلي المنتج كامل في بلاصتو، حاجة ماتحدو»
-   ═══════════════════════════════════════════════════════════════
-   الكارت ولّى بلا خلفية ولا ظل ولا إيطار (في ProductCard.tsx).
-   ⚠️ globals.css فيها توهج قديم من عصر Aurora على hover/is-active/
-   :active تاع .product-card-animated: box-shadow بنفسجي
-   rgba(107,61,180,.25) + border-color #6B3DB4 !important — مع كارت
-   بلا إطار كان غادي يرسم مستطيل ملون حول المنتج = «حاجة تحدّو»
-   بالضبط. التنقية هنا: نفس الـ specificity + الملف كيتحمّل بعد
-   globals = الأخير يربح. الرفعة translateY(-4px) كتبقى (لمسة
-   تفاعلية بلا رسم إطار). */
+   FRAMELESS (Task 21) — كتالوج مفتوح بلا توهج قديم
+   globals.css فيها توهج Aurora قديم على .product-card-animated —
+   التنقية هنا: نفس specificity + الملف كيتحمّل بعد globals.
+   ═══════════════════════════════════════════════════════════════ */
 .product-card-animated:hover,
 .product-card-animated.is-active,
 .product-card-animated:active {

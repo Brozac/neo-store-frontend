@@ -2,6 +2,13 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════
+ * GOOGLE-GRID v6.1 LIGHT (2026-11-07 — طلب المالك بصورة نتائج صور Google):
+ * تصميم عرض المنتجات = بلاطة صورة مدورة + العنوان تحت البلاطة (سطرين)
+ * + سطر رمادي "Laclarc · $price" + masonry (طول متغير لكل منتج) في كل
+ * الشاشات. الألوان فاتحة دايماً (نفس لون الموقع — طلب المالك الصريح: «خليها
+ * فاتحة نفس لون الموقع نتاعي») — بلا لوح غامق. البانل الزجاجي
+ * ولّى أيقونتين عائمين (QV/Add) بلا شريط — الصورة صافية كيما Google.
+ * ═══════════════════════════════════════════════════════════════
  * Laclarc ProductCard — v5.0 (HOMECARD Task 18 + GLASSCARD Task 20)
  * ═══════════════════════════════════════════════════════════════
  * ✨ [glasscard] — بانل الزجاج تاع mockup المستخدم (نفس وصفة Task 19
@@ -96,7 +103,7 @@ interface ProductCardProps {
   /** 🩹 FIX-LAZY: true = eager للصورة (أول كروت أول شاشة — مرشحو LCP) */
   eager?: boolean;
   /** ✨ [masonry] نتائج Google (طلب المستخدم): بئر الصورة يولي بطول متغير
-   *    لكل منتج (نسبة ثابتة من hash ديال id) + object-cover — موبايل برك */
+   *    لكل منتج (نسبة ثابتة من hash ديال id) + object-cover — GOOGLE-GRID: كل الشاشات */
   masonry?: boolean;
 }
 
@@ -108,7 +115,7 @@ interface ProductCardProps {
 //    · aspectRatio inline style = صفر خطر purge من Tailwind + صفر CLS
 //      (الارتفاع معروف قبل ما تتحمل الصورة — نفس حماية aspect-square).
 const MASONRY_RATIOS = ['4 / 5', '1 / 1', '3 / 4', '5 / 6', '1 / 1', '3 / 4', '4 / 5', '2 / 3'];
-const masonryRatio = (id: string | number): string => {
+export const masonryRatio = (id: string | number): string => {
   const s = String(id);
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -139,7 +146,7 @@ const popHeart = (el: Element | null) => {
   } catch { /* بيئة بلا WAAPI — التنقل يبقى خدام */ }
 };
 
-export default function ProductCard({ product, isTouched, eager = false, masonry = false }: ProductCardProps) {
+export default function ProductCard({ product, isTouched, eager = false, masonry = true }: ProductCardProps) {
   const router = useRouter();
   const { addToCart } = useCart();
   const [isAdded, setIsAdded] = useState(false);
@@ -285,7 +292,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
   return (
     <div
       data-product-id={String(product.id)}
-      className={`product-card-wrapper product-card-animated overflow-hidden flex flex-col group relative cursor-pointer transition-transform duration-300 active:scale-[0.98] ${
+      className={`product-card-wrapper product-card-animated overflow-hidden flex flex-col group relative cursor-pointer transition-transform duration-300 active:scale-[0.98] break-inside-avoid mb-3 sm:mb-4 ${
         isTouched ? 'is-active' : ''
       }`}
       onClick={handleCardClick}
@@ -302,7 +309,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
             ✨ [frameless] البئر تحيّد: بلا هوامش ولا حواف ولا تدرج —
             الصورة edge-to-edge كاملة في بلاصتها، حاجة ما تحدّها */}
         <div
-          className={`relative overflow-hidden ${masonry ? '' : 'aspect-square'}`}
+          className={`relative overflow-hidden rounded-xl bg-white ring-1 ring-black/[0.04] ${masonry ? '' : 'aspect-square'}`}
           style={ratio ? { aspectRatio: ratio } : undefined}
         >
           {/* ✨ img — 🩹 FIX-IMG (OSS transform) + 🩹 FIX-LAZY (lazy/async + eager اختياري)
@@ -315,15 +322,8 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
             decoding="async"
             className={`${masonry ? 'object-cover' : 'object-contain'} w-full h-full transition-transform duration-500 group-hover:scale-105`}
           />
-          {/* ✨ [homecard] scrim حبري — الاسم الأبيض يقرا على أي صورة (كما في mockup)
-              ✨ [glasscard] pc-scrim = مخبي في الديسكتوب (البانل الزجاجي عوضو) */}
-          <div
-            aria-hidden="true"
-            className="pc-scrim absolute inset-x-0 bottom-0 h-[48%] pointer-events-none [background:linear-gradient(to_top,rgba(46,64,87,.84)_0%,rgba(46,64,87,.34)_42%,rgba(46,64,87,0)_72%)]"
-          />
-          <h3 className="pc-imgtitle absolute inset-x-0 bottom-0 px-3 pb-2.5 text-[12.5px] leading-[1.35] font-extrabold text-white line-clamp-2 pointer-events-none [text-shadow:0_1px_10px_rgba(23,37,54,.25)]">
-            {product.title}
-          </h3>
+          {/* GOOGLE-GRID v6 — scrim وعنوان-على-الصورة تحيدو: العنوان ولّى تحت
+              البلاطة كيما نتائج صور Google اللي طلب المالك بالضبط */}
 
           {/* ✨ [glasscard] بانل الزجاج — mockup hover (ديسكتوب برك):
               كيطلع من لتحت .4s ease-in + blur 15px + دخول متدرج
@@ -331,9 +331,9 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
               داخل الـ well (overflow-hidden كيقصّو وهو مخبي للتحت).
               الأزرار داخل الـ Link = نفس نمط HeroSection (preventDefault
               في openQV/handleAddToCart كيمنع التنقل المزدوج) */}
+          {/* GOOGLE-GRID v6 — البانل ولّى أيقونتين عائمين برك (بلا نصوص:
+              العنوان والقسم عايشين تحت البلاطة) — نفس الربط والأنيميشن */}
           <div className="pc-glass">
-            <p className="pc-gtitle">{product.title}</p>
-            {catLine && <p className="pc-gcat">{catLine}</p>}
             <div className="pc-gicons">
               <span className="pc-gslot" style={{ '--i': 0 } as React.CSSProperties}>
                 <button
@@ -374,32 +374,28 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
           </div>
         </div>
 
-        {/* ✨ [homecard] الجسم — سطر القسم + صف السعر (بلا نجوم: الـ API ما فيهش rating)
-            ✨ [glasscard] pc-body/pc-bodycat = تنفس سفلي + اخفاء القسم في الديسكتوب
-            (ولّى في البانل الزجاجي) — السعر باقي ظاهر دايماً */}
-        <div className="pc-body px-3 pt-2.5 pb-0.5">
-          {catLine && (
-            <p className="pc-bodycat text-[9.5px] text-temu-gray-text font-semibold tracking-[0.02em] truncate">
-              {catLine}
-            </p>
-          )}
+        {/* GOOGLE-GRID v6 — المعلومات تحت البلاطة كيما نتائج صور Google:
+            العنوان (سطرين) + سطر المصدر والسعر. قواعد الثقة كما هي:
+            FIX-ZERO (بلا سعر = بلا صف) + TRUST (خصم حقيقي 1-89% برك) */}
+        <div className="pc-info px-0.5 pt-2 pb-1 min-w-0">
+          <h3 className="pc-title text-[13px] leading-[1.45] font-medium line-clamp-2">
+            {product.title}
+          </h3>
 
-          {/* 🩹 FIX-ZERO — بلا سعر حقيقي ما كاينش "$0.00" */}
           {safePrice > 0 && (
-            <div className="flex items-baseline gap-1.5 flex-wrap mt-1">
-              <span className="text-[15.5px] font-black text-temu-black leading-none">
-                ${safePrice.toFixed(2)}
-              </span>
+            <div className="pc-meta flex items-center gap-1.5 mt-1.5 text-[11.5px] leading-none min-w-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              <span className="pc-source font-semibold shrink-0">Laclarc</span>
+              <span className="pc-sep" aria-hidden="true">&middot;</span>
+              <span className="pc-price font-semibold">${safePrice.toFixed(2)}</span>
               {displayOriginalPrice > safePrice && (
-                <span className="text-[10px] text-temu-gray-light line-through font-medium">
-                  ${displayOriginalPrice.toFixed(2)}
-                </span>
+                <span className="pc-orig line-through">${displayOriginalPrice.toFixed(2)}</span>
               )}
-              {discountText && (
-                <span className="text-[9px] font-black px-2 py-[3px] rounded-full bg-coral-500/15 text-coral-600 leading-none">
-                  {discountText}
-                </span>
-              )}
+              {discountText && <span className="pc-disc">{discountText}</span>}
             </div>
           )}
         </div>
@@ -427,7 +423,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
           ✨ [homecard] حلقة الاختيار = نمط mockup (2px أبيض + 4px fog-500) */}
       {hasSwatches && (
         <div
-          className="pc-swatches px-3 pt-1.5 pb-1 flex items-center gap-1.5 flex-wrap"
+          className="pc-swatches px-0.5 pt-1.5 pb-1 flex items-center gap-1.5 flex-wrap"
           onMouseLeave={() => setSwHover(-1)}
         >
           {swList.map((s, idx) => (
@@ -477,7 +473,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
           type="button"
           onClick={handleAddToCart}
           aria-live="polite"
-          className={`h-[34px] flex-[1.35] rounded-full text-white text-[10.5px] font-extrabold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 ${
+          className={`pc-pill-add h-[34px] flex-[1.35] rounded-full text-white text-[10.5px] font-extrabold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 ${
             isAdded ? 'bg-maroccan-tea-600' : 'bg-temu-black'
           }`}
         >
@@ -493,7 +489,7 @@ export default function ProductCard({ product, isTouched, eager = false, masonry
           type="button"
           onClick={openQV}
           aria-haspopup="dialog"
-          className="h-[34px] flex-1 rounded-full border border-temu-gray-border bg-white text-temu-gray-text text-[10.5px] font-bold flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-95 hover:border-temu-gray-light hover:text-temu-black"
+          className="pc-pill-qv h-[34px] flex-1 rounded-full border border-temu-gray-border bg-white text-temu-gray-text text-[10.5px] font-bold flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-95 hover:border-temu-gray-light hover:text-temu-black"
         >
           Quick View
         </button>

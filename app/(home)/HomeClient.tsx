@@ -431,7 +431,11 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* 6. شبكة المنتجات */}
+        {/* 6. شبكة المنتجات — GOOGLE-GRID v6.1 LIGHT: masonry كيشبه نتائج
+            صور Google (الصورة المرجعية تاع المالك) بصح على خلفية الموقع
+            الفاتحة — طلب المالك: «نحوس كلش فاتح، خليها فاتحة نفس لون
+            الموقع نتاعي» — بلا لوح غامق: الكروت يجلسو نيشان على خلفية
+            الهوم (نفس كيما categories/favorites/all-products) */}
         <div className="mb-4">
           {/* 🩹 v5.1 — خطأ أول الصفحة (قاتل) — retry داخلي بلا reload */}
           {!loading && feed.error && (
@@ -452,7 +456,7 @@ function HomeContent() {
             </div>
           ) : displayProducts.length > 0 ? (
             <div
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4"
               onTouchMove={(e) => {
                 const touch = e.touches[0];
                 if (touch) {
