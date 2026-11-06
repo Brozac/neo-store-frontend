@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { isCategoryHidden } from '@/lib/siteConfig';
+import { getServerVisibility } from '@/lib/visibilityServer';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
@@ -22,7 +24,20 @@ export async function GET(
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const products = Array.isArray(data?.products) ? data.products : [];
+    let products = Array.isArray(data?.products) ? data.products : [];
+
+    // ═══ v28 [total-vanish] — منتجات الأقسام المخفية ما كيتفهرسوش ═══
+    // (الطلب: المخفي = «كانها غير موجود») — يختاج category في minimal=1
+    // ديال الباك (KIT v28). إلا الباك قديم (بلا category) → الفلترة كتتخطى
+    // بأمان (fail-open) حتى يتحدث الباك.
+    const vis = await getServerVisibility();
+    if (vis.branches['products'] === false) {
+      products = []; // فرع صفحات المنتوجات كامل مخفي (dangerous branch)
+    } else if (vis.hiddenCategories.length > 0) {
+      products = products.filter(
+        (p: any) => !p?.category || !isCategoryHidden(p.category, vis.hiddenCategories)
+      );
+    }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

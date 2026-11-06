@@ -65,9 +65,18 @@ export function UnavailablePanel({ branch, refLabel }: { branch?: BranchId; refL
   );
 }
 
-export default function SiteConfigProvider({ children }: { children: React.ReactNode }) {
-  const [cfg, setCfg] = useState<SiteVisibilityConfig | null>(null);
-  const [ready, setReady] = useState(false);
+export default function SiteConfigProvider({
+  children,
+  initialCfg,
+}: {
+  children: React.ReactNode;
+  // 🆓 v28 [total-vanish] — الكونفيگ السيرفري من layout: أول render (SSR)
+  // كيخدم به → الأقسام/الفروع المخفية ما كيبانوش حتى في الـ HTML الأول.
+  // من بعد الـ fetch الكلاينتي كيبقى خدّام (تحديث ≤ 60s + برودكاست الأدمن).
+  initialCfg?: SiteVisibilityConfig | null;
+}) {
+  const [cfg, setCfg] = useState<SiteVisibilityConfig | null>(initialCfg ?? null);
+  const [ready, setReady] = useState<boolean>(Boolean(initialCfg));
 
   const load = useCallback(async (force = false) => {
     try {

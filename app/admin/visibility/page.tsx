@@ -178,7 +178,16 @@ export default function VisibilityControlPage() {
       // الحقيقة المعروضة = اللي تخزن فعلًا
       setCfg(draft);
       clearSiteConfigCache(); // التابات المفتوحة تجيب النسخة الجديدة فورًا
-      setMessage('✅ Saved to the database — visitors see changes within ~1 minute.');
+
+      // 🆓 v28 [total-vanish] — تفريغ كاش السيرفر (وسم visibility):
+      // الـ layout/sitemaps/hub كيقراو من كاش مُوَسْم — بلا هاد الخطوة
+      // الصفحات الثابتة كانت كتبقى بالـ HTML القديم حتى revalidate اليومي.
+      // best-effort: حتى إلا فشل، الكلاينت كيتحدث ≤ 60s والكاش اليومي يطيح.
+      try {
+        await fetch('/api/visibility-revalidate', { method: 'POST' });
+      } catch { /* best-effort */ }
+
+      setMessage('✅ Saved to the database — pages regenerate instantly, everything hidden is really gone.');
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 403) { router.push('/admin/login'); return; }

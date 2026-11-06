@@ -3,6 +3,7 @@ import { Providers } from './providers';
 import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 import { Marcellus } from 'next/font/google';
+import { getServerVisibility } from '@/lib/visibilityServer';
 
 // ✨ SERENE V2 — خط البراند Marcellus (mockup .brandname/.brandtag)
 // next/font = self-hosted في البناء — بلا FOUT وبلا طلب خارجي وقت التشغيل
@@ -84,18 +85,25 @@ export const viewport: Viewport = {
   themeColor: '#5B7EA6',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // 🆓 v28 [total-vanish] — القراءة السيرفرية لكونفيگ الظهور:
+  // الـ SSR كيخرج من أول HTML بلا الأقسام المخفية (بلا فلاش، بلا SEO)،
+  // والفروع المخفية كيصدهم الـ middleware بـ 404 حقيقية قبل أي render.
+  // كاش مُوسم visibility — الحفظ الإداري كيفرّغو فوراً عبر
+  // /api/visibility-revalidate. فشل؟ → fail-open (كلشي ظاهر).
+  const visibility = await getServerVisibility();
+
   return (
     <html lang="en" className={`scroll-smooth ${marcellus.variable}`}>
       <body className="bg-temu-offwhite font-sans antialiased text-gray-900" suppressHydrationWarning>
 
         {/* ✨ JSON-LD Structured Data (FIX-ESCAPE مطبق) */}
 
-        <Providers>
+        <Providers initialCfg={visibility}>
           {children}
         </Providers>
 

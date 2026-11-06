@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { isCategoryHidden } from '@/lib/siteConfig';
+import { getServerVisibility } from '@/lib/visibilityServer';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
@@ -43,6 +45,17 @@ export async function GET() {
     }
   } catch {
     // fail → urlset خاوي (الفهرس يبقى صالح)
+  }
+
+  // ═══ v28 [total-vanish] — الأقسام المخفية ما كيتفهرسوش ═══
+  // (الطلب: المخفي = «كانها غير موجود») — الصفحات كيصدهم الـ middleware
+  // بـ 404، فهنا كنحيدهم من الـ sitemap حتى جوجل ما يحاولش يفهرس ميت.
+  // fail-open: فشل القراءة = الفلترة مبيعاش (كلشي كيبقى كما كان).
+  const vis = await getServerVisibility();
+  if (vis.branches['category'] === false) {
+    paths = []; // فرع صفحات الأقسام كامل مخفي
+  } else if (vis.hiddenCategories.length > 0) {
+    paths = paths.filter((p) => !isCategoryHidden(p, vis.hiddenCategories));
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

@@ -18,8 +18,8 @@ import Link from 'next/link';
 import CategoriesClient from './CategoriesClient';
 import CategoriesJsonLd from './CategoriesJsonLd';
 import { fetchCategoriesHub, type HubNode } from '@/lib/categoriesHub';
-import { getStoredSiteConfig } from '@/lib/siteConfigStore';
-import { sanitizeConfig, isCategoryHidden } from '@/lib/siteConfig';
+import { getServerVisibility } from '@/lib/visibilityServer';
+import { isCategoryHidden } from '@/lib/siteConfig';
 
 // ISR — الأقسام كيتبدلو نادراً؛ 6 سوايع = توازن بين الطزاجة وحمل Render
 export const revalidate = 21600;
@@ -113,11 +113,11 @@ export default async function CategoriesPage() {
     return <CategoriesClient />;
   }
 
-  // 👁️ F#93 — الأقسام المخفية من الكونفيگ — الفايلة fail-open (فشل قراءة = كلشي ظاهر)
-  let hiddenCats: string[] = [];
-  try {
-    hiddenCats = sanitizeConfig(await getStoredSiteConfig())?.hiddenCategories ?? [];
-  } catch { hiddenCats = []; }
+  // 👁️ F#93 + 🆓 v28 [total-vanish] — الأقسام المخفية من **الباكند** (مصدر الحقيقة).
+  // كان كيقرا من KV القديم اللي توفى مع v27 (ال저장 ولّى في store_settings)
+  // → الفلترة هنا كانت ميتة. دابا نفس مصدر الكلاينت، والنتيجة كتبان في
+  // أول HTML (SSR) — fail-open: فشل القراءة = كلشي ظاهر.
+  const hiddenCats: string[] = (await getServerVisibility()).hiddenCategories;
   const pruneCats = (nodes: HubNode[]): HubNode[] =>
     nodes
       .filter(n => !isCategoryHidden(n.slugPath, hiddenCats))

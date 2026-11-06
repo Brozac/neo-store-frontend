@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { CartProvider } from './context/CartContext';
 import { useSiteConfig } from './components/SiteConfigProvider';
 import SiteConfigProvider, { UnavailablePanel } from './components/SiteConfigProvider';
-import { matchHiddenBranch } from '@/lib/siteConfig';
+import { matchHiddenBranch, type SiteVisibilityConfig } from '@/lib/siteConfig';
 import CartWidget from './components/CartWidget';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -26,7 +26,15 @@ const FloatingSupport = dynamic(() => import('./components/floating/FloatingSupp
 const SpinWheel = dynamic(() => import('./components/SpinWheel'), { ssr: false });
 
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialCfg,
+}: {
+  children: React.ReactNode;
+  // 🆓 v28 [total-vanish] — الكونفيگ السيرفري (من layout): الـ SSR كيخرج
+  // بالحكم الصحيح من أول paint (الأقسام المخفية ما كينولدوش أصلاً في HTML)
+  initialCfg?: SiteVisibilityConfig | null;
+}) {
   const pathname = usePathname();
 
   const isAdminRoute = pathname?.startsWith('/admin');
@@ -54,7 +62,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <SiteConfigProvider>
+    <SiteConfigProvider initialCfg={initialCfg}>
       <CartProvider>
         <StorefrontVisibilityGate isAdminRoute={!!isAdminRoute}>
           {/* ✨ التقاط UTM */}
