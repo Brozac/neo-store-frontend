@@ -100,14 +100,23 @@ async function getRelatedProducts(id: string) {
   }
 }
 
+// ✨ SEO-BLURB (v2.3 — طلب المالك 2026-11-07): الوصف القديم كان كيبدا بـ
+// "Product information:Material:ABS..." (مواصفات خام مقطوعة) — قبيح فنتائج البحث.
+// الجديد: جملة نظيفة دايماً — {title} | Free Worldwide Express Shipping from
+// Laclarc — secure checkout, fast delivery.  (مولّد واحد لميتا + OG + JSON-LD)
+function seoBlurb(title: unknown, max: number): string {
+  const t = String(title || 'This product').replace(/\s+/g, ' ').trim() || 'This product';
+  return `${t} | Free Worldwide Express Shipping from Laclarc — secure checkout, fast delivery.`.substring(0, max);
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(id);
 
   if (!product) return { title: 'Product Not Found | Laclarc' };
 
-  // ✨ FIX-OGWS (v2.2): تطبيع whitespace قبل substring — الأوصاف متعددة الأسطر ما كياكلوش الميزانية
-  const cleanDescription = product.description?.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 160) || 'Buy premium quality products at Laclarc Store with Worldwide Shipping.';
+  // ✨ SEO-BLURB (v2.3): الجملة النظيفة (≤160) — seo_meta_description تبقى الأولوية
+  const cleanDescription = seoBlurb(product.title, 160);
   const primaryImage = httpsify(product.image_url || product.image || `${SITE_URL}/icon-512.png`);
 
   return {
@@ -167,9 +176,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   //    جوجل كيعاقب review markup بلا مراجعات معروضة — manual action محتمل على الموقع كامل.
   //    الترقية الحقيقية (Backlog): aggregate من /api/reviews server-side — يتضمن فقط
   //    إلا كانت مراجعات حقيقية معروضة فنفس الـ ISR render.
-  // ✨ FIX-OGWS (v2.2): نفس التطبيع للـ JSON-LD description
-  const cleanDesc = product.description?.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().substring(0, 200)
-    || 'Buy premium quality products at Laclarc with FREE Worldwide Shipping.';
+  // ✨ SEO-BLURB (v2.3): نفس الجملة النظيفة للـ JSON-LD (≤200)
+  const cleanDesc = seoBlurb(product.title, 200);
   const gallery: string[] = Array.isArray(product.images)
     ? product.images.filter((i: unknown): i is string => typeof i === 'string' && i.length > 0)
     : [];
