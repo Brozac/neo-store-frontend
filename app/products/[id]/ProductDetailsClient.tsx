@@ -7,13 +7,12 @@ import dynamic from 'next/dynamic';                                    // 🆕 P
 import { useCart } from '../../context/CartContext';
 import CountdownTimer from '../../components/CountdownTimer';
 import BuyButton from '../../components/BuyButton';
-import TiltCard from '../../components/TiltCard';
+// TiltCard (3D tilt) تحيّد من هنا — طلب المالك: «الغي تاثير 3d tilt» فقسم You May Also Like
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { useSiteConfig, UnavailablePanel } from '../../components/SiteConfigProvider';
-import { isCategoryHidden } from '@/lib/siteConfig';
+import './pd.css'; // 📱 Task 17 — SERENE product mockup (mobile) — كلاسات pd-* معزولة بالكامل
 
 // ════════════════════════════════════════════════════════════════
 // ProductDetailsClient v1.1 — مراجعة عميقة سطر بسطر (Task 9)
@@ -126,10 +125,7 @@ export default function ProductDetailsClient({
   relatedProducts: Product[];
 }) {
   const router = useRouter();
-  const { addToCart } = useCart();
-
-  // 👁️ F#93 — كونفيگ الظهور (fail-open) — القسم المخفي كيحجب صفحة المنتج
-  const { cfg: siteCfg, ready: siteCfgReady } = useSiteConfig();
+  const { addToCart, totalItemsCount, isMounted } = useCart(); // 🆕 IMMERSIVE — badge السلة الزاجاج فوق المعرض
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
@@ -189,9 +185,23 @@ export default function ProductDetailsClient({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
+  // 🆕 REVIEWS LIGHTBOX (Task 24) — صور المشترين كينبثقو فنافذة داخل الموقع
+  // (كانت كتفتح فتاب جديد) — سكرول/سوايب/أسهم بين صور المشترين كاملين
+  const [revLightbox, setRevLightbox] = useState<{ photos: string[]; index: number } | null>(null);
+  const revTouchX = useRef(0);
+
+  // 📱 Task 17 — الأكورديونات تاع الموبايل (mockup: أول واحدة مفتوحة دايماً)
+  const [openAcc, setOpenAcc] = useState<string | null>('details');
+  const sizeAccRef = useRef<HTMLDivElement>(null);
+  const openSizeGuide = () => {
+    setOpenAcc('size');
+    setTimeout(() => sizeAccRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+  };
+
   const touchStartX = useRef(0);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
   const mainCtaRef = useRef<HTMLDivElement>(null);
+  const mobileCtaRef = useRef<HTMLDivElement>(null); // 📱 Task 17 — هدف الموبايل (الديسكتوب مخفي display:none → IO ما يخدمش عليه)
 
   const defaultImage = '/icon-512.png';
 
@@ -349,8 +359,10 @@ export default function ProductDetailsClient({
   }, [product.id, API_BASE_URL]);
 
   useEffect(() => {
-    const target = mainCtaRef.current;
-    if (!target) return;
+    // 📱 Task 17: نراقبو زوج الأهداف — ديابا الكتلة الديسكتوب display:none فالموبايل،
+    // والكتلة الموبايل display:none فالديسكتوب — اللي يبان هو اللي يقدّر الإشارة
+    const targets = [mainCtaRef.current, mobileCtaRef.current].filter(Boolean) as HTMLElement[];
+    if (targets.length === 0) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -359,7 +371,7 @@ export default function ProductDetailsClient({
       { threshold: 0.1 }
     );
 
-    observer.observe(target);
+    targets.forEach(t => observer.observe(t));
     return () => observer.disconnect();
   }, []);
 
@@ -430,19 +442,329 @@ export default function ProductDetailsClient({
 
   const isCurrentProductFavorited = favoriteIds.includes(String(product.id));
 
-  // 👁️ F#93 — قسم المنتج مخفي → لوحة "غير متاح مؤقتاً" (كل الـ hooks دازت قبل)
-  if (siteCfgReady && isCategoryHidden((product as any)?.category, siteCfg?.hiddenCategories)) {
-    return <UnavailablePanel refLabel={String((product as any)?.category || 'category')} />;
-  }
-
   const detailBullets: string[] = [];
   if (product.material) detailBullets.push(`Material: ${product.material}`);
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
   if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
   if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
+
+  // ═══ 🆕 REVIEWS LIGHTBOX (Task 24) ═══
+  // صور المشترين كاملين من المراجعات المعروضة (flat list) + بداية كل مراجعة
+  const revPhotoIdx = useMemo(() => {
+    const list: string[] = [];
+    const starts = new Map<string, number>();
+    shownReviews.forEach((r) => {
+      if (Array.isArray(r.images)) {
+        r.images.forEach((u, i) => {
+          starts.set(`${r.id}:${i}`, list.length);
+          list.push(u);
+        });
+      }
+    });
+    return { list, starts };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviews, visibleReviews, starFilter]);
+
+  const revNav = (dir: 1 | -1) =>
+    setRevLightbox((l) => (l ? { photos: l.photos, index: (l.index + dir + l.photos.length) % l.photos.length } : l));
+
+  // سوايب أفقي داخل النافذة (موبايل) — handlers مستقلين على المعرض الرئيسي
+  const handleRevTouchStart = (e: React.TouchEvent) => { revTouchX.current = e.touches[0].clientX; };
+  const handleRevTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - revTouchX.current;
+    if (Math.abs(dx) > 48) revNav(dx < 0 ? 1 : -1);
+  };
+
+  // 🔒 body scroll lock + كيبورد (سهم يمين/يسار · Escape) ملي النافذة محلولة
+  useEffect(() => {
+    if (!revLightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRevLightbox(null);
+      else if (e.key === 'ArrowRight') revNav(1);
+      else if (e.key === 'ArrowLeft') revNav(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revLightbox !== null]);
+
   return (
-    <main className="min-h-screen bg-temu-offwhite pb-32 font-sans">
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
+    <main className="min-h-screen bg-temu-offwhite pb-48 font-sans">
+
+      {/* ══════════════════════════════════════════════════════════
+          📱 MOBILE — SERENE mockup port (Task 17 «ديرو في الهاتف يبان كيما هاك»)
+          float-head زاجاج + معرض كينزلق + شيت أبيض بـ -26px + أكورديونات
+          الكلاسات pd-* من pd.css — نفس القيم الحيّة (fog-500 #5b7ea6 …)
+          🆕 IMMERSIVE (Task 23) — pd-immersive: المنتج كامل من فوق الصفحة
+             في بلاصة الـ navbar وشريط الثقة (موبايل برك — التفاصيل فـ pd.css)
+          ══════════════════════════════════════════════════════════ */}
+      <div className="md:hidden pd-scope pd-immersive pb-10">
+        <div className="max-w-[560px] mx-auto">
+
+          {/* المعرض — سلايدر كامل بلا إطار */}
+          <div
+            className="pd-gallery touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* float head: رجوع + (فيديو) + قلب — زجاج 38px */}
+            <div className="pd-float">
+              <div className="pd-float-side">
+                <button type="button" onClick={() => router.back()} className="pd-gbtn" aria-label="Back">
+                  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+              </div>
+              <div className="pd-float-side">
+                {product.video_url && (
+                  <button type="button" onClick={() => setShowVideo(v => !v)} className="pd-gbtn" aria-label="Product video">
+                    <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8" strokeLinejoin="round"></polygon></svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleToggleFavorite(product.id)}
+                  className={`pd-gbtn ${isCurrentProductFavorited ? 'on' : ''}`}
+                  aria-label="Save to Wishlist"
+                >
+                  <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                </button>
+                {/* 🆕 IMMERSIVE — سلة زاجاج بـ badge (نفس mockup الحقيبة):
+                    الـ navbar مخفي فالموبايل → السلة دايماً في متناول اليد */}
+                <Link href="/cart" className="pd-gbtn pd-gcart" aria-label="Shopping Cart" title="Shopping Cart">
+                  <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                  {isMounted && totalItemsCount > 0 && (
+                    <span className="pd-gbadge">{totalItemsCount > 99 ? '99+' : totalItemsCount}</span>
+                  )}
+                </Link>
+              </div>
+            </div>
+
+            {/* المسار المنزلق — نفس انتقال mockup cubic-bezier(.22,.8,.28,1)
+                🩹 Task 26 — تحياد التدرجات الزرقاء inline (كانت هي «الصندوق الأبيض»:
+                صورة بخلفية بيضاء فوق تدرج أزرق = مربع أبيض عائم) — الخلفية البيضاء
+                المدمجة جاية من pd.css (.pd-slide{background:#fff}) والصورة contain كامل */}
+            <div
+              className="pd-track"
+              style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              onClick={() => { if (!showVideo) { setIsLightboxOpen(true); setIsZoomed(false); } }}
+            >
+              {showVideo && product.video_url ? (
+                <div className="pd-slide vid">
+                  <video src={product.video_url} controls autoPlay playsInline />
+                </div>
+              ) : (
+                galleryImages.map((img, idx) => (
+                  <div key={idx} className="pd-slide">
+                    <img
+                      src={IMG.detail(img)}
+                      srcSet={`${IMG.card(img)} 400w, ${IMG.detail(img)} 800w`}
+                      sizes="100vw"
+                      fetchPriority={idx === 0 ? 'high' : undefined}
+                      loading={idx === 0 ? undefined : 'lazy'}
+                      decoding="async"
+                      alt={product.title}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* النقاط — النشطة تتفرد وطويلة بيضاء (mockup gdots) */}
+            {!showVideo && galleryImages.length > 1 && (
+              <div className="pd-dots">
+                {galleryImages.map((_, idx) => (
+                  <i key={idx} className={currentImageIndex === idx ? 'on' : ''} onClick={() => setCurrentImageIndex(idx)} />
+                ))}
+              </div>
+            )}
+
+            {/* 🆕 IMMERSIVE — عداد «1/5» يمين تحت (نفس mockup الحقيبة) */}
+            {!showVideo && galleryImages.length > 1 && (
+              <div className="pd-count">{currentImageIndex + 1}/{galleryImages.length}</div>
+            )}
+          </div>
+
+          {/* الشيت الأبيض اللي يركب على المعرض بـ -26px */}
+          <div className="pd-sheet">
+            <div className="pd-toprow">
+              <span className="pd-brand">LACLARC</span>
+              <span className="pd-sku">REF-{product.id}</span>
+            </div>
+
+            <h1 className="pd-title">{product.title}</h1>
+
+            <div className="pd-meta">
+              {reviews.length > 0 ? (
+                <>
+                  <span className="pd-stars">
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                  </span>
+                  <span>({realTotal} verified rating{realTotal !== 1 ? 's' : ''})</span>
+                </>
+              ) : (
+                <span>New in catalog — be the first to review</span>
+              )}
+            </div>
+
+            <div className="pd-pricerow">
+              <b>${safePrice.toFixed(2)}</b>
+              {safeOriginalPrice > safePrice && (
+                <>
+                  <s>${safeOriginalPrice.toFixed(2)}</s>
+                  <span className="pd-off">-{discountPct}%</span>
+                </>
+              )}
+            </div>
+
+            {/* 🩹 TRUST — الكاونتر فقط للعروض الممولة الحقيقية */}
+            {product.is_sourced === true && <div className="mt-3"><CountdownTimer /></div>}
+
+            {/* الألوان — محرك الفاريانت الحقيقي (نفس منطق الديسكتوب) */}
+            {variantEngine.groups.length > 1 && (
+              <div className="pd-opt">
+                <p>Color: <b>{selectedGroup?.name}</b></p>
+                <div className="pd-swatches">
+                  {variantEngine.groups.map((g) => (
+                    <button
+                      key={g.name}
+                      type="button"
+                      onClick={() => setSelectedColorName(g.name)}
+                      title={g.name}
+                      aria-label={`Color ${g.name}`}
+                      aria-pressed={selectedGroup?.name === g.name}
+                      className={`pd-swatch ${selectedGroup?.name === g.name ? 'on' : ''}`}
+                    >
+                      {g.image ? (
+                        <img src={IMG.thumb(g.image)} alt={g.name} loading="lazy" decoding="async" />
+                      ) : (
+                        <i style={{ backgroundColor: getColorHex(g.hex || g.name) }}></i>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* fallback قديم — دوائر hex بلا variants صالحين */}
+            {variantEngine.groups.length <= 1 && product.colors && product.colors.length > 0 && (
+              <div className="pd-opt">
+                <p>Color: <b>{selectedColorName || product.colors[0]}</b></p>
+                <div className="pd-swatches">
+                  {product.colors.map((col, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedColorName(col)}
+                      aria-label={`Color ${col}`}
+                      aria-pressed={selectedColorName === col}
+                      className={`pd-swatch ${selectedColorName === col ? 'on' : ''}`}
+                    >
+                      <i style={{ backgroundColor: getColorHex(col) }}></i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* المقاسات — شيبات mockup + دليل المقاسات يهز الأكورديون */}
+            {availableSizes.length > 0 && (
+              <div className="pd-opt">
+                <p>Size: <b>{effectiveSize}</b></p>
+                <div className="pd-sizes">
+                  {availableSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSelectedSize(sz)}
+                      className={`pd-size ${effectiveSize === sz ? 'on' : ''}`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={openSizeGuide} className="mt-2.5 text-[11px] font-bold text-temu-orange cursor-pointer">
+                  Size Guide ↗
+                </button>
+              </div>
+            )}
+
+            {/* الكمية — ستيبر حبة (1..9) كيما mockup */}
+            <div className="pd-qtyrow">
+              <p>Quantity</p>
+              <div className="pd-stepper">
+                <button type="button" onClick={() => setQuantity(q => Math.max(1, q - 1))} aria-label="Decrease quantity">−</button>
+                <b>{quantity}</b>
+                <button type="button" onClick={() => setQuantity(q => Math.min(9, q + 1))} aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+
+            {/* Buy Now المباشر — نفس الـ PaymentModal (الإيراد محفوظ) */}
+            <div className="mt-3" ref={mobileCtaRef}>
+              <BuyButton
+                product={{
+                  id: product.id,
+                  title: product.title,
+                  name: product.title,
+                  price: safePrice,
+                  image: mainImageSrc,
+                  color: selectedGroup?.name || selectedColorName || '',
+                  size: effectiveSize || '',
+                  quantity: quantity,
+                  vid: matchedVariant?.vid || ''
+                }}
+              />
+            </div>
+
+            <div className="mt-3">
+              <DeliveryEstimator productId={product.id} />
+            </div>
+
+            {/* الثقة الحقيقية */}
+            <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] font-semibold" style={{ color: 'var(--ink-soft)' }}>
+              <div className="flex flex-col items-center gap-1"><GlobeShippingIcon size={16} active /> Free Shipping</div>
+              <div className="flex flex-col items-center gap-1"><ReturnsIcon size={16} active /> 30-Day Guarantee</div>
+              <div className="flex flex-col items-center gap-1"><LockIcon size={16} active /> Secure Checkout</div>
+            </div>
+
+            {/* الأكورديونات — mockup: أول وحدة مفتوحة + شيفرونة تلف */}
+            {[
+              { key: 'details', label: 'Details', body: (
+                <>
+                  <p>{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
+                  {detailBullets.length > 0 && <ul>{detailBullets.map((b, i) => <li key={i}>{b}</li>)}</ul>}
+                </>
+              )},
+              { key: 'materials', label: 'Materials', body: <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p> },
+              { key: 'size', label: 'Size & Fit', body: <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p> },
+              { key: 'shipping', label: 'Shipping & Returns', body: (
+                <>
+                  <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
+                  <p style={{ fontSize: 11, marginTop: 4, opacity: .85 }}>Typical transit time: 7–15 business days depending on destination country.</p>
+                </>
+              )},
+            ].map(acc => (
+              <div key={acc.key} ref={acc.key === 'size' ? sizeAccRef : undefined} className={`pd-acc ${openAcc === acc.key ? 'open' : ''}`}>
+                <button type="button" className="pd-acc-head" onClick={() => setOpenAcc(o => o === acc.key ? null : acc.key)}>
+                  {acc.label}
+                  <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div className="pd-acc-body"><div className="pd-acc-inner">{acc.body}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════
+          🖥️ DESKTOP — نفس التصميم المعتمد (REPLICA v3/v4/v5) بلا أي تبدال
+          ══════════════════════════════════════════════════════════ */}
+      <div className="hidden md:block max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-12">
 
         {/* Breadcrumbs */}
         <div className="flex flex-col gap-2 mb-6">
@@ -554,7 +876,7 @@ export default function ProductDetailsClient({
                     onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
-                        ? 'border-[#5F8271] shadow-md ring-2 ring-[#5F8271]/30 scale-95'
+                        ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
@@ -716,13 +1038,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 1
-                        ? 'border-[#5F8271] bg-serene-mint/70 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#5F8271] bg-[#5F8271]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -734,36 +1056,36 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 2
-                        ? 'border-[#5F8271] bg-serene-mint/70 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#5F8271]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#5F8271] bg-[#5F8271]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-[#6B3DB4]">Duo</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 2 Units</span>
-                    <span className="text-sm font-black text-[#C86F4E] mt-1">${(safePrice * 2).toFixed(2)}</span>
+                    <span className="text-sm font-black text-coral-600 mt-1">${(safePrice * 2).toFixed(2)}</span>
                   </div>
 
                   <div
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity >= 3
-                        ? 'border-[#5F8271] bg-serene-mint/70 shadow-sm'
+                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-emerald-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#5F8271] bg-[#5F8271]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-gray-600">Buy 3 Units</span>
-                    <span className="text-sm font-black text-emerald-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
+                    <span className="text-sm font-black text-maroccan-tea-600 mt-1">${(safePrice * 3).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -774,7 +1096,7 @@ export default function ProductDetailsClient({
                   onClick={handleAddToCart}
                   className={`flex-1 text-white font-black py-4 px-6 rounded-temu-sm transition flex items-center justify-center gap-3 text-base cursor-pointer active:scale-95 shadow-lg ${
                     mainAdded
-                      ? 'bg-emerald-600 shadow-emerald-600/20'
+                      ? 'bg-maroccan-tea-600 shadow-maroccan-tea-600/20'
                       : 'bg-temu-orange hover:bg-temu-orange-bright shadow-temu-orange/20'
                   }`}
                 >
@@ -875,6 +1197,12 @@ export default function ProductDetailsClient({
             )}
           </div>
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════
+          🔄 SHARED — FBT + مقترحات + المراجعات (زوج المستويات — كلاسات pd-scope للمراجعات)
+          ══════════════════════════════════════════════════════════ */}
+      <div className="pd-scope max-w-6xl mx-auto px-4 md:px-8 pb-6 space-y-12">
 
         {relatedProducts.length > 0 && (
           <FrequentlyBoughtTogether
@@ -883,29 +1211,29 @@ export default function ProductDetailsClient({
           />
         )}
 
-        {/* You May Also Like */}
+        {/* You May Also Like — كروت ثابتة بلا 3D tilt (طلب المالك 2026-11-07):
+            الغلاف TiltCard (rotate3d + scale + glow + ظل أزرق) تحيّد —
+            الكارت كيبقى عادي بحدودو + active:scale-95 */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
             <h2 className="text-lg font-black text-temu-black mb-6">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {relatedProducts.map((p) => (
-                <TiltCard key={p.id}>
-                  <Link href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
-                    <div className="relative aspect-square overflow-hidden bg-gray-50">
-                      <img
-                        src={IMG.card(p.image_url || p.image || defaultImage)}
-                        alt={p.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-contain p-2 transition group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="p-3 pt-2 flex flex-col justify-between flex-1">
-                      <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
-                      <p className="text-temu-error font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
-                    </div>
-                  </Link>
-                </TiltCard>
+                <Link key={p.id} href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
+                  <div className="relative aspect-square overflow-hidden bg-gray-50">
+                    <img
+                      src={IMG.card(p.image_url || p.image || defaultImage)}
+                      alt={p.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-contain p-2 transition group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-3 pt-2 flex flex-col justify-between flex-1">
+                    <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1 group-hover:text-temu-orange">{p.title}</h3>
+                    <p className="text-temu-error font-extrabold text-sm">${parsePrice(p.price).toFixed(2)}</p>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -926,8 +1254,8 @@ export default function ProductDetailsClient({
               <button
                 onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
                 className={starFilter === 0
-                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#C86F4E] to-[#B85F40] text-white shadow-sm transition-all duration-200'
-                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#C86F4E]/50 hover:text-[#C86F4E] transition-all duration-200'}
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
               >
                 All ({realTotal})
               </button>
@@ -936,8 +1264,8 @@ export default function ProductDetailsClient({
                   key={s}
                   onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
                   className={starFilter === s
-                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#C86F4E] to-[#B85F40] text-white shadow-sm transition-all duration-200'
-                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#C86F4E]/50 hover:text-[#C86F4E] transition-all duration-200'}
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
                 >
                   {s}★ ({starCounts[s]})
                 </button>
@@ -945,38 +1273,80 @@ export default function ProductDetailsClient({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="md:grid md:grid-cols-2 md:gap-4 mb-8">
             {shownReviews.map((rev) => (
-              <div key={rev.id} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
-                  <span className="text-amber-400 text-xs">{'★'.repeat(rev.rating)}</span>
-                </div>
-                <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
+              <div key={rev.id}>
+                {/* 📱 mockup rev — أفاتار دائري fog + نجوم ذهبية + نص 11.5 */}
+                <div className="pd-rev md:hidden">
+                  <div className="pd-rava">{(rev.author || '?').charAt(0).toUpperCase()}</div>
+                  <div className="pd-rmain">
+                    <div className="pd-rname">
+                      {rev.author}
+                      {rev.country ? (
+                        <span style={{ fontWeight: 500, fontSize: 10.5, color: 'var(--ink-soft)' }}> · {rev.country}</span>
+                      ) : null}
+                    </div>
+                    <div className="pd-rstars">{'★'.repeat(Math.round(rev.rating))}</div>
+                    <p className="pd-rtext">{rev.content}</p>
 
-                {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
-                  <div className="flex gap-2 pt-1">
-                    {rev.images.map((photoUrl, pIdx) => (
-                      <div
-                        key={pIdx}
-                        className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
-                        onClick={() => window.open(photoUrl, '_blank', 'noopener,noreferrer')}
-                        title="Click to view full photo"
-                      >
-                        <img
-                          src={IMG.thumb(photoUrl)}
-                          alt="Buyer proof photo"
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
+                    {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
+                      <div className="pd-rphotos">
+                        {rev.images.map((photoUrl, pIdx) => (
+                          <img
+                            key={pIdx}
+                            src={IMG.thumb(photoUrl)}
+                            alt="Buyer proof photo"
+                            loading="lazy"
+                            className="cursor-pointer transition active:scale-90"
+                            title="View photo"
+                            onClick={() => {
+                              const gi = revPhotoIdx.starts.get(`${rev.id}:${pIdx}`);
+                              if (gi !== undefined) setRevLightbox({ photos: revPhotoIdx.list, index: gi });
+                            }}
+                          />
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                <span className="text-[10px] text-gray-400 block font-mono">
-                  {new Date(rev.created_at).toLocaleDateString()}
-                </span>
+                    <span className="pd-rdate">{new Date(rev.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {/* 🖥️ الكارت المعتمد — بلا تبدال */}
+                <div className="hidden md:block p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
+                    <span className="text-butter-up-400 text-xs">{'★'.repeat(rev.rating)}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
+
+                  {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
+                    <div className="flex gap-2 pt-1">
+                      {rev.images.map((photoUrl, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 cursor-pointer hover:scale-105 transition"
+                          onClick={() => {
+                            const gi = revPhotoIdx.starts.get(`${rev.id}:${pIdx}`);
+                            if (gi !== undefined) setRevLightbox({ photos: revPhotoIdx.list, index: gi });
+                          }}
+                          title="Click to view full photo"
+                        >
+                          <img
+                            src={IMG.thumb(photoUrl)}
+                            alt="Buyer proof photo"
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <span className="text-[10px] text-gray-400 block font-mono">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -993,7 +1363,7 @@ export default function ProductDetailsClient({
             <div className="flex flex-col items-center gap-2 mb-8">
               <button
                 onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
-                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#C86F4E] to-[#B85F40] text-white hover:opacity-90 shadow-[0_4px_14px_rgba(200,111,78,0.3)] transition-all duration-300"
+                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(126,86,196,0.3)] transition-all duration-300"
               >
                 Load more reviews ({filteredReviews.length - shownReviews.length} more)
               </button>
@@ -1120,22 +1490,132 @@ export default function ProductDetailsClient({
         </div>
       )}
 
-      {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
+      {/* 🆕 REVIEWS LIGHTBOX (Task 24) — «صور المشترين ينبثقو في نافذة داخل الموقع
+          ونسكرولي بينهم» — كانت كتفتح فتاب جديد (window.open).
+          نفس لغة الـ Lightbox تاع المعرض: عداد + أسهم + سوايب + شريط مصغرات */}
+      {revLightbox && revLightbox.photos.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[200] flex flex-col justify-between p-4 sm:p-6 backdrop-blur-md animate-fade-in select-none"
+          onClick={() => setRevLightbox(null)}
+        >
+          <div className="flex justify-between items-center w-full max-w-6xl mx-auto z-20" onClick={e => e.stopPropagation()}>
+            <div className="bg-white/10 backdrop-blur-md text-white font-mono text-xs px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm">
+              {revLightbox.index + 1} / {revLightbox.photos.length}
+            </div>
 
-      {/* Sticky Buy Bar — 🕊️ Sérénité: pb آمن باش يتفادى GlassDock في الموبايل */}
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-temu-gray-border shadow-[0_-8px_25px_rgba(51,65,58,0.08)] p-3 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] sm:pb-4 transition-all duration-300 transform ${
-          showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
-        }`}
-      >
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <span className="bg-white/10 backdrop-blur-md text-white/80 text-[10px] font-bold px-3 py-1.5 rounded-full border border-white/10 hidden sm:block">
+              Buyer photo — Customer Reviews
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setRevLightbox(null)}
+              className="bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
+              aria-label="Close Photos"
+            >
+              <GlassIcon i="x" size="xs" />
+            </button>
+          </div>
 
           <div
+            className="relative flex-1 w-full max-w-4xl mx-auto flex items-center justify-center overflow-hidden my-2"
+            onClick={e => e.stopPropagation()}
+            onTouchStart={handleRevTouchStart}
+            onTouchEnd={handleRevTouchEnd}
+          >
+            <img
+              key={revLightbox.photos[revLightbox.index]}
+              src={revLightbox.photos[revLightbox.index]}
+              alt="Buyer proof photo"
+              decoding="async"
+              className="max-w-full max-h-full object-contain animate-fade-in"
+              onClick={e => e.stopPropagation()}
+            />
+
+            {revLightbox.photos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); revNav(-1); }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Previous Buyer Photo"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); revNav(1); }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
+                  aria-label="Next Buyer Photo"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* شريط المصغرات — سكرول أفقي، النشطة كتتفرد (نفس أسلوب معرض المنتج) */}
+          <div className="w-full max-w-xl mx-auto z-20 overflow-x-auto scrollbar-hide py-1" onClick={e => e.stopPropagation()}>
+            <div className="flex gap-2 justify-center">
+              {revLightbox.photos.map((p, i) => (
+                <div
+                  key={i}
+                  onClick={() => setRevLightbox({ photos: revLightbox.photos, index: i })}
+                  className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 transition shrink-0 ${
+                    i === revLightbox.index ? 'border-temu-orange scale-105 shadow-md' : 'border-white/20 opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  <img src={IMG.thumb(p)} alt="Thumb" loading="lazy" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🩹 TRUST — LivePurchaseNotification محذوف نهائياً (أسماء/مدن "VERIFIED ORDER" وهمية) */}
+
+      {/* 🎨 REPLICA_V4 — Sticky CTA طبق الأصل من المعاينة
+          🩹 كان bottom-0 و GlassDock (z-40) كيغطي على نص الأزرار في الموبايل —
+          دابا مرفوع فوق الدوك بـ calc(78px + safe-area) مثل #productCta تاع المعاينة
+          🩹 Responsive (Task 27): الدوك تخبى في الديسكتوب (md:hidden) — الشريط يهبط لـ bottom-0 */}
+      <div
+        className={`pd-scope fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-t border-temu-gray-border-light md:shadow-[0_-10px_30px_rgba(23,23,26,0.08)] px-4 pt-3 pb-3 bottom-[calc(78px+env(safe-area-inset-bottom,0px))] md:bottom-0 transition-all duration-300 transform ${
+          showStickyBar ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-6 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="max-w-[560px] md:max-w-6xl mx-auto flex items-center gap-3">
+
+          {/* 📱 mockup CTA — المجموع يسار + زر كبير واحد يمين (pd-cta-price من pd.css) */}
+          <div className="pd-cta-price md:hidden">
+            <small>Total</small>
+            <b>${(safePrice * quantity).toFixed(2)}</b>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              handleAddToCart();
+              setStickyAdded(true);
+              setTimeout(() => setStickyAdded(false), 1200);
+            }}
+            className={`flex-1 md:hidden text-white font-black text-[14px] py-3.5 rounded-2xl transition active:scale-[.97] cursor-pointer shadow-[0_10px_22px_rgba(70,100,138,0.32)] bg-linear-to-r from-fog-600 via-fog-500 to-coral-400 flex items-center justify-center gap-2 ${
+              stickyAdded ? '!bg-linear-to-r !from-maroccan-tea-600 !via-maroccan-tea-600 !to-maroccan-tea-600' : ''
+            }`}
+          >
+            {stickyAdded ? (
+              <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added</span>
+            ) : (
+              'Add to Cart'
+            )}
+          </button>
+
+          {/* ملخص المنتج — ديسكتوب فقط (المعاينة: الموبايل فيه زوز أزرار برك) */}
+          <div
             onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+            className="hidden md:flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
             title="Tap to review choices"
           >
-            <div className="relative w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-200 shrink-0">
+            <div className="relative w-12 h-12 rounded-xl bg-fog-50 overflow-hidden border border-temu-gray-border-light shrink-0">
               <img
                 src={IMG.thumb(mainImageSrc)}
                 alt={product.title}
@@ -1145,20 +1625,21 @@ export default function ProductDetailsClient({
             </div>
 
             <div className="min-w-0 pr-1">
-              <p className="text-xs font-black text-gray-900 truncate">{product.title}</p>
+              <p className="text-xs font-black text-temu-black truncate">{product.title}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-sm font-black text-[#C86F4E]">${safePrice.toFixed(2)}</span>
+                <span className="text-sm font-black text-coral-600">${safePrice.toFixed(2)}</span>
                 {safeOriginalPrice > safePrice && (
-                  <span className="text-[10px] text-gray-400 line-through">${safeOriginalPrice.toFixed(2)}</span>
+                  <span className="text-[10px] text-temu-gray-light line-through">${safeOriginalPrice.toFixed(2)}</span>
                 )}
               </div>
-              <p className="text-[10px] text-gray-500 font-semibold truncate">
+              <p className="text-[10px] text-temu-gray-text font-semibold truncate">
                 {[selectedGroup?.name || selectedColorName, effectiveSize].filter(Boolean).join(' • ')} • Qty: {quantity}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* الزوز أزرار — نفس المعاينة: ghost + primary متدرج */}
+          <div className="hidden md:flex items-center gap-2.5 flex-1 md:flex-none">
             <button
               type="button"
               onClick={() => {
@@ -1166,25 +1647,29 @@ export default function ProductDetailsClient({
                 setStickyAdded(true);
                 setTimeout(() => setStickyAdded(false), 1200);
               }}
-              className={`py-3 px-3.5 sm:px-4 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1.5 shadow-sm ${
+              className={`flex-1 sm:flex-none font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm transition active:scale-[.97] cursor-pointer whitespace-nowrap ${
                 stickyAdded
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                  ? 'bg-maroccan-tea-600 text-white shadow-md shadow-maroccan-tea-600/25'
+                  : 'bg-fog-100 text-fog-700 hover:bg-fog-200/70'
               }`}
             >
-              {stickyAdded ? <span><GlassIcon i="check" size="xs" /> Added</span> : <span><GlassIcon ch="🛒" size="xs" /> +Bag</span>}
+              {stickyAdded ? (
+                <span className="flex items-center justify-center gap-1.5"><GlassIcon i="check" size="xs" /> Added</span>
+              ) : (
+                'Add to Cart'
+              )}
             </button>
 
             <button
               type="button"
               onClick={() => {
-                // 🩹 Tenet #31: كاتب واحد للإلحاق — كان نسخة مكررة ديال handleAddToCart (طبقة divergence جاهزة)
+                // 🩹 Tenet #31: كاتب واحد للإلحاق — نفس handleAddToCart (مع الحركة fly-to-cart)
                 handleAddToCart();
                 router.push('/cart');
               }}
-              className="bg-linear-to-r from-[#5F8271] to-[#4E6F60] hover:brightness-110 text-white font-black py-3 px-4 sm:px-6 rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-[#5F8271]/25 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="flex-1 sm:flex-none bg-linear-to-r from-fog-600 via-fog-500 to-fog-400 text-white font-black text-[13px] uppercase tracking-wide py-3.5 px-5 sm:px-7 rounded-temu-sm shadow-lg shadow-fog-500/40 active:scale-[.97] transition flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
-              <span><GlassIcon i="zap" size="xs" /></span> Buy Now
+              <GlassIcon i="zap" size="xs" /> Buy Now • ${(safePrice * quantity).toFixed(2)}
             </button>
           </div>
 
