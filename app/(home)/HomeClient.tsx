@@ -240,9 +240,13 @@ function HomeContent() {
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
       <div className="max-w-7xl mx-auto px-4">
 
-        {/* 1. Hero Section */}
+        {/* 1. Hero Section — 📱 [mmobile-hide 2026-11-06 (طلب المالك):
+            الهاتف (<640px) ما يشارفهوش · التابلت/الكمبيوتر (640px+) عادي.
+            CSS صافي (hidden sm:block) — بلا JS، صفر flicker، والـ DOM/SEO كامل */}
         {sec?.hero !== false && activeCategory === 'All' && searchQuery === '' && (
-          <HeroSection trendingProducts={trendingProducts} />
+          <div className="hidden sm:block">
+            <HeroSection trendingProducts={trendingProducts} />
+          </div>
         )}
 
         {/* 2. Categories Bar — Temu-style rail */}
@@ -302,9 +306,10 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 5. Trending Now */}
+        {/* 5. Trending Now — 📱 [mmobile-hide 2026-11-06 (طلب المالك): مخبي في الهاتف
+            (<640px) · التابلت/الكمبيوتر كيشارفوه عادي — نفس سلوك Task 22 القديم */}
         {sec?.trending !== false && activeCategory === 'All' && searchQuery === '' && !hasActiveFilters && trendingProducts.length > 0 && (
-          <div className="mb-8 mt-6">
+          <div className="hidden sm:block mb-8 mt-6">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-black text-temu-black flex items-center gap-2">
                 <span>🔥</span> Trending Now

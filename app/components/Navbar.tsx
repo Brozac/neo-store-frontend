@@ -41,12 +41,22 @@ export default function Navbar() {
       <nav className="bg-white/85 backdrop-blur-xl text-temu-black px-4 py-3 sm:py-3.5 border-b border-temu-gray-border-light">
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4 sm:gap-8">
 
-          {/* Logo */}
+          {/* ✨ BRAND — icon-512 + LACLARC بخط Marcellus (طلب المالك 2026-11-06)
+              Marcellus محمّل عبر next/font (layout.tsx) و .font-brand في globals.css */}
           <Link
             href="/"
-            className="text-2xl sm:text-3xl font-black tracking-wider text-temu-green whitespace-nowrap active:scale-95 transition cursor-pointer"
+            className="flex items-center gap-2.5 whitespace-nowrap active:scale-95 transition cursor-pointer"
           >
-            Laclarc
+            <img
+              src="/icon-512.png"
+              alt="Laclarc"
+              width={38}
+              height={38}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white ring-1 ring-temu-gray-border-light shadow-sm object-contain p-0.5"
+            />
+            <span className="text-2xl sm:text-3xl font-black tracking-wider text-temu-green font-brand uppercase">
+              Laclarc
+            </span>
           </Link>
 
           {/* Search Bar (Desktop) */}

@@ -47,8 +47,16 @@ export default function Footer() {
 
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block">
-              <span className="text-2xl sm:text-3xl font-black text-temu-green tracking-wider">Laclarc</span>
+            {/* ✨ BRAND — icon-512 + LACLARC بخط Marcellus (طلب المالك 2026-11-06) */}
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <img
+                src="/icon-512.png"
+                alt="Laclarc"
+                width={34}
+                height={34}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white ring-1 ring-temu-gray-border shadow-sm object-contain p-0.5"
+              />
+              <span className="text-2xl sm:text-3xl font-black text-temu-green tracking-wider font-brand uppercase">Laclarc</span>
             </Link>
             <p className="text-xs sm:text-sm text-temu-gray-text leading-relaxed max-w-sm">
               Your global flagship store for curated lifestyle gear, electric grooming innovations, and verified daily essentials. Fully automated worldwide fulfillment with bank-grade security.
