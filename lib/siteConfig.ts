@@ -2,14 +2,18 @@
 // ═══════════════════════════════════════════════════════════════════════
 // المصدر الوحيد لشكل كونفيگ ظهور الموقع — مشترك كلاينت/سيرفر (بلا server-only).
 //
-// التخزين: KV/R2 binding تاع الـ Worker (نفس الرابط الحي — صفر إعداد جديد)
-// → app/api/site-config/route.ts هو الباب الوحيد للقراءة العامة والكتابة الإدارية.
+// v27 [visibility-persist] — مصدر الحقيقة ولّى **الباكند** (نفس نمط payment-settings):
+//   · التخزين: store_settings في قاعدة البيانات (hidden_routes / hidden_sections / show_reels)
+//   · الكتابة الإدارية: PUT /api/admin/settings/:key (adminApi — كوكي admin_token)
+//   · القراءة العامة: GET /api/settings (كي رجّع القوائمين مباشرة)
+//   · /api/site-config (KV) مازال موجود بصح ولّى بلا استعمال — ميت الكود.
 //
 // القواعد:
-//   · DEFAULT = كلشي ظاهر — غياب الكونفيگ أو فشل القراءة = فتح كامل (fail-open).
-//     السبب: عطل الكونفيگ ما يحقش يطيح المتجر — الإخفاء يرجع تلقائياً عند أول نجاح.
+//   · DEFAULT = كلشي ظاهر — غياب القوائم أو فشل القراءة = فتح كامل (fail-open).
+//     السبب: عطل القراءة ما يحقش يطيح المتجر — الإخفاء يرجع تلقائياً عند أول نجاح.
 //   · null/false معالجة صريحة: `cfg?.sections.hero !== false` هي القراءة الموحدة.
-//   · hiddenCategories كتسجل slugPath كامل (l1/l2/l3) — نفس شكل product.category.
+//   · hiddenCategories كتسجل slugPath كامل (l1 أو l1/l2 أو l1/l2/l3) — نفس شكل product.category.
+//   · في hidden_routes: برونكس الفروع (/products …) + صفحات الأقسام (/category/slug…).
 // ═══════════════════════════════════════════════════════════════════════
 
 // ─── أقسام الصفحة الرئيسية ───
@@ -217,11 +221,69 @@ export function isCategoryHidden(productCategory: unknown, hidden: string[] | un
   return false;
 }
 
-// ─── قراءة الكلاينت — sessionStorage TTL + fetch ───
+// ═══ v27 [visibility-persist] — جسر الباكند ═══════════════════════════
+// hidden_routes = ['/products', '/categories', '/category/electronics', …]
+// hidden_sections = ['hero', 'reels', …]
+// هاد الدالة كتحول القوائمين لكونفيگ F#93 القياسي — طبقة التنفيذ (Provider,
+// BranchGate, Navbar, Footer, HomeClient…) ما كتبدل والو.
+
+const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com').replace(/\/+$/, '');
+
+function normRoute(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  const s = raw.trim().toLowerCase();
+  if (!s) return '';
+  return s.startsWith('/') ? s.replace(/\/+$/, '') || '/' : `/${s}`.replace(/\/+$/, '');
+}
+
+export function configFromBackendLists(
+  routes: unknown,
+  sections: unknown,
+  showReels: unknown
+): SiteVisibilityConfig {
+  const routeList = Array.isArray(routes)
+    ? [...new Set(routes.map(normRoute).filter(Boolean))].slice(0, 100)
+    : [];
+  const sectionList = Array.isArray(sections)
+    ? [...new Set(sections.filter((s): s is string => typeof s === 'string'))]
+    : [];
+  const sectionSet = new Set(sectionList);
+
+  const sectionsOut: HomeSectionsConfig = { ...DEFAULT_CONFIG.sections };
+  for (const key of Object.keys(sectionsOut) as (keyof HomeSectionsConfig)[]) {
+    if (key === 'reels') {
+      // الريلز مزدوجة: مفتاح sections + مفتاح الباك show_reels — يكفي واحد فيهم
+      sectionsOut.reels = !sectionSet.has('reels') && showReels !== false;
+    } else {
+      sectionsOut[key] = !sectionSet.has(key);
+    }
+  }
+
+  const routeSet = new Set(routeList);
+  const branches = { ...DEFAULT_CONFIG.branches };
+  for (const b of BRANCHES) {
+    branches[b.id] = !routeSet.has(b.prefixes[0]);
+  }
+
+  const hiddenCategories = routeList
+    .filter(r => r.startsWith('/category/') && r.length > '/category/'.length)
+    .map(r => r.slice('/category/'.length))
+    .slice(0, 300);
+
+  return { v: 1, sections: sectionsOut, hiddenCategories, branches };
+}
+
+// ─── قراءة الكلاينت — sessionStorage TTL + fetch من الباكند ───
 const SS_KEY = 'laclarc_sitecfg_v1';
-const SS_TTL_MS = 60_000; // دقيقة واحدة — متناسقة مع s-maxage=60 تاع الراوت (التغييرات توصل ≤ 2 دقيقة)
+const SS_TTL_MS = 60_000; // دقيقة — التغييرات توصل للزوار خلال ≤ 1 دقيقة من بعد Save
 
 interface SSCache { t: number; cfg: SiteVisibilityConfig }
+
+/** كيتنادى من بعد Save الإداري — باش التابات المفتوحة تجيب النسخة الجديدة دغيا */
+export function clearSiteConfigCache(): void {
+  if (typeof window === 'undefined') return;
+  try { sessionStorage.removeItem(SS_KEY); } catch { /* ignore */ }
+}
 
 export async function fetchSiteConfig(opts: { force?: boolean } = {}): Promise<SiteVisibilityConfig> {
   if (!opts.force && typeof window !== 'undefined') {
@@ -234,9 +296,11 @@ export async function fetchSiteConfig(opts: { force?: boolean } = {}): Promise<S
     } catch { /* sessionStorage ميت (private mode) — نكمل بfetch */ }
   }
 
-  const res = await fetch('/api/site-config', { cache: 'no-store' });
+  const res = await fetch(`${BACKEND_URL}/api/settings?t=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`settings HTTP ${res.status}`);
   const json = await res.json().catch(() => null);
-  const cfg = sanitizeConfig(json?.config) ?? { ...DEFAULT_CONFIG };
+  // fail-open: أي غياب/فشل = قوائم خاوية = كلشي ظاهر
+  const cfg = configFromBackendLists(json?.hidden_routes, json?.hidden_sections, json?.show_reels);
 
   try {
     sessionStorage.setItem(SS_KEY, JSON.stringify({ t: Date.now(), cfg }));

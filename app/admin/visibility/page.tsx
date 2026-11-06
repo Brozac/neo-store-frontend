@@ -2,23 +2,18 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════
- * 👁️ LACLARC VISIBILITY CONTROL — التحكم في الظهور (F#93 · OpCenter)
+ * 👁️ LACLARC VISIBILITY CONTROL — التحكم في الظهور (v27 · visibility-persist)
  * ═══════════════════════════════════════════════════════════════════
- * ثلاث مجموعات تحكم من مكان واحد:
- *   1. 🏠 أقسام الصفحة الرئيسية — 5 مفاتيح فورية (Hero · Rail · Deals · Reels · Trending)
- *   2. 🗂️ أقسام المنتوجات (categories) — الشجرة الحية من GET /api/categories:
- *      إخفاء قسم = يختفي من الشريط/الدليل + منتجاته كيتصفوا من كل الخلاصات
- *   3. 🌿 فروع الموقع (الصفحات) — 16 فرع: من القوائم + الصفحة كتولي
- *      "غير متاح مؤقتاً" للزوار
+ * نفس نمط payment-settings بالضبط — بسيط ومباشر:
+ *   · التحميل:  adminApi.get('/admin/settings')
+ *               → { show_reels, hidden_routes: [], hidden_sections: [] }
+ *   · الحفظ:    adminApi.put('/admin/settings/hidden_routes',   { value: JSON.stringify(routes) })
+ *               adminApi.put('/admin/settings/hidden_sections', { value: JSON.stringify(sections) })
+ *               + مزامنة show_reels غير إلا تبدلت الريلز
+ *   · التخزين:  store_settings في قاعدة بيانات الباكند — دائم، بلا KV وبلا حيل.
  *
- * الحفظ: PUT /api/site-config (نفس الدومين) — الجلسة كيتحقق منها الباك الحي.
- * التخزين: bindings تاع الـ Worker (KV/R2 الموجودين) — صفر endpoint باك جديد.
- *
- * مبادئ:
- *   · كل التغييرات محلية حتى "Save & Publish" — مفيش ونص حفظ بالصدفة
- *   · الرد كيعرض الحقيقة: storage + edgePurged + revalidated (لا أخضر زائف)
- *   · الفروع الخطرة (صفحات المنتوجات) كتطلب تأكيد صريح
- *   · Reels مزدوج: كيتزامن مع مفتاح الباك show_reels (best-effort + تقرير)
+ * الحفظ: كل التغييرات محلية حتى "Save & Publish" · الفروع الخطرة كتطلب تأكيد.
+ * الزوار يشوفو التغيير خلال ≤ دقيقة (كاش القراءة العامة 60 ثانية).
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -28,11 +23,11 @@ import adminApi from '../../utils/adminApi';
 import AdminShell from '../_shell/AdminShell';
 import {
   SECTION_META, BRANCHES,
-  DEFAULT_CONFIG, sanitizeConfig,
+  DEFAULT_CONFIG, configFromBackendLists, clearSiteConfigCache,
   type SiteVisibilityConfig, type BranchId, type HomeSectionsConfig,
 } from '@/lib/siteConfig';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const MAX_ITEMS = 100; // نفس السقف ديال الباكند على القائمة
 
 interface CatNode {
   id: number;
@@ -60,7 +55,6 @@ export default function VisibilityControlPage() {
   const [loadError, setLoadError] = useState('');
   const [cfg, setCfg] = useState<SiteVisibilityConfig | null>(null);   // المحفوظة الحية
   const [draft, setDraft] = useState<SiteVisibilityConfig | null>(null); // الشغل المحلي
-  const [source, setSource] = useState<string>('—');
 
   // الأقسام الحية من الباك
   const [cats, setCats] = useState<{ name: string; slugPath: string; depth: number; image_url?: string | null }[] | null>(null);
@@ -76,14 +70,16 @@ export default function VisibilityControlPage() {
     setLoadError('');
     setMessage('');
     try {
-      const res = await fetch('/api/site-config', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
-      const parsed = sanitizeConfig(json?.config) ?? { ...DEFAULT_CONFIG };
+      // v27 — نفس نمط payment-settings: قراءة بسيطة من الباكند
+      const res = await adminApi.get('/admin/settings');
+      const d = res.data || {};
+      const parsed = configFromBackendLists(d.hidden_routes, d.hidden_sections, d.show_reels);
       setCfg(parsed);
       setDraft(parsed);
-      setSource(String(json?.source ?? '—'));
-    } catch {
-      setLoadError('Could not reach /api/site-config — visibility state UNKNOWN (nothing is changed).');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) { router.push('/admin/login'); return; }
+      setLoadError('Could not load settings from the backend — visibility state UNKNOWN (nothing is changed).');
       setCfg({ ...DEFAULT_CONFIG });
       setDraft({ ...DEFAULT_CONFIG });
     } finally {
@@ -96,8 +92,9 @@ export default function VisibilityControlPage() {
       const flat = flattenCats(Array.isArray(res.data) ? res.data : []);
       setCats(flat);
       setCatsError(false);
-    } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) { router.push('/admin/login'); return; }
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) { router.push('/admin/login'); return; }
       setCatsError(true);
     }
   }, [router]);
@@ -127,10 +124,7 @@ export default function VisibilityControlPage() {
     setMessage('');
     const set = new Set(draft.hiddenCategories);
     if (set.has(slugPath)) set.delete(slugPath);
-    else {
-      // ولّي ناسك: بنحيّد الأبادر ديالو (l1, l1/l2...) — slugPath الكامل هو الحاكم
-      set.add(slugPath);
-    }
+    else set.add(slugPath);
     setDraft({ ...draft, hiddenCategories: [...set].sort() });
   };
 
@@ -143,6 +137,16 @@ export default function VisibilityControlPage() {
     return cats.filter(c => c.slugPath.toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
   }, [cats, catQuery]);
 
+  // v27 — الكونفيگ ← قوائم الباكند (نفس الشكل اللي كيتخزن في store_settings)
+  const buildLists = (d: SiteVisibilityConfig) => {
+    const routes = [
+      ...BRANCHES.filter(b => d.branches[b.id] === false).map(b => b.prefixes[0]),
+      ...d.hiddenCategories.map(c => `/category/${c}`),
+    ];
+    const sections = SECTION_META.filter(s => d.sections[s.key] === false).map(s => s.key as string);
+    return { routes: [...new Set(routes)], sections: [...new Set(sections)] };
+  };
+
   const save = async () => {
     if (!draft || !cfg) return;
     if (productsHidden && !confirmDanger) {
@@ -154,45 +158,32 @@ export default function VisibilityControlPage() {
     setSaving(true);
     setMessage('');
     try {
-      const res = await fetch('/api/site-config', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ config: draft }),
-      });
-      const json = await res.json().catch(() => null);
-
-      if (res.status === 401) { router.push('/admin/login'); return; }
-      if (!res.ok || !json?.ok) {
-        setMessage(`❌ Save failed: ${json?.error || `HTTP ${res.status}`} — nothing was written.`);
+      const { routes, sections } = buildLists(draft);
+      if (routes.length > MAX_ITEMS) {
+        setMessage(`❌ Too many hidden items (${routes.length}) — the backend allows max ${MAX_ITEMS}. Un-hide some categories and try again.`);
         return;
       }
 
-      // الحقيقة المعروضة = رد السيرفر حرفياً
-      setCfg(sanitizeConfig(json.config) ?? draft);
-      setDraft(sanitizeConfig(json.config) ?? draft);
-      const storage = json.storage === 'devfile' ? 'dev file (local preview only)' : json.storage === 'kv' ? 'Workers KV' : json.storage === 'r2' ? 'R2 bucket' : String(json.storage);
-      const parts = [
-        `✅ Published — storage: ${storage}`,
-        `edge cache ${json.edgePurged ? 'purged ✓' : 'purge unavailable (fine — TTL 60s)'}`,
-        `ISR revalidated: ${(json.revalidated || []).length ? (json.revalidated as string[]).join(', ') : 'none'}`,
-      ];
-      if ((json.revalidateFailed || []).length) parts.push(`⚠️ failed: ${(json.revalidateFailed as string[]).join(', ')}`);
-      setMessage(parts.join(' · '));
+      // v27 — الحفظ: نفس نمط payment-settings (adminApi + كوكي الجلسة)
+      await adminApi.put('/admin/settings/hidden_routes', { value: JSON.stringify(routes) });
+      await adminApi.put('/admin/settings/hidden_sections', { value: JSON.stringify(sections) });
 
-      // 🎬 Reels — مزامنة مفتاح الباك show_reels (best-effort، التقرير صادق)
-      const prevReels = cfg.sections.reels;
-      const nextReels = draft.sections.reels;
-      if (prevReels !== nextReels) {
+      // 🎬 الريلز — مزامنة مفتاح الباك show_reels (غير إلا تبدلت)
+      if (cfg.sections.reels !== draft.sections.reels) {
         try {
-          await adminApi.put('/admin/settings/show_reels', { value: nextReels });
-          setMessage((m) => `${m} · show_reels backend key synced to ${nextReels ? 'SHOWN' : 'HIDDEN'} ✓`);
-        } catch {
-          setMessage((m) => `${m} · ⚠️ backend show_reels sync failed (homepage uses BOTH keys)`);
-        }
+          await adminApi.put('/admin/settings/show_reels', { value: draft.sections.reels });
+        } catch { /* best-effort — المفتاح الرئيسي هو hidden_sections */ }
       }
-    } catch {
-      setMessage('❌ Save failed: network error — nothing was written.');
+
+      // الحقيقة المعروضة = اللي تخزن فعلًا
+      setCfg(draft);
+      clearSiteConfigCache(); // التابات المفتوحة تجيب النسخة الجديدة فورًا
+      setMessage('✅ Saved to the database — visitors see changes within ~1 minute.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) { router.push('/admin/login'); return; }
+      const detail = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setMessage(`❌ Save failed: ${detail || 'backend error'} — nothing was written.`);
     } finally {
       setSaving(false);
     }
@@ -240,10 +231,7 @@ export default function VisibilityControlPage() {
         <div className="bg-white rounded-2xl p-5 border border-temu-gray-border-light shadow-xs flex items-center justify-between gap-3 flex-wrap">
           <div className="text-xs">
             <p className="font-black text-temu-black">👁️ Storefront visibility</p>
-            <p className="text-gray-500 mt-0.5">
-              Live source: <span className="font-mono">{source}</span>
-              {cfg?.updatedAt && <> · last publish <span className="font-mono">{cfg.updatedAt.slice(0, 19).replace('T', ' ')} UTC</span></>}
-            </p>
+            <p className="text-gray-500 mt-0.5">Source: backend database (store_settings) — saved permanently</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={loadAll} className="text-xs bg-temu-offwhite hover:bg-gray-100 text-temu-black px-3 py-2 rounded-xl border border-temu-gray-border-light transition cursor-pointer">↻ Reload</button>
