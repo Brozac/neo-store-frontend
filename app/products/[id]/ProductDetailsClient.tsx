@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';                                    // 🆕 P
 import { useCart } from '../../context/CartContext';
 import CountdownTimer from '../../components/CountdownTimer';
 import BuyButton from '../../components/BuyButton';
-// TiltCard (3D tilt) تحيّد من هنا — طلب المالك: «الغي تاثير 3d tilt» فقسم You May Also Like
+// ✨ F#36-notilt (مطبق مع F#38 2026-11-08): TiltCard ما بقا لومر — مرجع واحد كان فقسم YMAL وحيد
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
@@ -1211,15 +1211,17 @@ export default function ProductDetailsClient({
           />
         )}
 
-        {/* You May Also Like — كروت ثابتة بلا 3D tilt (طلب المالك 2026-11-07):
-            الغلاف TiltCard (rotate3d + scale + glow + ظل أزرق) تحيّد —
-            الكارت كيبقى عادي بحدودو + active:scale-95 */}
+        {/* You May Also Like */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-temu-gray-border-light pt-10">
             <h2 className="text-lg font-black text-temu-black mb-6">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* ✨ YMAL-SCROLL (F#38 — طلب المالك 2026-11-08): موبايل = كاروسيل أفقي
+                بالسحب (snap + بلا scrollbar + كروت كتبزق من الحواف) — ديسكتوب
+                كيبقى نفس الغريد 4 أعمدة ما تبدل والو.
+                + F#36-notilt كتطبق هنا (TiltCard كان باقي فالوك — حيدناه). */}
+            <div className="-mx-4 px-4 md:mx-0 md:px-0 flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none pb-2 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-padding-inline:1rem]">
               {relatedProducts.map((p) => (
-                <Link key={p.id} href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition">
+                <Link key={p.id} href={`/products/${p.id}`} className="group flex flex-col h-full bg-white border border-temu-gray-border-light rounded-temu-sm overflow-hidden active:scale-95 transition shrink-0 w-[168px] md:w-auto snap-start">
                   <div className="relative aspect-square overflow-hidden bg-gray-50">
                     <img
                       src={IMG.card(p.image_url || p.image || defaultImage)}
