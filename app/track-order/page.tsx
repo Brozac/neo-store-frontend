@@ -67,6 +67,31 @@ const TONE_CLASSES: Record<Tone, string> = {
 // ✨ عرض التقدم حسب المرحلة الحقيقية — الطلبات الملغاة كيبانو 0%
 const STEP_WIDTH = ['8%', '45%', '75%', '100%'];
 
+// 🔧 M#56 — الزبون كينسخ العلامة كاملة من البطاقة/الإيميل: «Order LC-2026-00091»
+// الباك كيقبل ID رقمي (92) أو كود الطلب (LC-2026-00091) — تحقق حي —
+// ولكن الصيغة الخام بالكلمة «Order» كتطيح 404. نفكوها هنا لمرشحين نظيفين
+// ونجربوهم بالتسلسل. كل مرشح كيمشي بنفس الإيميل (حماية IDOR ما تتنقاشش).
+function parseOrderQuery(raw: string): string[] {
+  const cleaned = raw.trim().replace(/\s+/g, ' ');
+  if (!cleaned) return [];
+  const candidates: string[] = [];
+  const push = (v: string) => { const t = v.trim(); if (t && !candidates.includes(t)) candidates.push(t); };
+
+  // 1) كود الطلب المعروض — أي حالة وأي فواصل: LC-2026-00091 · lc 2026 00091 · LC202600091
+  const lc = cleaned.toUpperCase().match(/LC[-\s:]?(\d{4})[-\s:]?(\d{3,8})/);
+  if (lc) push(`LC-${lc[1]}-${lc[2]}`);
+
+  // 2) الرقم المجرد — 92 · #92 · Order 92 · ORDER #92 · order: 92
+  const bare = cleaned
+    .replace(/^\s*#*\s*order\s*#*\s*:?/i, '')
+    .replace(/^[#\s:]+|[#\s:]+$/g, '')
+    .trim();
+  if (/^\d{1,10}$/.test(bare)) push(bare);
+
+  if (candidates.length === 0) push(cleaned); // صيغة غريبة — نجربوها كيما هي
+  return candidates.slice(0, 3);
+}
+
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const initialOrderId = searchParams.get('orderId') || '';
@@ -86,7 +111,10 @@ function TrackOrderContent() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   const executeTrack = useCallback(async (targetId: string, targetEmail: string) => {
-    if (!targetId.trim() || !targetEmail.trim()) {
+    const email = targetEmail.trim().toLowerCase();
+    const candidates = parseOrderQuery(targetId);
+
+    if (candidates.length === 0 || !email) {
       setError('Please provide both your Order ID and Account Email to verify shipment ownership.');
       return;
     }
@@ -96,20 +124,26 @@ function TrackOrderContent() {
     setOrders([]);
     setLiveEvents({});
 
+    let lastError = '';
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/track/${encodeURIComponent(targetId.trim())}?email=${encodeURIComponent(targetEmail.trim().toLowerCase())}`);
-      const data = await res.json();
+      // 🔧 M#56 — نجرّبو كل مرشح بالتسلسل؛ أول واحد يجاوب بنجاح كيكفي
+      for (const cand of candidates) {
+        const res = await fetch(`${API_BASE_URL}/api/orders/track/${encodeURIComponent(cand)}?email=${encodeURIComponent(email)}`);
+        const data = await res.json().catch(() => null);
 
-      if (res.ok) {
-        if (Array.isArray(data) && data.length > 0) {
-          try { sessionStorage.setItem('laclarc_last_track_email', targetEmail.trim().toLowerCase()); } catch {}
+        if (res.ok && Array.isArray(data) && data.length > 0) {
+          try { sessionStorage.setItem('laclarc_last_track_email', email); } catch {}
           setOrders(data);
-        } else {
-          setError('No orders found matching this Order ID and Email combination.');
+          return; // finally كتضمن إطفاء اللودينغ
         }
-      } else {
-        setError(data.error || 'Unable to locate order with provided credentials.');
+
+        if (!res.ok && data && typeof data === 'object' && data.error) lastError = data.error;
+        // المرشح ما جاب والو — عاد المرشح الموالي
       }
+
+      setError(lastError
+        ? `${lastError} Tip: paste the full reference (e.g. Order LC-2026-00091) or the numeric ID (e.g. 92), together with the email used at checkout.`
+        : 'No orders found matching this Order ID and Email combination. Double-check the email used at checkout — both the full reference (e.g. Order LC-2026-00091) and the numeric ID (e.g. 92) are accepted.');
     } catch {
       setError('Unable to reach global logistics server. Please check your connection.');
     } finally {
@@ -197,7 +231,7 @@ function TrackOrderContent() {
           <GlassIcon ch="📦" size="xs" />
         </div>
         <h1 className="text-2xl font-black text-gray-900 tracking-tight">Track Your Shipment</h1>
-        <p className="text-xs text-gray-500 mt-1">Enter your Order ID and the Email used during checkout</p>
+        <p className="text-xs text-gray-500 mt-1">Paste any order reference — 1042, LC-2026-00091, or the full label from your receipt — plus the email used at checkout</p>
       </div>
 
       {/* Query Form */}
@@ -206,7 +240,7 @@ function TrackOrderContent() {
           <label className="block text-[11px] font-bold uppercase text-gray-700 mb-1">Order Identification Number *</label>
           <input
             type="text"
-            placeholder="e.g. 1042"
+            placeholder="e.g. 1042 or LC-2026-00091"
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
             required
