@@ -1,0 +1,51 @@
+name: Backend Keep-Alive
+
+# ═══════════════════════════════════════════════════════════════════════
+# Keeps the Render free-tier backend always warm — zero cold starts.
+#
+# Render free services spin down after 15 minutes without HTTP traffic;
+# the next request then waits ~50-60s (cold boot). The worst moment for
+# that is a paying buyer landing on /success (JIT verification) or the
+# homepage ROTATE count fetch. This workflow pings the lightest possible
+# endpoint every 10 minutes so the idle timer never expires.
+#
+# Zero setup (unlike cf-cleanup.yml — no secrets needed):
+#   - Push this file and it runs. Nothing to configure.
+#   - Public repo: Actions minutes are free/unlimited.
+#     Private repo: no-checkout curl job ≈ 15-25s per run ≈ ~900 min/mo,
+#     inside the 2,000 free minutes tier.
+#
+# Manual test: Actions > Backend Keep-Alive > Run workflow.
+# ═══════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 min < Render 15-min idle timeout
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping backend root (wake + health read)
+        run: |
+          ok=0
+          for attempt in 1 2; do
+            code=$(curl -sS -o /tmp/ka_body.txt -w '%{http_code}' --max-time 30 \
+              https://neo-store-backend.onrender.com/ || echo 000)
+            echo "attempt $attempt → HTTP $code: $(head -c 120 /tmp/ka_body.txt)"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            [ "$attempt" = "1" ] && sleep 5
+          done
+          if [ "$ok" = "1" ]; then
+            echo "✅ backend warm"
+          else
+            echo "::warning::backend did not answer 200 after 2 attempts (HTTP $code) — check Render dashboard"
+          fi
