@@ -17,11 +17,22 @@
 //   🩹 retry داخلي — window.location.reload مات (لا مسح للجلسة والسكرول)
 // ═══════════════════════════════════════════════════════════════════
 
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import FilterSortDrawer from '@/components/FilterSortDrawer';
+import {
+  DEFAULT_FILTERS,
+  PRICE_BANDS,
+  SORTS,
+  activeFilterCount,
+  countPrice,
+  findBand,
+  visibleProducts,
+  type FilterState,
+} from '@/lib/filterSort';
 import GlassIcon from '@/components/ui/GlassIcon';
 import { useSiteConfig, UnavailablePanel } from '../../components/SiteConfigProvider';
 import { isCategoryHidden } from '@/lib/siteConfig';
@@ -79,6 +90,60 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
+  // ═══ F#57 — الفلترة والفرز (فوق الكاتب — الكاتب ما يتنمسش، Tenet #31) ═══
+  // هنا بلا فاسيت فئة — الفئة مثبتة من الـ slug (السيرفر هو اللي كيفترد) ═══
+  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+
+  const visible = useMemo(() => visibleProducts(products, applied), [products, applied]);
+  const filtersActive = activeFilterCount(applied) > 0;
+
+  const openDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(true); }, [applied]);
+  const dismissDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(false); }, [applied]);
+  const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
+  const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
+  const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any' })), []);
+  const clearAllFilters = useCallback(() => {
+    setApplied((prev) => {
+      const next = { ...prev, price: 'any' };
+      setDraft(next);
+      return next;
+    });
+  }, []);
+
+  const sections = useMemo(
+    () => [
+      {
+        key: 'sort',
+        title: 'Sort by',
+        type: 'radio' as const,
+        options: SORTS.map((s) => ({ value: s.value, label: s.label })),
+        selected: [draft.sort],
+        onToggle: toggleDraftSort,
+      },
+      {
+        key: 'price',
+        title: 'Price',
+        type: 'radio' as const,
+        options: PRICE_BANDS.filter((b) => b.value !== 'any').map((b) => {
+          const c = countPrice(products, b.value);
+          return { value: b.value, label: b.label, count: c, disabled: c === 0 && draft.price !== b.value };
+        }),
+        selected: [draft.price],
+        onToggle: toggleDraftPrice,
+      },
+    ],
+    [draft, products, toggleDraftSort, toggleDraftPrice]
+  );
+  const matchCount = countPrice(products, draft.price);
+
+  const priceChip = applied.price !== 'any'
+    ? [{ key: 'price', label: findBand(applied.price).label, onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })) }]
+    : [];
+
   // 👁️ F#93 — القسم مخفي من الكونفيگ → لوحة "غير متاح مؤقتاً" (بعد كل الـ hooks)
   if (siteCfgReady && isCategoryHidden(slugPath, siteCfg?.hiddenCategories)) {
     return <UnavailablePanel refLabel={slugPath} />;
@@ -108,14 +173,67 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
           All Categories
         </button>
 
-        <div className="flex items-baseline justify-between gap-3 mb-6 flex-wrap">
+        <div className="flex items-baseline justify-between gap-3 mb-3 flex-wrap">
           <h1 className="text-3xl font-extrabold text-temu-black capitalize">{h1Text || categoryName}</h1>
-          {totalCount > 0 && (
-            <span className="text-xs font-bold text-gray-400">
-              {totalCount.toLocaleString()} products
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {totalCount > 0 && (
+              <span className="text-xs font-bold text-gray-400">
+                {filtersActive ? `${visible.length} matches` : `${totalCount.toLocaleString()} products`}
+              </span>
+            )}
+            {/* F#57 — زر الدروار */}
+            <button
+              ref={openerRef}
+              type="button"
+              id="pf-drawer-open"
+              onClick={openDrawer}
+              aria-haspopup="dialog"
+              aria-expanded={drawerOpen ? 'true' : 'false'}
+              aria-controls="pf-drawer-panel"
+              className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-bold whitespace-nowrap text-temu-black shadow-xs transition-colors duration-150 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] active:translate-y-px motion-reduce:transition-none"
+            >
+              <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" />
+              </svg>
+              Filter and sort
+              {filtersActive && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#5B7EA6] px-1.5 text-xs font-bold text-white tabular-nums">
+                  {activeFilterCount(applied)}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* F#57 — شيبس الفلاتر المطبقة */}
+        {priceChip.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
+              {priceChip.map((c) => (
+                <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
+                  {c.label}
+                  <button
+                    type="button"
+                    onClick={c.onRemove}
+                    aria-label={`Remove filter: ${c.label}`}
+                    className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
+                  >
+                    <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="cursor-pointer rounded-sm text-[13px] font-bold whitespace-nowrap text-gray-500 underline underline-offset-4 transition-colors duration-150 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
         {/* حالة الخطأ القاتل منفصلة — retry داخلي (بلا reload — الجلسة والسكرول كيبقاو) */}
         {error && (
@@ -165,10 +283,24 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
               }}
               onTouchEnd={() => setTouchedProductId(null)}
             >
-              {products.map((p, i) => (
+              {visible.map((p, i) => (
                 <ProductCard key={p.id} product={p} eager={i < 4} />
               ))}
             </div>
+
+            {/* F#57 — الفلاتر مطبقة ولا النتيجة خاوية فوق المحمل — صدق + مخرج */}
+            {!loadingMore && visible.length === 0 && products.length > 0 && (
+              <div className="bg-white p-10 rounded-temu-sm shadow-sm text-center border border-temu-gray-border-light space-y-3">
+                <p className="text-temu-black font-semibold">No matches with the current filters.</p>
+                <p className="text-temu-gray-light text-sm">More products keep loading as you scroll — or clear the filters.</p>
+                <button
+                  onClick={clearAllFilters}
+                  className="inline-block bg-temu-orange text-white font-bold px-6 py-3 rounded-temu-sm hover:bg-temu-orange-bright transition cursor-pointer active:scale-95 touch-manipulation shadow-md"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
 
             {/* Sentinel (infinite scroll) — الـ observer كيتصاوب فعلاً (FIX-DEAD مغروز في الـ hook) */}
             <div ref={sentinelRef} className="h-10" />
@@ -209,6 +341,17 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
           </>
         )}
       </div>
+
+      {/* F#57 — دروار الفلترة والفرز */}
+      <FilterSortDrawer
+        open={drawerOpen}
+        onClose={dismissDrawer}
+        sections={sections}
+        onReset={clearDraft}
+        onApply={applyDrawer}
+        matchCount={matchCount}
+        openerRef={openerRef}
+      />
     </main>
   );
 }

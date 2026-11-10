@@ -35,8 +35,20 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
+import FilterSortDrawer, { type DrawerSection } from '@/components/FilterSortDrawer';
+import {
+  DEFAULT_FILTERS,
+  PRICE_BANDS,
+  SORTS,
+  activeFilterCount,
+  countPrice,
+  findBand,
+  visibleProducts,
+  type FilterState,
+} from '@/lib/filterSort';
 import GlassIcon from '@/components/ui/GlassIcon';
 
 // نفس دالة ProductCard (GOOGLE-GRID) — نسب مدروس: القص مع object-cover
@@ -61,11 +73,63 @@ interface P {
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 const PER_PAGE = 24;
 
+// ═══ F#57 — فاسيت الفئة (all-products برك): جذور الشجرة من /api/categories/hub
+// counts سيرفر حقيقية · كاش جلسة · fail-open دائماً (فشل = فاسيت خاوي، الصفحة تخدم)
+interface CatRoot { slugPath: string; name: string; count: number | null }
+const CAT_FACET_CACHE = 'laclarc_catfacet_v1';
+function readCatFacetCache(): CatRoot[] | null {
+  try {
+    const raw = sessionStorage.getItem(CAT_FACET_CACHE);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed?.roots) ? parsed.roots : null;
+  } catch { return null; }
+}
+function writeCatFacetCache(roots: CatRoot[]) {
+  try { sessionStorage.setItem(CAT_FACET_CACHE, JSON.stringify({ roots })); } catch {}
+}
+async function fetchCategoryRoots(api: string): Promise<CatRoot[]> {
+  const cached = readCatFacetCache();
+  if (cached && cached.length > 0) return cached;
+  try {
+    const res = await fetch(`${api}/api/categories/hub`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const roots: CatRoot[] = (Array.isArray(data?.nodes) ? data.nodes : [])
+      .filter((n: any) => n && typeof n.slugPath === 'string' && n.slugPath)
+      .map((n: any) => ({
+        slugPath: n.slugPath as string,
+        name: String(n.name || n.slug || n.slugPath),
+        count: typeof n.count === 'number' && n.count >= 0 ? n.count : null,
+      }));
+    if (roots.length === 0) throw new Error('empty hub');
+    writeCatFacetCache(roots);
+    return roots;
+  } catch {
+    return []; // fail-open — الفاسيت يبقى مخبي، السيرفر هو ما عندوش الجذور اليوم
+  }
+}
+
 export default function AllProducts() {
+  // ═══ F#57 — حالة الفلترة: applied (المطبقة) + draft (المسودة داخل الدروار) ═══
+  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const activeCategory = applied.category[0] ?? '';
+
   // ═══ الكاتب الوحيد — التوصيل فقط ═══
-  const feed = useInfiniteFeed<P>('all-products', true, {
-    buildPageUrl: (page) => `${API}/api/products?page=${page}`,
-    buildCountUrl: () => `${API}/api/products?count=1`,
+  // F#57: resetKey كيتضمن الفئة — تبديل الفئة = إعادة تهيئة كاملة (count + صفحة 1)
+  // من الكاتب الوحيد، نفس آلية الأقسام في الهوم — الفلترة سيرفر-سايد حقيقية
+  const feed = useInfiniteFeed<P>(`all-products:${activeCategory}`, true, {
+    buildPageUrl: (page) =>
+      activeCategory
+        ? `${API}/api/products?category=${encodeURIComponent(activeCategory)}&page=${page}`
+        : `${API}/api/products?page=${page}`,
+    buildCountUrl: () =>
+      activeCategory
+        ? `${API}/api/products?count=1&category=${encodeURIComponent(activeCategory)}`
+        : `${API}/api/products?count=1`,
     perPage: PER_PAGE,
   });
 
@@ -81,6 +145,110 @@ export default function AllProducts() {
     retry,
   } = feed;
 
+  // ═══ F#57 — طبقة العرض فوق الكاتب (الكاتب ما يتنمسش — Tenet #31) ═══
+  const visible = useMemo(() => visibleProducts(items, applied), [items, applied]);
+  const filtersActive = activeFilterCount(applied) > 0;
+
+  // فاسيت الجذور — كيتجاب أول مرة كيتفتح الدروار (كاش جلسة داخل المُجيب)
+  const [catRoots, setCatRoots] = useState<CatRoot[] | null>(null);
+  useEffect(() => {
+    if (!drawerOpen || catRoots) return;
+    let alive = true;
+    fetchCategoryRoots(API).then((roots) => {
+      if (alive && roots.length > 0) setCatRoots(roots);
+    });
+    return () => { alive = false; };
+  }, [drawerOpen, catRoots]);
+
+  // ═══ معالجات الدروار — draft/applied كيما في الديمو ═══
+  const openDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(true); }, [applied]);
+  const dismissDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(false); }, [applied]);
+  const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
+  const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
+  const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
+  const toggleDraftCategory = useCallback(
+    (slugPath: string) => setDraft((d) => ({ ...d, category: d.category[0] === slugPath ? [] : [slugPath] })),
+    []
+  );
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', category: [] })), []);
+  const clearAllFilters = useCallback(() => {
+    setApplied((prev) => {
+      const next = { ...prev, price: 'any', category: [] };
+      setDraft(next);
+      return next;
+    });
+  }, []);
+
+  // ═══ الأقسام اللي كتمشي للدروار ═══
+  const sections = useMemo<DrawerSection[]>(() => {
+    const list: DrawerSection[] = [
+      {
+        key: 'sort',
+        title: 'Sort by',
+        type: 'radio',
+        options: SORTS.map((s) => ({ value: s.value, label: s.label })),
+        selected: [draft.sort],
+        onToggle: toggleDraftSort,
+      },
+      {
+        key: 'price',
+        title: 'Price',
+        type: 'radio',
+        options: PRICE_BANDS.filter((b) => b.value !== 'any').map((b) => {
+          const c = countPrice(items, b.value);
+          return { value: b.value, label: b.label, count: c, disabled: c === 0 && draft.price !== b.value };
+        }),
+        selected: [draft.price],
+        onToggle: toggleDraftPrice,
+      },
+    ];
+    if (catRoots && catRoots.length > 0) {
+      list.push({
+        key: 'category',
+        title: 'Category',
+        type: 'radio',
+        defaultFolded: true,
+        options: [
+          { value: '', label: 'All categories' },
+          ...catRoots.map((r) => ({
+            value: r.slugPath,
+            label: r.name,
+            count: r.count,
+            disabled: r.count === 0 && draft.category[0] !== r.slugPath,
+          })),
+        ],
+        selected: draft.category,
+        onToggle: toggleDraftCategory,
+      });
+    }
+    return list;
+  }, [draft, items, catRoots, toggleDraftSort, toggleDraftPrice, toggleDraftCategory]);
+
+  // رقم زر التطبيق — الصدق: كيتبدل الفئة = refetch سيرفر، الرقم معلومش سلفاً
+  const categoryChanged = (draft.category[0] ?? '') !== activeCategory;
+  const matchCount = categoryChanged ? null : countPrice(items, draft.price);
+
+  // ═══ الشيبس — كل فيلتر مطبق = شيب كيحيد راسو بضغطة ═══
+  const chips = useMemo(() => {
+    const list: { key: string; label: string; onRemove: () => void }[] = [];
+    if (activeCategory) {
+      const root = catRoots?.find((r) => r.slugPath === activeCategory);
+      list.push({
+        key: 'category',
+        label: root?.name ?? activeCategory.replace(/-/g, ' '),
+        onRemove: () => setApplied((prev) => ({ ...prev, category: [] })),
+      });
+    }
+    if (applied.price !== 'any') {
+      list.push({
+        key: 'price',
+        label: findBand(applied.price).label,
+        onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })),
+      });
+    }
+    return list;
+  }, [activeCategory, applied.price, catRoots]);
+
   return (
     <main className="min-h-screen bg-temu-offwhite">
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -89,10 +257,21 @@ export default function AllProducts() {
           <div>
             <h1 className="text-xl font-black text-temu-black tracking-tight"><GlassIcon ch="🛍️" size="xs" /> All Products</h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              Browse the full catalog — {items.length}
-              {done
-                ? ' products'
-                : (totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : '+')}
+              {filtersActive ? (
+                <>
+                  {visible.length} match{visible.length === 1 ? '' : 'es'}
+                  {activeCategory
+                    ? totalCount > 0 ? ` · ${totalCount.toLocaleString()} in this category` : ''
+                    : ` · ${items.length} loaded`}
+                </>
+              ) : (
+                <>
+                  Browse the full catalog — {items.length}
+                  {done
+                    ? ' products'
+                    : (totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : '+')}
+                </>
+              )}
             </p>
           </div>
           <Link
@@ -103,9 +282,62 @@ export default function AllProducts() {
           </Link>
         </div>
 
+        {/* ═══ F#57 — شريط الفلترة: زر الدروار + شيبس الفلاتر المطبقة ═══ */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
+          <button
+            ref={openerRef}
+            type="button"
+            id="pf-drawer-open"
+            onClick={openDrawer}
+            aria-haspopup="dialog"
+            aria-expanded={drawerOpen ? 'true' : 'false'}
+            aria-controls="pf-drawer-panel"
+            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-bold whitespace-nowrap text-temu-black shadow-xs transition-colors duration-150 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] active:translate-y-px motion-reduce:transition-none"
+          >
+            <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" />
+            </svg>
+            Filter and sort
+            {filtersActive && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#5B7EA6] px-1.5 text-xs font-bold text-white tabular-nums">
+                {activeFilterCount(applied)}
+              </span>
+            )}
+          </button>
+
+          {chips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
+                {chips.map((c) => (
+                  <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
+                    {c.label}
+                    <button
+                      type="button"
+                      onClick={c.onRemove}
+                      aria-label={`Remove filter: ${c.label}`}
+                      className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
+                    >
+                      <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="cursor-pointer rounded-sm text-[13px] font-bold whitespace-nowrap text-gray-500 underline underline-offset-4 transition-colors duration-150 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Grid */}
         <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4">
-          {items.map((p, i) => {
+          {visible.map((p, i) => {
             // 🩹 FIX-TRUST + FIX-ZERO — نفس قواعد ProductCard بالحرف (قاعدة واحدة في الموقع كله)
             const price = Number(p.price) || 0;
             const orig = Number(p.original_price) || 0;
@@ -164,6 +396,20 @@ export default function AllProducts() {
         {/* Sentinel + states */}
         <div ref={sentinelRef} className="h-10" />
 
+        {/* 🩹 F#57 — الفلاتر مطبقة وولا خاوية: الصفحة كتشرح الصدق — الـ feed كمّل يخدم */}
+        {!loading && !error && visible.length === 0 && items.length > 0 && (
+          <div className="bg-white p-10 rounded-xl border border-gray-100 text-center space-y-3">
+            <p className="text-sm font-bold text-temu-black">No matches with the current filters.</p>
+            <p className="text-xs text-gray-500">More products keep loading as you scroll — or clear the filters.</p>
+            <button
+              onClick={clearAllFilters}
+              className="text-xs font-bold bg-[#5B7EA6] text-white px-5 py-2.5 rounded-xl active:scale-95 cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
         {loading && (
           <div className="text-center py-6">
             <div className="w-6 h-6 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -208,6 +454,17 @@ export default function AllProducts() {
           </p>
         )}
       </div>
+
+      {/* ═══ F#57 — دروار الفلترة والفرز (موبايل = شيت من التحت · ديسكتوب = جانبي) ═══ */}
+      <FilterSortDrawer
+        open={drawerOpen}
+        onClose={dismissDrawer}
+        sections={sections}
+        onReset={clearDraft}
+        onApply={applyDrawer}
+        matchCount={matchCount}
+        openerRef={openerRef}
+      />
     </main>
   );
 }
