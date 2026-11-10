@@ -27,6 +27,15 @@
 //   🩹 FIX-RACE (count): العدّاد بـ AbortController + reset — لا عدّاد قديم
 //                        تحت اسم فئة جديدة.
 //
+//   🔄 ROTATE-V1        : خيار mapPage اختياري — الصفحة الافتراضية كتمشي لصفحة
+//                        حقيقية مدوّرة داخل K صفحات الكتالوج (بذرة عشوائية في
+//                        كل زيارة) → المنتجات كيدخلو وكيخرجو كل مرة. القواعد:
+//                        · fail-open: بلا عدّاد/فشل → identity (السلوك القديم)
+//                        · كاش جلسة للعدّاد → الزيارات المتكررة بلا انتظار
+//                        · overshoot guard: العدّاد قديم → رجوع آمن للصفحة 1
+//                        · done = دورة كاملة (v ≥ K) — الصفحات الجزئية عادية
+//                        · consumers بلا mapPage (الأقسام/all-products) = ما تغيّر والو
+
 // ── عقد الاستعمال ──
 //   · enabled=false كيجمد الـ feed (مثلاً وضع البحث) — المستهلك مسؤول ما يعرضش
 //     حالة قديمة وهو مجمد (الهوم كيفرق بـ isBrowsing).
@@ -36,6 +45,21 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+// 🔄 ROTATE-V1 — كاش عدّاد الكتالوج للجلسة (url → count) — الزيارات المتكررة
+// كتبدا فوراً بالصفحة المدوّرة بلا انتظار RTT ديال العدّاد (fail-open دائماً)
+const COUNT_CACHE_KEY = 'laclarc_count_cache';
+function readCountCache(): { u: string; c: number } | null {
+  try {
+    const raw = sessionStorage.getItem(COUNT_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed.u === 'string' && typeof parsed.c === 'number' ? parsed : null;
+  } catch { return null; }
+}
+function writeCountCache(u: string, c: number) {
+  try { sessionStorage.setItem(COUNT_CACHE_KEY, JSON.stringify({ u, c })); } catch {}
+}
 
 export interface FeedItem {
   id: string | number;
@@ -51,6 +75,9 @@ export interface UseInfiniteFeedOptions<T> {
   perPage?: number;
   /** سلحسالفة حتمية لكل صفحة (الهوم: seed + page) — اختياري */
   shuffle?: (items: T[], page: number) => T[];
+  /** 🔄 ROTATE-V1 — تحويل الصفحة الافتراضية (1..K) لصفحة حقيقية — اختياري
+   *  K = عدد الصفحات (من العدّاد، fail-open: بلا عدّاد ما كيتستعملش) */
+  mapPage?: (virtualPage: number, totalPages: number) => number;
   /** تحويل الاستجابة — default: حرس Array.isArray (موحد على كل المسارات) */
   parse?: (data: any) => T[];
   /** rootMargin ديال الـ observer — default '600px' (الهوم كتمرر '800px') */
@@ -93,6 +120,41 @@ export function useInfiniteFeed<T extends { id: string | number } = any>(
   const busyRef = useRef(false);                  // 🛡️ mutex واحد للمسارين
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  // 🔄 ROTATE-V1 — plumbing ديال التدوير (فما كاين mapPage غير)
+  const totalPagesRef = useRef(0);                // K الحالية (من العدّاد أو الكاش)
+  const countPromiseRef = useRef<Promise<number> | null>(null);
+  const rotationOffRef = useRef(false);           // overshoot guard → identity للجولة
+
+  // ═══ عدّاد الحقيقة — قبل الصفحة الأولى (mapPage كينتظر الوعد ديالو) ═══
+  // abort + reset (لا عدّاد قديم) + ROTATE: كاشر الوعد لي كينتظرو التدوير
+  useEffect(() => {
+    if (!enabled) return;
+    const buildCountUrl = optsRef.current.buildCountUrl;
+    if (!buildCountUrl) { countPromiseRef.current = null; return; }
+    const url = buildCountUrl();
+    if (!url) { countPromiseRef.current = null; return; }  // بوابة اختيارية من المستهلك
+    const controller = new AbortController();
+    setTotalCount(0);
+    // 🔄 ROTATE — كاش الجلسة: نفس الـ url → K فورية بلا انتظار
+    const cached = readCountCache();
+    totalPagesRef.current = cached && cached.u === url && cached.c > 0
+      ? Math.ceil(cached.c / perPage)
+      : 0;
+    countPromiseRef.current = fetch(url, { signal: controller.signal })
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: any) => {
+        const count = Number(d?.count) || 0;
+        if (count > 0) {
+          setTotalCount(count);
+          totalPagesRef.current = Math.ceil(count / perPage);
+          writeCountCache(url, count);
+        }
+        return count;
+      })
+      .catch(() => 0);                            // تجميلي — صمت مقصود وموثق
+    return () => controller.abort();
+  }, [resetKey, enabled, retryNonce, perPage]);
+
   // ═══ الصفحة الأولى — Reset كامل عند resetKey/enabled/retry ═══
   useEffect(() => {
     if (!enabled) return;
@@ -103,18 +165,55 @@ export function useInfiniteFeed<T extends { id: string | number } = any>(
 
     (async () => {
       try {
-        const res = await fetch(optsRef.current.buildPageUrl(1), {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        // 🔄 ROTATE-V1 — تحضير K (fail-open): الكاش = فوري · أول زيارة = انتظار واحد
+        let rotateActive = false;
+        if (optsRef.current.mapPage) {
+          if (totalPagesRef.current > 0) {
+            rotateActive = true;
+          } else if (countPromiseRef.current) {
+            const c = await countPromiseRef.current;
+            if (gen !== genRef.current) return;     // 🛡️ سياق أقدم — تجاهل
+            if (c > 0) { totalPagesRef.current = Math.ceil(c / perPage); rotateActive = true; }
+          }
+        }
+        rotationOffRef.current = false;
+
+        const mapPage = optsRef.current.mapPage;
+        let realPage = 1;
+        if (rotateActive && mapPage) realPage = mapPage(1, totalPagesRef.current);
+
+        const fetchPage = (rp: number) =>
+          fetch(optsRef.current.buildPageUrl(rp), {
+            cache: 'no-store',
+            signal: controller.signal,
+          }).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          });
+
+        let data = await fetchPage(realPage);
         if (gen !== genRef.current) return;       // 🛡️ سياق أقدم — تجاهل
         const parse = optsRef.current.parse;
-        const arr: T[] = parse ? parse(data) : (Array.isArray(data) ? data : []);
+        let arr: T[] = parse ? parse(data) : (Array.isArray(data) ? data : []);
+
+        // 🛡️ ROTATE overshoot guard — العدّاد قديم/غالط والصفحة المدوّرة برا النهاية
+        // → رجوع آمن للسلوك القديم (identity) للجولة كاملة
+        if (rotateActive && realPage > 1 && arr.length === 0) {
+          rotationOffRef.current = true;
+          rotateActive = false;
+          data = await fetchPage(1);
+          if (gen !== genRef.current) return;
+          arr = parse ? parse(data) : (Array.isArray(data) ? data : []);
+        }
+
         setProducts(optsRef.current.shuffle ? optsRef.current.shuffle(arr, 1) : arr);
-        if (arr.length < perPage) setDone(true);
-        else setPage(2);                          // 🩹 FIX-DUP (root) — مغروز في الكاتب
+        if (rotateActive) {
+          if (arr.length === 0) setDone(true);
+          else setPage(2);                        // 🩹 FIX-DUP (root) — مغروز في الكاتب
+        } else {
+          if (arr.length < perPage) setDone(true);
+          else setPage(2);                        // 🩹 FIX-DUP (root) — مغروز في الكاتب
+        }
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
           console.error('[feed:first]', err);
@@ -128,22 +227,6 @@ export function useInfiniteFeed<T extends { id: string | number } = any>(
     return () => controller.abort();
   }, [resetKey, enabled, retryNonce, perPage]);
 
-  // ═══ عدّاد الحقيقة — abort + reset (لا عدّاد قديم) ═══
-  useEffect(() => {
-    if (!enabled) return;
-    const buildCountUrl = optsRef.current.buildCountUrl;
-    if (!buildCountUrl) return;
-    const url = buildCountUrl();
-    if (!url) return;                             // بوابة اختيارية من المستهلك
-    const controller = new AbortController();
-    setTotalCount(0);
-    fetch(url, { signal: controller.signal })
-      .then(r => (r.ok ? r.json() : null))
-      .then((d: any) => { if (d?.count) setTotalCount(d.count); })
-      .catch(() => {});                           // تجميلي — صمت مقصود وموثق
-    return () => controller.abort();
-  }, [resetKey, enabled, retryNonce]);
-
   // ═══ loadMore — الكاتب الوحيد للإلحاق (الزر والـ observer كلاهما هنا) ═══
   const loadMore = useCallback(async () => {
     if (busyRef.current || done || loading || !enabled) return;
@@ -151,7 +234,11 @@ export function useInfiniteFeed<T extends { id: string | number } = any>(
     setLoadingMore(true);
     const myGen = genRef.current;
     try {
-      const res = await fetch(optsRef.current.buildPageUrl(page), { cache: 'no-store' });
+      // 🔄 ROTATE-V1 — الصفحة الافتراضية → الصفحة الحقيقية المدوّرة (fail-open)
+      const mapPage = optsRef.current.mapPage;
+      const rotateActive = !!mapPage && !rotationOffRef.current && totalPagesRef.current > 0;
+      const realPage = rotateActive && mapPage ? mapPage(page, totalPagesRef.current) : page;
+      const res = await fetch(optsRef.current.buildPageUrl(realPage), { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (genRef.current !== myGen) return;       // 🛡️ السياق تبدل — لا إلحاق من ميت
@@ -165,8 +252,14 @@ export function useInfiniteFeed<T extends { id: string | number } = any>(
         return [...prev, ...list];
       });
       setMoreError('');                           // 🩹 FIX-STALE — نجاح يمسح الخطأ
-      if (arr.length < perPage) setDone(true);
-      else setPage(p => p + 1);
+      if (rotateActive) {
+        // دورة كاملة حول الكتالوج — الصفحات الجزئية في النص عادية (نهاية كتالوج حقيقية)
+        if (page >= totalPagesRef.current || arr.length === 0) setDone(true);
+        else setPage(p => p + 1);
+      } else {
+        if (arr.length < perPage) setDone(true);
+        else setPage(p => p + 1);
+      }
     } catch (err: any) {
       console.error('[feed:more]', err);
       setMoreError(optsRef.current.moreErrorText ?? 'Failed to load more products. Please try again.');

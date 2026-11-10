@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense, useMemo } from 'react';
+import { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '../components/ProductCard';
 import LightningDeals from '../components/LightningDeals';
@@ -68,19 +68,23 @@ function HomeContent() {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchGenRef = useRef(0);                 // 🛡️ سباقات البحث السريعة (gen محلي — الـ hook عندو gen ديالو)
 
-  // ✨ Session seed — lazy init (SSR-safe: typeof window guard, Tenet #2)
+  // 🔄 ROTATE-V1 — seed جديد في كل زيارة (كان sessionStorage catalog_seed ثابت
+  //    للجلسة كاملة — طلب المالك: «المنتجات نحوسهم كل مرة يتبدلو تدخل تخرج
+  //    يطلعوا منتجات جديدة») — SSR-safe: typeof window guard, Tenet #2
   const [shuffleSeed] = useState<number | null>(() => {
     if (typeof window === 'undefined') return 1;
-    try {
-      const saved = sessionStorage.getItem('catalog_seed');
-      if (saved) return Number(saved);
-      const seed = Math.floor(Math.random() * 1_000_000);
-      sessionStorage.setItem('catalog_seed', String(seed));
-      return seed;
-    } catch {
-      return 1;
-    }
+    return Math.floor(Math.random() * 1_000_000);
   });
+
+  // 🔄 ROTATE-V1 — كل زيارة كتبدا من صفحة عشوائية من الكتالوج وتلف عليه بالكامل:
+  //    virtual page v من K صفحات → real page ((offset + v - 1) % K) + 1
+  //    = المنتجات كيدخلو وكيخرجو كل زيارة، بلا تكرار داخل الزيارة، والسكرول
+  //    اللانهائي كيغطي الكتالوج كامل (fail-open: بلا عدّاد = السلوك القديم)
+  const mapPage = useCallback((v: number, K: number) => {
+    if (!shuffleSeed || K <= 1) return v;
+    const offset = shuffleSeed % K;
+    return ((offset + v - 1) % K) + 1;
+  }, [shuffleSeed]);
 
   const categoriesReady = categoryStructure.length > 1;
   const isBrowsing = !searchQuery; // browse feed vs server search results
@@ -108,6 +112,7 @@ function HomeContent() {
       perPage: PER_PAGE,
       rootMargin: '800px',                                          // نفس السلوك الاستباقي ديال v5
       shuffle: (arr, pageNum) => shufflePage(arr, pageNum, shuffleSeed),
+      mapPage,                                                      // 🔄 ROTATE-V1 — كل زيارة = كتالوج مختلف
     }
   );
 
