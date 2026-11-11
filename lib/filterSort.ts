@@ -4,14 +4,16 @@
 // مستعمل من /all-products و /category/* — صفر React، صفر fetch: دوال نقية
 // كتقبل المصفوفات والحقول كيما جاو من الـ feed.
 //
-// تقسيم الحقيقة (F#57-Phase2 — الباك فهم price/sort/colour params):
-//   · category/price/colour/sort = سيرفر-سايد على الكاتالوگ كامل (53k+) —
+// تقسيم الحقيقة (F#59-drawerv2 — منمط الديمو المرجعي):
+//   · category/price/colour/size/sort = سيرفر-سايد على الكاتالوگ كامل (53k+) —
 //     filterQuery() كيبني الـ params وresetKey جديد = الكاتب الوحيد يجيب من جديد.
+//     🆕 اللون والمقاس ولّاو قوائم (multi-select كيما الديمو) — السيرفر كيتوصل
+//     بـ «Black,Navy Blue» وكيدير OR-chain (patch sizefacet-FROM-d4f24af).
 //   · visibleProducts/countPrice بقاو فوق المحمل كطبقة عرض/safety-net:
 //     مكررة idempotent مع السيرفر (نفس النطاقات بالحرف) — إلا الباك ما وصلش
-//     للـ patch الجديد، الفلترة كتخدم فوق المحمل بدل ما تهبط خاوية (graceful).
-//     · colour ما عندوش safety-net كلاينت عمداً (swatches سقف 5 — العد والحقيقة
-//       غير عند السيرفر EXISTS على variants كاملين) — بلا باك جديد = بلا فلترة لون.
+//     للـ patch الجديد، الفلترة السعرية كتخدم فوق المحمل بدل ما تهبط خاوية (graceful).
+//     · colour/size ما عندهمش safety-net كلاينت عمداً (variants ماشي فالpayload —
+//       الحقيقة غير عند السيرفر) — بلا باك جديد = الفلتر ما كيتبدلش (بلا كذب).
 // العدادات في الدروار = فوق المحمل برك · totalCount = سيرفر صادق (?count=1+filters).
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -23,11 +25,19 @@ export interface FilterState {
   price: string;
   /** slugPath تاع فئة الجذر — [] = كل الفئات (سيرفر-سايد عبر resetKey) */
   category: string[];
-  /** لون واحد (سيرفر-سايد colour param على variants) — '' = أي لون */
-  colour: string;
+  /** 🆕 v2 ألوان مختارة (سيرفر-سايد OR-chain على variants) — [] = أي لون */
+  colour: string[];
+  /** 🆕 v2 مقاسات مختارة (سيرفر-سايد suffix بعد آخر '-' فvariantKey) — [] = أي مقاس */
+  size: string[];
 }
 
-export const DEFAULT_FILTERS: FilterState = { sort: 'recommended', price: 'any', category: [], colour: '' };
+export const DEFAULT_FILTERS: FilterState = {
+  sort: 'recommended',
+  price: 'any',
+  category: [],
+  colour: [],
+  size: [],
+};
 
 export interface SortOption {
   value: SortKey;
@@ -51,6 +61,33 @@ export const COLOR_FACETS: string[] = [
   'Black', 'White', 'Gray', 'Blue', 'Navy Blue', 'Red', 'Green', 'Yellow',
   'Pink', 'Purple', 'Orange', 'Beige', 'Brown', 'Silver', 'Gold', 'Multicolor',
 ];
+
+// 🆕 v2 — دواير اللون (نمط الديمو المرجعي): كل اسم = خلفية CSS حقيقية
+// قيم مباشرة للستايل (بلا tailwind arbitrary — الأسماء ديناميكية) · Multicolor = تدرّج
+export const COLOR_SWATCHES: Record<string, string> = {
+  Black: '#1d1d1f',
+  White: '#ffffff',
+  Gray: '#9a9a96',
+  Blue: '#2563eb',
+  'Navy Blue': '#1e2a4a',
+  Red: '#b3202a',
+  Green: '#1f4d3a',
+  Yellow: '#facc15',
+  Pink: '#e9a9b8',
+  Purple: '#7e5bef',
+  Orange: '#f97316',
+  Beige: '#d9c8b4',
+  Brown: '#7c4a21',
+  Silver: '#c0c0c8',
+  Gold: '#d4a24e',
+  Multicolor: 'conic-gradient(#b3202a 0 60deg, #facc15 60deg 120deg, #1f4d3a 120deg 180deg, #2563eb 180deg 240deg, #7e5bef 240deg 300deg, #f97316 300deg 360deg)',
+};
+
+// 🆕 v2 — فاسيت المقاس: whitelist حرفية من SW_SIZE_ONLY_RX تاع الباك
+// (server.js — الحقيقة عند السيرفر: suffix بعد آخر '-' فvariantKey CJ "Color-Size").
+// القائمة مقفلة على المقاسات الحرفية الشائعة — المقاسات الرقمية (كوأشار 38-46…)
+// موجودة فالقاموس تاع الباك ولكن ماشي هنا: كتخدم من الدروار غير إلا ولات فعالة فالكاتالوگ.
+export const SIZE_FACETS: string[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL'];
 
 export interface PriceBand {
   value: string;
@@ -105,24 +142,29 @@ export function visibleProducts<T extends { price?: unknown }>(products: T[], st
 export function activeFilterCount(state: FilterState): number {
   let n = 0;
   if (state.price !== 'any') n += 1;
-  if (state.colour) n += 1;
   n += state.category.length;
+  n += state.colour.length;
+  n += state.size.length;
   return n;
 }
 
-/** 🆕 Phase2 — الـ params تاع الفلترة للسيرفر (كيتزادو بعد ?... ولا ?count=1):
- *  minPrice/maxPrice من النطاق · colour · sort — كل واحد غير إلا نشيط.
- *  الدلالة متطابقة مع passesPrice بالحرف (سقف النطاق inclusive في الجوج جهات):
+/** 🆕 v2 — الـ params تاع الفلترة للسيرفر (كيتزادو بعد ?... ولا ?count=1):
+ *  minPrice/maxPrice من النطاق · colour/size قوائم مفصولة بفواصل (OR-chain سيرفر)
+ *  · sort — كل واحد غير إلا نشيط. الدلالة متطابقة مع passesPrice بالحرف
+ *  (سقف النطاق inclusive في الجوج جهات):
  *    under-10 → maxPrice=10 · 10-25 → minPrice=10&maxPrice=25 · over-50 → minPrice=50
- *  رجّع '' إلا ماكاين حتى فيلتر — الـ URL كيبقى كيف ما كان (byte-compat مع Phase 1). */
-export function filterQuery(state: Pick<FilterState, 'sort' | 'price' | 'colour'>): string {
+ *  رجّع '' إلا ماكاين حتى فيلتر — الـ URL كيبقى كيف ما كان (byte-compat مع Phase 1).
+ *  ⚠️ عقد الباك (sizefacet-FROM-d4f24af): القيمة الواحدة = نفس القديم بالحرف؛
+ *  القائمة مفصولة بفواصل كتفهم من الباك الجديد — القديم كيتجاهلها بصمت (graceful). */
+export function filterQuery(state: Pick<FilterState, 'sort' | 'price' | 'colour' | 'size'>): string {
   const sp = new URLSearchParams();
   const band = findBand(state.price);
   if (band.value !== 'any') {
     if (band.min > 0) sp.set('minPrice', String(band.min));
     if (Number.isFinite(band.max)) sp.set('maxPrice', String(band.max));
   }
-  if (state.colour) sp.set('colour', state.colour);
+  if (state.colour.length) sp.set('colour', state.colour.join(','));
+  if (state.size.length) sp.set('size', state.size.join(','));
   if (state.sort !== 'recommended') sp.set('sort', state.sort);
   const q = sp.toString();
   return q ? `&${q}` : '';

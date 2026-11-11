@@ -41,13 +41,16 @@ import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import FilterSortDrawer, { type DrawerSection } from '@/components/FilterSortDrawer';
 import {
   COLOR_FACETS,
+  COLOR_SWATCHES,
   DEFAULT_FILTERS,
   PRICE_BANDS,
+  SIZE_FACETS,
   SORTS,
   activeFilterCount,
   countPrice,
   filterQuery,
   findBand,
+  findSort,
   visibleProducts,
   type FilterState,
 } from '@/lib/filterSort';
@@ -118,13 +121,28 @@ export default function AllProducts() {
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement | null>(null);
+  // 🆕 v2 — إدارة التركيز تاع الشيبس (نمط الديمو): بعد الحيد، التركيز كيمشي للشيب
+  // اللي عوض المحيد، ولا للّخرة، ولا لزر الفتح إلا ما بقاش حتى شيب
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusNext = useRef<number | 'opener' | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    const i = focusNext.current;
+    focusNext.current = null;
+    if (i === 'opener') {
+      openerRef.current?.focus();
+      return;
+    }
+    const left = chipRefs.current.filter(Boolean);
+    (left[i] ?? left[i - 1] ?? openerRef.current)?.focus();
+  });
   const activeCategory = applied.category[0] ?? '';
 
   // ═══ الكاتب الوحيد — التوصيل فقط ═══
   // F#57-Phase2: resetKey كيتضمن كل الفلاتر — أي تبديل = إعادة تهيئة كاملة
   // (count + صفحة 1) والسيرفر هو اللي كيفلتر ويفرز على الكاتالوگ كامل
   const feed = useInfiniteFeed<P>(
-    `all-products:${activeCategory}|${applied.price}|${applied.sort}|${applied.colour}`,
+    `all-products:${activeCategory}|${applied.price}|${applied.sort}|${applied.colour.join(',')}|${applied.size.join(',')}`,
     true,
     {
       buildPageUrl: (page) =>
@@ -172,15 +190,23 @@ export default function AllProducts() {
   const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
   const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
   const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
-  const toggleDraftColour = useCallback((v: string) => setDraft((d) => ({ ...d, colour: v })), []);
+  // 🆕 v2 — اللون والمقاس متعددين (كيما الديمو) — الضغطة كتزيد/كيحيد من القائمة
+  const toggleDraftColour = useCallback(
+    (v: string) => setDraft((d) => ({ ...d, colour: d.colour.includes(v) ? d.colour.filter((x) => x !== v) : [...d.colour, v] })),
+    []
+  );
+  const toggleDraftSize = useCallback(
+    (v: string) => setDraft((d) => ({ ...d, size: d.size.includes(v) ? d.size.filter((x) => x !== v) : [...d.size, v] })),
+    []
+  );
   const toggleDraftCategory = useCallback(
     (slugPath: string) => setDraft((d) => ({ ...d, category: d.category[0] === slugPath ? [] : [slugPath] })),
     []
   );
-  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', category: [], colour: '' })), []);
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', category: [], colour: [], size: [] })), []);
   const clearAllFilters = useCallback(() => {
     setApplied((prev) => {
-      const next = { ...prev, price: 'any', category: [], colour: '' };
+      const next = { ...prev, price: 'any', category: [], colour: [], size: [] };
       setDraft(next);
       return next;
     });
@@ -193,6 +219,7 @@ export default function AllProducts() {
         key: 'sort',
         title: 'Sort by',
         type: 'radio',
+        summary: findSort(draft.sort).label,
         options: SORTS.map((s) => ({ value: s.value, label: s.label })),
         selected: [draft.sort],
         onToggle: toggleDraftSort,
@@ -201,6 +228,7 @@ export default function AllProducts() {
         key: 'price',
         title: 'Price',
         type: 'radio',
+        summary: findBand(draft.price).label,
         options: PRICE_BANDS.filter((b) => b.value !== 'any').map((b) => {
           const c = countPrice(items, b.value);
           return { value: b.value, label: b.label, count: c, disabled: c === 0 && draft.price !== b.value };
@@ -209,17 +237,26 @@ export default function AllProducts() {
         onToggle: toggleDraftPrice,
       },
       {
-        // 🆕 F#57-Phase2 — فاسيت اللون (سيرفر-سايد EXISTS على variants)
+        // 🆕 v2 — فاسيت اللون multi-select بدواير حقيقية (نمط الديمو)
         key: 'colour',
         title: 'Colour',
-        type: 'radio',
+        type: 'swatch',
         defaultFolded: true,
-        options: [
-          { value: '', label: 'Any colour' },
-          ...COLOR_FACETS.map((c) => ({ value: c, label: c })),
-        ],
-        selected: [draft.colour],
+        summary: draft.colour.length ? draft.colour.join(', ') : 'Any',
+        options: COLOR_FACETS.map((c) => ({ value: c, label: c, swatch: COLOR_SWATCHES[c] })),
+        selected: draft.colour,
         onToggle: toggleDraftColour,
+      },
+      {
+        // 🆕 v2 — فاسيت المقاس بالبلاطات (نمط الديمو) — سيرفر-سايد suffix تاع variantKey
+        key: 'size',
+        title: 'Size',
+        type: 'tiles',
+        defaultFolded: true,
+        summary: draft.size.length ? draft.size.join(', ') : 'Any',
+        options: SIZE_FACETS.map((s) => ({ value: s, label: s })),
+        selected: draft.size,
+        onToggle: toggleDraftSize,
       },
     ];
     if (catRoots && catRoots.length > 0) {
@@ -228,6 +265,7 @@ export default function AllProducts() {
         title: 'Category',
         type: 'radio',
         defaultFolded: true,
+        summary: draft.category[0] ? (catRoots.find((r) => r.slugPath === draft.category[0])?.name ?? 'Selected') : 'All categories',
         options: [
           { value: '', label: 'All categories' },
           ...catRoots.map((r) => ({
@@ -242,18 +280,19 @@ export default function AllProducts() {
       });
     }
     return list;
-  }, [draft, items, catRoots, toggleDraftSort, toggleDraftPrice, toggleDraftColour, toggleDraftCategory]);
+  }, [draft, items, catRoots, toggleDraftSort, toggleDraftPrice, toggleDraftColour, toggleDraftSize, toggleDraftCategory]);
 
-  // رقم زر التطبيق — الصدق Phase2: كيتبدل الفئة/السعر/اللون = refetch سيرفر —
+  // رقم زر التطبيق — الصدق Phase2: كيتبدل الفئة/السعر/اللون/المقاس = refetch سيرفر —
   // العدادات فوق المحمل ما عادش كيمثلو النتيجة الجاية → «Show results» بلا رقم
   const categoryChanged = (draft.category[0] ?? '') !== activeCategory;
   const priceChanged = draft.price !== applied.price;
-  const colourChanged = draft.colour !== applied.colour;
-  const matchCount = (categoryChanged || priceChanged || colourChanged)
+  const colourChanged = draft.colour.join(',') !== applied.colour.join(',');
+  const sizeChanged = draft.size.join(',') !== applied.size.join(',');
+  const matchCount = (categoryChanged || priceChanged || colourChanged || sizeChanged)
     ? null
     : countPrice(items, draft.price);
 
-  // ═══ الشيبس — كل فيلتر مطبق = شيب كيحيد راسو بضغطة ═══
+  // ═══ الشيبس — كل فيلتر مطبق = شيب كيحيد راسو بضغطة (اللون/المقاس = شيب لكل قيمة) ═══
   const chips = useMemo(() => {
     const list: { key: string; label: string; onRemove: () => void }[] = [];
     if (activeCategory) {
@@ -271,15 +310,22 @@ export default function AllProducts() {
         onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })),
       });
     }
-    if (applied.colour) {
+    for (const c of applied.colour) {
       list.push({
-        key: 'colour',
-        label: applied.colour,
-        onRemove: () => setApplied((prev) => ({ ...prev, colour: '' })),
+        key: `colour-${c}`,
+        label: c,
+        onRemove: () => setApplied((prev) => ({ ...prev, colour: prev.colour.filter((x) => x !== c) })),
+      });
+    }
+    for (const s of applied.size) {
+      list.push({
+        key: `size-${s}`,
+        label: `Size ${s}`,
+        onRemove: () => setApplied((prev) => ({ ...prev, size: prev.size.filter((x) => x !== s) })),
       });
     }
     return list;
-  }, [activeCategory, applied.price, applied.colour, catRoots]);
+  }, [activeCategory, applied.price, applied.colour, applied.size, catRoots]);
 
   return (
     <main className="min-h-screen bg-temu-offwhite">
@@ -345,12 +391,13 @@ export default function AllProducts() {
           {chips.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
-                {chips.map((c) => (
+                {chips.map((c, i) => (
                   <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
                     {c.label}
                     <button
                       type="button"
-                      onClick={c.onRemove}
+                      ref={(el) => { chipRefs.current[i] = el; }}
+                      onClick={() => { c.onRemove(); focusNext.current = i; }}
                       aria-label={`Remove filter: ${c.label}`}
                       className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
                     >
@@ -363,7 +410,7 @@ export default function AllProducts() {
               </ul>
               <button
                 type="button"
-                onClick={clearAllFilters}
+                onClick={() => { clearAllFilters(); focusNext.current = 'opener'; }}
                 className="cursor-pointer rounded-sm text-[13px] font-bold whitespace-nowrap text-gray-500 underline underline-offset-4 transition-colors duration-150 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
               >
                 Clear all

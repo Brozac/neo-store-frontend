@@ -1,18 +1,20 @@
 'use client';
 
 // ═══════════════════════════════════════════════════════════════════════
-// app/components/FilterSortDrawer.tsx — F#57-filterdrawer
+// app/components/FilterSortDrawer.tsx — F#59-drawerv2
 // ═══════════════════════════════════════════════════════════════════════
 // دروار الفلترة والفرز — النمط متبني على كومبوننت الديمو الممتاز (draft/applied
 // · focus trap · Escape · drag-to-dismiss · disabled للخيارات الخاوية) متبرج
-// على واقع لكل لارك:
-//   · data-driven: الصفحات كتمرر sections (فاسيتس) — الدروار ما يعرف والو
-//     على الباك ولا على الكتالوج (العرض برك).
-//   · matchCount=null → الزر كيولي «Show results» بلا رقم — الصدق قبل الرقم
-//     (كيوقع ملي كيتبدل category = refetch سيرفر، الرقم معلومش سلفاً).
-//   · الألوان: نظام لكل لارك (#5B7EA6 fog-blue) ماشي zinc تاع الديمو.
-//   · كل منيوكتات الـ a11y تاع الديمو محفوظة: Tab محبوس في البانيل، التركيز
-//     كيرجع للزر اللي فتح، role=status للعد، motion-reduce، sr-only.
+// على واقع لكل لارك.
+//
+// 🆕 v2 — رفع التشابه مع الديمو المرجعي (المالك مرجع الديمو كامل):
+//   · summary: كل قسم كيعرض الاختيار الحالي بجنب العنوان («Price — Under $10»)
+//   · swatch: دواير اللون الحقيقية (خلفية CSS + ring عند الاختيار) ماشي كاشبوكسات
+//   · tiles: المقاسات بلاطات (grid) كيما الديمو — multi-select
+//   · اللون ولّى multi-select (checkbox دواير) — السيرفر كيتوصل قائمة مفصولة
+//     بفواصل وكيدير OR-chain (patch sizefacet-FROM-d4f24af)
+//   · كل منيوكتات الـ a11y محفوظة: Tab محبوس، التركيز كيرجع للزر اللي فتح،
+//     role-less fieldset/legend، motion-reduce، sr-only، disabled خاوي ما كيتشافش
 // ═══════════════════════════════════════════════════════════════════════
 
 import { useEffect, useRef, useState } from 'react';
@@ -25,18 +27,24 @@ export interface DrawerOption {
   count?: number | null;
   /** معطل — اختيار كيرجع صفر نتائج (الديمو: ما كتخليش الزبون يحبس راسو في خاوي) */
   disabled?: boolean;
+  /** 🆕 v2 خلفية دايرة اللون (hex ولا CSS gradient) — type='swatch' برك */
+  swatch?: string;
 }
 
 export interface DrawerSection {
   key: string;
   title: string;
-  type: 'radio' | 'checkbox';
+  /** radio = دايرة وحيدة · checkbox = قائمة متعددة · swatch = دواير لون متعددة
+   *  · tiles = بلاطات متعددة (نمط الديمو للمقاسات) */
+  type: 'radio' | 'checkbox' | 'swatch' | 'tiles';
   options: DrawerOption[];
   /** الاختيار الحالي في المسودة (values) */
   selected: string[];
   onToggle: (value: string) => void;
   /** مطوي عند الفتح — default: مكشوف */
   defaultFolded?: boolean;
+  /** 🆕 v2 — الاختيار الحالي كيتعرض بجنب العنوان (نمط الديمو: «Price — £75 to £150») */
+  summary?: string;
 }
 
 interface FilterSortDrawerProps {
@@ -212,6 +220,9 @@ export default function FilterSortDrawer({
                       className="group flex h-14 w-full cursor-pointer items-center gap-3 rounded-md text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#5B7EA6]"
                     >
                       <span className="grow">{section.title}</span>
+                      {section.summary && (
+                        <span className="max-w-[10rem] truncate text-sm font-normal text-gray-500 sm:max-w-[14rem]">{section.summary}</span>
+                      )}
                       <svg
                         className={`size-4 shrink-0 text-gray-500 transition-transform duration-150 motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`}
                         viewBox="0 0 24 24"
@@ -228,7 +239,65 @@ export default function FilterSortDrawer({
                   </h3>
                   <fieldset id={sectionId} hidden={!expanded} className="pt-1 pb-5">
                     <legend className="sr-only">{section.title}</legend>
-                    <ul className={section.type === 'radio' ? 'space-y-2.5' : 'grid grid-cols-2 gap-x-6 gap-y-2.5'}>
+                    {section.type === 'tiles' ? (
+                      /* 🆕 v2 — بلاطات المقاسات (نمط الديمو) — multi-select */
+                      <div className="grid grid-cols-4 gap-2">
+                        {section.options.map((o) => {
+                          const checked = section.selected.includes(o.value);
+                          const inputId = `pf-drawer-${section.key}-${o.value || 'all'}`;
+                          return (
+                            <label
+                              key={o.value}
+                              htmlFor={inputId}
+                              className="relative flex h-10 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-bold whitespace-nowrap text-temu-black shadow-xs transition-colors duration-150 select-none hover:bg-gray-50 has-checked:border-[#5B7EA6] has-checked:bg-[#5B7EA6] has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-[#5B7EA6] has-disabled:cursor-not-allowed has-disabled:text-gray-400 has-disabled:line-through has-disabled:opacity-60 has-disabled:shadow-none has-disabled:hover:bg-white motion-reduce:transition-none"
+                            >
+                              <input
+                                id={inputId}
+                                type="checkbox"
+                                name={`pf-drawer-${section.key}`}
+                                value={o.value}
+                                checked={checked}
+                                disabled={o.disabled}
+                                onChange={() => section.onToggle(o.value)}
+                                className="peer sr-only"
+                              />
+                              {o.label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : section.type === 'swatch' ? (
+                      /* 🆕 v2 — دواير اللون الحقيقية (نمط الديمو) — multi-select */
+                      <ul className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                        {section.options.map((o) => {
+                          const checked = section.selected.includes(o.value);
+                          const inputId = `pf-drawer-${section.key}-${o.value || 'all'}`;
+                          return (
+                            <li key={o.value} className="flex items-center gap-3 text-sm has-[:disabled]:opacity-50">
+                              <input
+                                id={inputId}
+                                type="checkbox"
+                                name={`pf-drawer-${section.key}`}
+                                value={o.value}
+                                checked={checked}
+                                disabled={o.disabled}
+                                onChange={() => section.onToggle(o.value)}
+                                aria-label={o.label}
+                                style={o.swatch ? { background: o.swatch } : undefined}
+                                className="size-5 shrink-0 cursor-pointer appearance-none rounded-full bg-gray-200 ring-1 ring-black/10 ring-inset checked:ring-2 checked:ring-[#5B7EA6] checked:ring-offset-2 checked:ring-offset-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] disabled:cursor-not-allowed motion-reduce:transition-none"
+                              />
+                              <label htmlFor={inputId} className="grow cursor-pointer text-temu-black">
+                                {o.label}
+                              </label>
+                              {o.count !== null && o.count !== undefined && (
+                                <span className="text-xs text-gray-500 tabular-nums">{o.count.toLocaleString()}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <ul className={section.type === 'radio' ? 'space-y-2.5' : 'grid grid-cols-2 gap-x-6 gap-y-2.5'}>
                       {section.options.map((o) => {
                         const checked = section.selected.includes(o.value);
                         const inputId = `pf-drawer-${section.key}-${o.value || 'all'}`;
@@ -271,7 +340,8 @@ export default function FilterSortDrawer({
                           </li>
                         );
                       })}
-                    </ul>
+                      </ul>
+                    )}
                   </fieldset>
                 </div>
               );

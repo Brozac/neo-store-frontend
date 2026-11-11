@@ -17,7 +17,7 @@
 //   🩹 retry داخلي — window.location.reload مات (لا مسح للجلسة والسكرول)
 // ═══════════════════════════════════════════════════════════════════
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard';
@@ -25,13 +25,16 @@ import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import FilterSortDrawer from '@/components/FilterSortDrawer';
 import {
   COLOR_FACETS,
+  COLOR_SWATCHES,
   DEFAULT_FILTERS,
   PRICE_BANDS,
+  SIZE_FACETS,
   SORTS,
   activeFilterCount,
   countPrice,
   filterQuery,
   findBand,
+  findSort,
   visibleProducts,
   type FilterState,
 } from '@/lib/filterSort';
@@ -73,11 +76,25 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement | null>(null);
+  // 🆕 v2 — إدارة التركيز تاع الشيبس (نمط الديمو) — نفسها فall-products
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusNext = useRef<number | 'opener' | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    const i = focusNext.current;
+    focusNext.current = null;
+    if (i === 'opener') {
+      openerRef.current?.focus();
+      return;
+    }
+    const left = chipRefs.current.filter(Boolean);
+    (left[i] ?? left[i - 1] ?? openerRef.current)?.focus();
+  });
 
   // ═══ الكاتب الوحيد — التوصيل فقط ═══
   // resetKey كيتضمن كل الفلاتر — أي تبديل = إعادة تهيئة كاملة والسيرفر كيفلتر
   const feed = useInfiniteFeed<Product>(
-    `${slugPath}|${applied.price}|${applied.sort}|${applied.colour}`,
+    `${slugPath}|${applied.price}|${applied.sort}|${applied.colour.join(',')}|${applied.size.join(',')}`,
     true,
     {
       buildPageUrl: (page) =>
@@ -113,11 +130,19 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
   const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
   const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
-  const toggleDraftColour = useCallback((v: string) => setDraft((d) => ({ ...d, colour: v })), []);
-  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', colour: '' })), []);
+  // 🆕 v2 — اللون والمقاس متعددين (كيما الديمو) — الضغطة كتزيد/كيحيد من القائمة
+  const toggleDraftColour = useCallback(
+    (v: string) => setDraft((d) => ({ ...d, colour: d.colour.includes(v) ? d.colour.filter((x) => x !== v) : [...d.colour, v] })),
+    []
+  );
+  const toggleDraftSize = useCallback(
+    (v: string) => setDraft((d) => ({ ...d, size: d.size.includes(v) ? d.size.filter((x) => x !== v) : [...d.size, v] })),
+    []
+  );
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', colour: [], size: [] })), []);
   const clearAllFilters = useCallback(() => {
     setApplied((prev) => {
-      const next = { ...prev, price: 'any', colour: '' };
+      const next = { ...prev, price: 'any', colour: [], size: [] };
       setDraft(next);
       return next;
     });
@@ -129,6 +154,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         key: 'sort',
         title: 'Sort by',
         type: 'radio' as const,
+        summary: findSort(draft.sort).label,
         options: SORTS.map((s) => ({ value: s.value, label: s.label })),
         selected: [draft.sort],
         onToggle: toggleDraftSort,
@@ -137,6 +163,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         key: 'price',
         title: 'Price',
         type: 'radio' as const,
+        summary: findBand(draft.price).label,
         options: PRICE_BANDS.filter((b) => b.value !== 'any').map((b) => {
           const c = countPrice(products, b.value);
           return { value: b.value, label: b.label, count: c, disabled: c === 0 && draft.price !== b.value };
@@ -145,35 +172,53 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         onToggle: toggleDraftPrice,
       },
       {
-        // 🆕 F#57-Phase2 — فاسيت اللون (سيرفر-سايد EXISTS على variants)
+        // 🆕 v2 — فاسيت اللون multi-select بدواير حقيقية (نمط الديمو)
         key: 'colour',
         title: 'Colour',
-        type: 'radio' as const,
+        type: 'swatch' as const,
         defaultFolded: true,
-        options: [
-          { value: '', label: 'Any colour' },
-          ...COLOR_FACETS.map((c) => ({ value: c, label: c })),
-        ],
-        selected: [draft.colour],
+        summary: draft.colour.length ? draft.colour.join(', ') : 'Any',
+        options: COLOR_FACETS.map((c) => ({ value: c, label: c, swatch: COLOR_SWATCHES[c] })),
+        selected: draft.colour,
         onToggle: toggleDraftColour,
       },
+      {
+        // 🆕 v2 — فاسيت المقاس بالبلاطات (نمط الديمو) — سيرفر-سايد suffix تاع variantKey
+        key: 'size',
+        title: 'Size',
+        type: 'tiles' as const,
+        defaultFolded: true,
+        summary: draft.size.length ? draft.size.join(', ') : 'Any',
+        options: SIZE_FACETS.map((s) => ({ value: s, label: s })),
+        selected: draft.size,
+        onToggle: toggleDraftSize,
+      },
     ],
-    [draft, products, toggleDraftSort, toggleDraftPrice, toggleDraftColour]
+    [draft, products, toggleDraftSort, toggleDraftPrice, toggleDraftColour, toggleDraftSize]
   );
 
-  // رقم زر التطبيق — الصدق Phase2: كيتبدل السعر/اللون = refetch سيرفر →
+  // رقم زر التطبيق — الصدق Phase2: كيتبدل السعر/اللون/المقاس = refetch سيرفر →
   // العدادات فوق المحمل ما عادش كيمثلو النتيجة الجاية → «Show results» بلا رقم
   const priceChanged = draft.price !== applied.price;
-  const colourChanged = draft.colour !== applied.colour;
-  const matchCount = (priceChanged || colourChanged) ? null : countPrice(products, draft.price);
+  const colourChanged = draft.colour.join(',') !== applied.colour.join(',');
+  const sizeChanged = draft.size.join(',') !== applied.size.join(',');
+  const matchCount = (priceChanged || colourChanged || sizeChanged) ? null : countPrice(products, draft.price);
 
+  // 🆕 v2 — الشيبس: شيب لكل قيمة (اللون/المقاس متعددين)
   const chips = [
     ...(applied.price !== 'any'
       ? [{ key: 'price', label: findBand(applied.price).label, onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })) }]
       : []),
-    ...(applied.colour
-      ? [{ key: 'colour', label: applied.colour, onRemove: () => setApplied((prev) => ({ ...prev, colour: '' })) }]
-      : []),
+    ...applied.colour.map((c) => ({
+      key: `colour-${c}`,
+      label: c,
+      onRemove: () => setApplied((prev) => ({ ...prev, colour: prev.colour.filter((x) => x !== c) })),
+    })),
+    ...applied.size.map((s) => ({
+      key: `size-${s}`,
+      label: `Size ${s}`,
+      onRemove: () => setApplied((prev) => ({ ...prev, size: prev.size.filter((x) => x !== s) })),
+    })),
   ];
 
   // 👁️ F#93 — القسم مخفي من الكونفيگ → لوحة "غير متاح مؤقتاً" (بعد كل الـ hooks)
@@ -245,12 +290,13 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         {chips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
-              {chips.map((c) => (
+              {chips.map((c, i) => (
                 <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
                   {c.label}
                   <button
                     type="button"
-                    onClick={c.onRemove}
+                    ref={(el) => { chipRefs.current[i] = el; }}
+                    onClick={() => { c.onRemove(); focusNext.current = i; }}
                     aria-label={`Remove filter: ${c.label}`}
                     className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
                   >
@@ -263,7 +309,7 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
             </ul>
             <button
               type="button"
-              onClick={clearAllFilters}
+              onClick={() => { clearAllFilters(); focusNext.current = 'opener'; }}
               className="cursor-pointer rounded-sm text-[13px] font-bold whitespace-nowrap text-gray-500 underline underline-offset-4 transition-colors duration-150 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
             >
               Clear all
