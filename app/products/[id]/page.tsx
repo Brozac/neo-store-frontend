@@ -68,19 +68,44 @@ export async function generateStaticParams() {
   }
 }
 
+// ═══ 🩹 F#61 CRAWL-SAFE — فشل مؤقت = 500 مؤقت، ماشي 404 دائمي ═══
+// القصة المثبتة بالأرقام (12/11): Merchant Center رفض 27.4K منتج (25.6%) بـ
+// «Product page unavailable» — الكود القديم كان كيحوّل أي فشل مؤقت للباك
+// (429 من AntiClone limiter · 5xx · timeout · شبكة) لـ null → notFound() →
+// 404 دائمي. Google كيحسب الـ 404 «ميت للأبد» → المنتج كيتطرد من MC.
+// العقد الجديد (عكسي مع F#62 تاع الباك — الـ limiter خرج من العنصر الواحد):
+//   · 404 حقيقي من الباك برك = null → notFound() (المنتج محي فعلاً — صادق)
+//   · أي فشل مؤقت = throw → 500 مؤقتة → Google كيحسبها «تعالي من بعد»
+//     وكيعاود الزحفة — المنتج يبقى Under review بدل ما يتطرد للأبد
+//   · retry وحدة بعد 700ms للفشل العابر — micro-burst ما كيقتلش الصفحة
+class ProductUnavailableError extends Error {
+  status: number;
+  constructor(status: number) {
+    super(`product backend HTTP ${status}`);
+    this.status = status;
+  }
+}
+
+async function fetchProductOnce(id: string) {
+  const res = await fetch(`${API_URL}/api/products/${id}`, {
+    next: { revalidate: 86400, tags: [`product-${id}`] },
+  });
+  if (res.status === 404) return null; // محي حقيقة من الكاطالوگ → 404 صادقة
+  if (!res.ok) throw new ProductUnavailableError(res.status); // مؤقت → 500
+  return res.json();
+}
+
 async function getProduct(id: string) {
   try {
-    const res = await fetch(`${API_URL}/api/products/${id}`, {
-      next: { revalidate: 86400, tags: [`product-${id}`] },
-    });
-    if (!res.ok) {
-      console.warn(`getProduct(${id}): HTTP`, res.status); // 🛡️ بلا صمت — الفلسفة
-      return null;
-    }
-    return res.json();
+    return await fetchProductOnce(id);
   } catch (e) {
-    console.warn(`getProduct(${id}): fetch failed`, e);
-    return null;
+    // 🛡️ بلا صمت — الفلسفة: العبرة فالسجل، الاستسلام هنا = 500 مؤقتة ماشي 404
+    console.warn(`getProduct(${id}): transient — retry once`, e);
+    if (e instanceof ProductUnavailableError || e instanceof TypeError) {
+      await new Promise((r) => setTimeout(r, 700));
+      return await fetchProductOnce(id); // فشل تاني = 500 مؤقتة (Google كيعاود)
+    }
+    throw e; // JSON/أخطاء أخرى = 500 مؤقتة برك — عمرها ما تولي 404
   }
 }
 
