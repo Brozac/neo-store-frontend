@@ -15,11 +15,67 @@ import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import { useSiteConfig } from '../components/SiteConfigProvider';
 import { isCategoryHidden } from '@/lib/siteConfig';
+import FilterSortDrawer, { type DrawerSection } from '../components/FilterSortDrawer';
+import { COLOR_FACETS, COLOR_SWATCHES } from '@/lib/filterSort';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
 
 const PER_PAGE = 24;
+
+// ═══ F#60 — الفلترة والفرز في الهوم عبر دروار all-products (نفس المكون، نفس الوجهة) ═══
+// المالك: «Filter and sort مابانتش في الموقع» — الدروار كان حي في /all-products
+// والفئات ولكن الهوم ما كانش فيه حتى زر «Filter and sort» — هنا كنركّبو بنفس المكون.
+// البنية: applied = المطبق على الـ grid · draft = المسودة داخل الدروار (نمط الديمو).
+interface HomeFilterState {
+  sortBy: SortOption;
+  priceRange: PriceRangeOption;
+  colours: string[];
+}
+const HOME_DEFAULT_FILTERS: HomeFilterState = { sortBy: 'default', priceRange: 'all', colours: [] };
+
+// خيارات الفرز تاع الهوم — نفس قائمة الـ select القديم بالحرف (+discount اللي كانت فيه)
+const HOME_SORTS: { value: SortOption; label: string }[] = [
+  { value: 'default', label: 'Top Recommendations' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'discount', label: 'Biggest Discounts' },
+  { value: 'newest', label: 'Newest Arrivals' },
+];
+
+// نطاقات السعر تاع الهوم — نفس البيلز القديمة (Under $15 / $15–$35 / $35+) بالحرف
+const HOME_PRICE_BANDS: { value: PriceRangeOption; label: string }[] = [
+  { value: 'under15', label: 'Under $15' },
+  { value: '15to35', label: '$15 to $35' },
+  { value: 'above35', label: 'Over $35' },
+];
+
+/** واش المنتج داخل في نطاق السعر تاع الهوم — FIX-ZERO: بلا سعر = بلا وعد زائف */
+function homePassesPrice(p: { price?: unknown }, band: PriceRangeOption): boolean {
+  const price = Number(p?.price) || 0;
+  if (band === 'all') return true;
+  if (price <= 0) return false;
+  if (band === 'under15') return price < 15;
+  if (band === '15to35') return price >= 15 && price <= 35;
+  return price > 35; // above35
+}
+
+/** عدّاد الفاسيت تاع السعر — فوق المحمل، مستقل على الاختيار الحالي (نمط الديمو) */
+function countHomePrice(products: { price?: unknown }[], band: PriceRangeOption): number {
+  return products.reduce((acc, p) => (homePassesPrice(p, band) ? acc + 1 : acc), 0);
+}
+
+/** 🎨 مطابقة اللون كلاينت-سايد على swatches الـ payload ({c,i,v}):
+ *  «White» كتضرب أي swatch كيحتويها (نفس دلالة ILIKE تاع السيرفر في Phase 2).
+ *  منتوج بلا داتا لون = ما كيماطش فيلتر لون (صدق — بلا كذب) */
+function matchesColour(product: { swatches?: unknown }, colours: string[]): boolean {
+  if (colours.length === 0) return true;
+  const names: string[] = Array.isArray(product?.swatches)
+    ? (product.swatches as { c?: string }[]).map((s) => String(s?.c || '').toLowerCase()).filter(Boolean)
+    : [];
+  if (names.length === 0) return false;
+  return colours.some((c) => names.some((n) => n.includes(c.toLowerCase())));
+}
 
 // ✨ Per-page shuffle: deterministic per (seed, page) — session freshness,
 //    stable appends (loaded pages never re-order — Temu-style scroll stability)
@@ -60,8 +116,25 @@ function HomeContent() {
   const sec = cfg?.sections;
   const hiddenCats = cfg?.hiddenCategories;
 
-  const [sortBy, setSortBy] = useState<SortOption>('default');
-  const [priceRange, setPriceRange] = useState<PriceRangeOption>('all');
+  // ═══ F#60 — حالة الفلترة (draft/applied كيما all-products) ═══
+  const [applied, setApplied] = useState<HomeFilterState>(HOME_DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<HomeFilterState>(HOME_DEFAULT_FILTERS);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  // 🆕 إدارة التركيز تاع الشيبس (نمط الديمو — نفس all-products)
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusNext = useRef<number | 'opener' | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    const i = focusNext.current;
+    focusNext.current = null;
+    if (i === 'opener') {
+      openerRef.current?.focus();
+      return;
+    }
+    const left = chipRefs.current.filter(Boolean);
+    (left[i] ?? left[i - 1] ?? openerRef.current)?.focus();
+  });
 
   // ═══ Search branch state (البحث خارج الـ hook — نتائج حتى 200 بلا pagination) ═══
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -189,9 +262,11 @@ function HomeContent() {
     return visible.slice(0, 5);
   }, [products, hiddenCats]);
 
-  // ✨ فلترة client-side المتبقية: price فقط (+ category safety net — السيرفر فلتر أصلاً)
+  // ✨ فلترة client-side: price + colour (+ category safety net — السيرفر فلتر أصلاً)
   //    ⚠️ matchesSearch تحيدت: البحث ولّى server-side (والـ SELECT ما فيهش description —
   //    الفلتر client كان كيحذف نتائج صحيحة مطابقة بالوصف — bug صامت مقفول)
+  //    🆕 F#60 — اللون دخل الفلترة (matchesColour على swatches الـ payload) +
+  //    FIX-ZERO عبر homePassesPrice (بلا سعر = ما كيدخل حتى نطاق)
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       if (isCategoryHidden(product.category, hiddenCats)) return false; // 👁️ F#93 — الأقسام المخفية من كل الخلاصات
@@ -203,20 +278,17 @@ function HomeContent() {
         matchesCategory = pCat === targetSlug || pCat.startsWith(targetSlug + '-') || pCat.startsWith(targetSlug + '/');
       }
       if (!matchesCategory) return false;
-      const price = Number(product.price) || 0;
-      if (priceRange === 'under15') return price < 15;
-      if (priceRange === '15to35') return price >= 15 && price <= 35;
-      if (priceRange === 'above35') return price > 35;
-      return true;
+      if (!matchesColour(product, applied.colours)) return false; // 🎨 F#60
+      return homePassesPrice(product, applied.priceRange);
     });
-  }, [products, activeCategory, categoryStructure, priceRange, hiddenCats]);
+  }, [products, activeCategory, categoryStructure, applied.priceRange, applied.colours, hiddenCats]);
 
   // ✨ Sorting Engine (client — على المحمّل)
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];
-    if (sortBy === 'price-asc') return list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
-    if (sortBy === 'price-desc') return list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
-    if (sortBy === 'discount') {
+    if (applied.sortBy === 'price-asc') return list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    if (applied.sortBy === 'price-desc') return list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    if (applied.sortBy === 'discount') {
       return list.sort((a, b) => {
         const discA = Number(a.original_price) > Number(a.price)
           ? (Number(a.original_price) - Number(a.price)) / Number(a.original_price) : 0;
@@ -225,21 +297,104 @@ function HomeContent() {
         return discB - discA;
       });
     }
-    if (sortBy === 'newest') return list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    if (applied.sortBy === 'newest') return list.sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
     return list;
-  }, [filteredProducts, sortBy]);
+  }, [filteredProducts, applied.sortBy]);
 
-  // ✨ العرض: default feed = accumulated (بلا trending) · الفرز = sorted — بلا slice
-  const displayProducts = useMemo(() => {
-    const isDefaultFeed = activeCategory === 'All' && !searchQuery && sortBy === 'default' && priceRange === 'all';
-    if (isDefaultFeed) {
-      const trendingIdSet = new Set(trendingProducts.map(p => String(p.id)));
-      return products.filter(p => !trendingIdSet.has(String(p.id)));
+  // ═══ F#60 — handlers ديال الدروار (draft/applied كيما الديمو) ═══
+  const openDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(true); }, [applied]);
+  const dismissDrawer = useCallback(() => { setDraft(applied); setDrawerOpen(false); }, [applied]);
+  const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
+  const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sortBy: v as SortOption })), []);
+  const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, priceRange: v as PriceRangeOption })), []);
+  const toggleDraftColour = useCallback(
+    (v: string) => setDraft((d) => ({ ...d, colours: d.colours.includes(v) ? d.colours.filter((x) => x !== v) : [...d.colours, v] })),
+    []
+  );
+  // مسح داخل المسودة — الفرز كيبقى (sort ماشي فيلتر — نفس فلسفة all-products)
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, priceRange: 'all', colours: [] })), []);
+  const clearAllFilters = useCallback(() => {
+    setApplied((prev) => {
+      const next = { ...prev, sortBy: 'default' as SortOption, priceRange: 'all' as PriceRangeOption, colours: [] };
+      setDraft(next);
+      return next;
+    });
+  }, []);
+
+  // ═══ F#60 — أقسام الدروار: Sort + Price + Colour (الفئة عند الريل تاع الهوم،
+  //   المقاس ما عندناش داتا كلاينت عليه — بلا وعد مزيف) ═══
+  const sections = useMemo<DrawerSection[]>(() => [
+    {
+      key: 'sort',
+      title: 'Sort by',
+      type: 'radio',
+      summary: HOME_SORTS.find((s) => s.value === draft.sortBy)?.label ?? 'Top Recommendations',
+      options: HOME_SORTS.map((s) => ({ value: s.value, label: s.label })),
+      selected: [draft.sortBy],
+      onToggle: toggleDraftSort,
+    },
+    {
+      key: 'price',
+      title: 'Price',
+      type: 'radio',
+      summary: draft.priceRange === 'all'
+        ? 'Any price'
+        : (HOME_PRICE_BANDS.find((b) => b.value === draft.priceRange)?.label ?? 'Any price'),
+      options: HOME_PRICE_BANDS.map((b) => {
+        const c = countHomePrice(products, b.value);
+        return { value: b.value, label: b.label, count: c, disabled: c === 0 && draft.priceRange !== b.value };
+      }),
+      selected: [draft.priceRange],
+      onToggle: toggleDraftPrice,
+    },
+    {
+      key: 'colour',
+      title: 'Colour',
+      type: 'swatch',
+      defaultFolded: true,
+      summary: draft.colours.length ? draft.colours.join(', ') : 'Any',
+      options: COLOR_FACETS.map((c) => {
+        const cnt = products.filter((p) => matchesColour(p, [c])).length;
+        return { value: c, label: c, swatch: COLOR_SWATCHES[c], count: cnt, disabled: cnt === 0 && !draft.colours.includes(c) };
+      }),
+      selected: draft.colours,
+      onToggle: toggleDraftColour,
+    },
+  ], [draft, products, toggleDraftSort, toggleDraftPrice, toggleDraftColour]);
+
+  // زر التطبيق — العد صادق فوق المحمل (كلشي كلاينت في الهوم — لا refetch ولا مجهول)
+  const draftMatches = useMemo(
+    () => products.filter((p) => matchesColour(p, draft.colours) && homePassesPrice(p, draft.priceRange)).length,
+    [products, draft.colours, draft.priceRange]
+  );
+
+  // ═══ F#60 — الشيبس: كل فيلتر مطبق = شيب كيحيد راسو بضغطة ═══
+  const chips = useMemo(() => {
+    const list: { key: string; label: string; onRemove: () => void }[] = [];
+    if (applied.priceRange !== 'all') {
+      list.push({
+        key: 'price',
+        label: HOME_PRICE_BANDS.find((b) => b.value === applied.priceRange)?.label ?? 'Price',
+        onRemove: () => setApplied((prev) => ({ ...prev, priceRange: 'all' })),
+      });
     }
-    return sortedProducts;
-  }, [products, sortedProducts, trendingProducts, activeCategory, searchQuery, sortBy, priceRange]);
+    for (const c of applied.colours) {
+      list.push({
+        key: `colour-${c}`,
+        label: c,
+        onRemove: () => setApplied((prev) => ({ ...prev, colours: prev.colours.filter((x) => x !== c) })),
+      });
+    }
+    return list;
+  }, [applied.priceRange, applied.colours]);
 
-  const hasActiveFilters = sortBy !== 'default' || priceRange !== 'all';
+  const activeCount = (applied.priceRange !== 'all' ? 1 : 0) + applied.colours.length;
+  const hasActiveFilters = applied.sortBy !== 'default' || activeCount > 0;
+
+  // 🩹 F#60 — الباغ القاتل: الـ grid كان كيقرا products الخام حتى مع فلاتر نشطة
+  // (rotate 1d5b2f0 كان عمّر sortfix fd420c2) — الفرز/السعر/اللون ما كانو ما كيتبدلش والو بالعين.
+  // الفلاتر نشطة → sortedProducts (المفلتر/المرتب) · default → raw rotate feed (ROTATE-V1 مستقر)
+  const gridProducts = hasActiveFilters ? sortedProducts : products;
 
   return (
     <main className="min-h-screen bg-temu-offwhite pb-32 font-sans relative pt-4">
@@ -268,7 +423,9 @@ function HomeContent() {
                 key={cat.slug || cat.name}
                 onClick={() => {
                   setActiveCategory(cat.name);
-                  setPriceRange('all');
+                  // F#60 — تبديل الفئة كيمسح الفلاتر (نفس سلوك البيلز القديمة)
+                  setApplied((prev) => ({ ...prev, priceRange: 'all', colours: [] }));
+                  setDraft((prev) => ({ ...prev, priceRange: 'all', colours: [] }));
                 }}
                 className="flex flex-col items-center gap-1.5 shrink-0 w-20 group cursor-pointer active:scale-95 transition touch-manipulation"
               >
@@ -366,7 +523,8 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 🧭 شريط الفرز والفلترة */}
+        {/* 🧭 F#60 — شريط الفلترة: زر «Filter and sort» + شيبس — نفس الوجهة تاع all-products.
+            الـ select القديم + بيلز الميزانية تنحاو: الدروار كيغطيهم جميع (نفس المكون حرفياً) */}
         <div className="bg-white p-4 rounded-2xl border border-temu-gray-border-light shadow-xs mb-6 space-y-3.5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
@@ -374,66 +532,64 @@ function HomeContent() {
                 {searchQuery ? `Results for "${searchQuery}"` : (activeCategory === 'All' ? 'Popular Essentials' : activeCategory)}
               </h2>
               <p className="text-xs text-gray-500 font-medium mt-0.5">
-                Showing <strong className="text-temu-black">{displayProducts.length}</strong> of{' '}
+                Showing <strong className="text-temu-black">{gridProducts.length}</strong> of{' '}
                 {(isBrowsing && feed.totalCount) ? feed.totalCount.toLocaleString() : filteredProducts.length} items
               </p>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs font-bold text-gray-500 whitespace-nowrap">Sort By:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-temu-offwhite border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-temu-black focus:outline-none focus:border-[#5F8271] cursor-pointer w-full sm:w-auto shadow-2xs"
+              <button
+                ref={openerRef}
+                type="button"
+                id="pf-drawer-open"
+                onClick={openDrawer}
+                aria-haspopup="dialog"
+                aria-expanded={drawerOpen ? 'true' : 'false'}
+                aria-controls="pf-drawer-panel"
+                className="inline-flex h-9 w-full sm:w-auto cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 text-sm font-bold whitespace-nowrap text-temu-black shadow-xs transition-colors duration-150 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] active:translate-y-px motion-reduce:transition-none"
               >
-                <option value="default">✨ Top Recommendations</option>
-                <option value="price-asc">💵 Price: Low to High</option>
-                <option value="price-desc">💎 Price: High to Low</option>
-                <option value="discount">🔥 Biggest Discounts (% OFF)</option>
-                <option value="newest">⚡ Newest Arrivals</option>
-              </select>
+                <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M10 5H3" /><path d="M12 19H3" /><path d="M14 3v4" /><path d="M16 17v4" /><path d="M21 12h-9" /><path d="M21 19h-5" /><path d="M21 5h-7" /><path d="M8 10v4" /><path d="M8 12H3" />
+                </svg>
+                Filter and sort
+                {activeCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#5B7EA6] px-1.5 text-xs font-bold text-white tabular-nums">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mr-1 hidden sm:inline">
-                Budget:
-              </span>
-              {[
-                { id: 'all', label: 'All Prices' },
-                { id: 'under15', label: 'Under $15' },
-                { id: '15to35', label: '$15 – $35' },
-                { id: 'above35', label: '$35+' },
-              ].map((pill) => (
-                <button
-                  key={pill.id}
-                  type="button"
-                  onClick={() => setPriceRange(pill.id as PriceRangeOption)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer active:scale-95 ${
-                    priceRange === pill.id
-                      ? 'bg-[#5F8271] text-white shadow-xs'
-                      : 'bg-temu-offwhite hover:bg-gray-100 text-gray-600 border border-gray-200/80'
-                  }`}
-                >
-                  {pill.label}
-                </button>
-              ))}
-            </div>
-
-            {hasActiveFilters && (
+          {chips.length > 0 && (
+            <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-gray-100">
+              <ul aria-label="Applied filters" className="flex flex-wrap items-center gap-2">
+                {chips.map((c, i) => (
+                  <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
+                    {c.label}
+                    <button
+                      type="button"
+                      ref={(el) => { chipRefs.current[i] = el; }}
+                      onClick={() => { c.onRemove(); focusNext.current = i; }}
+                      aria-label={`Remove filter: ${c.label}`}
+                      className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
+                    >
+                      <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
               <button
                 type="button"
-                onClick={() => {
-                  setSortBy('default');
-                  setPriceRange('all');
-                }}
-                className="text-xs text-[#C86F4E] font-bold hover:underline cursor-pointer active:scale-95 transition whitespace-nowrap"
+                onClick={() => { clearAllFilters(); focusNext.current = 'opener'; }}
+                className="cursor-pointer rounded-sm text-[13px] font-bold whitespace-nowrap text-gray-500 underline underline-offset-4 transition-colors duration-150 hover:text-temu-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B7EA6] motion-reduce:transition-none"
               >
-                Reset Filters ✕
+                Clear all
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* 6. شبكة المنتجات — GOOGLE-GRID v6.1 LIGHT: masonry كيشبه نتائج
@@ -459,7 +615,7 @@ function HomeContent() {
             <div className="flex justify-center py-16">
               <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : displayProducts.length > 0 ? (
+          ) : gridProducts.length > 0 ? (
             <div
               className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4"
               onTouchMove={(e) => {
@@ -476,7 +632,7 @@ function HomeContent() {
               }}
               onTouchEnd={() => setTouchedProductId(null)}
             >
-              {products.map((p, i) => (
+              {gridProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} eager={i < 4} />
               ))}
             </div>
@@ -488,8 +644,7 @@ function HomeContent() {
               <button
                 type="button"
                 onClick={() => {
-                  setSortBy('default');
-                  setPriceRange('all');
+                  clearAllFilters();
                   setActiveCategory('All');
                   router.push('/');
                 }}
@@ -509,11 +664,23 @@ function HomeContent() {
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (
             <p className="text-center text-xs text-gray-400 py-8">
-              🏁 You&apos;ve reached the end — {displayProducts.length.toLocaleString()} products
+              🏁 You&apos;ve reached the end — {gridProducts.length.toLocaleString()} products
             </p>
           )}
         </div>
       </div>
+
+      {/* ═══ F#60 — دروار الفلترة والفرز في الهوم (موبايل = شيت · ديسكتوب = جانبي)
+          — نفس المكون تاع all-products حرفياً ═══ */}
+      <FilterSortDrawer
+        open={drawerOpen}
+        onClose={dismissDrawer}
+        sections={sections}
+        onReset={clearDraft}
+        onApply={applyDrawer}
+        matchCount={draftMatches}
+        openerRef={openerRef}
+      />
     </main>
   );
 }

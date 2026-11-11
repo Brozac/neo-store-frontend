@@ -7,7 +7,8 @@
 //   • /api/ و /admin       → مستثناة تماماً من الـ SW
 // ============================================================
 
-const CACHE_NAME = 'laclarc-pwa-v39';
+// F#60-homedrawer — الدروار ولّى في الهوم حتى هو (لا تحديث = كاش قديم بلا دروار)
+const CACHE_NAME = 'laclarc-pwa-v40';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.webmanifest',
