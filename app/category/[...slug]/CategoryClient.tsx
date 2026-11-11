@@ -24,11 +24,13 @@ import ProductCard from '../../components/ProductCard';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import FilterSortDrawer from '@/components/FilterSortDrawer';
 import {
+  COLOR_FACETS,
   DEFAULT_FILTERS,
   PRICE_BANDS,
   SORTS,
   activeFilterCount,
   countPrice,
+  filterQuery,
   findBand,
   visibleProducts,
   type FilterState,
@@ -66,14 +68,25 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   // ✨ Tenet #4 — بلا hardcoded URLs
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
+  // ═══ F#57-Phase2 — حالة الفلترة فوق الكاتب (resetKey تاع الـ hook كيقراها) ═══
+  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
+  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+
   // ═══ الكاتب الوحيد — التوصيل فقط ═══
-  const feed = useInfiniteFeed<Product>(slugPath, true, {
-    buildPageUrl: (page) =>
-      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}`,
-    buildCountUrl: () =>
-      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1`,
-    perPage: PER_PAGE,
-  });
+  // resetKey كيتضمن كل الفلاتر — أي تبديل = إعادة تهيئة كاملة والسيرفر كيفلتر
+  const feed = useInfiniteFeed<Product>(
+    `${slugPath}|${applied.price}|${applied.sort}|${applied.colour}`,
+    true,
+    {
+      buildPageUrl: (page) =>
+        `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&page=${page}${filterQuery(applied)}`,
+      buildCountUrl: () =>
+        `${API_BASE_URL}/api/products?category=${encodeURIComponent(slugPath)}&count=1${filterQuery(applied)}`,
+      perPage: PER_PAGE,
+    }
+  );
 
   const {
     products,
@@ -90,13 +103,8 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
 
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
-  // ═══ F#57 — الفلترة والفرز (فوق الكاتب — الكاتب ما يتنمسش، Tenet #31) ═══
+  // ═══ F#57 — معالجات الفلترة (الحالة معرفة فوق الـ hook) ═══
   // هنا بلا فاسيت فئة — الفئة مثبتة من الـ slug (السيرفر هو اللي كيفترد) ═══
-  const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);
-  const [draft, setDraft] = useState<FilterState>(DEFAULT_FILTERS);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const openerRef = useRef<HTMLButtonElement | null>(null);
-
   const visible = useMemo(() => visibleProducts(products, applied), [products, applied]);
   const filtersActive = activeFilterCount(applied) > 0;
 
@@ -105,10 +113,11 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
   const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
   const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
-  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any' })), []);
+  const toggleDraftColour = useCallback((v: string) => setDraft((d) => ({ ...d, colour: v })), []);
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', colour: '' })), []);
   const clearAllFilters = useCallback(() => {
     setApplied((prev) => {
-      const next = { ...prev, price: 'any' };
+      const next = { ...prev, price: 'any', colour: '' };
       setDraft(next);
       return next;
     });
@@ -135,14 +144,37 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         selected: [draft.price],
         onToggle: toggleDraftPrice,
       },
+      {
+        // 🆕 F#57-Phase2 — فاسيت اللون (سيرفر-سايد EXISTS على variants)
+        key: 'colour',
+        title: 'Colour',
+        type: 'radio' as const,
+        defaultFolded: true,
+        options: [
+          { value: '', label: 'Any colour' },
+          ...COLOR_FACETS.map((c) => ({ value: c, label: c })),
+        ],
+        selected: [draft.colour],
+        onToggle: toggleDraftColour,
+      },
     ],
-    [draft, products, toggleDraftSort, toggleDraftPrice]
+    [draft, products, toggleDraftSort, toggleDraftPrice, toggleDraftColour]
   );
-  const matchCount = countPrice(products, draft.price);
 
-  const priceChip = applied.price !== 'any'
-    ? [{ key: 'price', label: findBand(applied.price).label, onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })) }]
-    : [];
+  // رقم زر التطبيق — الصدق Phase2: كيتبدل السعر/اللون = refetch سيرفر →
+  // العدادات فوق المحمل ما عادش كيمثلو النتيجة الجاية → «Show results» بلا رقم
+  const priceChanged = draft.price !== applied.price;
+  const colourChanged = draft.colour !== applied.colour;
+  const matchCount = (priceChanged || colourChanged) ? null : countPrice(products, draft.price);
+
+  const chips = [
+    ...(applied.price !== 'any'
+      ? [{ key: 'price', label: findBand(applied.price).label, onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })) }]
+      : []),
+    ...(applied.colour
+      ? [{ key: 'colour', label: applied.colour, onRemove: () => setApplied((prev) => ({ ...prev, colour: '' })) }]
+      : []),
+  ];
 
   // 👁️ F#93 — القسم مخفي من الكونفيگ → لوحة "غير متاح مؤقتاً" (بعد كل الـ hooks)
   if (siteCfgReady && isCategoryHidden(slugPath, siteCfg?.hiddenCategories)) {
@@ -206,10 +238,10 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
         </div>
 
         {/* F#57 — شيبس الفلاتر المطبقة */}
-        {priceChip.length > 0 && (
+        {chips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
-              {priceChip.map((c) => (
+              {chips.map((c) => (
                 <li key={c.key} className="inline-flex h-7 items-center gap-1 rounded-full bg-white border border-fog-200 pr-1 pl-3 text-[13px] whitespace-nowrap text-temu-black shadow-xs">
                   {c.label}
                   <button

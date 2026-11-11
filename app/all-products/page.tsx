@@ -40,11 +40,13 @@ import { IMG } from '@/lib/imageOptimizer';
 import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import FilterSortDrawer, { type DrawerSection } from '@/components/FilterSortDrawer';
 import {
+  COLOR_FACETS,
   DEFAULT_FILTERS,
   PRICE_BANDS,
   SORTS,
   activeFilterCount,
   countPrice,
+  filterQuery,
   findBand,
   visibleProducts,
   type FilterState,
@@ -119,19 +121,23 @@ export default function AllProducts() {
   const activeCategory = applied.category[0] ?? '';
 
   // ═══ الكاتب الوحيد — التوصيل فقط ═══
-  // F#57: resetKey كيتضمن الفئة — تبديل الفئة = إعادة تهيئة كاملة (count + صفحة 1)
-  // من الكاتب الوحيد، نفس آلية الأقسام في الهوم — الفلترة سيرفر-سايد حقيقية
-  const feed = useInfiniteFeed<P>(`all-products:${activeCategory}`, true, {
-    buildPageUrl: (page) =>
-      activeCategory
-        ? `${API}/api/products?category=${encodeURIComponent(activeCategory)}&page=${page}`
-        : `${API}/api/products?page=${page}`,
-    buildCountUrl: () =>
-      activeCategory
-        ? `${API}/api/products?count=1&category=${encodeURIComponent(activeCategory)}`
-        : `${API}/api/products?count=1`,
-    perPage: PER_PAGE,
-  });
+  // F#57-Phase2: resetKey كيتضمن كل الفلاتر — أي تبديل = إعادة تهيئة كاملة
+  // (count + صفحة 1) والسيرفر هو اللي كيفلتر ويفرز على الكاتالوگ كامل
+  const feed = useInfiniteFeed<P>(
+    `all-products:${activeCategory}|${applied.price}|${applied.sort}|${applied.colour}`,
+    true,
+    {
+      buildPageUrl: (page) =>
+        activeCategory
+          ? `${API}/api/products?category=${encodeURIComponent(activeCategory)}&page=${page}${filterQuery(applied)}`
+          : `${API}/api/products?page=${page}${filterQuery(applied)}`,
+      buildCountUrl: () =>
+        activeCategory
+          ? `${API}/api/products?count=1&category=${encodeURIComponent(activeCategory)}${filterQuery(applied)}`
+          : `${API}/api/products?count=1${filterQuery(applied)}`,
+      perPage: PER_PAGE,
+    }
+  );
 
   const {
     products: items,   // alias — الـ JSX كيبقى كما هو
@@ -166,14 +172,15 @@ export default function AllProducts() {
   const applyDrawer = useCallback(() => { setApplied(draft); setDrawerOpen(false); }, [draft]);
   const toggleDraftSort = useCallback((v: string) => setDraft((d) => ({ ...d, sort: v as FilterState['sort'] })), []);
   const toggleDraftPrice = useCallback((v: string) => setDraft((d) => ({ ...d, price: v })), []);
+  const toggleDraftColour = useCallback((v: string) => setDraft((d) => ({ ...d, colour: v })), []);
   const toggleDraftCategory = useCallback(
     (slugPath: string) => setDraft((d) => ({ ...d, category: d.category[0] === slugPath ? [] : [slugPath] })),
     []
   );
-  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', category: [] })), []);
+  const clearDraft = useCallback(() => setDraft((d) => ({ ...d, price: 'any', category: [], colour: '' })), []);
   const clearAllFilters = useCallback(() => {
     setApplied((prev) => {
-      const next = { ...prev, price: 'any', category: [] };
+      const next = { ...prev, price: 'any', category: [], colour: '' };
       setDraft(next);
       return next;
     });
@@ -201,6 +208,19 @@ export default function AllProducts() {
         selected: [draft.price],
         onToggle: toggleDraftPrice,
       },
+      {
+        // 🆕 F#57-Phase2 — فاسيت اللون (سيرفر-سايد EXISTS على variants)
+        key: 'colour',
+        title: 'Colour',
+        type: 'radio',
+        defaultFolded: true,
+        options: [
+          { value: '', label: 'Any colour' },
+          ...COLOR_FACETS.map((c) => ({ value: c, label: c })),
+        ],
+        selected: [draft.colour],
+        onToggle: toggleDraftColour,
+      },
     ];
     if (catRoots && catRoots.length > 0) {
       list.push({
@@ -222,11 +242,16 @@ export default function AllProducts() {
       });
     }
     return list;
-  }, [draft, items, catRoots, toggleDraftSort, toggleDraftPrice, toggleDraftCategory]);
+  }, [draft, items, catRoots, toggleDraftSort, toggleDraftPrice, toggleDraftColour, toggleDraftCategory]);
 
-  // رقم زر التطبيق — الصدق: كيتبدل الفئة = refetch سيرفر، الرقم معلومش سلفاً
+  // رقم زر التطبيق — الصدق Phase2: كيتبدل الفئة/السعر/اللون = refetch سيرفر —
+  // العدادات فوق المحمل ما عادش كيمثلو النتيجة الجاية → «Show results» بلا رقم
   const categoryChanged = (draft.category[0] ?? '') !== activeCategory;
-  const matchCount = categoryChanged ? null : countPrice(items, draft.price);
+  const priceChanged = draft.price !== applied.price;
+  const colourChanged = draft.colour !== applied.colour;
+  const matchCount = (categoryChanged || priceChanged || colourChanged)
+    ? null
+    : countPrice(items, draft.price);
 
   // ═══ الشيبس — كل فيلتر مطبق = شيب كيحيد راسو بضغطة ═══
   const chips = useMemo(() => {
@@ -246,8 +271,15 @@ export default function AllProducts() {
         onRemove: () => setApplied((prev) => ({ ...prev, price: 'any' })),
       });
     }
+    if (applied.colour) {
+      list.push({
+        key: 'colour',
+        label: applied.colour,
+        onRemove: () => setApplied((prev) => ({ ...prev, colour: '' })),
+      });
+    }
     return list;
-  }, [activeCategory, applied.price, catRoots]);
+  }, [activeCategory, applied.price, applied.colour, catRoots]);
 
   return (
     <main className="min-h-screen bg-temu-offwhite">
