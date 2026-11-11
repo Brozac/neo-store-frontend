@@ -291,10 +291,15 @@ export default function AllProducts() {
             <p className="text-xs text-gray-500 mt-0.5">
               {filtersActive ? (
                 <>
-                  {visible.length} match{visible.length === 1 ? '' : 'es'}
+                  {/* F#58 honestheader — السيرفر هو الصادق (count=1+filters): «X of Y matches» —
+                      القديم كان كيقول «48 matches · 48 loaded» والمجموعة الحقيقية 2,496.
+                      totalCount ما وصلش بعد → fallback قديم سليم */}
+                  {visible.length}
+                  {totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : ''}
+                  {' '}match{visible.length === 1 ? '' : 'es'}
                   {activeCategory
-                    ? totalCount > 0 ? ` · ${totalCount.toLocaleString()} in this category` : ''
-                    : ` · ${items.length} loaded`}
+                    ? ' in this category'
+                    : totalCount > 0 ? '' : ` · ${items.length} loaded`}
                 </>
               ) : (
                 <>

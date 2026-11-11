@@ -210,7 +210,11 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
           <div className="flex items-center gap-3">
             {totalCount > 0 && (
               <span className="text-xs font-bold text-gray-400">
-                {filtersActive ? `${visible.length} matches` : `${totalCount.toLocaleString()} products`}
+                {/* F#58 honestheader — السيرفر هو الصادق: «X of Y matches» (count=1+filters) —
+                    القديم كان كيقول «48 matches» وهو ماشي غير المحمل (السيرفر عندو 2,496) */}
+                {filtersActive
+                  ? `${visible.length} of ${totalCount.toLocaleString()} matches`
+                  : `${totalCount.toLocaleString()} products`}
               </span>
             )}
             {/* F#57 — زر الدروار */}
