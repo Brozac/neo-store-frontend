@@ -1,0 +1,60 @@
+# ═══════════════════════════════════════════════════════════════════
+# warm-cache.yml — F#63 MC-FIX: تسخين كاش صفحات المنتجات ضد Googlebot
+# ═══════════════════════════════════════════════════════════════════
+# علاش: Googlebot فوق صفحة باردة كيحصل على hang 30-45s / 503 → Merchant
+# Center كيسجل 32.1K منتج «Product page unavailable». التسخين الأسبوعي
+# كيولّد الصفحات الجديدة (CJ sync كيزيد يومياً) وكيصلح اللي فشل — الصفحة
+# السخونة كتخدم 0.4-2s والزحف تاع Google كيمشي بلا ما يصنّف شي حاجة.
+#
+# التشغيل: يدوي (workflow_dispatch) + كل أحد 01:00 UTC.
+# الميزانية: ~54K طلب كامل < 100K/يوم (Workers Free) — فالليل قليل الزحار.
+# المدة: مثبت حي 12/11 — 40 صفحة/23s على conc=4 (1.74/s) → conc=8 ≈ 3.5/s
+#        → 53.8K ≈ 4.3 سايع ✓ داخلة فـ timeout 360 دقيقة.
+# ═══════════════════════════════════════════════════════════════════
+name: warm-cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: 'عدد الطلبات الموازية (1-12)'
+        default: '8'
+        required: false
+      limit:
+        description: 'حد أقصى للروابط (فارغ = كامل ~53.8K)'
+        default: ''
+        required: false
+  schedule:
+    - cron: '0 1 * * 0' # كل أحد 01:00 UTC — ليل ساكن
+
+permissions:
+  contents: read
+
+concurrency:
+  group: warm-cache
+  cancel-in-progress: false
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Warm product pages (ISR pre-generation)
+        run: |
+          node scripts/warm-products.mjs \
+            --concurrency "${{ github.event.inputs.concurrency || '8' }}" \
+            ${{ github.event.inputs.limit && format('--limit {0}', github.event.inputs.limit) || '' }}
+
+      - name: Archive warm report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: warm-last-run
+          path: scripts/warm-last-run.json
+          retention-days: 14

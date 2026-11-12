@@ -53,6 +53,7 @@ export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_URL}/api/products?limit=100`, {
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(10000), // F#63 — build ما يتعلقش على backend نائم
     });
     if (!res.ok) {
       console.warn('generateStaticParams: HTTP', res.status, '— ISR on-demand covers the rest');
@@ -86,9 +87,18 @@ class ProductUnavailableError extends Error {
   }
 }
 
+// ═══ 🩹 F#63 MC-HANG-FIX — الزحفة كتعلّق، ماشي غير كتفشل ═══
+// مثبت حي (12/11): صفحات باردة (أول توليد ISR فوق KV) كتعلّق 30-45s بلا جواب —
+// fetch بلا timeout كيبقى مفتوح → Googlebot كيعطي timeout → نفس تصنيف
+// «Product page unavailable» ديال الـ 500 فالميرشانت سنتر. الحد 6s = هامش
+// 2-15× فوق زمن الاستجابة العادي (0.4-3s مباشر) — الطلب المعلّق كيتقطع بسرعة
+// ويدخل لعقد F#61 (retry → 500 مؤقتة كتعاود الزحفة، ما كتطردش المنتج).
+const PRODUCT_FETCH_TIMEOUT_MS = 6000;
+
 async function fetchProductOnce(id: string) {
   const res = await fetch(`${API_URL}/api/products/${id}`, {
     next: { revalidate: 86400, tags: [`product-${id}`] },
+    signal: AbortSignal.timeout(PRODUCT_FETCH_TIMEOUT_MS),
   });
   if (res.status === 404) return null; // محي حقيقة من الكاطالوگ → 404 صادقة
   if (!res.ok) throw new ProductUnavailableError(res.status); // مؤقت → 500
@@ -101,7 +111,12 @@ async function getProduct(id: string) {
   } catch (e) {
     // 🛡️ بلا صمت — الفلسفة: العبرة فالسجل، الاستسلام هنا = 500 مؤقتة ماشي 404
     console.warn(`getProduct(${id}): transient — retry once`, e);
-    if (e instanceof ProductUnavailableError || e instanceof TypeError) {
+    if (
+      e instanceof ProductUnavailableError ||
+      e instanceof TypeError ||
+      // F#63 — AbortSignal.timeout كيرمي TimeoutError (DOMException) — نعاودو حتّى هو
+      (e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError'))
+    ) {
       await new Promise((r) => setTimeout(r, 700));
       return await fetchProductOnce(id); // فشل تاني = 500 مؤقتة (Google كيعاود)
     }
@@ -113,6 +128,8 @@ async function getRelatedProducts(id: string) {
   try {
     const res = await fetch(`${API_URL}/api/products/${id}/related`, {
       next: { revalidate: 86400, tags: ['products-index'] },
+      // F#63 — الـ page كيتسنا بـ Promise.all(product, related) — معلّق هنا = معلّق الصفحة كاملة
+      signal: AbortSignal.timeout(PRODUCT_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) {
       console.warn(`getRelatedProducts(${id}): HTTP`, res.status);
