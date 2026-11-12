@@ -21,7 +21,12 @@
 	// اسم الـ Worker — الرابط التجريبي: https://laclarc.<subdomain>.workers.dev
 	"name": "laclarc",
 	"main": ".open-next/worker.js",
-	"compatibility_date": "2025-09-01",
+	"compatibility_date": "2026-11-13",
+// ─── ⭐ Workers Cache: CF كيفحص الكاش قبل ما يجري الـ Worker ───
+// صفحات ISR (s-maxage=86400) كتخدم من الحافة — HIT = صفر تنفيذ Worker
+"cache": {
+  "enabled": true,
+},
 	"compatibility_flags": [
 		// Node.js APIs داخل الـ Worker (Buffer, crypto — كيستعملهم /api/revalidate وNextAuth)
 		"nodejs_compat",
