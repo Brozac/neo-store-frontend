@@ -82,8 +82,10 @@ function ResetPasswordContent() {
           <form onSubmit={handleReset} className="space-y-4 text-left">
             <div>
               <label className="block text-gray-700 text-xs font-bold uppercase mb-1">New Password *</label>
+              {/* F#64 — autoComplete=new-password: المتصفح كيعبي كلمة السر القديمة وحدو ففورم الإعادة */}
               <input 
                 type="password" 
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -94,8 +96,10 @@ function ResetPasswordContent() {
 
             <div>
               <label className="block text-gray-700 text-xs font-bold uppercase mb-1">Confirm Password *</label>
+              {/* F#64 — نفس العلاج للـ confirm */}
               <input 
                 type="password" 
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

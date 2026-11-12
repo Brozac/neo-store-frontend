@@ -249,8 +249,15 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
   return (
     <div className="w-full font-sans text-[#2E4057] overflow-hidden bg-[#F4F8FB] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" onLoad={initGSAP} />
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP} />
+      {/* F#64 SRI — modern-web-guidance: scripts خارجية بلا integrity = سلسلة توريد مكشوفة
+          لو cdnjs انخترقت، GSAP المزوّر كيخدم على laclarc.com كامل. الـ hashes محسوبة
+          من الملف الأصلي بتاع cdnjs 3.12.2 (openssl dgst -sha384) — أي تعديل بايت واحد = حجب.
+          ⚠️ cast as object: ScriptProps تاع next/script مازال ما يشملش integrity — الـ runtime
+          كيفردهم كاملين للـ DOM عبر setAttributesFromProps (script.js:122) — الأنواع المتأخرة ماشي السلوك */}
+      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" strategy="afterInteractive" onLoad={initGSAP}
+        {...({ integrity: 'sha384-d+vyQ0dYcymoP8ndq2hW7FGC50nqGdXUEgoOUGxbbkAJwZqL7h+jKN0GGgn9hFDS', crossOrigin: 'anonymous', referrerPolicy: 'no-referrer' } as object)} />
+      <Script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" strategy="afterInteractive" onLoad={initGSAP}
+        {...({ integrity: 'sha384-poC0r6usQOX2Ayt/VGA+t81H6V3iN9L+Irz9iO8o+s0X20tLpzc9DOOtnKxhaQSE', crossOrigin: 'anonymous', referrerPolicy: 'no-referrer' } as object)} />
 
       <section className="hero-container relative min-h-[90vh] md:min-h-[85vh] lg:min-h-[92vh] w-full flex flex-col justify-between p-6 sm:p-12 lg:p-16 overflow-hidden">
 
