@@ -377,7 +377,12 @@ export default function ProductDetailsClient({
 
 
   const parsePrice = (price: any) => Number(price) || 0;
-  const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  const UNENT: Record<string, string> = { nbsp: ' ', amp: '&', quot: '"', lt: '<', gt: '>', '#39': "'", apos: "'", eacute: 'é', egrave: 'è', agrave: 'à', deg: '°', hellip: '…' };
+  const stripHtml = (html?: string) => html ? html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;([a-zA-Z]+|#\d+);/g, (_, e: string) => UNENT[e] ?? ' ')
+    .replace(/&(nbsp|amp|quot|lt|gt|#39|apos);/gi, (_, e: string) => UNENT[e.toLowerCase()] ?? ' ')
+    .replace(/\s+/g, ' ').trim() : '';
   const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
 
   const safePrice = parsePrice(product.price);
