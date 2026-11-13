@@ -26,7 +26,7 @@ export default function CancelPage() {
         {/* Helpful Alternatives Box */}
         <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs text-left space-y-2 text-gray-600">
           <p className="font-bold text-gray-800 mb-1">Encountered an issue?</p>
-          <p>&bull; <strong>Card declined?</strong> You can try an alternative card, Paysera, or Crypto.</p>
+          <p>&bull; <strong>Card declined?</strong> You can try an alternative card, or Crypto.</p>
           <p>&bull; <strong>In Algeria?</strong> You can pay directly via BaridiMob / CCP.</p>
         </div>
 

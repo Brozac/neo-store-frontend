@@ -66,8 +66,9 @@ function SystemEventsPanel() {
   ];
 
   // الموثقة في system_events (DRS §5) — عين M#31 كتخدم هنا
+  // F#68: PAYSERA_AMOUNT_MISMATCH تحيدت من الفلتر — الأحداث القديمة باقية تبان تحت "All"
   const EVENT_TYPES_V2 = ['CJ_ORDER_HALTED', 'WEBHOOK_SPOOF_REJECTED', 'CJ_NUMBER_BURNED',
-    'SHIPPING_BLOCKED_FLAG', 'CRYPTO_NO_ADDRESS', 'PAYSERA_AMOUNT_MISMATCH',
+    'SHIPPING_BLOCKED_FLAG', 'CRYPTO_NO_ADDRESS',
     'CJ_INTERCEPT_REASON', 'VERIFIED_REVIEW_SUBMITTED', 'TOPSELLERS_IMPORT'];
   // دمج بلا تكرار — القديمة + الجديدة
   for (const t of EVENT_TYPES_V2) if (!EVENT_TYPES.includes(t)) EVENT_TYPES.push(t);

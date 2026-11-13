@@ -14,7 +14,7 @@ interface PaymentModalProps {
   couponCode?: string;
 }
 
-const ALL_GATEWAYS = ['stripe', 'paysera', 'crypto', 'baridimob'];
+const ALL_GATEWAYS = ['stripe', 'crypto', 'baridimob']; // F#68: Paysera تحيدت نهائياً
 
 export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, couponCode }: PaymentModalProps) {
   const router = useRouter();
@@ -74,10 +74,9 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
 
   // 🩹 TRUST FIX — routing map: البوابات الديناميكية → المسارات الصحيحة
   //    stripe → /api/create-checkout-session (المسار الملك الوحيد — limiter + cancel-atomic + masked errors)
-  //    paysera/crypto → /api/payment/{method} (كما هي)
+  //    F#68: Paysera تحيدت نهائياً — crypto → /api/payment/{method} (كما هي)
   const PAYMENT_ROUTES: Record<string, string> = {
     stripe: '/api/create-checkout-session',
-    paysera: '/api/payment/paysera',
     crypto: '/api/payment/crypto',
   };
 
@@ -220,26 +219,7 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
                   </button>
                 )}
 
-                {isEnabled('paysera') && (
-                  <button
-                    onClick={() => handlePayment('paysera')}
-                    disabled={loadingGateway !== null}
-                    className="w-full flex items-center justify-between p-4 border-2 border-temu-gray-border-light rounded-temu-sm hover:border-temu-orange transition cursor-pointer active:scale-95 text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-fog-500/10 text-fog-600 rounded-xl flex items-center justify-center font-black text-xs">
-                        🇪🇺
-                      </div>
-                      <div>
-                        <span className="font-extrabold text-temu-black text-sm block">Paysera Checkout</span>
-                        <span className="text-[11px] text-temu-gray-light">European SEPA &amp; Global Cards</span>
-                      </div>
-                    </div>
-                    {loadingGateway === 'paysera' ? <div className="w-4 h-4 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> : <span className="text-xs text-temu-orange font-bold">&rarr;</span>}
-                  </button>
-                )}
-
-                                {isEnabled('crypto') && (
+                {isEnabled('crypto') && (
                   <button
                     onClick={() => handlePayment('crypto')}
                     disabled={loadingGateway !== null}

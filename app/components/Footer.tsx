@@ -140,7 +140,7 @@ export default function Footer() {
         {/* Payment Methods Trust Bar */}
         <div className="pt-8 border-t border-temu-gray-border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-[11px] text-temu-gray-text font-medium">
-            &copy; {new Date().getFullYear()} <strong className="text-temu-black">Laclarc</strong>. All rights reserved. Powered by Stripe, Paysera, and NowPayments.
+            &copy; {new Date().getFullYear()} <strong className="text-temu-black">Laclarc</strong>. All rights reserved. Powered by Stripe and NowPayments.
           </p>
 
           <div className="flex items-center gap-4 text-xs font-semibold text-temu-gray-text flex-wrap justify-center">
