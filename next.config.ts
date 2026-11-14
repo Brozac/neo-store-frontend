@@ -120,8 +120,15 @@ const nextConfig: NextConfig = {
 
 // ──── [LACLARC::OPENNEXT-CF] MIGRATION-CF v1 ────
 // كيشدّ bindings ديال Cloudflare فـ `next dev` المحلي (كيتطلب wrangler مثبّت)
-// فالإنتاج ما كيدير والو — كيتنشّط غير فوضع التطوير (دوك OpenNext get-started خطوة 12)
-initOpenNextCloudflareForDev();
+// 🩹 F#75 — البايلد فشل هنا: Next 16 كيحمّل الكونفيگ حتى وقت `next build`
+//    والدالة كانت كتجري فيه — ومع `"remote": true` فwrangler.jsonc كتحاول
+//    تدير remote session كتطالب CLOUDFLARE_API_TOKEN (unhandledRejection).
+//    حتى شي كود ما كيحتاجها وقت البيلد (getCloudflareContext fail-soft ف
+//    siteConfigStore) — لهذا كتقيد فالتطوير برك، حرفياً كيف ما الكومنتاي
+//    فوق كيقول. `next dev` كيف كيف، الإنتاج ما كيخدمش حاجات زايدين.
+if (process.env.NODE_ENV === 'development') {
+  initOpenNextCloudflareForDev();
+}
 // ──── [/LACLARC::OPENNEXT-CF] ────
 
 // ──── [LACLARC::SENTRY-NEXTCONFIG] v1 (Task 16) ────
