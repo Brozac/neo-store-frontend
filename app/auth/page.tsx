@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import MultiStepRegister from '../components/MultiStepRegister';
 import Image from 'next/image';
 import GlassIcon from '@/components/ui/GlassIcon';
+// 🔐 F#73 Passkeys — أدلة modern-web-guidance (authentication + conditional UI + conditional create)
+import { passkeyLogin, startConditionalLogin, pkSupported, passkeyRegister, PasskeyUserData } from '../../lib/passkeys';
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,6 +19,10 @@ function AuthContent() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [serverWaking, setServerWaking] = useState(false);
+
+  // 🔐 F#73 Passkeys
+  const [pkReady, setPkReady] = useState(false);
+  const [pkBusy, setPkBusy] = useState(false);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -55,6 +61,9 @@ function AuthContent() {
         if (data.user) {
           localStorage.setItem('user_data', JSON.stringify(data.user));
         }
+        // 🔐 F#73 — conditional create صامت بعد password login ناجح (دليل passkey-conditional-create)
+        // سilent تام: كل الأخطاء مبلعين داخل passkeyRegister (conditional:true) — ما كيأخرش الدخول إلا لحظات
+        try { await passkeyRegister({ token: data.token, conditional: true, promotion: true }); } catch { /* silent */ }
         router.push(redirectPath);
       }
     } catch (err: any) {
@@ -85,6 +94,45 @@ function AuthContent() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔐 F#73 — تخزين ناجح + توجيه (مشترك بين الconditional UI والدخول بالزر)
+  const completePasskeyLogin = (data: { token: string; user?: PasskeyUserData | Record<string, unknown> }) => {
+    localStorage.setItem('token', data.token);
+    if (data.user) {
+      localStorage.setItem('user_data', JSON.stringify(data.user));
+    }
+    router.push(redirectPath);
+  };
+
+  // 🔐 F#73 — Conditional UI: اقتراح الpasskey داخل autofill خانة الإيميل (بلا زر ولا dialog)
+  // startConditionalLogin كيتحقق من conditionalGet داخليا — فالمتصفحات غير الداعمة كترجع noop
+  useEffect(() => {
+    let cancelled = false;
+    pkSupported().then((ok) => { if (!cancelled) setPkReady(ok); });
+    const cleanup = startConditionalLogin(completePasskeyLogin);
+    return () => { cancelled = true; cleanup(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, redirectPath]);
+
+  const handlePasskeyLogin = async () => {
+    setError('');
+    setPkBusy(true);
+    try {
+      const result = await passkeyLogin();
+      if (result.ok) {
+        completePasskeyLogin(result);
+        return;
+      }
+      if (result.reason === 'cancelled') {
+        // إعادة تشغيل الconditional autofill بعد إلغاء الprompt الصريح (دليل authentication §155)
+        startConditionalLogin(completePasskeyLogin);
+      } else {
+        setError(result.message || 'Passkey sign-in failed.');
+      }
+    } finally {
+      setPkBusy(false);
     }
   };
 
@@ -183,7 +231,7 @@ function AuthContent() {
               priority 
             />
           </div>
-          <h1 className="text-2xl font-black text-gray-900">Welcome to Laclarc</h1>
+          <h1 id="auth-welcome" className="text-2xl font-black text-gray-900">Welcome to Laclarc</h1>
           <p className="text-gray-500 text-xs mt-1">Sign in to manage orders, wishlist, and rewards</p>
         </div>
 
@@ -208,7 +256,9 @@ function AuthContent() {
               value={formData.email} 
               onChange={handleChange} 
               required 
-              autoComplete="email"
+              autoFocus
+              autoComplete="username webauthn"
+              aria-describedby="auth-welcome"
               placeholder="name@example.com" 
               className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5B7EA6] transition" 
             />
@@ -254,6 +304,28 @@ function AuthContent() {
           >
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Sign In & Access Account'}
           </button>
+
+          {pkReady && (
+            <>
+              <div className="flex items-center gap-3 pt-1" role="separator" aria-hidden="true">
+                <span className="h-px flex-1 bg-gray-200"></span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">or</span>
+                <span className="h-px flex-1 bg-gray-200"></span>
+              </div>
+              <button
+                type="button"
+                onClick={handlePasskeyLogin}
+                disabled={pkBusy || loading}
+                className="w-full bg-white border-2 border-[#5B7EA6] text-[#5B7EA6] hover:bg-fog-50 font-extrabold rounded-xl py-3.5 transition disabled:opacity-70 flex justify-center items-center gap-2 cursor-pointer active:scale-95 text-xs uppercase tracking-wider"
+              >
+                {pkBusy ? (
+                  <div className="w-5 h-5 border-2 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <><GlassIcon ch="🔑" size="xs" /> Sign In with a Passkey</>
+                )}
+              </button>
+            </>
+          )}
         </form>
 
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">

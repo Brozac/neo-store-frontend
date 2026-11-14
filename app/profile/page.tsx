@@ -3,7 +3,9 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { uiAlert } from '../../lib/ui-dialog'; // F#72 · MWG dialog
+import { uiAlert, uiConfirm } from '../../lib/ui-dialog'; // F#72 · MWG dialog
+// 🔐 F#73 Passkeys Management — أدلة modern-web-guidance (registration + management)
+import { listPasskeys, renamePasskey, deletePasskey, passkeyRegister, syncAcceptedCredentials, pkSupported, PasskeyCredInfo } from '../../lib/passkeys';
 
 interface UserProfile {
   name: string;
@@ -31,6 +33,14 @@ export default function ProfilePage() {
   // Image Upload State
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState('');
+
+  // 🔐 F#73 Passkeys Management
+  const [pkList, setPkList] = useState<PasskeyCredInfo[]>([]);
+  const [pkLoading, setPkLoading] = useState(false);
+  const [pkBusy, setPkBusy] = useState(false);
+  const [pkUiSupported, setPkUiSupported] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -75,6 +85,83 @@ export default function ProfilePage() {
     sessionStorage.clear();         // 🩹 كحل my_orders_cache
     setUser(null);
     router.push('/auth');
+  };
+
+  // 🔐 F#73 — تحميل قائمة البصمات + مزامنة password managers عند التحميل (دليل management §93)
+  const loadPasskeys = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return;
+    setPkLoading(true);
+    try {
+      const info = await listPasskeys(token);
+      setPkList(info.credentials);
+      syncAcceptedCredentials(info.rpId, info.userId, info.credentials); // Signal API — console.warn فقط
+    } catch {
+      // القائمة ليست حرجة — صمت
+    } finally {
+      setPkLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    pkSupported().then(setPkUiSupported);
+    loadPasskeys();
+  }, [user]);
+
+  // 🔐 F#73 — flow الإدارة: بلا authenticatorAttachment → security keys مسموحة (دليل management §78)
+  const handleAddPasskey = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token || pkBusy) return;
+    setPkBusy(true);
+    try {
+      const result = await passkeyRegister({ token, promotion: false });
+      if (result.ok) {
+        await loadPasskeys();
+      } else if (result.message) {
+        await uiAlert(result.message);
+      }
+    } catch (err) {
+      await uiAlert((err as Error)?.message || 'Passkey creation failed.');
+    } finally {
+      setPkBusy(false);
+    }
+  };
+
+  const handleDeletePasskey = async (cred: PasskeyCredInfo) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token || pkBusy) return;
+    const okGo = await uiConfirm(`Delete "${cred.name}"? Devices relying on it will no longer be able to sign in with it.`);
+    if (!okGo) return;
+    setPkBusy(true);
+    try {
+      await deletePasskey(token, cred.id);
+      await loadPasskeys(); // كيعاود يطلق signalAllAcceptedCredentials بالمتبقي (دليل management §95)
+    } catch (err) {
+      await uiAlert((err as Error)?.message || 'Delete failed.');
+    } finally {
+      setPkBusy(false);
+    }
+  };
+
+  // إعادة التسمية = label فالسيرفر فقط — بلا signalCurrentUserDetails (دليل management §72)
+  const handleRenamePasskey = async (cred: PasskeyCredInfo) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const newName = renameValue.trim();
+    if (!token || !newName) {
+      setRenamingId(null);
+      return;
+    }
+    setPkBusy(true);
+    try {
+      await renamePasskey(token, cred.id, newName);
+      setRenamingId(null);
+      await loadPasskeys();
+    } catch (err) {
+      await uiAlert((err as Error)?.message || 'Rename failed.');
+    } finally {
+      setPkBusy(false);
+    }
   };
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -342,6 +429,98 @@ export default function ProfilePage() {
             </button>
           )}
         </div>
+
+        {/* 🔐 F#73 — Passkeys Management (دليل passkey-management) — كيبان فقط للمسجلين */}
+        {user && (pkUiSupported || pkList.length > 0) && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+            <div className="flex justify-between items-center mb-1.5">
+              <h2 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <GlassIcon ch="🔑" size="xs" /> Passkey Sign-In
+              </h2>
+              {pkUiSupported && (
+                <button
+                  onClick={handleAddPasskey}
+                  disabled={pkBusy}
+                  className="bg-[#5B7EA6] hover:bg-[#46648A] text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-2 rounded-xl transition disabled:opacity-50 cursor-pointer active:scale-95"
+                >
+                  {pkBusy ? '…' : '+ Add Passkey'}
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-400 mb-3">
+              Sign in with your face, fingerprint, or device PIN — no password needed.
+            </p>
+
+            {pkLoading ? (
+              <div className="py-4 text-center text-xs text-gray-400 font-bold">Loading…</div>
+            ) : pkList.length === 0 ? (
+              <div className="py-4 text-center text-xs text-gray-400 font-bold">
+                No passkeys yet — add one for one-tap sign-in.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {pkList.map((cred) => (
+                  <div key={cred.id} className="py-3">
+                    {renamingId === cred.id ? (
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          maxLength={50}
+                          aria-label="Passkey name"
+                          className="flex-1 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#5B7EA6]"
+                        />
+                        <button
+                          onClick={() => handleRenamePasskey(cred)}
+                          disabled={pkBusy}
+                          className="bg-[#5B7EA6] text-white text-[10px] font-extrabold uppercase px-3 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setRenamingId(null)}
+                          className="text-gray-400 hover:text-gray-700 text-xs font-bold px-1 cursor-pointer"
+                          aria-label="Cancel rename"
+                        >
+                          <GlassIcon i="x" size="xs" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-gray-900 truncate">{cred.name}</p>
+                          <p className="text-[10px] text-gray-400">
+                            {cred.deviceType === 'multiDevice' ? 'Synced across devices' : 'This device only'}
+                            {cred.backedUp ? ' · Backed up' : ''}
+                            {cred.registeredAt ? ` · Added ${new Date(cred.registeredAt).toLocaleDateString()}` : ''}
+                            {cred.lastUsedAt ? ` · Last used ${new Date(cred.lastUsedAt).toLocaleDateString()}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button
+                            onClick={() => { setRenamingId(cred.id); setRenameValue(cred.name); }}
+                            disabled={pkBusy}
+                            className="text-[#5B7EA6] text-[10px] font-extrabold uppercase px-2 py-1 cursor-pointer disabled:opacity-50"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={() => handleDeletePasskey(cred)}
+                            disabled={pkBusy}
+                            className="text-coral-600 text-[10px] font-extrabold uppercase px-2 py-1 cursor-pointer disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Edit Profile Modal */}
