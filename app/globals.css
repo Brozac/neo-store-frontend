@@ -1026,3 +1026,85 @@ img {
     animation: none;
   }
 }
+
+/* ═══ F#72 · MWG dialog — native <dialog> service (lib/ui-dialog.ts → uiConfirm/uiAlert) ═══
+   قواعد MWG: بلا role="dialog"/aria-modal/focus trap — المتصفح كيوفرهم من showModal()
+   overscroll-behavior: contain إلزامي على dialog:modal و::backdrop (سكرول الصفحة ورا ما يتسربش) */
+.ui-dlg {
+  border: 0;
+  border-radius: 18px;
+  padding: 22px 22px 18px;
+  max-width: min(92vw, 380px);
+  background: #fff;
+  color: #22364a;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+}
+.ui-dlg:modal {
+  overscroll-behavior: contain;
+}
+.ui-dlg::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  overflow: hidden; /* MWG إلزامي: ::backdrop ماشي scroll container — بلاها كيتجاهل overscroll-behavior */
+  overscroll-behavior: contain;
+}
+.ui-dlg-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #22364a;
+}
+.ui-dlg-msg {
+  margin: 0 0 18px;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #4a5c72;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.ui-dlg-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+}
+.ui-dlg-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.ui-dlg-btn:active {
+  transform: scale(0.96);
+}
+.ui-dlg-btn.primary {
+  background: linear-gradient(135deg, #5b7ea6, #46688c);
+  color: #fff;
+}
+.ui-dlg-btn.danger {
+  background: #dc2626;
+  color: #fff;
+}
+.ui-dlg-btn.ghost {
+  background: #f1f5f9;
+  color: #22364a;
+}
+.ui-dlg-btn:focus-visible {
+  outline: 2px solid #5b7ea6;
+  outline-offset: 2px;
+}
+/* دخول سلس بـ @starting-style (baseline) — الإغلاق كيبقى فوري */
+.ui-dlg[open] {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, overlay 0.18s ease allow-discrete,
+    display 0.18s ease allow-discrete;
+}
+@starting-style {
+  .ui-dlg[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}

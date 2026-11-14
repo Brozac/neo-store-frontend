@@ -3,6 +3,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import GlassIcon from '@/components/ui/GlassIcon';
+import { uiAlert } from '../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface UserProfile {
   name: string;
@@ -81,7 +82,7 @@ export default function ProfilePage() {
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('File is too large. Maximum allowed size is 5MB.');
+      uiAlert('File is too large. Maximum allowed size is 5MB.');
       return;
     }
 

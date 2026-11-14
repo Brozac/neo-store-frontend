@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
 import AdminShell from '../_shell/AdminShell';
+import { uiAlert, uiConfirm } from '../../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface Order {
   id: number;
@@ -52,13 +53,13 @@ export default function BaridiMobOrdersAdmin() {
     if (input === null) return; // cancel
     const verified = parseFloat(input.replace(/[^\d.,]/g, '').replace(',', '.'));
     if (!Number.isFinite(verified) || verified <= 0) {
-      alert('❌ Invalid amount — approval aborted.');
+      uiAlert('❌ Invalid amount — approval aborted.');
       return;
     }
 
     const mismatch = Math.abs(verified - declared) > 1;
     if (mismatch) {
-      const proceed = window.confirm(
+      const proceed = await uiConfirm(
         `⚠️ AMOUNT MISMATCH — Order #${id}\n\n` +
         `Declared:  ${declared.toLocaleString()} DZD\n` +
         `Received:  ${verified.toLocaleString()} DZD\n` +
@@ -75,10 +76,10 @@ export default function BaridiMobOrdersAdmin() {
         declared_amount: declared,
         mismatch: mismatch,
       });
-      alert(`✅ ${res.data.message || `Order #${id} approved — dispatching to CJ in background.`}`);
+      uiAlert(`✅ ${res.data.message || `Order #${id} approved — dispatching to CJ in background.`}`);
       fetchOrders();
     } catch (error: any) {
-      alert(`❌ Approval failed: ${error.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Approval failed: ${error.response?.data?.error || 'Server error'}`);
     } finally {
       setActionLoading(null);
     }
@@ -91,18 +92,18 @@ export default function BaridiMobOrdersAdmin() {
     );
     if (reason === null) return; // cancel
     if (!reason.trim()) {
-      alert('❌ A rejection reason is required.');
+      uiAlert('❌ A rejection reason is required.');
       return;
     }
-    if (!confirm(`Confirm: Order #${id} will be CANCELLED?\nReason: ${reason.trim()}`)) return;
+    if (!await uiConfirm(`Confirm: Order #${id} will be CANCELLED?\nReason: ${reason.trim()}`)) return;
 
     setActionLoading(id);
     try {
       await adminApi.put(`/admin/manual-orders/reject/${id}`, { reason: reason.trim() });
-      alert(`✅ Order #${id} rejected — reason recorded.`);
+      uiAlert(`✅ Order #${id} rejected — reason recorded.`);
       fetchOrders();
     } catch (error: any) {
-      alert(`❌ Rejection failed: ${error.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Rejection failed: ${error.response?.data?.error || 'Server error'}`);
     } finally {
       setActionLoading(null);
     }

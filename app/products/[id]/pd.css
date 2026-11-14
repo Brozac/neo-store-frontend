@@ -106,6 +106,19 @@
   .pd-acc-body{max-height:none;height:0;transition:height .35s ease}
   .pd-acc.open .pd-acc-body{max-height:none;height:auto}
 }
+
+/* ── F#72 · MWG scoped-component-transitions: تبديل الصورة الرئيسية (الديسكتوب) بـ view transition
+   scoped على جذر المعرض (element.startViewTransition فالTSX) — الصفحة كتبقى تفاعلية وبلا snapshot عام.
+   الفallback موثق فالTSX: document.startViewTransition → تحديث مباشر ── */
+.pd-vt-main { view-transition-name: pd-vt-main; }
+/* MWG إلزامي: احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
 .pd-acc-inner{padding:0 16px 14px;font-size:12px;line-height:1.95;color:var(--ink-soft)}
 .pd-acc-inner ul{margin:6px 0 0;padding-inline-start:18px;list-style:disc}
 

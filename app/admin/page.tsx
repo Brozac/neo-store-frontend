@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../utils/adminApi';
 import AdminShell from './_shell/AdminShell';
+import { uiAlert, uiConfirm } from '../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface CategoryNode {
   id: number;
@@ -262,18 +263,18 @@ export default function AdminDashboard() {
     setSyncingCats(true);
     try {
       const res = await adminApi.post('/admin/sync-categories');
-      alert(`✅ ${res.data.message}`);
-    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`); }
+      uiAlert(`✅ ${res.data.message}`);
+    } catch (err: any) { uiAlert(`❌ Error: ${err.response?.data?.error || 'Network Error'}`); }
     finally { setSyncingCats(false); }
   };
 
   const handleBackfillCategories = async () => {
-    if (!confirm('This will update categories for all existing products in background. Continue?')) return;
+    if (!await uiConfirm('This will update categories for all existing products in background. Continue?')) return;
     setBackfillingCats(true);
     try {
       const res = await adminApi.post('/admin/backfill-categories');
-      alert(`✅ ${res.data.message}`);
-    } catch (err: any) { alert(`❌ Error: ${err.response?.data?.error || 'Server error'}`); }
+      uiAlert(`✅ ${res.data.message}`);
+    } catch (err: any) { uiAlert(`❌ Error: ${err.response?.data?.error || 'Server error'}`); }
     finally { setBackfillingCats(false); }
   };
 
@@ -301,7 +302,7 @@ export default function AdminDashboard() {
   };
 
   const handleMassSync = async () => {
-    if (!confirm('⚠️ This will fetch up to 1200 products from CJ. It will run in the background. Continue?')) return;
+    if (!await uiConfirm('⚠️ This will fetch up to 1200 products from CJ. It will run in the background. Continue?')) return;
     setMassSyncing(true);
     setSyncMessage('🚀 Mass Sync Engine started in background! Check server logs.');
     try {
@@ -318,7 +319,7 @@ export default function AdminDashboard() {
     setSyncMessage('🎬 Multi-keyword video hunt started in background (~15 min)...');
     try {
       await adminApi.post('/admin/sync-videos');
-      alert('🎬 Video Sync v2 triggered! Check server logs in ~15 minutes for results.');
+      uiAlert('🎬 Video Sync v2 triggered! Check server logs in ~15 minutes for results.');
     } catch (err: any) {
       setSyncMessage(`❌ Error: ${err.response?.data?.error || 'Failed to start video sync.'}`);
     } finally {
@@ -327,17 +328,17 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteVideo = async (productId: number | string) => {
-    if (!confirm('Remove video from this product? The item will remain in the store without video.')) return;
+    if (!await uiConfirm('Remove video from this product? The item will remain in the store without video.')) return;
     try {
       const res = await adminApi.delete(`/admin/videos/${productId}`);
       if (res.data?.success) {
         setVideoProducts(prev => prev.filter(p => p.id !== productId));
-        alert('✅ Video removed successfully. Product remains in store.');
+        uiAlert('✅ Video removed successfully. Product remains in store.');
       } else {
-        alert(`❌ ${res.data?.error || 'Failed to delete video.'}`);
+        uiAlert(`❌ ${res.data?.error || 'Failed to delete video.'}`);
       }
     } catch (err: any) {
-      alert(`❌ Error: ${err.response?.data?.error || 'Failed to delete video.'}`);
+      uiAlert(`❌ Error: ${err.response?.data?.error || 'Failed to delete video.'}`);
     }
   };
 
@@ -637,7 +638,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       await adminApi.put('/admin/settings/show_reels', { value: nextVal });
                     } catch (e) {
                       setShowReels(!nextVal);
-                      alert('⚠️ Could not save the setting. Check your connection and try again.');
+                      uiAlert('⚠️ Could not save the setting. Check your connection and try again.');
                     }
                   }}
                   className={`w-14 h-7 rounded-full transition-colors relative cursor-pointer ${showReels ? 'bg-emerald-500' : 'bg-gray-300'}`}
@@ -956,10 +957,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                 const payload = Object.fromEntries(formData.entries());
                 try {
                   await adminApi.post('/admin/sourcing/create', payload);
-                  alert('✅ Sourcing request sent to CJ team successfully!');
+                  uiAlert('✅ Sourcing request sent to CJ team successfully!');
                   form.reset();
                 } catch (err: any) {
-                  alert(`❌ Sourcing Submission Failed: ${err.response?.data?.error || 'Server error.'}`);
+                  uiAlert(`❌ Sourcing Submission Failed: ${err.response?.data?.error || 'Server error.'}`);
                 }
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light">
                 <div>
@@ -1001,10 +1002,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                     ...payload,
                     discount_value: Number(payload.discount_value)
                   });
-                  alert('✅ Coupon activated successfully in store system!');
+                  uiAlert('✅ Coupon activated successfully in store system!');
                   form.reset();
                 } catch (err: any) {
-                  alert(`❌ Error: ${err.response?.data?.error || 'Failed to create coupon.'}`);
+                  uiAlert(`❌ Error: ${err.response?.data?.error || 'Failed to create coupon.'}`);
                 }
               }} className="space-y-4 bg-temu-offwhite p-6 rounded-xl border border-temu-gray-border-light max-w-lg">
                 <div>

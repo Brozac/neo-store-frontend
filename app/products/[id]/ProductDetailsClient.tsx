@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { flushSync } from 'react-dom'; // F#72 · MWG scoped-component-transitions — مزامنة DOM داخل update callback
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';                                    // 🆕 Phase 3
@@ -447,6 +448,22 @@ export default function ProductDetailsClient({
 
   const isCurrentProductFavorited = favoriteIds.includes(String(product.id));
 
+  // F#72 · MWG scoped-component-transitions — تبديل الصورة الرئيسية (الديسكتوب) بـ view transition
+  // scoped على جذر المعرض (element.startViewTransition): الصفحة كتبقى تفاعلية وبلا snapshot للـroot.
+  // الفallback: element.startViewTransition → document.startViewTransition → تحديث مباشر.
+  // MWG إلزامي: ready.catch() — إعادة الإطلاق كتسكّي الtransition كتخلق unhandled rejection
+  //             + prefers-reduced-motion فالـCSS (pd.css)
+  const galleryScopeRef = useRef<HTMLDivElement | null>(null);
+  const withGalleryTransition = (update: () => void) => {
+    type SvtHost = { startViewTransition?: (cb: () => void) => { ready?: Promise<void> } };
+    const scope = galleryScopeRef.current as unknown as SvtHost | null;
+    const doc = document as unknown as SvtHost;
+    const svt = scope?.startViewTransition ?? doc.startViewTransition;
+    if (!svt) { update(); return; }
+    const t = svt.call(scope ?? (document as unknown as SvtHost), () => { flushSync(update); });
+    t.ready?.catch(() => {});
+  };
+
   const detailBullets: string[] = [];
   if (product.material) detailBullets.push(`Material: ${product.material}`);
   if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
@@ -797,6 +814,7 @@ export default function ProductDetailsClient({
           {/* Visual Gallery */}
           <div className="flex flex-col gap-4">
             <div
+              ref={galleryScopeRef}
               className="relative w-full aspect-square sm:min-h-[440px] rounded-2xl overflow-hidden bg-white border border-temu-gray-border-light group touch-pan-y cursor-zoom-in shadow-sm flex items-center justify-center"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
@@ -812,7 +830,7 @@ export default function ProductDetailsClient({
                   fetchPriority="high"
                   decoding="async"
                   alt={product.title}
-                  className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+                  className="pd-vt-main w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                 />
               )}
 
@@ -822,7 +840,7 @@ export default function ProductDetailsClient({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
+                      withGalleryTransition(() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1));
                     }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Previous Image"
@@ -833,7 +851,7 @@ export default function ProductDetailsClient({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
+                      withGalleryTransition(() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1));
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Next Image"
@@ -878,7 +896,7 @@ export default function ProductDetailsClient({
                 {galleryImages.map((img, idx) => (
                   <div
                     key={idx}
-                    onClick={() => { setCurrentImageIndex(idx); setShowVideo(false); }}
+                    onClick={() => withGalleryTransition(() => { setCurrentImageIndex(idx); setShowVideo(false); })}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
                         ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import GlassIcon from '@/components/ui/GlassIcon';
+import { uiAlert } from '../../lib/ui-dialog'; // F#72 · MWG dialog
 
 // 🆕 FILE 5: Browser Purchase بمطابقة eventID حرفية مع conversionService.js
 // نفس event_id (purch_{orderId}) → Meta تعده مرة واحدة (Deduplication داخل 48h)
@@ -216,7 +217,7 @@ function SuccessContent() {
       );
       window.location.href = url;
     } catch (err) {
-      alert('Could not initiate add-on checkout. Your main order is still safe.');
+      uiAlert('Could not initiate add-on checkout. Your main order is still safe.');
     } finally {
       setIsUpsellProcessing(false);
     }

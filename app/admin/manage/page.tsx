@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import StarRating from '../../components/StarRating';
 import adminApi from '../../utils/adminApi';
 import AdminShell from '../_shell/AdminShell';
+import { uiAlert, uiConfirm } from '../../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface Product {
   id: string | number;
@@ -102,27 +103,27 @@ function ManageProductsContent() {
   }, [searchQuery]);
 
   const handleAutoCategorize = async () => {
-    if (!confirm('Run automated AI categorization for all inventory items?')) return;
+    if (!await uiConfirm('Run automated AI categorization for all inventory items?')) return;
     setIsCategorizing(true);
     try {
       const res = await adminApi.post('/admin/auto-categorize');
-      alert(`✅ ${res.data.message}`);
+      uiAlert(`✅ ${res.data.message}`);
       fetchProducts(); 
     } catch (err: any) {
-      alert(`❌ Failed: ${err.response?.data?.error || err.message}`);
+      uiAlert(`❌ Failed: ${err.response?.data?.error || err.message}`);
     } finally { 
       setIsCategorizing(false); 
     }
   };
 
   const handleDelete = async (id: string | number) => {
-    if (!confirm('Are you sure you want to hide this product from the store?')) return;
+    if (!await uiConfirm('Are you sure you want to hide this product from the store?')) return;
     setDeletingId(id);
     try {
       await adminApi.delete(`/admin/delete-product/${id}`);
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err: any) { 
-      alert(`❌ Error: ${err.response?.data?.error || 'Failed'}`); 
+      uiAlert(`❌ Error: ${err.response?.data?.error || 'Failed'}`); 
     } finally { 
       setDeletingId(null); 
     }
@@ -134,7 +135,7 @@ function ManageProductsContent() {
       const res = await adminApi.put(`/admin/toggle-deal/${id}`);
       setProducts(prev => prev.map(p => p.id === id ? { ...p, is_sourced: res.data.is_sourced } : p));
     } catch (err: any) {
-      alert(`❌ Deal toggle failed: ${err.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Deal toggle failed: ${err.response?.data?.error || 'Server error'}`);
     } finally { 
       setTogglingDealId(null); 
     }
@@ -149,9 +150,9 @@ function ManageProductsContent() {
         productUrl: '', 
         price: Number(product.price) || 0
       });
-      alert('✅ Sourcing request sent to CJ Agents!');
+      uiAlert('✅ Sourcing request sent to CJ Agents!');
     } catch (err: any) {
-      alert(`❌ Sourcing request failed: ${err.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Sourcing request failed: ${err.response?.data?.error || 'Server error'}`);
     } finally { 
       setSourcingId(null); 
     }
@@ -163,7 +164,7 @@ function ManageProductsContent() {
       await adminApi.put(`/admin/update-category/${id}`, { category: newCategory });
       setProducts(prev => prev.map(p => p.id === id ? { ...p, category: newCategory } : p));
     } catch (err: any) { 
-      alert(`❌ Category update failed: ${err.response?.data?.error}`); 
+      uiAlert(`❌ Category update failed: ${err.response?.data?.error}`); 
     } finally { 
       setUpdatingCategoryId(null); 
     }
@@ -186,16 +187,16 @@ function ManageProductsContent() {
     // 🛡️ v1.1 — Client-side financial guards (السيرفر هو الحكم — هادو UX)
     const parsedPrice = Number(editProduct.price);
     if (!Number.isFinite(parsedPrice) || parsedPrice < 9.99) {
-      alert(`❌ Price floor is $9.99 (v3.1) — cannot save $${editProduct.price}.`);
+      uiAlert(`❌ Price floor is $9.99 (v3.1) — cannot save $${editProduct.price}.`);
       return;
     }
     if (!editProduct.title?.trim()) {
-      alert('❌ Title is required.');
+      uiAlert('❌ Title is required.');
       return;
     }
     const parsedOriginal = editProduct.original_price ? Number(editProduct.original_price) : null;
     if (parsedOriginal !== null && (!Number.isFinite(parsedOriginal) || parsedOriginal <= parsedPrice)) {
-      alert('❌ Original price must be higher than the selling price (or leave it empty).');
+      uiAlert('❌ Original price must be higher than the selling price (or leave it empty).');
       return;
     }
 
@@ -218,11 +219,11 @@ function ManageProductsContent() {
       };
 
       await adminApi.put(`/admin/update-product/${editProduct.id}`, payload);
-      alert('✅ Product updated and cache refreshed!');
+      uiAlert('✅ Product updated and cache refreshed!');
       setIsEditModalOpen(false);
       fetchProducts();
     } catch (err: any) {
-      alert(`❌ Save failed: ${err.response?.data?.error || err.message}`);
+      uiAlert(`❌ Save failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setSavingEdit(false);
     }

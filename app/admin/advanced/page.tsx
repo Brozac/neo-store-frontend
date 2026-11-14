@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import adminApi from '../../utils/adminApi';
 import AdminShell from '../_shell/AdminShell';
+import { uiAlert, uiConfirm } from '../../../lib/ui-dialog'; // F#72 · MWG dialog
 
 export default function AdvancedDashboard() {
   const router = useRouter();
@@ -34,14 +35,14 @@ export default function AdvancedDashboard() {
       if (res.data?.data && res.data.data.length > 0) {
         setCogsData(res.data.data[0]);
       } else {
-        alert('No financial COGS data found for this CJ Order Code.');
+        uiAlert('No financial COGS data found for this CJ Order Code.');
       }
     } catch (err: any) { 
       if (err.response?.status === 401 || err.response?.status === 403) {
         router.push('/admin/login');
         return;
       }
-      alert(`❌ Error fetching COGS: ${err.response?.data?.error || err.message}`); 
+      uiAlert(`❌ Error fetching COGS: ${err.response?.data?.error || err.message}`); 
     } finally {
       setCogsLoading(false);
     }
@@ -85,20 +86,20 @@ export default function AdvancedDashboard() {
       shopOrders.map((s: any) => `  • ${s.shopOrderId}`).join('\n') +
       `\n\n⚠️ This action is submitted to CJ arbitration and cannot be reversed from this panel.\n\nProceed?`;
 
-    if (!window.confirm(confirmMessage)) return;
+    if (!await uiConfirm(confirmMessage)) return;
 
     setSubmittingMergeIdx(idx);
     try {
       const payload = shopOrders.length > 0 ? shopOrders : [group];
       const res = await adminApi.post('/admin/merge/submit', payload);
       if (res.data?.code === 200 || res.data?.code === 0) {
-        alert('✅ Orders merged successfully on CJ!');
+        uiAlert('✅ Orders merged successfully on CJ!');
         fetchMergeList();
       } else {
-        alert(`⚠️ Merge notice: ${res.data?.message || 'Could not complete merge.'}`);
+        uiAlert(`⚠️ Merge notice: ${res.data?.message || 'Could not complete merge.'}`);
       }
     } catch (err: any) {
-      alert(`❌ Merge failed: ${err.response?.data?.error || err.message}`);
+      uiAlert(`❌ Merge failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setSubmittingMergeIdx(null);
     }
@@ -121,7 +122,7 @@ export default function AdvancedDashboard() {
         router.push('/admin/login');
         return;
       }
-      alert('Error fetching CJ makeup payments.'); 
+      uiAlert('Error fetching CJ makeup payments.'); 
     } finally {
       setMakeupLoading(false);
     }

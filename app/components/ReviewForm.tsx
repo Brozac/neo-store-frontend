@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import StarRating from './StarRating';
 import GlassIcon from '@/components/ui/GlassIcon';
+import { uiAlert } from '../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface ReviewFormProps {
   productId: string | number;
@@ -57,7 +58,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
     if (!files || files.length === 0) return;
 
     if (uploadedImages.length + files.length > 3) {
-      alert('You can upload a maximum of 3 photos per review.');
+      uiAlert('You can upload a maximum of 3 photos per review.');
       return;
     }
 
@@ -81,10 +82,10 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
       if (res.ok && Array.isArray(data.urls)) {
         setUploadedImages(prev => [...prev, ...data.urls]);
       } else {
-        alert(data.error || 'Failed to upload photo.');
+        uiAlert(data.error || 'Failed to upload photo.');
       }
     } catch (err) {
-      alert('Connection error while uploading images.');
+      uiAlert('Connection error while uploading images.');
     } finally {
       setUploadingPhotos(false);
       e.target.value = '';

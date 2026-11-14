@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import adminApi from '../../utils/adminApi';
 import AdminShell from '../_shell/AdminShell';
+import { uiAlert, uiConfirm } from '../../../lib/ui-dialog'; // F#72 · MWG dialog
 
 interface Order {
   id: number;
@@ -104,28 +105,28 @@ export default function FailedOrdersAdmin() {
   };
 
   const handleApprove = async (id: number) => {
-    if (!confirm(`Trigger background retry for Order #${id} to CJ Dropshipping?`)) return;
+    if (!await uiConfirm(`Trigger background retry for Order #${id} to CJ Dropshipping?`)) return;
     setActionLoading(id);
     try {
       const res = await adminApi.put(`/admin/retry-fulfillment/${id}`);
-      alert(`✅ ${res.data.message || 'Order fulfillment retry initiated in background!'}`);
+      uiAlert(`✅ ${res.data.message || 'Order fulfillment retry initiated in background!'}`);
       fetchOrders(); 
     } catch (error: any) {
-      alert(`❌ Retry failed: ${error.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Retry failed: ${error.response?.data?.error || 'Server error'}`);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleReject = async (id: number) => {
-    if (!confirm(`Are you sure you want to cancel and mark Order #${id} as cancelled?`)) return;
+    if (!await uiConfirm(`Are you sure you want to cancel and mark Order #${id} as cancelled?`)) return;
     setActionLoading(id);
     try {
       await adminApi.put(`/admin/manual-orders/reject/${id}`);
-      alert(`✅ Order #${id} has been marked as cancelled.`);
+      uiAlert(`✅ Order #${id} has been marked as cancelled.`);
       fetchOrders(); 
     } catch (error: any) {
-      alert(`❌ Cancellation failed: ${error.response?.data?.error || 'Server error'}`);
+      uiAlert(`❌ Cancellation failed: ${error.response?.data?.error || 'Server error'}`);
     } finally {
       setActionLoading(null);
     }
