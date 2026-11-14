@@ -75,6 +75,14 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=()',
           },
+          // 🔒 F#74 L4 — CSP مرحلة المراقبة (Report-Only = صفر تأثير على المستخدم، الجدوائلات فقط):
+          //    الخريطة هي نفسها الموثقة فالكومنتاي تحت (خطوة 1) — التقارير لـ /api/csp-reports
+          //    (sink جديد كيسجل ويكلّم 204). راقب أسبوعين → nonces → Enforce. بلا report-uri
+          //    قديم؟ هادا هو المدخل الموثق — عند الترحيل لReporting-Endpoints بدّل الحقل برك.
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: "default-src 'self'; img-src 'self' data: https://*.cjdropshipping.com https://*.alicdn.com https://*.aliyuncs.com https://*.aliexpress-media.com https://res.cloudinary.com https://images.unsplash.com; script-src 'self' 'unsafe-inline' https://js.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; connect-src 'self' https://api.stripe.com; report-uri /api/csp-reports",
+          },
         ],
       },
       {

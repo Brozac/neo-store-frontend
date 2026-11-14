@@ -70,7 +70,8 @@ function SearchContent() {
                   </div>
                   <div className="p-3">
                     <h3 className="text-xs font-bold text-temu-black line-clamp-2 mb-1">{p.title}</h3>
-                    <p className="text-sm font-black text-temu-error">${Number(p.laclarcPrice || p.price).toFixed(2)}</p>
+                    {/* 🔒 F#74 — بلا fallback على p.price (كلفة CJ ما كتنعرضش عمرو) */}
+                    <p className="text-sm font-black text-temu-error">${Number(p.laclarcPrice).toFixed(2)}</p>
                     {p.ordersCount > 0 && <p className="text-[10px] text-temu-gray-light mt-0.5"><GlassIcon ch="🔥" size="xs" /> {p.ordersCount} sold on CJ</p>}
                   </div>
                 </a>
