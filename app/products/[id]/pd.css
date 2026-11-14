@@ -100,6 +100,12 @@
 .pd-acc.open .pd-acc-head svg{transform:rotate(180deg)}
 .pd-acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
 .pd-acc.open .pd-acc-body{max-height:640px}
+/* F#71-c · MWG animate-to-intrinsic-sizes: interpolate-size كيحيد سقف 640px — المحتوى الطويل (جداول المقاسات/وصف CJ) كيبان كامل مع أنيميشن أصلي (Chrome/Edge 129+)؛ البقية كتبقى على max-height لفوق */
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+  .pd-acc-body{max-height:none;height:0;transition:height .35s ease}
+  .pd-acc.open .pd-acc-body{max-height:none;height:auto}
+}
 .pd-acc-inner{padding:0 16px 14px;font-size:12px;line-height:1.95;color:var(--ink-soft)}
 .pd-acc-inner ul{margin:6px 0 0;padding-inline-start:18px;list-style:disc}
 

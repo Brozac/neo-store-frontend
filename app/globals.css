@@ -648,6 +648,21 @@
   max-height: 100px;
 }
 
+/* ── F#71-c · MWG animate-to-intrinsic-sizes: أنيميشن أصلي للحجم الجوهري حتى 100% ديال المحتوى (Chrome/Edge 129+)؛ المتصفحات الأخرى كتبقى على max-height hack لفوق ── */
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+  .hero-card-description {
+    max-height: none;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.3s ease, opacity 0.3s ease;
+  }
+  .hero-card:hover .hero-card-description {
+    max-height: none;
+    height: auto;
+  }
+}
+
 /* حالات احتياطية: منتج واحد أو اثنان */
 .hero-cards-container.count-1 .hero-card { height: 100% !important; }
 .hero-cards-container.count-2 .pos-bottom-left { width: 100%; }
