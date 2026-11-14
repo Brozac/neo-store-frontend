@@ -10,11 +10,23 @@ interface JourneyEvent {
   time: string;
 }
 
+// 🩹 F#77 — الحالة الحية من الدوك 2.1 (كلها اختيارية — الباكند null إلا ما كانوش)
+interface JourneyLive {
+  status: string;
+  deliveryDay: string;
+  deliveryTime: string;
+  lastMileCarrier: string;
+  lastMileCarrierPhone: string;
+  lastMileCarrierEmail: string;
+  lastMileNumber: string;
+}
+
 interface Journey {
   order: { id: number; order_number?: string; status: string; tracking: string; destination: string };
   currentStage: string;
   events: JourneyEvent[];
   eta: { predictedDays: number; confidence: string; message: string };
+  live?: JourneyLive | null;
 }
 
 const STAGE_ICONS: Record<string, string> = {
@@ -28,6 +40,7 @@ const STAGE_ICONS: Record<string, string> = {
   DELIVERED: '🎉',
   UPDATE: '📍',
   ARRIVED: '🛬',
+  RETURNED: '↩️',
 };
 
 const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
@@ -41,6 +54,8 @@ const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
   DELIVERED: { en: 'Delivered!', ar: 'وصل! 🎉' },
   UPDATE: { en: 'Shipment update', ar: 'تحديث شحنة' },
   ARRIVED: { en: 'Arrived', ar: 'وصل' },
+  // 🩹 F#77 — حدث الرجوع للمستودع ("Undeliverable — returned to sender" ما بقتش تظهر "وصل!")
+  RETURNED: { en: 'Returned to warehouse — we are re-shipping', ar: 'رجع للمستودع — غادي نعاودو نشحنوه' },
 };
 
 export default function ShipTruthJourney({ orderId, email }: { orderId: number; email: string }) {
@@ -99,6 +114,7 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
 
   const t = STAGE_LABELS[journey.currentStage] || { en: journey.currentStage, ar: journey.currentStage };
   const isRTL = lang === 'ar';
+  const isRTLHeader = isRTL; // نفس اللغة للوحة الحية
 
   return (
     <div
@@ -130,6 +146,40 @@ export default function ShipTruthJourney({ orderId, email }: { orderId: number; 
             {journey.eta.confidence === 'high' && (
               <div className="mt-2 h-1.5 bg-black/30 rounded-full overflow-hidden">
                 <div className="h-full bg-linear-to-r from-maroccan-tea-400 to-maroccan-tea-300 rounded-full" style={{ width: '87%' }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 🩹 F#77 — الحالة الحية من CJ (دوك 2.1): ETA الرسمي + الناقل الأخير مع تيليفون/إيميل */}
+        {journey.live && (journey.live.status || journey.live.deliveryDay || journey.live.lastMileCarrier) && (
+          <div className="mt-3 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/15 text-gray-200">
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <span className="text-xs font-bold">
+                {journey.live.status || (isRTLHeader ? 'حالة حية' : 'Live status')}
+              </span>
+              {journey.live.deliveryDay && (
+                <span className="text-xs font-black text-butter-up-300">
+                  {isRTLHeader ? `تقدير CJ: ~${journey.live.deliveryDay} يوم` : `CJ estimate: ~${journey.live.deliveryDay}d`}
+                </span>
+              )}
+            </div>
+            {journey.live.lastMileCarrier && (
+              <div className="mt-2 pt-2 border-t border-white/10 text-[11px] leading-relaxed">
+                <span className="font-bold text-white">
+                  {isRTLHeader ? `الناقل الأخير: ${journey.live.lastMileCarrier}` : `Handed to ${journey.live.lastMileCarrier}`}
+                </span>
+                {journey.live.lastMileNumber && <span className="text-gray-300"> · #{journey.live.lastMileNumber}</span>}
+                {(journey.live.lastMileCarrierPhone || journey.live.lastMileCarrierEmail) && (
+                  <span className="text-gray-300">{' — '}{isRTLHeader ? 'تواصل معهم مباشرة: ' : 'reach them: '}</span>
+                )}
+                {journey.live.lastMileCarrierPhone && (
+                  <a href={`tel:${journey.live.lastMileCarrierPhone.replace(/\s+/g, '')}`} className="underline hover:text-white" dir="ltr">{journey.live.lastMileCarrierPhone}</a>
+                )}
+                {journey.live.lastMileCarrierPhone && journey.live.lastMileCarrierEmail && <span className="text-gray-400"> · </span>}
+                {journey.live.lastMileCarrierEmail && (
+                  <a href={`mailto:${journey.live.lastMileCarrierEmail}`} className="underline hover:text-white" dir="ltr">{journey.live.lastMileCarrierEmail}</a>
+                )}
               </div>
             )}
           </div>
