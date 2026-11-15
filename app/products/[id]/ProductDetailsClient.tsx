@@ -332,6 +332,12 @@ export default function ProductDetailsClient({
     if (variantImageIdx >= 0) setCurrentImageIndex(variantImageIdx);
   }, [variantImageIdx]);
 
+  // 🩹 F#98 — ملي كيتبدل طول المعرض (صورة الفاريانت كتزول قدام → 15↔14) الـ index القديم
+  //    يقدر يخرج من المدى (عداد "15/14" وصورة غالطة) — نرجعوه دائماً لآخر index صالح
+  useEffect(() => {
+    setCurrentImageIndex(prev => Math.min(Math.max(prev, 0), Math.max(galleryImages.length - 1, 0)));
+  }, [galleryImages]);
+
   // 🛡️ parse-safe للمفضلة — localStorage فاسد ما يكسرش الزر (نفس نمط CartContext v1.1)
   //    + cap 100 = مطابق لـ by-ids LIMIT 100 (API)
   const parseFavorites = (): string[] => {
@@ -433,15 +439,25 @@ export default function ProductDetailsClient({
     touchStartX.current = e.touches[0].clientX;
   };
 
+  // 🧭 F#98 — تنقل دائري آمن: modulo حقيقي بدل الـ ternary wrap. الجذر الحقيقي لبلاغ
+  //    "-20 / 14": سهم Next تاع الـ lightbox كان فيه prev - 1 بالغلط — عند prev=0
+  //    ما كانش كيرجع لـ length-1، كان كينقص لـ -1 ثم -2... بلا نهاية. الـ modulo
+  //    هنا مقاوم حتى لو الـ index خرج من المدى (طول المعرض كيتبدل مع الفاريانت)
+  const navImage = (dir: 1 | -1) =>
+    setCurrentImageIndex(prev => {
+      const len = Math.max(galleryImages.length, 1);
+      return (((prev + dir) % len) + len) % len;
+    });
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (isZoomed) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchStartX.current - touchEndX;
     if (Math.abs(diffX) > 40) {
       if (diffX > 0) {
-        setCurrentImageIndex(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+        navImage(1);
       } else {
-        setCurrentImageIndex(prev => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+        navImage(-1);
       }
     }
   };
@@ -840,7 +856,7 @@ export default function ProductDetailsClient({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      withGalleryTransition(() => setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1));
+                      withGalleryTransition(() => navImage(-1));
                     }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Previous Image"
@@ -851,7 +867,7 @@ export default function ProductDetailsClient({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      withGalleryTransition(() => setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1));
+                      withGalleryTransition(() => navImage(1));
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-temu-black p-2.5 rounded-full shadow-md transition cursor-pointer z-10 active:scale-90"
                     aria-label="Next Image"
@@ -1470,7 +1486,7 @@ export default function ProductDetailsClient({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setCurrentImageIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
+                    navImage(-1);
                   }}
                   className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
                   aria-label="Previous Photo"
@@ -1481,7 +1497,7 @@ export default function ProductDetailsClient({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setCurrentImageIndex(prev => prev === galleryImages.length - 1 ? 0 : prev - 1);
+                    navImage(1); // 🩹 F#98: كان prev - 1 — كينقص بلا حد (بلاغ "-20 / 14")
                   }}
                   className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-md transition active:scale-90 cursor-pointer z-10"
                   aria-label="Next Photo"
