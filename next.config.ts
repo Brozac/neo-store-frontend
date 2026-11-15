@@ -1,4 +1,7 @@
-import { withSentryConfig } from '@sentry/nextjs';
+// 🩹 F#94 — import من '@sentry/nextjs/config' (الجذر الرئيسي deprecated وسيوقف فv11):
+//   "[@sentry/nextjs] Importing `withSentryConfig` from `@sentry/nextjs` is deprecated and will
+//    stop working in v11. Import it from `@sentry/nextjs/config` instead" (بان فبيلد 2026-11-15)
+import { withSentryConfig } from '@sentry/nextjs/config';
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 import type { NextConfig } from "next";
 
@@ -148,7 +151,15 @@ export default CF_SLIM
         project: process.env.SENTRY_PROJECT,
         authToken: process.env.SENTRY_AUTH_TOKEN,
         sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
-        disableLogger: true,
+        // 🩹 F#94 — disableLogger deprecated → webpack.treeshake.removeDebugLogging
+        //   (ما كتخدمش مع Turbopack — Next 16 كيبني بيه — ولكن كيسكت الـ warning
+        //   وكيبقى صحيح للwebpack، والإزالة الفعلية كتتم عند رجوع webpack)
+        // 🩹 F#94 — telemetry: false — الـ build telemetry ديال Sentry (بيانات الإصدار)
+        //   كانت مفعّلة by default — تعطيلها فـ نفس روح Privacy scrub ديالنا
+        telemetry: false,
+        webpack: {
+          treeshake: { removeDebugLogging: true },
+        },
       }
     );
 // ──── [/LACLARC::SENTRY-NEXTCONFIG] ────

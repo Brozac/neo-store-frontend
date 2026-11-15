@@ -2,9 +2,10 @@ import { ImageResponse } from 'next/og';
 
 // ═══════════════════════════════════════════════════════════════════
 // 🩹 AUDIT v2.0 — Task 13 (app/opengraph-image.tsx)
-// DECISION-EDGE — runtime='edge' بقى كما هو: المحتوى ثابت، Next كيعطي URL
-//                 مُهشّم + cache immutable → كلفة ≈ 0. البديل (توليد عند build)
-//                 موثق فـ README-layout-og-fix.md #6 — ما تبدلش بلا سبب
+// 🩹 F#94 — runtime edge→nodejs: Next 16 كيديپريكا Edge Runtime
+//   ("⚠ The Edge Runtime is deprecated... use the nodejs runtime instead" فالبيلد)
+//   edge غادي يتّحيد فv17 → الهجرة دابا وهي غير warning = آمنة ومجرّبة.
+//   المحتوى ثابت + cache immutable → نفس كلفة ≈ 0 على nodejs.
 // VERIFY-EMOJI  — 🌍🔒 next/og فيه دعم إيموجي مدمج، ولكن تأكد مرة وحدة (README #3)
 //                 إلا خرجو مربعات خاوية → بدّل بلوك الشارات بالنسخة النصية
 //                 الآمنة المحفوظة تحت كتعليق (التبديل = 30 ثانية)
@@ -12,7 +13,7 @@ import { ImageResponse } from 'next/og';
 
 // 🆕 OG image ديناميكي — يولد عند أول طلب ويُخزن (بلا صيانة)
 // يُستخدم تلقائياً من layout.tsx (يستبدل /hero-image.jpg الغائب)
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const alt = 'Laclarc — Global Curated Marketplace';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

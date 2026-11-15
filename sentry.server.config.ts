@@ -7,5 +7,10 @@ Sentry.init({
   environment: process.env.NODE_ENV || 'production',
   release: 'laclarc-web@' + (process.env.VERCEL_GIT_COMMIT_SHA || 'dev'),
   tracesSampleRate: 0, // مرحلة 1 = أخطاء فقط
+  // 🩹 F#94 — نفس تنقية الخصوصية ديال الباك (query_string كيقدر يحمل بيانات طلب)
+  beforeSend(event) {
+    if (event.request) { delete event.request.query_string; }
+    return event;
+  },
 });
 // ──── [/LACLARC::SENTRY-SERVER-CFG] ────
