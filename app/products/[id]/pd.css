@@ -100,6 +100,9 @@
 .pd-acc.open .pd-acc-head svg{transform:rotate(180deg)}
 .pd-acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
 .pd-acc.open .pd-acc-body{max-height:640px}
+/* 🧩 F#99 — أكورديون Details ولى فيه بنية منظمة (جدول specs + Overview + Package) كيتعدى 640px
+   فأغلب الأوصاف — fallback تاع المتصفحات اللي ما فيهاش interpolate-size (الجديد فالـ @supports لتحت كيغطيهم) */
+.pd-acc-tall.open .pd-acc-body{max-height:1600px}
 /* F#71-c · MWG animate-to-intrinsic-sizes: interpolate-size كيحيد سقف 640px — المحتوى الطويل (جداول المقاسات/وصف CJ) كيبان كامل مع أنيميشن أصلي (Chrome/Edge 129+)؛ البقية كتبقى على max-height لفوق */
 @supports (interpolate-size: allow-keywords) {
   :root { interpolate-size: allow-keywords; }

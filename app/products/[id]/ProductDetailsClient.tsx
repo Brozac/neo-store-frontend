@@ -116,6 +116,186 @@ const REVIEWS_PAGE = 6;
 // 🛡️ [variant-truth] escape regex — مقاسات فيها رموز خاص ("S/M", "4 (Kids)") ما يرميوش
 const escRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// ═══ 🧩 F#99 — التفاصيل المنظمة (Details parsed) ═══
+// وصف CJ الخام (البنية الحقيقية فالـ HTML: «Overview:» / «Product information:» / «Packing list:» /
+// «Product Image:» + مخلفات <img> مكررة مع المعرض) كيتحول لـ blocks منظمة:
+// Specifications (صفوف key/value) · لائحات · فقرات — بدل wall-of-text واحد.
+// مبني ومثبت على 6 أوصاف حية (97772/97771/97770/97769/97768/97650): headers بـ ":" و "："،
+// صفوف specs، لائحات مرقمة، Packing list غير مرقمة، Note متعدد الأسطر، أوصاف بلا بنية، وأوصاف خاوية.
+type DetailRow = { k: string; v: string };
+type DetailBlock =
+  | { kind: 'specs'; title: string; rows: DetailRow[] }
+  | { kind: 'list'; title: string; items: string[] }
+  | { kind: 'para'; title: string; text: string };
+
+const DETAIL_ENT: Record<string, string> = { nbsp: ' ', amp: '&', quot: '"', lt: '<', gt: '>', '#39': "'", apos: "'", eacute: 'é', egrave: 'è', agrave: 'à', deg: '°', hellip: '…' };
+
+// أسطر نظيفة من HTML: <br> = السطر الحقيقي (بنية CJ) · الصور محذوفة · خلايا الجداول → "a | b"
+const htmlToLines = (html?: string): string[] => {
+  if (!html) return [];
+  return html
+    .replace(/<img[^>]*>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6]|ul|ol|table)>/gi, '\n')
+    .replace(/<\/td>/gi, ' | ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;([a-zA-Z]+|#\d+);/g, (_m, e: string) => DETAIL_ENT[e] ?? ' ')
+    .replace(/&(nbsp|amp|quot|lt|gt|#39|apos);/gi, (_m, e: string) => DETAIL_ENT[e.toLowerCase()] ?? ' ')
+    .replace(/&([a-zA-Z]+|#\d+);/g, ' ')
+    .split('\n')
+    .map(l => l.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+};
+
+// عناوين معروفة → labels canon — CJ كيبدل الشكل («Product information:» / «Product Information :» / «Packing List:»)
+const DETAIL_SECTION_MAP: [RegExp, string][] = [
+  [/^overview$/i, 'Overview'],
+  [/^(product\s*(information|info|details?)|specifications?|specs?|parameters?|attributes)$/i, 'Specifications'],
+  [/^(packing\s*list|package\s*(included|includes|list)|what.?s\s+included)$/i, 'Package Includes'],
+  [/^(features?|highlights?)$/i, 'Features'],
+  [/^(notes?|warm\s*tips?|caution|notice)$/i, 'Notes'],
+];
+const canonDetailSection = (t: string): string => {
+  for (const [rx, canon] of DETAIL_SECTION_MAP) if (rx.test(t)) return canon;
+  return t.replace(/[:：]\s*$/, '').trim();
+};
+
+const DETAIL_HEADER_RX = /^(.{2,48}?)\s*[:：]\s*$/;   // سطر قصير كيسالي بكولون (عادي ":" ولا كامل "：")
+const DETAIL_NUM_RX = /^\d{1,2}\s*[.)]\s*/;
+const DETAIL_BUL_RX = /^[•·●▪★✦✧]\s*/;
+// "Key: value" — مفتاح قصير (≤40 حرف، ≤4 كلمات، بلا أرقام/نهاية جملة) باش جُمل الـ prose فيها ":" ما يتفلتوش
+const detailSpecSplit = (line: string): DetailRow | null => {
+  const i = line.search(/[:：]/);
+  if (i < 0) return null;
+  const k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
+  if (k.length < 2 || k.length > 40 || !v || v.length > 240) return null;
+  if (/\d/.test(k) || /[.!?]$/.test(k) || k.split(/\s+/).length > 4) return null;
+  return { k, v };
+};
+
+const parseDetailBlocks = (html: string | undefined, fieldRows: DetailRow[] = []): DetailBlock[] => {
+  const lines = htmlToLines(html);
+  const blocks: DetailBlock[] = [];
+  const cur = () => blocks[blocks.length - 1];
+  const push = (b: DetailBlock) => { blocks.push(b); return b; };
+  let skipImages = false;
+
+  for (const line of lines) {
+    if (skipImages) break;
+    const hm = line.match(DETAIL_HEADER_RX);
+    // «Product Image:» = معرض CJ مكرر مع المعرض الرئيسي — من هنا لتحت كله مخلفات
+    if (hm && /^product\s*images?$/i.test(hm[1])) { skipImages = true; break; }
+
+    if (hm) {
+      const title = canonDetailSection(hm[1]);
+      const kind: DetailBlock['kind'] = title === 'Package Includes' ? 'list'
+        : (title === 'Overview' || title === 'Notes') ? 'para'
+        : 'specs';
+      const last = cur();
+      if (last && last.title === title && last.kind === kind) continue; // قسم مكرر في نفس الوصف
+      push(kind === 'list' ? { kind, title, items: [] } : kind === 'para' ? { kind, title, text: '' } : { kind, title, rows: [] });
+      continue;
+    }
+
+    const num = line.match(DETAIL_NUM_RX);
+    const bul = line.match(DETAIL_BUL_RX);
+    const clean = num ? line.replace(DETAIL_NUM_RX, '') : bul ? line.replace(DETAIL_BUL_RX, '') : line;
+    const b = cur();
+
+    if (b && b.kind === 'list') { b.items.push(clean); continue; } // Packing list ما مرقموش بـ "." — أي سطر فقسم لائحة = عنصر
+
+    if (num || bul) {
+      // لائحة مرقمة وسط فقرة → لائحة مستقلة بنفس العنوان
+      if (b && b.kind === 'para' && b.text) { push({ kind: 'list', title: b.title, items: [clean] }); b.title = ''; continue; }
+      push({ kind: 'list', title: b ? b.title : '', items: [clean] });
+      continue;
+    }
+
+    const row = detailSpecSplit(line);
+    if (row && (!b || b.kind === 'specs' || (b.kind === 'para' && !b.text))) {
+      if (b && b.kind === 'specs') {
+        if (!b.rows.some(r => r.k.toLowerCase() === row.k.toLowerCase())) b.rows.push(row); // 🩹 CJ كيعاود المفاتيح (Style ×2 فـ 97772)
+        continue;
+      }
+      push({ kind: 'specs', title: b ? b.title : '', rows: [row] });
+      continue;
+    }
+    if (b && b.kind === 'para') { b.text = b.text ? `${b.text} ${line}` : line; continue; }
+    if (b && b.kind === 'specs' && b.rows.length > 0) { b.rows[b.rows.length - 1].v += ` ${line}`; continue; } // value متعدد الأسطر (Note...)
+    push({ kind: 'para', title: '', text: line });
+  }
+
+  // فقرات متتالية بلا عنوان → فقرة واحدة
+  const merged: DetailBlock[] = [];
+  for (const b of blocks) {
+    const p = merged[merged.length - 1];
+    if (p && p.kind === 'para' && b.kind === 'para' && p.title === b.title) { p.text = `${p.text} ${b.text}`.trim(); continue; }
+    merged.push(b);
+  }
+  const out = merged.filter(b => b.kind === 'specs' ? b.rows.length > 0 : b.kind === 'list' ? b.items.length > 0 : b.text.length > 0);
+
+  // specs ديال الـ DB (material/composition/pattern/origin) — موثوقة قبل المكتشفة، بلا تكرار
+  const surviving = fieldRows.filter(fr => !out.some(b => b.kind === 'specs' && b.rows.some(r => r.k.toLowerCase() === fr.k.toLowerCase())));
+  if (surviving.length > 0) {
+    const specsBlock = out.find((b): b is Extract<DetailBlock, { kind: 'specs' }> => b.kind === 'specs' && /^Specifications$/.test(b.title));
+    if (specsBlock) specsBlock.rows.unshift(...surviving);
+    else out.unshift({ kind: 'specs', title: 'Specifications', rows: surviving });
+  }
+  return out;
+};
+
+// ═══ 📏 F#100 — Size & Fit حقيقي ═══
+// جداول المقاسات الحقيقية تاع CJ ما راهمش جداول HTML — راهي صورة شارت جوة وصف المورد
+// تحت عنوان «Size:» / «Size Information:» (مثبت على 97753/97766/97751/97754)، والملاحظات
+// («Asian sizes are 1 to 2 sizes smaller...» / «allow 2-3cm differences») نص مكتوب فالوصف.
+// الـ extractor كيلتقط غير اللي مكتوب فعلاً — بلا اختراع ولا جداول قياسية مصطنعة (M#45 محترم).
+// مبني ومتحقق على 50 وصف حي: 4 charts كلهم تحت عناوين size صريحة · 4 notes · بلا false positives.
+type SizeFitData = { chartImg: string; notes: string[] };
+
+// ملاحظات القياس/المقاس — نصوص المورد الحقيقية فقط (ملاحظة الألوان «computers display colors» ما تدخلش)
+const SIZE_NOTE_RX = /(asian\s*sizes?|size\s*chart|manual\s*measurement|\d\s*[-–~]\s*\d\s*cm|choose\s+the\s+larger|between\s+two\s+sizes|true\s+to\s+size|runs?\s+(?:small|large)|1\s*to\s*2\s*sizes|smaller\s+than\s+european)/i;
+// توكنات مقاس حقيقية (chips) — الأبعاد بوحدات (35cm / 15.2x17.8cm) ما هيش chips — بقات فجدول Specifications
+const SIZE_TOKEN_RX = /^(?:xxx?l|xx?[sml]|[sml]\d?|one[- ]?size|free[- ]?size|custom|\d{1,3}|\d{1,2}\s*years?|\d{1,2}\s*\(kids\))$/i;
+
+const extractSizeFit = (html?: string): SizeFitData => {
+  const out: SizeFitData = { chartImg: '', notes: [] };
+  if (!html) return out;
+  // نفس استراتيجية htmlToLines تاع F#99 — ولكن <img> كيبقى token باش نلقطو شارت المقاس
+  const toks = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6]|ul|ol|table)>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .split(/(<img[^>]*>)/i);
+  let inSize = false;
+  let stop = false;
+  for (const t of toks) {
+    if (stop) break;
+    if (/^<img/i.test(t)) {
+      if (inSize && !out.chartImg) {
+        const src = t.match(/src=["']([^"']+)["']/i)?.[1];
+        if (src && !/\.svg(\?|$)/i.test(src)) out.chartImg = src.trim();
+      }
+      continue;
+    }
+    for (const line of t.replace(/<[^>]*>/g, ' ').split('\n')) {
+      const l = line.replace(/\s+/g, ' ').trim();
+      if (!l) continue;
+      const hm = l.match(DETAIL_HEADER_RX);
+      if (hm) {
+        // «Product Image:» = منطقة المخلفات (معرض CJ مكرر) — مثل F#99 كنحبسو هنا
+        if (/^product\s*images?$/i.test(hm[1])) { stop = true; break; }
+        inSize = /^(sizes?|size\s*(information|chart|guide|details?)|measurements?|fit)\b/i.test(hm[1]);
+        continue;
+      }
+      const clean = l.replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
+      if (SIZE_NOTE_RX.test(clean) && clean.length <= 400 && !out.notes.some(n => n.toLowerCase() === clean.toLowerCase())) {
+        out.notes.push(clean);
+      }
+    }
+  }
+  return out;
+};
+
 export default function ProductDetailsClient({
   product,
   initialReviews,
@@ -384,12 +564,6 @@ export default function ProductDetailsClient({
 
 
   const parsePrice = (price: any) => Number(price) || 0;
-  const UNENT: Record<string, string> = { nbsp: ' ', amp: '&', quot: '"', lt: '<', gt: '>', '#39': "'", apos: "'", eacute: 'é', egrave: 'è', agrave: 'à', deg: '°', hellip: '…' };
-  const stripHtml = (html?: string) => html ? html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;([a-zA-Z]+|#\d+);/g, (_, e: string) => UNENT[e] ?? ' ')
-    .replace(/&(nbsp|amp|quot|lt|gt|#39|apos);/gi, (_, e: string) => UNENT[e.toLowerCase()] ?? ' ')
-    .replace(/\s+/g, ' ').trim() : '';
   const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
 
   const safePrice = parsePrice(product.price);
@@ -480,11 +654,186 @@ export default function ProductDetailsClient({
     t.ready?.catch(() => {});
   };
 
-  const detailBullets: string[] = [];
-  if (product.material) detailBullets.push(`Material: ${product.material}`);
-  if (product.composition) detailBullets.push(`Composition: ${product.composition}`);
-  if (product.pattern) detailBullets.push(`Pattern: ${product.pattern}`);
-  if (product.origin) detailBullets.push(`Origin: ${product.origin}`);
+  // 🧩 F#99 — التفاصيل المنظمة: وصف CJ الخام → blocks (specs/list/para) — نفس المحرك للموبايل والديسكتوب
+  //    (يحل محل detailBullets + stripHtml — الـ DB fields كيدخلو specs موثوقين بلا تكرار مع الوصف)
+  const detailBlocks = useMemo<DetailBlock[]>(() => {
+    const fieldRows: DetailRow[] = [];
+    if (product.material) fieldRows.push({ k: 'Material', v: product.material });
+    if (product.composition) fieldRows.push({ k: 'Composition', v: product.composition });
+    if (product.pattern) fieldRows.push({ k: 'Pattern', v: product.pattern });
+    if (product.origin) fieldRows.push({ k: 'Origin', v: product.origin });
+    return parseDetailBlocks(product.description, fieldRows);
+  }, [product.description, product.material, product.composition, product.pattern, product.origin]);
+
+  // 🧩 Materials من الوصف إلا الـ DB خاوي — نفس الأمانة: كنعرضو غير اللي مكتوب فالوصف
+  const materialFromDesc = useMemo(() => {
+    for (const b of detailBlocks) if (b.kind === 'specs') {
+      const r = b.rows.find(x => /^(material|composition|fabric)$/i.test(x.k));
+      if (r) return r.v;
+    }
+    return '';
+  }, [detailBlocks]);
+
+  // ═══ 📏 F#100 — Size & Fit حقيقي ═══
+  // شارت المقاس الحقيقي (صورة المورد) + ملاحظات القياس المكتوبة فالوصف — بلا اختراع (M#45)
+  const sizeFit = useMemo<SizeFitData>(() => extractSizeFit(product.description), [product.description]);
+
+  // توكنات المقاس من صف «Size:» تاع الوصف (نفس مصدر جدول Specifications) — chips عرض فقط إلا ما كايناش variants
+  const sizeLabelsFromDesc = useMemo(() => {
+    for (const b of detailBlocks) if (b.kind === 'specs') {
+      const r = b.rows.find(x => /^sizes?$/i.test(x.k));
+      if (r) {
+        const toks = r.v.split(/[,，、/|]+|\s+/).map(s => s.replace(/[.;]+$/, '').trim()).filter(Boolean);
+        return toks.filter(t => SIZE_TOKEN_RX.test(t) && t.length <= 12);
+      }
+    }
+    return [];
+  }, [detailBlocks]);
+
+  const [isChartZoom, setIsChartZoom] = useState(false);
+
+  // 🧩 Renderer مشترك — تاب Details (الديسكتوب) + أكورديون Details (الموبايل) بنفس البنية
+  const renderDetailBlocks = () => (
+    <div className="space-y-5">
+      {detailBlocks.length === 0 && (
+        <p className="text-xs sm:text-sm text-temu-gray-text leading-relaxed">Full specifications available — contact support for any question.</p>
+      )}
+      {detailBlocks.map((b, i) => (
+        <div key={i}>
+          {b.title && (
+            <p className="text-[11px] font-black uppercase tracking-wider text-temu-black mb-2">{b.title}</p>
+          )}
+          {b.kind === 'specs' && (
+            <div className="rounded-xl border border-temu-gray-border-light overflow-hidden divide-y divide-temu-gray-border-light bg-white">
+              {b.rows.map((r, j) => (
+                <div key={j} className="flex gap-3 px-3 py-2">
+                  <span className="w-28 sm:w-36 shrink-0 text-xs font-bold text-temu-black leading-relaxed">{r.k}</span>
+                  <span className="flex-1 text-xs text-temu-gray-text leading-relaxed break-words">{r.v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {b.kind === 'list' && (
+            <ul className="space-y-1.5">
+              {b.items.map((it, j) => (
+                <li key={j} className="flex gap-2 text-xs sm:text-sm text-temu-gray-text leading-relaxed">
+                  <span className="text-temu-orange font-bold shrink-0">•</span>
+                  <span>{it}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {b.kind === 'para' && (
+            <p className="text-xs sm:text-sm text-temu-gray-text leading-relaxed">{b.text}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // ═══ 📏 F#100 — Renderer مشترك Size & Fit (تاب ديسكتوب + أكورديون موبايل) ═══
+  // المكونات: شارت المورد الحقيقي (صورة قابلة للتكبير) · chips المقاسات (تفاعلية إلا كاين variants) ·
+  // ملاحظات المورد · دليل القياس المحايد — والفallback صادق ملي ما كاين حتى معلومة مقاس.
+  const HOW_TO_MEASURE: [string, string][] = [
+    ['Chest', 'Measure around the fullest part of your chest, keeping the tape level and snug.'],
+    ['Waist', 'Measure around your natural waistline — the narrowest part of your torso.'],
+    ['Hips', 'Measure around the fullest part of your hips, keeping your feet together.'],
+    ['Length', 'Measure from the highest point of the shoulder straight down to the hem.'],
+  ];
+
+  const renderSizeChips = (labels: string[], clickable: boolean) => (
+    <div className="flex flex-wrap gap-2">
+      {labels.map(l => clickable ? (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setSelectedSize(l)}
+          aria-pressed={effectiveSize === l}
+          className={`h-9 min-w-[44px] px-3 rounded-lg border-2 text-xs font-bold transition cursor-pointer active:scale-95 ${effectiveSize === l ? 'border-temu-orange bg-temu-orange text-white' : 'border-gray-200 bg-white text-temu-black hover:border-gray-400'}`}
+        >
+          {l}
+        </button>
+      ) : (
+        <span key={l} className="h-9 min-w-[44px] px-3 rounded-lg border border-gray-200 bg-white text-xs font-bold text-temu-black inline-flex items-center justify-center">{l}</span>
+      ))}
+    </div>
+  );
+
+  const hasSizeInfo = !!(sizeFit.chartImg || sizeFit.notes.length > 0 || availableSizes.length > 0 || sizeLabelsFromDesc.length >= 2);
+
+  const renderSizeFit = () => {
+    // الفallback الصادق — المورد ما وفّرش حتى معلومة مقاس (سوايع، ديكور، إلكترونيات...)
+    if (!hasSizeInfo) {
+      return (
+        <p className="text-xs sm:text-sm text-temu-gray-text leading-relaxed">
+          The supplier didn&apos;t provide a size chart for this product. Need exact measurements? Contact support and we&apos;ll get them for you.
+        </p>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        {/* شارت المقاس الحقيقي — صورة المورد من قسم Size فالوصف */}
+        {sizeFit.chartImg && (
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wider text-temu-black mb-2">Supplier size chart</p>
+            <button
+              type="button"
+              onClick={() => setIsChartZoom(true)}
+              aria-label="Enlarge size chart"
+              className="block w-full max-w-md mx-auto rounded-xl border border-temu-gray-border-light bg-white overflow-hidden cursor-zoom-in"
+            >
+              <img src={IMG.detail(sizeFit.chartImg)} alt="Supplier size chart" loading="lazy" decoding="async" className="w-full h-auto" />
+            </button>
+            <p className="text-[10px] text-temu-gray-light text-center mt-1.5">Tap the chart to enlarge</p>
+          </div>
+        )}
+
+        {/* المقاسات — تفاعية من variants الحقيقية، وإلا عرض فقط من وصف المورد */}
+        {(availableSizes.length > 0 || sizeLabelsFromDesc.length >= 2) && (
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wider text-temu-black mb-2">
+              {availableSizes.length > 0 ? 'Available sizes' : 'Supplier size range'}
+            </p>
+            {availableSizes.length > 0 ? renderSizeChips(availableSizes, true) : renderSizeChips(sizeLabelsFromDesc, false)}
+            <p className="text-[10px] text-temu-gray-light mt-1.5">
+              {availableSizes.length > 0
+                ? `Currently viewing: ${effectiveSize || availableSizes[0]} — pick your size here or in the buy box.`
+                : 'Sizes listed by the supplier — availability may vary by color.'}
+            </p>
+          </div>
+        )}
+
+        {/* ملاحظات المورد الحقيقية — نص الوصف نفسه (Asian sizes / 2-3cm / size chart) */}
+        {sizeFit.notes.length > 0 && (
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wider text-temu-black mb-2">Supplier fit notes</p>
+            <ul className="space-y-1.5">
+              {sizeFit.notes.slice(0, 4).map((n, i) => (
+                <li key={i} className="flex gap-2 text-xs sm:text-sm text-temu-gray-text leading-relaxed">
+                  <span className="text-temu-orange font-bold shrink-0">•</span>
+                  <span>{n}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* دليل القياس المحايد — تعليمات قياس عامة، بلا أي وعد على المنتج */}
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-wider text-temu-black mb-2">How to measure</p>
+          <div className="rounded-xl border border-temu-gray-border-light overflow-hidden divide-y divide-temu-gray-border-light bg-white">
+            {HOW_TO_MEASURE.map(([k, v]) => (
+              <div key={k} className="flex gap-3 px-3 py-2">
+                <span className="w-20 sm:w-24 shrink-0 text-xs font-bold text-temu-black leading-relaxed">{k}</span>
+                <span className="flex-1 text-xs text-temu-gray-text leading-relaxed">{v}</span>
+              </div>
+            ))}
+            <div className="px-3 py-2 text-[10px] text-temu-gray-light">Supplier charts use centimeters — 1 inch = 2.54 cm.</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ═══ 🆕 REVIEWS LIGHTBOX (Task 24) ═══
   // صور المشترين كاملين من المراجعات المعروضة (flat list) + بداية كل مراجعة
@@ -772,14 +1121,9 @@ export default function ProductDetailsClient({
 
             {/* الأكورديونات — mockup: أول وحدة مفتوحة + شيفرونة تلف */}
             {[
-              { key: 'details', label: 'Details', body: (
-                <>
-                  <p>{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
-                  {detailBullets.length > 0 && <ul>{detailBullets.map((b, i) => <li key={i}>{b}</li>)}</ul>}
-                </>
-              )},
-              { key: 'materials', label: 'Materials', body: <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p> },
-              { key: 'size', label: 'Size & Fit', body: <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p> },
+              { key: 'details', label: 'Details', body: renderDetailBlocks() },
+              { key: 'materials', label: 'Materials', body: <p>{product.material || materialFromDesc || 'Material specifications not provided by the supplier — contact support for details.'}</p> },
+              { key: 'size', label: 'Size & Fit', body: renderSizeFit() },
               { key: 'shipping', label: 'Shipping & Returns', body: (
                 <>
                   <p>Worldwide insured delivery. Shipped in 24–48 hours directly via CJ Dropshipping.</p>
@@ -787,7 +1131,7 @@ export default function ProductDetailsClient({
                 </>
               )},
             ].map(acc => (
-              <div key={acc.key} ref={acc.key === 'size' ? sizeAccRef : undefined} className={`pd-acc ${openAcc === acc.key ? 'open' : ''}`}>
+              <div key={acc.key} ref={acc.key === 'size' ? sizeAccRef : undefined} className={`pd-acc ${(acc.key === 'details' || acc.key === 'size') ? 'pd-acc-tall ' : ''}${openAcc === acc.key ? 'open' : ''}`}>
                 <button type="button" className="pd-acc-head" onClick={() => setOpenAcc(o => o === acc.key ? null : acc.key)}>
                   {acc.label}
                   <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1207,24 +1551,16 @@ export default function ProductDetailsClient({
 
           <div className="text-sm text-temu-gray-text leading-relaxed">
             {activeTab === 'details' && (
-              <div>
-                <p className="mb-4">{stripHtml(product.description) || 'Full specifications available — contact support for any question.'}</p>
-                {detailBullets.length > 0 && (
-                  <ul className="space-y-1.5 list-disc list-inside">
-                    {detailBullets.map((b, i) => <li key={i}>{b}</li>)}
-                  </ul>
-                )}
-              </div>
+              <div>{renderDetailBlocks()}</div>
             )}
 
             {/* 🩹 M#45: "hypoallergenic" = وعد صحي بلا مصدر على منتجات بلا بيانات */}
             {activeTab === 'materials' && (
-              <p>{product.material || 'Material specifications not provided by the supplier — contact support for details.'}</p>
+              <p>{product.material || materialFromDesc || 'Material specifications not provided by the supplier — contact support for details.'}</p>
             )}
 
-            {activeTab === 'size' && (
-              <p>Standard fit. Order your typical size. Detailed guide available upon request from support.</p>
-            )}
+            {/* 📏 F#100 — Size & Fit حقيقي: شارت المورد + chips + notes + دليل القياس */}
+            {activeTab === 'size' && renderSizeFit()}
 
             {activeTab === 'shipping' && (
               <div className="space-y-2">
@@ -1528,6 +1864,30 @@ export default function ProductDetailsClient({
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 📏 F#100 — زوم شارت المقاس الحقيقي: صورة المورد بكامل الدقة (عن فوق الـ lightbox تاع المعرض z-200) */}
+      {isChartZoom && sizeFit.chartImg && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[210] flex flex-col items-center justify-center p-4 sm:p-6 backdrop-blur-md animate-fade-in cursor-zoom-out select-none"
+          onClick={() => setIsChartZoom(false)}
+        >
+          <img
+            src={IMG.zoom(sizeFit.chartImg)}
+            alt="Supplier size chart — enlarged"
+            decoding="async"
+            className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-xl bg-white shadow-2xl"
+          />
+          <p className="text-white/70 text-xs mt-4">Supplier size chart — tap anywhere to close</p>
+          <button
+            type="button"
+            onClick={() => setIsChartZoom(false)}
+            className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition cursor-pointer active:scale-90"
+            aria-label="Close size chart"
+          >
+            <GlassIcon i="x" size="xs" />
+          </button>
         </div>
       )}
 
