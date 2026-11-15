@@ -337,8 +337,16 @@ export async function passkeyRegister(opts: PasskeyRegisterOpts): Promise<{ ok: 
     const caps = await pkCapabilities();
     if (!caps) return { ok: false, message: 'Passkeys are not supported in this browser.' };
     if (silent && caps.conditionalCreate !== true) return { ok: false };
-    if (!silent && caps.passkeyPlatformAuthenticator !== true) {
-      return { ok: false, message: 'No platform authenticator available.' };
+    // 🩹 F#97 — الحاجز القديم ("No platform authenticator available.") كان كيمنع التسجيل
+    //   على أي جهاز بلا platform authenticator مدمج (ويندوز بلا Windows Hello / لينكس)،
+    //   رغم أن الـ management flow تاع السيرفر ما يفرضش authenticatorAttachment —
+    //   يعني المتصفح كيقترح بروحو الروابط البديلة: QR تاع الهاتف (hybrid) / مفتاح أمني USB.
+    //   السياسة الجديدة:
+    //     • promotion (ترقية بعد password) → skip صامت: السيرفر بيفرض platform وتما ماكاينش
+    //     • silent (conditional create) → skip صامت (الشرط فوق)
+    //     • management flow (زر ADD PASSKEY) → نكملو عادي — الـ native chooser هو الدليل
+    if (caps.passkeyPlatformAuthenticator !== true && (silent || opts.promotion === true)) {
+      return { ok: false };
     }
 
     // تنظيف الpipeline قبل الcreate — إلزامي حتى للconditional create (دليل conditional-create §1)
