@@ -296,6 +296,127 @@ const extractSizeFit = (html?: string): SizeFitData => {
   return out;
 };
 
+// ═══ 🎨 F#101 — سكة الألوان (ColorRail) ═══
+// بلاغ المالك (48433 غطاء صوفا): 82+ swatch فشبكة wrap كيحشرو الصفحة ويطولوها.
+// الحل: سكة أفقية وحدة بـ scroll-snap + شيفرونات جانبيين + تلاشي الحواف (كاشفين غير ملي كاين
+// زيادة) + توسيط اللون المختار آلياً (scrollTo يدوي — scrollIntoView كيهز الصفحة عمودياً) +
+// «See all N colors» كيفتح الشبكة الكاملة فالمنتجات المتعددة (>12). الحالات الصغيرة كيما كان.
+const SWATCH_HEX = (c?: string | null) => c && c.startsWith('#') ? c : '#888888';
+
+const ColorRail = ({ groups, selected, onSelect, variant }: {
+  groups: { name: string; image: string; hex: string | null }[];
+  selected?: string;
+  onSelect: (name: string) => void;
+  variant: 'mobile' | 'desktop';
+}) => {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [canL, setCanL] = useState(false);
+  const [canR, setCanR] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const many = groups.length > 12;
+
+  // قياس overflow — يتحكم فالشيفرونات والتلاشي (الشبكة الموسعة ديما بلا chevrons)
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el || expanded) { setCanL(false); setCanR(false); return; }
+    const m = () => {
+      setCanL(el.scrollLeft > 2);
+      setCanR(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    };
+    m();
+    el.addEventListener('scroll', m, { passive: true });
+    window.addEventListener('resize', m);
+    return () => { el.removeEventListener('scroll', m); window.removeEventListener('resize', m); };
+  }, [groups.length, expanded]);
+
+  // توسيط المختار آلياً — scrollTo حسابي (بلا scrollIntoView باش ما يهزّش الصفحة)
+  const activeIdx = groups.findIndex(g => g.name === selected);
+  useEffect(() => {
+    if (expanded || activeIdx < 0) return;
+    const el = railRef.current;
+    const chipEl = el?.querySelector<HTMLElement>(`[data-cidx="${activeIdx}"]`);
+    if (!el || !chipEl) return;
+    const target = Math.max(0, Math.min(
+      chipEl.offsetLeft - el.clientWidth / 2 + chipEl.offsetWidth / 2,
+      el.scrollWidth - el.clientWidth
+    ));
+    if (Math.abs(el.scrollLeft - target) > 4) el.scrollTo({ left: target, behavior: 'smooth' });
+  }, [activeIdx, expanded, groups.length]);
+
+  const nudge = (dir: 1 | -1) => {
+    const el = railRef.current;
+    if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.6), behavior: 'smooth' });
+  };
+
+  const renderChip = (g: { name: string; image: string; hex: string | null }, idx: number) => {
+    const on = g.name === selected;
+    if (variant === 'mobile') {
+      return (
+        <button
+          key={g.name}
+          type="button"
+          data-cidx={idx}
+          onClick={() => onSelect(g.name)}
+          title={g.name}
+          aria-label={`Color ${g.name}`}
+          aria-pressed={on}
+          className={`pd-swatch ${on ? 'on' : ''}`}
+        >
+          {g.image ? (
+            <img src={IMG.thumb(g.image)} alt={g.name} loading="lazy" decoding="async" />
+          ) : (
+            <i style={{ backgroundColor: SWATCH_HEX(g.hex || g.name) }}></i>
+          )}
+        </button>
+      );
+    }
+    return (
+      <button
+        key={g.name}
+        type="button"
+        data-cidx={idx}
+        onClick={() => onSelect(g.name)}
+        title={g.name}
+        aria-label={`Color ${g.name}`}
+        aria-pressed={on}
+        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 active:scale-90 shrink-0 ${on ? 'border-temu-orange scale-110 shadow ring-2 ring-temu-orange/30' : 'border-gray-200 hover:border-gray-300'}`}
+      >
+        {g.image ? (
+          <img src={IMG.thumb(g.image)} alt={g.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+        ) : (
+          <span style={{ backgroundColor: SWATCH_HEX(g.hex || g.name) }} className="block w-full h-full rounded-full border border-black/10"></span>
+        )}
+      </button>
+    );
+  };
+
+  return (
+    <div className="pd-railwrap">
+      <div ref={railRef} className={expanded ? 'pd-swatches' : 'pd-rail'}>
+        {groups.map((g, idx) => renderChip(g, idx))}
+      </div>
+      {!expanded && canL && (
+        <button type="button" className="pd-railbtn left" onClick={() => nudge(-1)} aria-label="Scroll colors left">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+      )}
+      {!expanded && canR && (
+        <button type="button" className="pd-railbtn right" onClick={() => nudge(1)} aria-label="Scroll colors right">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      )}
+      {!expanded && <div className={`pd-fade l ${canL ? 'on' : ''}`} />}
+      {!expanded && <div className={`pd-fade r ${canR ? 'on' : ''}`} />}
+      {many && (
+        <button type="button" onClick={() => setExpanded(e => !e)} className="pd-seeall" aria-expanded={expanded}>
+          {expanded ? 'Show fewer colors' : `See all ${groups.length} colors`}
+          <svg viewBox="0 0 24 24" className={expanded ? 'up' : ''}><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      )}
+    </div>
+  );
+};
+
 export default function ProductDetailsClient({
   product,
   initialReviews,
@@ -408,13 +529,17 @@ export default function ProductDetailsClient({
     } catch { /* 🩹 parse-safe — variants فاسدة ما تكسرش الصفحة */ }
 
     const SIZE_RX = /^(xxs|xs|s|m|l|xl|2xl|xxl|3xl|xxxl|4xl|xxxxl|5xl|one[- ]?size|free[- ]?size|custom)$/i;
+    // 🎨 F#101 — «Beige-180x130cm» = أبعاد ماشي لون — تفرّك اللون من الأبعاد
+    // (48433 غطاء صوفا: 85 فاريانت «Color-الأبعاد» كانوا كيتقراو 85 لون → شبكة swatch تطول الصفحة)
+    const DIMENSION_RX = /^\d{1,3}(?:\.\d+)?\s*[x×]\s*\d{1,3}(?:\.\d+)?(?:\s*[x×]\s*\d{1,3}(?:\.\d+)?)?\s*(?:cm|mm|m)?$/i;
 
     // "Black-XS" → [Black, XS] · "Rose Red" → [Rose Red, ''] · "One-Size" آمن (SIZE_RX)
+    // 🎨 F#101: "Beige-180x130cm" → [Beige, 180x130cm] · "Green-3x3m" → [Green, 3x3m]
     const splitKey = (key: string): [string, string] => {
       const i = key.lastIndexOf('-');
-      if (i === -1) return [key, ''];
+      if (i <= 0) return [key, ''];                      // 🩹 i===0 كان كيخلي color خاوي → الفاريانت كيتحيد بلا سبب
       const right = key.slice(i + 1);
-      if (dbSizes.some(s => s.toLowerCase() === right.toLowerCase()) || SIZE_RX.test(right)) {
+      if (dbSizes.some(s => s.toLowerCase() === right.toLowerCase()) || SIZE_RX.test(right) || DIMENSION_RX.test(right)) {
         return [key.slice(0, i), right];
       }
       return [key, ''];
@@ -445,12 +570,25 @@ export default function ProductDetailsClient({
     }
 
     // ترتيب canon — ظهور CJ ماشي مرتّب (شفت Pink: 2XL,3XL,L,M,S,XL فالداتا الحية)
+    // 🎨 F#101 — الأبعاد كيترتبو بالأرقام ("95x190cm" قبل "180x130cm" — localeCompare كان كيغلط: '1'<'9')
     const CANON = ['xxs','xs','s','m','l','xl','2xl','xxl','3xl','xxxl','4xl','xxxxl','5xl','one size','one-size'];
     const canonIdx = (s: string) => {
       const i = CANON.indexOf(s.toLowerCase());
       return i === -1 ? 99 : i;
     };
-    for (const g of groups) g.sizes.sort((a, b) => canonIdx(a) - canonIdx(b) || a.localeCompare(b));
+    const dimVal = (s: string): [number, number] | null => {
+      const m = s.toLowerCase().match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/);
+      return m ? [parseFloat(m[1]), parseFloat(m[2])] : null;
+    };
+    for (const g of groups) {
+      g.sizes.sort((a, b) => {
+        const c = canonIdx(a) - canonIdx(b);
+        if (c) return c;
+        const da = dimVal(a), dbb = dimVal(b);
+        if (da && dbb && (da[0] !== dbb[0] || da[1] !== dbb[1])) return da[0] - dbb[0] || da[1] - dbb[1];
+        return a.localeCompare(b);
+      });
+    }
 
     // hex mapping — غير إلا العدد متطابق معقول (96854: 2=2 ✓) · colors[] ناقصة (96917: 6 مقابل 8)
     const cols = Array.isArray(product.colors)
@@ -1012,29 +1150,19 @@ export default function ProductDetailsClient({
             {/* 🩹 TRUST — الكاونتر فقط للعروض الممولة الحقيقية */}
             {product.is_sourced === true && <div className="mt-3"><CountdownTimer /></div>}
 
-            {/* الألوان — محرك الفاريانت الحقيقي (نفس منطق الديسكتوب) */}
+            {/* الألوان — سكة أفقية F#101 (chevrons + fades + توسيط المختار) — نفس محرك الفاريانت */}
             {variantEngine.groups.length > 1 && (
               <div className="pd-opt">
-                <p>Color: <b>{selectedGroup?.name}</b></p>
-                <div className="pd-swatches">
-                  {variantEngine.groups.map((g) => (
-                    <button
-                      key={g.name}
-                      type="button"
-                      onClick={() => setSelectedColorName(g.name)}
-                      title={g.name}
-                      aria-label={`Color ${g.name}`}
-                      aria-pressed={selectedGroup?.name === g.name}
-                      className={`pd-swatch ${selectedGroup?.name === g.name ? 'on' : ''}`}
-                    >
-                      {g.image ? (
-                        <img src={IMG.thumb(g.image)} alt={g.name} loading="lazy" decoding="async" />
-                      ) : (
-                        <i style={{ backgroundColor: getColorHex(g.hex || g.name) }}></i>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                <p>
+                  Color: <b>{selectedGroup?.name}</b>
+                  {variantEngine.groups.length > 12 && <span className="pd-cnt"> · {variantEngine.groups.length} colors</span>}
+                </p>
+                <ColorRail
+                  groups={variantEngine.groups}
+                  selected={selectedGroup?.name}
+                  onSelect={setSelectedColorName}
+                  variant="mobile"
+                />
               </div>
             )}
 
@@ -1326,36 +1454,14 @@ export default function ProductDetailsClient({
                 <div className="mb-6">
                   <label className="block text-xs uppercase font-extrabold text-temu-black mb-2">
                     Color: <span className="text-temu-gray-text font-semibold">{selectedGroup?.name}</span>
+                    {variantEngine.groups.length > 12 && <span className="text-temu-gray-light font-semibold normal-case"> · {variantEngine.groups.length} colors</span>}
                   </label>
-                  <div className="flex gap-2.5 flex-wrap">
-                    {variantEngine.groups.map((g) => (
-                      <button
-                        key={g.name}
-                        type="button"
-                        onClick={() => setSelectedColorName(g.name)}
-                        title={g.name}
-                        aria-label={`Color ${g.name}`}
-                        aria-pressed={selectedGroup?.name === g.name}
-                        className={`relative w-11 h-11 rounded-full overflow-hidden transition cursor-pointer border-2 active:scale-90 ${
-                          selectedGroup?.name === g.name
-                            ? 'border-temu-orange scale-110 shadow ring-2 ring-temu-orange/30'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {g.image ? (
-                          <img
-                            src={IMG.thumb(g.image)}
-                            alt={g.name}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span style={{ backgroundColor: getColorHex(g.hex || g.name) }} className="block w-full h-full rounded-full border border-black/10"></span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                  <ColorRail
+                    groups={variantEngine.groups}
+                    selected={selectedGroup?.name}
+                    onSelect={setSelectedColorName}
+                    variant="desktop"
+                  />
                 </div>
               )}
 

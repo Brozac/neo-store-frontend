@@ -197,3 +197,28 @@
    ════════════════════════════════════════════════════════════ */
 .ymal-rail{ scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
 .ymal-cell{ scroll-snap-align: start; scroll-snap-stop: always; }
+
+
+/* ════════════════════════════════════════════════════════════
+   🎨 F#101 — سكة الألوان الأفقية (ColorRail)
+   بلاغ المالك (48433): 82+ swatch فشبكة wrap كيطولو الصفحة — دابا
+   سكة وحدة أفقية بـ scroll-snap + شيفرونات + تلاشي الحواف.
+   الحالات الصغيرة (≤12) كتبان كيما كان — بلا chevrons بلا toggle.
+   ════════════════════════════════════════════════════════════ */
+.pd-railwrap{position:relative;min-width:0}
+.pd-rail{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;scroll-snap-type:x proximity;padding:3px 2px 5px;-webkit-overflow-scrolling:touch}
+.pd-rail::-webkit-scrollbar{display:none}
+.pd-rail .pd-swatch{flex:0 0 auto;scroll-snap-align:start}
+.pd-railbtn{position:absolute;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 2px 8px rgba(46,64,87,.2);display:grid;place-items:center;cursor:pointer;z-index:2;transition:opacity .2s,transform .15s;padding:0}
+.pd-railbtn svg{width:12px;height:12px;stroke:var(--ink);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pd-railbtn.left{left:-4px}
+.pd-railbtn.right{right:-4px}
+.pd-railbtn:active{transform:translateY(-50%) scale(.88)}
+.pd-fade{position:absolute;top:0;bottom:0;width:24px;pointer-events:none;z-index:1;opacity:0;transition:opacity .25s}
+.pd-fade.l{left:0;background:linear-gradient(to right,#fff,hsla(0,0%,100%,0))}
+.pd-fade.r{right:0;background:linear-gradient(to left,#fff,hsla(0,0%,100%,0))}
+.pd-fade.on{opacity:1}
+.pd-seeall{display:inline-flex;align-items:center;gap:5px;margin-top:7px;background:none;border:0;padding:0;font-size:11px;font-weight:800;color:var(--primary);cursor:pointer}
+.pd-seeall svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
+.pd-seeall svg.up{transform:rotate(180deg)}
+.pd-cnt{font-weight:600;font-size:11px;color:var(--ink-soft)}
