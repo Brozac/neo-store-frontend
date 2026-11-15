@@ -28,10 +28,17 @@ export default function Footer() {
 
   const handleInstallClick = () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        setDeferredPrompt(null);
-      });
+      const p = deferredPrompt;
+      // 🩹 F#95 (LACLARC-FRONTEND-2) — prompt() كيتستهلك مرة وحدة: الاستعمال الثاني
+      //   كيرمي NotAllowedError "must be called with a user gesture" (المفعول كتسالي
+      //   حتى فنفس الgesture). الاستهلاك الفوري + try/catch → الفشل كيرجع للدليل الآمن.
+      setDeferredPrompt(null);
+      try {
+        p.prompt();
+        p.userChoice?.then(() => setDeferredPrompt(null)).catch(() => {});
+      } catch {
+        setShowIosGuide(true);
+      }
     } else {
       // إظهار إرشادات التثبيت المخصصة لهواتف آبل والمتصفحات الأخرى
       setShowIosGuide(true);

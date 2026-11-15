@@ -74,7 +74,8 @@ function matchesColour(product: { swatches?: unknown }, colours: string[]): bool
     ? (product.swatches as { c?: string }[]).map((s) => String(s?.c || '').toLowerCase()).filter(Boolean)
     : [];
   if (names.length === 0) return false;
-  return colours.some((c) => names.some((n) => n.includes(c.toLowerCase())));
+  // 🩹 F#95 (LACLARC-FRONTEND-3) — colours كيجيو من query params → String() ضد undefined/null
+  return colours.some((c) => names.some((n) => n.includes(String(c || '').toLowerCase())));
 }
 
 // ✨ Per-page shuffle: deterministic per (seed, page) — session freshness,

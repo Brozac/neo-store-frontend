@@ -140,7 +140,8 @@ export default function OrdersPage() {
   // 🎨 REPLICA_V4 — لوون الـ pills طبق الأصل من المعاينة (Aurora tokens)
   // delivered أخضر الثقة · shipped ضبابي بحدود · processing لافندر معتم · cancelled بنفسجي فاتح
   const getStatusStyle = (status: string) => {
-    switch (status.toLowerCase()) {
+    // 🩹 F#95 (LACLARC-FRONTEND-3) — status كيقدر يجي undefined من الداتا → toLowerCase كيرمي TypeError
+    switch ((status || '').toLowerCase()) {
       case 'completed':
       case 'paid':
         return 'bg-[#e9f7de] text-[#4c7c00]';                          // Delivered
