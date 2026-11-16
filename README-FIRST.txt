@@ -5,7 +5,7 @@
 
 اللي كاين هنا (308+/19-):
   DESIGN.md                                   (جديد — عقد الهوية البصرية v1.0)
-  lib/colorHex.ts                             (جديد — أسماء CJ → hex حقيقي، مختبَر 18/18)
+  lib/colorHex.ts                             (جديد — أسماء CJ → hex حقيقي، مختبَر 21/21)
   app/components/FrequentlyBoughtTogether.tsx (phantom-15% → $ حقيقي + Bag→Cart + نجاح شرطي)
   app/products/[id]/ProductDetailsClient.tsx  (colorHex wiring + بنفسج→fog ×13 + aria-pressed)
 
@@ -16,7 +16,7 @@
   git pull                      # خاصك تكون على 818b174 laclarc-frontend-F101-colorrail
   git apply --check laclarc-f101-dsaudit-FROM-colorrail.patch   # تأكد قبل
   git apply laclarc-f101-dsaudit-FROM-colorrail.patch
-  git add -A && git commit -m "f101-dsaudit: colorHex (18/18) + purple→fog PDC×13 + FBT phantom→\$ + Bag→Cart + aria-pressed + DESIGN.md v1.0"
+  git add -A && git commit -m "f101-dsaudit: colorHex (21/21) + purple→fog PDC×13 + FBT phantom→\$ + Bag→Cart + aria-pressed + DESIGN.md v1.0"
   git push origin main
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -47,3 +47,10 @@
   • الـ patch محسوب على 818b174 بالبايت — إلا الـ main ديالك تزاد من بعد، الطريق ب آمن.
   • DESIGN.md = العقد الرسمي للهوية — كل كومبونونت جديد كيتبع به (قسم 4).
   • سكيلات purple-s-baby-sister / violet-heaven فـ globals.css = legacy — ما تستعملوش فكود جديد.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ v2 (F#102 code-review) — نفس الـ patch تطوّر:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • 🩹 المطابقة بالكلمات الكاملة: "Bordered" ما كتوليش حمراء (includes الخام كتخلط)
+  • ✨ المركب بلا مسافات خدّام: "SkyBlue" / "ArmyGreen"
+  • الاختبارات: 21/21 ✓ — الـ patch كيتطبق على 818b174 بحال قبل (327+/19-)

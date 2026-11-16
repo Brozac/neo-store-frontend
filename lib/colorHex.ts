@@ -108,6 +108,10 @@ const NAMED: Array<[string, string]> = [
 const norm = (s: string) =>
   s.toLowerCase().replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
 
+// 🩹 code-review F#102: includes الخام كتخلط — "Bordered" فيها "red" → حمراء مزورة!
+// المطابقة دابا بالكلمات الكاملة: كل كلمة ديال الاسم خاصها تكون كلمة مستقلة فالاسم المبحوث.
+const wordSet = (s: string) => new Set(s.split(/[^a-z]+/).filter(Boolean));
+
 /** توسيط hex قصير #abc → #aabbcc (كنرجعو دايماً بصيغة موحدة صغيرة للـ CSS) */
 const expandHex = (hex: string): string => {
   const m = hex.replace('#', '').toLowerCase();
@@ -119,7 +123,7 @@ const expandHex = (hex: string): string => {
 
 /**
  * محوّل الاسم → hex حقيقي للسواتش.
- * الترتيب: hex صالح → مطابقة تامة → كلمة الأطول → أول لون معروف → fallback.
+ * الترتيب: hex صالح → مطابقة تامة → بدون مسافات → كلمة الأطول → fallback.
  */
 export const getColorHex = (raw?: string | null): string => {
   if (!raw) return COLOR_FALLBACK_HEX;
@@ -136,8 +140,19 @@ export const getColorHex = (raw?: string | null): string => {
     if (n === name) return hex;
   }
 
-  // 3) مطابقة جزئية — الكلمة الأطول أولاً ("Army Green" قبل "Green")
-  const hits = NAMED.filter(([name]) => n.includes(name));
+  // 2.5) مركب بلا مسافات — "SkyBlue" / "ArmyGreen" (صيغة CJ شائعة)
+  const squashed = n.replace(/ /g, '');
+  for (const [name, hex] of NAMED) {
+    if (name.includes(' ') && squashed === name.replace(/ /g, '')) return hex;
+  }
+
+  // 3) مطابقة بالكلمات الكاملة — الكلمة الأطول أولاً ("Army Green" قبل "Green")
+  //    "Bordered" ما كتطابقش "red" — الكلمة خاصها تكون مستقلة
+  const ws = wordSet(n);
+  const hits = NAMED.filter(([name]) => {
+    const parts = name.split(' ');
+    return parts.every((w) => ws.has(w));
+  });
   if (hits.length > 0) {
     hits.sort((a, b) => b[0].length - a[0].length);
     return hits[0][1];
@@ -153,5 +168,9 @@ export const isKnownColor = (raw?: string | null): boolean => {
   const s = String(raw).trim();
   if (HEX_RX.test(s)) return true;
   const n = norm(s);
-  return NAMED.some(([name]) => n === name || n.includes(name));
+  // نفس منطق getColorHex — كلمات كاملة (بلا includes الخام)
+  const ws = wordSet(n);
+  if (NAMED.some(([name]) => name.split(' ').every((w) => ws.has(w)))) return true;
+  const squashed = n.replace(/ /g, '');
+  return NAMED.some(([name]) => name.includes(' ') && squashed === name.replace(/ /g, ''));
 };
