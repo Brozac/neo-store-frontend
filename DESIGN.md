@@ -97,6 +97,18 @@
 4. **Empty state = 3 عناصر:** شنو وقع + علاش + كيفاش يصلح ("No products found matching these filters" + زر Clear).
 5. **النجاح كيحترم الحالة:** "Both Added" غير إلا تزادو جوج عناصر فعلاً.
 
+### 4.4 السكيلتات (Skeleton Loading) — F#104
+
+**العقد:** `app/components/Skeleton.tsx` + كلاس `.sk` فـ `globals.css`.
+
+1. **الستايل:** fog shimmer — بلوك `fog-100` + موجة `fog-200` كتجري 1.4s (`.sk::after` + `sk-sweep`). بلا بنفسجي، بلا ألوان خارج السلم.
+2. **Reduced-motion إجباري:** `prefers-reduced-motion: reduce` → الموجة كتوقف والبلوك fog-200 ثابت (a11y).
+3. **Geometry mirror:** السكيلت كيحاكي الشكل الحقيقي بنفس الأبعاد (aspect-square للصور، نفس الgrid `columns-2 md:columns-3 lg:columns-4` للهوم) — صفر layout shift ملي المحتوى يوصل.
+4. **واحد المحتوى لكل بلاصة:** الهوم (loading + الفيد اللانهائي + Suspense) = `GridSkeleton` · PDP = `PdpSkeleton` فـ `loading.tsx` + `ReviewRowSkeleton` وقت fetch المراجعات · الكارت/الشيكاوت/الكاتيݣوري/الفوفوري/review = سكيلتات خاصة.
+5. **a11y:** الجذر `role="status" aria-live="polite"` + `sr-only` نص — البلوكات الديكورية `aria-hidden`.
+6. **Server-safe:** بلا hooks ولا state — يخدم فـ `loading.tsx` وclient components بجوج.
+7. **ممنوع:** spinner كامل-صفحة كيحيد المحتوى الموجود (كان سبب CLS فالهوم) — السكيلت كيبدل غير البلاصة اللي كتستنى.
+
 ---
 
 ## 5. سجل الاستثناءات (Exceptions Log)
@@ -107,6 +119,7 @@
 | `#888888` fallback للسواتش المجهول | الصدق قبل الجمال — بلا لون مزيف | ✅ معتمد (موثق فـ colorHex.ts) |
 | `#2b2b2b` off-black فالسواتش | أسود المنتج الحقيقي بلا قسوة #000000 | ✅ معتمد |
 | سكيلات ROSE DUO غير المستعملة (9 سكيلات) | مسجلة بطلب المالك — متاحة للمستقبل | ⚠️ محايدة — ممنوع استعمال البنفسجية منها |
+| `#5F8271` sage قديم (75 بقعة باقية) | ثيم Sage القديم فـ admin + rings/footer/navbar — ماشي spinners | ⚠️ backlog: هجرة ثيم كاملة منفصلة (F#105-candidate) — spinners تصلحو فـ F#104 |
 
 ---
 
@@ -116,3 +129,4 @@
 - 🎨 **F#101:** `lib/colorHex.ts` جديد — SWATCH_HEX/getColorHex القديمين (رمادي موحد) مربوطين بالخريطة المعايرة.
 - 🩹 **FBT:** phantom-15% → وفر حقيقي بالدولار + رسالة نجاح شرطية + Bag→Cart.
 - ♿ **a11y:** `aria-pressed` على المقاسات والسواتشات · `aria-label` على شيفرونات الريل (كاينين من colorrail) · roles فالدراورات (كاينين).
+- 🦴 **F#104 skeleton:** `Skeleton.tsx` (8 سكيلتات) + `.sk` fog shimmer + reduced-motion · الهوم/PDP/كارت/فوفوري/كاتيݣوري/شيكاوت/review بدلوا spinners · spinners #5F8271 → fog-600.

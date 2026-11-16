@@ -1,9 +1,9 @@
 ════════════════════════════════════════════════════════════
- LACLARC F#101-dsaudit — 5 ملفات FROM 818b174 (colorrail)
+ LACLARC F#101→F#104 — 15 ملف FROM 818b174 (colorrail)
  قرا هادا قبل أي حاجة 🙏
 ════════════════════════════════════════════════════════════
 
-اللي كاين هنا (444+/40-):
+اللي كاين هنا (738+/62-):
   DESIGN.md                                   (جديد — عقد الهوية البصرية v1.0)
   lib/colorHex.ts                             (جديد — أسماء CJ → hex حقيقي، مختبَر 21/21)
   app/components/FrequentlyBoughtTogether.tsx (phantom-15% → $ حقيقي + Bag→Cart + نجاح شرطي)
@@ -16,7 +16,7 @@
   git pull                      # خاصك تكون على 818b174 laclarc-frontend-F101-colorrail
   git apply --check laclarc-f101-dsaudit-FROM-colorrail.patch   # تأكد قبل
   git apply laclarc-f101-dsaudit-FROM-colorrail.patch
-  git add -A && git commit -m "f101-dsaudit: colorHex (21/21) + purple→fog PDC×13 + FBT phantom→\$ + Bag→Cart + aria-pressed + DESIGN.md v1.0"
+  git add -A && git commit -m "f101-f104: colorHex (21/21) + purple→fog + FBT $ + reviews-fix + reviewstability + skeleton system (37/37)"
   git push origin main
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -75,3 +75,17 @@
   • 🩹 التاريخ: "Invalid Date" عمرو ما كيبان — فراغ بدل نص مكسور
   • الاختبارات: 13→30/30 reviews + 21/21 colorHex — الـ patch دابا 444+/40-
   • ملف واحد تبدل: ProductDetailsClient.tsx (الباقي كيف كيف)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ v5 (F#104 skeleton) — skeleton loading نظام كامل:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • ✨ app/components/Skeleton.tsx جديد — 10 سكيلتات بنفس geometry الحقيقي (zero CLS)
+  • ✨ .sk fog shimmer فـ globals.css — fog-100 بلوك + موجة fog-200 1.4s
+  • ♿ prefers-reduced-motion إجباري — الحركة كتوقف، البلوك fog-200 ثابت
+  • 🦴 الهوم: grid skeleton بدل spinner (loading + الفيد اللانهائي + Suspense fallback)
+  • 🦴 PDP: loading.tsx جديد (كانت route transition خاوية — fetch فيه retry + 700ms)
+      + صفوف سكيلت وقت fetch المراجعات (غير إلا SSR ما جاب والو)
+  • 🦴 كارت/فوفوري/كاتيݣوري/شيكاوت/review: سكيلتات خاصة بدل spinners
+  • 🎨 spinners بلون خارج العقد #5F8271 → fog-600 (الباقي ديال ثيم Sage = backlog موثق)
+  • الملفات ولاو 15 — الاختبارات: 37/37 skeleton + 30/30 reviews + 21/21 colorHex
+  • العقد الكامل فـ DESIGN.md §4.4

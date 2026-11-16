@@ -14,6 +14,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSiteConfig } from '../components/SiteConfigProvider';
 import { isCategoryHidden } from '@/lib/siteConfig';
+import { TilesSkeleton } from '../components/Skeleton'; // 🦴 F#104 — سكيلت بلاطات بدل spinner
 
 interface CategoryNode {
   id: number;
@@ -57,8 +58,10 @@ export default function CategoriesClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-temu-offwhite">
+        <div className="max-w-7xl mx-auto p-6">
+          <TilesSkeleton count={8} />
+        </div>
       </div>
     );
   }
