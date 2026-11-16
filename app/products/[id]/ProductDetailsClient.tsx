@@ -11,6 +11,7 @@ import BuyButton from '../../components/BuyButton';
 // ✨ F#36-notilt (مطبق مع F#38 2026-11-08): TiltCard ما بقا لومر — مرجع واحد كان فقسم YMAL وحيد
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
+import { getColorHex } from '@/lib/colorHex'; // 🎨 F#101 — أسماء CJ → hex حقيقي
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 import GlassIcon from '@/components/ui/GlassIcon';
 import './pd.css'; // 📱 Task 17 — SERENE product mockup (mobile) — كلاسات pd-* معزولة بالكامل
@@ -301,7 +302,10 @@ const extractSizeFit = (html?: string): SizeFitData => {
 // الحل: سكة أفقية وحدة بـ scroll-snap + شيفرونات جانبيين + تلاشي الحواف (كاشفين غير ملي كاين
 // زيادة) + توسيط اللون المختار آلياً (scrollTo يدوي — scrollIntoView كيهز الصفحة عمودياً) +
 // «See all N colors» كيفتح الشبكة الكاملة فالمنتجات المتعددة (>12). الحالات الصغيرة كيما كان.
-const SWATCH_HEX = (c?: string | null) => c && c.startsWith('#') ? c : '#888888';
+// 🎨 F#101 [color-swatches]: SWATCH_HEX القديم كان كيرجع #888888 لأي اسم → سواتش رمادي موحد.
+// دابا getColorHex (من lib/colorHex): hex صالح كيدوز كما هو، الاسم كيتطابق مع خريطة CJ
+// معايرة (أطول كلمة أولاً)، fallback موثق للمجهول. SWATCH_HEX بقى كـ alias للنداءات الحية.
+const SWATCH_HEX = (c?: string | null) => getColorHex(c);
 
 const ColorRail = ({ groups, selected, onSelect, variant }: {
   groups: { name: string; image: string; hex: string | null }[];
@@ -702,7 +706,7 @@ export default function ProductDetailsClient({
 
 
   const parsePrice = (price: any) => Number(price) || 0;
-  const getColorHex = (c: string) => c.startsWith('#') ? c : '#888888';
+  // 🎨 F#101: getColorHex جاية من lib/colorHex (import الفوق) — النسخة المحلية الرمادية حيدت
 
   const safePrice = parsePrice(product.price);
   const safeOriginalPrice = parsePrice(product.original_price);
@@ -1197,6 +1201,7 @@ export default function ProductDetailsClient({
                       key={sz}
                       type="button"
                       onClick={() => setSelectedSize(sz)}
+                      aria-pressed={effectiveSize === sz}
                       className={`pd-size ${effectiveSize === sz ? 'on' : ''}`}
                     >
                       {sz}
@@ -1387,7 +1392,7 @@ export default function ProductDetailsClient({
                     onClick={() => withGalleryTransition(() => { setCurrentImageIndex(idx); setShowVideo(false); })}
                     className={`relative aspect-square w-16 sm:w-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 bg-white shrink-0 ${
                       !showVideo && currentImageIndex === idx
-                        ? 'border-[#6B3DB4] shadow-md ring-2 ring-[#6B3DB4]/30 scale-95'
+                        ? 'border-[#46648A] shadow-md ring-2 ring-[#46648A]/30 scale-95'
                         : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-300'
                     }`}
                   >
@@ -1527,13 +1532,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(1)}
                     className={`p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 1
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#46648A] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-gray-900">Standard</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 1 ? 'border-[#46648A] bg-[#46648A]' : 'border-gray-300'}`}>
                         {quantity === 1 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -1545,13 +1550,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(2)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity === 2
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#46648A] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-extrabold text-xs text-[#6B3DB4]">Duo</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className="font-extrabold text-xs text-[#46648A]">Duo</span>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity === 2 ? 'border-[#46648A] bg-[#46648A]' : 'border-gray-300'}`}>
                         {quantity === 2 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -1563,13 +1568,13 @@ export default function ProductDetailsClient({
                     onClick={() => setQuantity(3)}
                     className={`relative p-3 rounded-2xl border-2 cursor-pointer transition active:scale-95 flex flex-col justify-between text-left ${
                       quantity >= 3
-                        ? 'border-[#6B3DB4] bg-fog-50/50 shadow-sm'
+                        ? 'border-[#46648A] bg-fog-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-extrabold text-xs text-maroccan-tea-600">Trio</span>
-                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#6B3DB4] bg-[#6B3DB4]' : 'border-gray-300'}`}>
+                      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${quantity >= 3 ? 'border-[#46648A] bg-[#46648A]' : 'border-gray-300'}`}>
                         {quantity >= 3 && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </span>
                     </div>
@@ -1590,7 +1595,7 @@ export default function ProductDetailsClient({
                   }`}
                 >
                   {mainAdded ? (
-                    <><span><GlassIcon i="check" size="xs" /></span> Added to Bag — View Cart <GlassIcon i="arrowRight" size="xs" /></>
+                    <><span><GlassIcon i="check" size="xs" /></span> Added to Cart — View Cart <GlassIcon i="arrowRight" size="xs" /></>
                   ) : (
                     <>Add to Cart</>
                   )}
@@ -1737,8 +1742,8 @@ export default function ProductDetailsClient({
               <button
                 onClick={() => { setStarFilter(0); setVisibleReviews(REVIEWS_PAGE); }}
                 className={starFilter === 0
-                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
-                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
+                  ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#5B7EA6] to-coral-600 text-white shadow-sm transition-all duration-200'
+                  : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#5B7EA6]/50 hover:text-[#5B7EA6] transition-all duration-200'}
               >
                 All ({realTotal})
               </button>
@@ -1747,8 +1752,8 @@ export default function ProductDetailsClient({
                   key={s}
                   onClick={() => { setStarFilter(s); setVisibleReviews(REVIEWS_PAGE); }}
                   className={starFilter === s
-                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white shadow-sm transition-all duration-200'
-                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#7E56C4]/50 hover:text-[#7E56C4] transition-all duration-200'}
+                    ? 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#5B7EA6] to-coral-600 text-white shadow-sm transition-all duration-200'
+                    : 'px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 hover:border-[#5B7EA6]/50 hover:text-[#5B7EA6] transition-all duration-200'}
                 >
                   {s}★ ({starCounts[s]})
                 </button>
@@ -1846,7 +1851,7 @@ export default function ProductDetailsClient({
             <div className="flex flex-col items-center gap-2 mb-8">
               <button
                 onClick={() => setVisibleReviews(c => c + REVIEWS_PAGE)}
-                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#7E56C4] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(126,86,196,0.3)] transition-all duration-300"
+                className="px-8 py-3 rounded-full text-sm font-black bg-gradient-to-r from-[#5B7EA6] to-coral-600 text-white hover:opacity-90 shadow-[0_4px_14px_rgba(91,126,166,0.3)] transition-all duration-300"
               >
                 Load more reviews ({filteredReviews.length - shownReviews.length} more)
               </button>
