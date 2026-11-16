@@ -136,7 +136,7 @@ const cleanCountry = (c?: string | null): string => {
   if (!s) return '';
   const fixed = COUNTRY_DISPLAY[s.toLowerCase()];
   if (fixed) return fixed;
-  // fallback عام: حيّد " (the)" فالخERاية و"the " فالبداية
+  // fallback عام: حيّد " (the)" فالآخر و"the " فالبداية
   return s.replace(/\s*\(the\)\s*$/i, '').replace(/^the\s+/i, '').trim();
 };
 
@@ -161,6 +161,27 @@ const dedupeReviews = (list: Review[]): { list: Review[]; removed: number } => {
     out.push(r);
   }
   return { list: out, removed: list.length - out.length };
+};
+
+/**
+ * 🩹 F#103b [display-stability] — بيانات CJ الخاوية (rating ناقص، 0، سالب، >5) ما خاصهاش تهزّ العرض:
+ * repeat(NaN)→فراغ · repeat(سالب)→RangeError كيطيح شبكة المراجعات كاملة (صفحة بيضاء).
+ * حصر 1..5 — نفس العقد فالكارتين (موبايل + سطحية).
+ */
+const clampStars = (n: unknown): number => Math.max(1, Math.min(5, Math.round(Number(n) || 0)));
+
+/** متوسط آمن — قيم تالفة (null/string/undefined) ما كتولّدش NaN مكشوف ("NaN" فالواجهة) */
+const safeAvg = (list: Review[]): number => {
+  if (!Array.isArray(list) || list.length === 0) return 0;
+  let sum = 0;
+  for (const r of list) sum += Number(r?.rating) || 0;
+  return sum / list.length;
+};
+
+/** تاريخ مقروء — "Invalid Date" عمرو ما كيبان فالواجهة (فراغ بدل نص مكسور) */
+const fmtDate = (v?: string): string => {
+  const d = new Date(v || '');
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
 };
 
 const TABS = [
@@ -1205,7 +1226,7 @@ export default function ProductDetailsClient({
                 <>
                   <span className="pd-stars">
                     <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                    {safeAvg(reviews).toFixed(1)}
                   </span>
                   <span>({realTotal} verified rating{realTotal !== 1 ? 's' : ''})</span>
                 </>
@@ -1504,10 +1525,10 @@ export default function ProductDetailsClient({
                 {reviews.length > 0 ? (
                   <>
                     <span className="text-temu-orange text-sm">
-                      {'★'.repeat(Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length))}
+                      {'★'.repeat(clampStars(safeAvg(reviews)))}
                     </span>
                     <span className="text-sm font-bold text-temu-black">
-                      {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                      {safeAvg(reviews).toFixed(1)}
                     </span>
                     <span className="text-xs text-temu-gray-light">
                       ({realTotal} verified rating{realTotal !== 1 ? 's' : ''})
@@ -1847,7 +1868,7 @@ export default function ProductDetailsClient({
                         <span style={{ fontWeight: 500, fontSize: 10.5, color: 'var(--ink-soft)' }}> · {cleanCountry(rev.country)}</span>
                       ) : null}
                     </div>
-                    <div className="pd-rstars">{'★'.repeat(Math.round(rev.rating))}</div>
+                    <div className="pd-rstars">{'★'.repeat(clampStars(rev.rating))}</div>
                     <p className="pd-rtext">{rev.content}</p>
 
                     {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
@@ -1869,7 +1890,7 @@ export default function ProductDetailsClient({
                       </div>
                     )}
 
-                    <span className="pd-rdate">{new Date(rev.created_at).toLocaleDateString()}</span>
+                    <span className="pd-rdate">{fmtDate(rev.created_at)}</span>
                   </div>
                 </div>
 
@@ -1879,7 +1900,7 @@ export default function ProductDetailsClient({
                     <span className="font-bold text-xs text-gray-900 truncate">
                       {rev.author}{cleanCountry(rev.country) ? ` (${cleanCountry(rev.country)})` : ' (Verified Buyer)'}
                     </span>
-                    <span className="text-butter-up-400 text-xs shrink-0">{'★'.repeat(Math.max(1, Math.min(5, Math.round(rev.rating))))}</span>
+                    <span className="text-butter-up-400 text-xs shrink-0">{'★'.repeat(clampStars(rev.rating))}</span>
                   </div>
                   <p className="text-xs text-gray-600 leading-relaxed break-words">{rev.content}</p>
 
@@ -1907,7 +1928,7 @@ export default function ProductDetailsClient({
                   )}
 
                   <span className="text-[10px] text-gray-400 block font-mono">
-                    {new Date(rev.created_at).toLocaleDateString()}
+                    {fmtDate(rev.created_at)}
                   </span>
                 </div>
               </div>
