@@ -38,6 +38,13 @@ export default function FrequentlyBoughtTogether({
   const currentPrice = Number(currentProduct.price) || 0;
   const partnerPrice = Number(bundlePartner.price) || 0;
 
+  // 🩹 P0 phantom-15% (F#101-dsaudit): الادعاء القديم "Save 15%" كان وهمياً — القارئ
+  //    كيفهم أن الباندل الكامل -15%، بصح الخصم الحقيقي = 15% على المكمّل فقط.
+  //    ux-copy: الوعد كيبان بالدولار الحقيقي ($X.XX) ماشي بنسبة مضللة، والرسالة
+  //    ديال النجاح كتحترم حالة includePartner ("Both Added" على عنصر واحد = كذب).
+  const saveAmt = parseFloat((partnerPrice * (BUNDLE_DISCOUNT_PERCENT / 100)).toFixed(2));
+  const hasSaving = includePartner && saveAmt > 0;
+
   // ✨ الإصلاح المالي (Mission #15):
   // قبل: applyWheelDiscount(15) كانت تطبق 15% على السلة كاملة + تبقى حية 
   //      حتى بعد حذف المكمل → تسرب مالي مزدوج.
@@ -90,7 +97,7 @@ export default function FrequentlyBoughtTogether({
           <span><GlassIcon ch="🤝" size="xs" /></span> Frequently Bought Together
         </h3>
         <span className="text-[10px] font-black uppercase tracking-wider bg-maroccan-tea-50 text-maroccan-tea-700 border border-maroccan-tea-200 px-2.5 py-0.5 rounded-full">
-          Bundle & Save 15%
+          {hasSaving ? `Bundle · Save $${saveAmt.toFixed(2)}` : 'Bundle Deal'}
         </span>
       </div>
 
@@ -173,9 +180,11 @@ export default function FrequentlyBoughtTogether({
             }`}
           >
             {addedSuccess ? (
-              <><span><GlassIcon i="check" size="xs" /></span> Both Added to Bag (15% OFF Saved)!</>
+              hasSaving
+                ? <><span><GlassIcon i="check" size="xs" /></span> Both Added to Cart — You Saved ${saveAmt.toFixed(2)}!</>
+                : <><span><GlassIcon i="check" size="xs" /></span> Added to Cart!</>
             ) : (
-              <><span><GlassIcon i="zap" size="xs" /></span> {includePartner ? 'Add Both to Cart (Save 15%)' : 'Add Item to Cart'}</>
+              <><span><GlassIcon i="zap" size="xs" /></span> {hasSaving ? `Add Both to Cart (Save $${saveAmt.toFixed(2)})` : (includePartner ? 'Add Both to Cart' : 'Add Item to Cart')}</>
             )}
           </button>
         </div>
