@@ -131,7 +131,7 @@
 .pd-rmain{min-width:0;flex:1}
 .pd-rname{font-size:12.5px;font-weight:700;color:var(--ink)}
 .pd-rstars{color:var(--gold);font-size:10.5px;margin:2px 0 4px;letter-spacing:1px}
-.pd-rtext{font-size:11.5px;color:var(--ink-soft);line-height:1.8}
+.pd-rtext{font-size:11.5px;color:var(--ink-soft);line-height:1.8;overflow-wrap:anywhere}
 .pd-rphotos{display:flex;gap:8px;margin-top:8px}
 .pd-rphotos img{width:52px;height:52px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
 .pd-rdate{display:block;margin-top:6px;font-size:10px;color:var(--ink-soft);opacity:.75;font-variant-numeric:tabular-nums}
