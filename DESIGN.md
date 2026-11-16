@@ -79,7 +79,7 @@
 | a11y | `aria-pressed` إجباري + `aria-label="Color {name}"` + `title={name}` |
 | الممنوع | render hex خام من الداتا، لون مزيف عند الاسم المجهول، سواتش بلا aria |
 
-**المصدر:** `lib/colorHex.ts` (مختبَر 18/18 — `scripts/verify-colorhex.ts` فالصندوق).
+**المصدر:** `lib/colorHex.ts` (مختبَر 21/21 — `scripts/verify-colorhex.ts` فالصندوق). المطابقة بالكلمات الكاملة (code-review F#102): "Bordered" ما كتوليش حمراء، والمركب بلا مسافات "SkyBlue" خدّام.
 
 ### 4.2 الأزرار
 
