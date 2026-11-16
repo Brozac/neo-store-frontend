@@ -102,6 +102,67 @@ interface Review {
   images?: string[];
 }
 
+// ═══ ⭐ F#103 [reviews-fix] — تنضيف العرض ديال التقييمات ═══
+// بلاغ المالك (سكرينشوت): "Russian Federation (the)" — الـ article ديال ISO كيبان كأنه خطأ.
+// خريطة أسماء ISO الطويلة → عرض نظيف (ماشي اختراع — نفس الدولة بسمية مقروءة)
+const COUNTRY_DISPLAY: Record<string, string> = {
+  'russian federation': 'Russia',
+  'russian federation (the)': 'Russia',
+  'korea (the republic of)': 'South Korea',
+  'republic of korea': 'South Korea',
+  'korea, republic of': 'South Korea',
+  'united states of america (the)': 'USA',
+  'united states of america': 'USA',
+  'united states (the)': 'USA',
+  'united kingdom (the)': 'UK',
+  'united kingdom': 'UK',
+  'czech republic (the)': 'Czechia',
+  'czechia': 'Czechia',
+  'viet nam': 'Vietnam',
+  'netherlands (the)': 'Netherlands',
+  'philippines (the)': 'Philippines',
+  'bahamas (the)': 'Bahamas',
+  'gambia (the)': 'Gambia',
+  'sudan (the)': 'Sudan',
+  'central african republic (the)': 'Central African Rep.',
+  'dominican republic (the)': 'Dominican Republic',
+  'united arab emirates (the)': 'UAE',
+};
+
+/** اسم الدولة للعرض — كينضّف articles ديال ISO: "Russian Federation (the)" → "Russia" */
+const cleanCountry = (c?: string | null): string => {
+  if (!c) return '';
+  const s = String(c).trim();
+  if (!s) return '';
+  const fixed = COUNTRY_DISPLAY[s.toLowerCase()];
+  if (fixed) return fixed;
+  // fallback عام: حيّد " (the)" فالخERاية و"the " فالبداية
+  return s.replace(/\s*\(the\)\s*$/i, '').replace(/^the\s+/i, '').trim();
+};
+
+/**
+ * 🩹 F#103: CJ كيرجع التقييمات مكرّرين (نفس النص حرفياً + نفس التاريخ + نفس الدولة،
+ * authors مختلفين masked) — الزبون كيشوف تقييم واحد مرتين = شك في المصداقية.
+ * المفتاح: النص المُطبّع + النجوم + الدولة + اليوم (بلا author — نفس النص حرفياً = مكرر).
+ */
+const dedupeReviews = (list: Review[]): { list: Review[]; removed: number } => {
+  if (!Array.isArray(list) || list.length < 2) return { list: Array.isArray(list) ? list : [], removed: 0 };
+  const seen = new Set<string>();
+  const out: Review[] = [];
+  for (const r of list) {
+    const key = [
+      String(r?.content || '').toLowerCase().replace(/\s+/g, ' ').trim(),
+      Math.round(Number(r?.rating) || 0),
+      String(r?.country || '').toLowerCase().trim(),
+      String(r?.created_at || '').slice(0, 10),
+    ].join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return { list: out, removed: list.length - out.length };
+};
+
 const TABS = [
   { key: 'details', label: 'Details' },
   { key: 'materials', label: 'Materials' },
@@ -439,14 +500,20 @@ export default function ProductDetailsClient({
   const [selectedColorName, setSelectedColorName] = useState('');   // 🆕 [variant-truth] اسم عائلة اللون (من variantKey) — hex بقى legacy فقط
   const [selectedSize, setSelectedSize] = useState('');             // 🆕 بلا افتراض 'M' — المحرك كيشتق المقاس الفعلي (effectiveSize)
   const [activeTab, setActiveTab] = useState<TabKey>('details');
-  const [reviews, setReviews] = useState(initialReviews);
+  // ⭐ F#103 [reviews-fix] — الـ SSR payload كيتنضّف من الدوبليكونات قبل الحالة
+  const initialDedup = useMemo(() => dedupeReviews(initialReviews), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [reviews, setReviews] = useState<Review[]>(initialDedup.list);
+  const [dupesRemoved, setDupesRemoved] = useState(initialDedup.removed);
   // ⭐ [cj-reviews v2] — فلتر النجوم + Load more + الإجمالي الحقيقي (meta.total من CJ)
   const [starFilter, setStarFilter] = useState(0); // 0 = الكل · 1..5 فلتر نجمي
   const [visibleReviews, setVisibleReviews] = useState(REVIEWS_PAGE);
   const [reviewsMeta, setReviewsMeta] = useState<{ total: number; loaded: number; hasMore: boolean } | null>(null);
 
   // ⭐ [cj-reviews v2] — الإجمالي الحقيقي مع fallback للشكل القديم (array بلا meta)
-  const realTotal = reviewsMeta?.total ?? reviews.length;
+  // F#103: الصدق الرقمي — المجموع المزعوم من الباك نقص منه المكررين المحذوفين (9→7 مثلاً)
+  const realTotal = reviewsMeta?.total != null
+    ? Math.max(reviews.length, reviewsMeta.total - dupesRemoved)
+    : reviews.length;
 
   const starCounts = useMemo(() => {
     const c: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -466,22 +533,28 @@ export default function ProductDetailsClient({
   // 🛡️ [cj-reviews v2] — شكلين مقبولين: array (backend قديم) ولا {reviews, meta} (v2)
   //    → التركيب آمن مهما كان ترتيب deploy تاع الفرونت/الباك.
   const applyReviewsPayload = (data: unknown) => {
+    const clean = (arr: Review[]) => {
+      const d = dedupeReviews(arr);
+      setReviews(d.list);
+      setDupesRemoved(d.removed);
+      return d.list.length;
+    };
     if (Array.isArray(data)) {
-      setReviews(data as Review[]);
+      clean(data as Review[]);
       setReviewsMeta(null);
       return;
     }
     if (data && typeof data === 'object' && Array.isArray((data as { reviews?: unknown }).reviews)) {
       const payload = data as { reviews: Review[]; meta?: { total?: number; loaded?: number; hasMore?: boolean } };
-      setReviews(payload.reviews);
+      const loaded = clean(payload.reviews);
       const m = payload.meta;
-      const loaded = payload.reviews.length;
       setReviewsMeta(m
         ? { total: Number(m.total) || loaded, loaded: Number(m.loaded) || loaded, hasMore: Boolean(m.hasMore) }
         : null);
       return;
     }
     setReviews([]); // 🛡️ error shape غير-array كان يكسر الصفحة كاملة (نفس حماية v1)
+    setDupesRemoved(0);
     setReviewsMeta(null);
   };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -1763,15 +1836,15 @@ export default function ProductDetailsClient({
 
           <div className="md:grid md:grid-cols-2 md:gap-4 mb-8">
             {shownReviews.map((rev) => (
-              <div key={rev.id}>
+              <div key={rev.id} className="min-w-0">
                 {/* 📱 mockup rev — أفاتار دائري fog + نجوم ذهبية + نص 11.5 */}
                 <div className="pd-rev md:hidden">
                   <div className="pd-rava">{(rev.author || '?').charAt(0).toUpperCase()}</div>
                   <div className="pd-rmain">
                     <div className="pd-rname">
                       {rev.author}
-                      {rev.country ? (
-                        <span style={{ fontWeight: 500, fontSize: 10.5, color: 'var(--ink-soft)' }}> · {rev.country}</span>
+                      {cleanCountry(rev.country) ? (
+                        <span style={{ fontWeight: 500, fontSize: 10.5, color: 'var(--ink-soft)' }}> · {cleanCountry(rev.country)}</span>
                       ) : null}
                     </div>
                     <div className="pd-rstars">{'★'.repeat(Math.round(rev.rating))}</div>
@@ -1800,13 +1873,15 @@ export default function ProductDetailsClient({
                   </div>
                 </div>
 
-                {/* 🖥️ الكارت المعتمد — بلا تبدال */}
-                <div className="hidden md:block p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-xs text-gray-900">{rev.author} ({rev.country || 'Verified Buyer'})</span>
-                    <span className="text-butter-up-400 text-xs">{'★'.repeat(rev.rating)}</span>
+                {/* 🖥️ الكارت المعتمد — بلا تبدال · F#103: min-w-0+overflow-hidden ضد طيحان النص خارج الحدود */}
+                <div className="hidden md:block min-w-0 overflow-hidden p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-bold text-xs text-gray-900 truncate">
+                      {rev.author}{cleanCountry(rev.country) ? ` (${cleanCountry(rev.country)})` : ' (Verified Buyer)'}
+                    </span>
+                    <span className="text-butter-up-400 text-xs shrink-0">{'★'.repeat(Math.max(1, Math.min(5, Math.round(rev.rating))))}</span>
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">{rev.content}</p>
+                  <p className="text-xs text-gray-600 leading-relaxed break-words">{rev.content}</p>
 
                   {rev.images && Array.isArray(rev.images) && rev.images.length > 0 && (
                     <div className="flex gap-2 pt-1">
