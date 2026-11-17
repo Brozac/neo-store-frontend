@@ -1,6 +1,8 @@
 'use client';
 
 // ──── [LACLARC::SENTRY-GLOBAL-ERROR] v1 (Task 16) ────
+// Major React errors are caught here (global-error replaces the root layout on error —
+// that's why it needs <html><body>). English UI — matching the site's tone.
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 
@@ -24,6 +26,7 @@ export default function GlobalError({
           textAlign: 'center',
           minHeight: '100vh',
           margin: 0,
+          backgroundColor: '#F4F7FA',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -34,12 +37,13 @@ export default function GlobalError({
           src="/error-bag.png"
           alt="Laclarc Error"
           style={{
-            width: '160px',
+            width: '240px',
             height: 'auto',
-            marginBottom: '1.25rem',
+            marginBottom: '1.5rem',
+            mixBlendMode: 'multiply',
           }}
         />
-        <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem', color: '#2E4057' }}>
+        <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#2E4057' }}>
           An unexpected error occurred
         </h1>
         <p style={{ color: '#46648A', marginBottom: '1.25rem' }}>
@@ -53,7 +57,7 @@ export default function GlobalError({
         <button
           onClick={() => reset()}
           style={{
-            padding: '0.55rem 1.4rem',
+            padding: '0.65rem 1.75rem',
             background: '#5B7EA6',
             color: '#fff',
             border: 'none',
