@@ -6,7 +6,12 @@
 
 /** بلوك السكيلت الأساسي — ديكور: aria-hidden (القراءة كتدار من role=status فالجذر) */
 export function Sk({ className = '' }: { className?: string }) {
-  return <div className={`sk ${className}`} aria-hidden="true" />;
+  return (
+    <div
+      className={`bg-slate-200/70 rounded animate-pulse ${className}`}
+      aria-hidden="true"
+    />
+  );
 }
 
 /** صف كارت منتج — يحاكي ProductCard: صورة مربعة بحقيبة Laclarc + سطرين عنوان + ثمن/شارة */
@@ -24,16 +29,16 @@ export function ProductCardSkeleton({ tall = false }: { tall?: boolean }) {
         <img
           src="/error-bag.png"
           alt=""
-          className="w-20 h-20 object-contain opacity-45 animate-pulse"
+          className="w-28 h-28 object-contain opacity-60 animate-pulse"
           style={{ mixBlendMode: 'multiply' }}
         />
       </div>
       <div className="p-2.5 space-y-2">
-        <Sk className="h-3 w-11/12" />
-        <Sk className="h-3 w-2/3" />
+        <div className="h-3 w-11/12 bg-slate-200/70 rounded animate-pulse" />
+        <div className="h-3 w-2/3 bg-slate-200/70 rounded animate-pulse" />
         <div className="flex items-center justify-between pt-1">
-          <Sk className="h-4 w-16" />
-          <Sk className="h-4 w-10" />
+          <div className="h-4 w-16 bg-slate-200/80 rounded animate-pulse" />
+          <div className="h-4 w-10 bg-slate-200/60 rounded animate-pulse" />
         </div>
       </div>
     </div>
@@ -72,13 +77,23 @@ export function PdpSkeleton() {
             <img
               src="/error-bag.png"
               alt=""
-              className="w-36 h-36 object-contain opacity-45 animate-pulse"
+              className="w-40 h-40 object-contain opacity-60 animate-pulse"
               style={{ mixBlendMode: 'multiply' }}
             />
           </div>
           <div className="flex gap-2">
             {Array.from({ length: 5 }, (_, i) => (
-              <Sk key={i} className="w-16 sm:w-20 aspect-square rounded-xl" />
+              <div
+                key={i}
+                className="w-16 sm:w-20 aspect-square rounded-xl bg-[#F4F7FA] border border-temu-gray-border-light flex items-center justify-center"
+              >
+                <img
+                  src="/error-bag.png"
+                  alt=""
+                  className="w-8 h-8 object-contain opacity-45 animate-pulse"
+                  style={{ mixBlendMode: 'multiply' }}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -134,7 +149,7 @@ export function ReviewsSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/** الكارت — صفوف منتوجات (مصغرة + أشرطة) + بلوك المجموع */
+/** الكارت — صفوف منتوجات (مصغرة بحقيبة Laclarc + أشرطة) + بلوك المجموع */
 export function CartSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" role="status" aria-live="polite">
@@ -143,7 +158,14 @@ export function CartSkeleton({ rows = 3 }: { rows?: number }) {
       <div className="space-y-3">
         {Array.from({ length: rows }, (_, i) => (
           <div key={i} className="flex gap-3 items-center p-3 bg-white rounded-2xl border border-gray-200">
-            <Sk className="w-20 h-20 rounded-xl shrink-0" />
+            <div className="w-20 h-20 rounded-xl shrink-0 bg-[#F4F7FA] flex items-center justify-center">
+              <img
+                src="/error-bag.png"
+                alt=""
+                className="w-11 h-11 object-contain opacity-55 animate-pulse"
+                style={{ mixBlendMode: 'multiply' }}
+              />
+            </div>
             <div className="flex-1 min-w-0 space-y-2">
               <Sk className="h-3 w-full" />
               <Sk className="h-3 w-1/2" />
@@ -180,7 +202,7 @@ export function CheckoutSkeleton() {
   );
 }
 
-/** الكاتيݣوريات — بلاطات مربعة */
+/** الكاتيݣوريات — بلاطات مربعة بحقيبة Laclarc */
 export function TilesSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div
@@ -191,7 +213,14 @@ export function TilesSkeleton({ count = 8 }: { count?: number }) {
       <span className="sr-only">Loading categories…</span>
       {Array.from({ length: count }, (_, i) => (
         <div key={i} aria-hidden="true" className="space-y-2">
-          <Sk className="w-full aspect-square rounded-2xl" />
+          <div className="w-full aspect-square rounded-2xl bg-[#F4F7FA] border border-temu-gray-border-light flex items-center justify-center">
+            <img
+              src="/error-bag.png"
+              alt=""
+              className="w-24 h-24 object-contain opacity-60 animate-pulse"
+              style={{ mixBlendMode: 'multiply' }}
+            />
+          </div>
           <Sk className="h-3 w-2/3 mx-auto" />
         </div>
       ))}

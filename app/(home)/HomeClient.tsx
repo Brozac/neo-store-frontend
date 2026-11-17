@@ -660,10 +660,10 @@ function HomeContent() {
           {/* 🎯 Sentinel — Temu-style infinite feed (بدل زر Load More) */}
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
-  <div className="mt-4">
-    <GridSkeleton count={4} />
-  </div>
-)}
+            <div className="mt-4">
+              <GridSkeleton count={4} />
+            </div>
+          )}
 
           {isBrowsing && feed.done && !loading && products.length > 0 && (
             <p className="text-center text-xs text-gray-400 py-8">
