@@ -17,6 +17,8 @@ import { useSiteConfig } from '../components/SiteConfigProvider';
 import { isCategoryHidden } from '@/lib/siteConfig';
 import FilterSortDrawer, { type DrawerSection } from '../components/FilterSortDrawer';
 import { COLOR_FACETS, COLOR_SWATCHES } from '@/lib/filterSort';
+import { GridSkeleton } from '@/components/Skeleton';
+
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
 type PriceRangeOption = 'all' | 'under15' | '15to35' | 'above35';
@@ -613,10 +615,9 @@ function HomeContent() {
             </div>
           )}
           {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : gridProducts.length > 0 ? (
+  <GridSkeleton count={10} />
+) : gridProducts.length > 0 ? (
+
             <div
               className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4"
               onTouchMove={(e) => {
@@ -659,10 +660,11 @@ function HomeContent() {
           {/* 🎯 Sentinel — Temu-style infinite feed (بدل زر Load More) */}
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
-            <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin mx-auto" />
-            </div>
-          )}
+  <div className="mt-4">
+    <GridSkeleton count={4} />
+  </div>
+)}
+
           {isBrowsing && feed.done && !loading && products.length > 0 && (
             <p className="text-center text-xs text-gray-400 py-8">
               🏁 You&apos;ve reached the end — {gridProducts.length.toLocaleString()} products
@@ -688,11 +690,15 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-temu-offwhite">
-        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-temu-offwhite pt-4 px-4">
+          <div className="max-w-7xl mx-auto">
+            <GridSkeleton count={10} />
+          </div>
+        </main>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

@@ -9,14 +9,25 @@ export function Sk({ className = '' }: { className?: string }) {
   return <div className={`sk ${className}`} aria-hidden="true" />;
 }
 
-/** صف كارت منتج — يحاكي ProductCard: صورة مربعة + سطرين عنوان + ثمن/شارة */
+/** صف كارت منتج — يحاكي ProductCard: صورة مربعة بحقيبة Laclarc + سطرين عنوان + ثمن/شارة */
 export function ProductCardSkeleton({ tall = false }: { tall?: boolean }) {
   return (
     <div
       className="break-inside-avoid mb-3 sm:mb-4 bg-white rounded-temu-sm overflow-hidden border border-temu-gray-border-light"
       aria-hidden="true"
     >
-      <Sk className={`w-full ${tall ? 'aspect-[4/5]' : 'aspect-square'}`} />
+      <div
+        className={`relative w-full ${
+          tall ? 'aspect-[4/5]' : 'aspect-square'
+        } bg-[#F4F7FA] flex items-center justify-center overflow-hidden`}
+      >
+        <img
+          src="/error-bag.png"
+          alt=""
+          className="w-20 h-20 object-contain opacity-45 animate-pulse"
+          style={{ mixBlendMode: 'multiply' }}
+        />
+      </div>
       <div className="p-2.5 space-y-2">
         <Sk className="h-3 w-11/12" />
         <Sk className="h-3 w-2/3" />
@@ -50,14 +61,21 @@ export function GridSkeleton({
   );
 }
 
-/** صفحة المنتج — معرض مربع + مصغرات + عمود المعلومات (عنوان/ثمن/سواتشات/CTA) */
+/** صفحة المنتج — معرض مربع بحقيبة Laclarc + مصغرات + عمود المعلومات */
 export function PdpSkeleton() {
   return (
     <div className="min-h-screen bg-temu-offwhite font-sans" role="status" aria-live="polite">
       <span className="sr-only">Loading product…</span>
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-16 grid lg:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <Sk className="w-full aspect-square rounded-2xl" />
+          <div className="w-full aspect-square rounded-2xl bg-[#F4F7FA] border border-temu-gray-border-light flex items-center justify-center">
+            <img
+              src="/error-bag.png"
+              alt=""
+              className="w-36 h-36 object-contain opacity-45 animate-pulse"
+              style={{ mixBlendMode: 'multiply' }}
+            />
+          </div>
           <div className="flex gap-2">
             {Array.from({ length: 5 }, (_, i) => (
               <Sk key={i} className="w-16 sm:w-20 aspect-square rounded-xl" />
