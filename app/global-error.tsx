@@ -1,8 +1,8 @@
 'use client';
 
 // ──── [LACLARC::SENTRY-GLOBAL-ERROR] v1 (Task 16) ────
-// أخطاء React الكبرى كتلقط هنا (global-error كيبدل الـ root layout وقت الخطأ —
-// علاش خاصو <html><body>). UI بالدارجة — نفس نبرة الموقع.
+// Major React errors are caught here (global-error replaces the root layout on error —
+// that's why it needs <html><body>). English UI — matching the site's tone.
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 
@@ -18,12 +18,17 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="en" dir="ltr">
       <body style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>وقع خطأ غير متوقع</h1>
+        <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>An unexpected error occurred</h1>
         <p style={{ color: '#666', marginBottom: '1.25rem' }}>
-          عفواً، شي حاجة خسرات من عندنا. عاود المحاولة عافاك.
+          Sorry, something went wrong on our end. Please try again.
         </p>
+        {error?.digest ? (
+          <p style={{ color: '#999', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+            Error code: {error.digest}
+          </p>
+        ) : null}
         <button
           onClick={() => reset()}
           style={{
@@ -36,7 +41,7 @@ export default function GlobalError({
             fontSize: '0.95rem',
           }}
         >
-          عاود المحاولة
+          Try again
         </button>
       </body>
     </html>

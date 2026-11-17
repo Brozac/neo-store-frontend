@@ -1,11 +1,11 @@
 'use client';
 
 // ──── [LACLARC::SENTRY-ROUTE-ERROR] v1 (F#94) ────
-// error boundary ديال segments — اللقطة الناقصة (F#94):
-//   global-error.tsx كيخدم غير لأخطاء الـ root layout. أخطاء الصفحات/الكونپونونتات
-//   كيصيطرهم Next بحدوده الافتراضية (default error boundary) → ما كيوصلوش لـ Sentry
-//   (catch داخلي، ماشي window.onerror). هادا error.tsx كيلقطهم ويصيفطهم —
-//   نفس UI الدارجة ديال global-error، بلا <html><body> حيت كيرندر داخل الـ layout.
+// Route segment error boundary — the missing piece (F#94):
+//   global-error.tsx only handles root layout errors. Page/component errors
+//   are caught by Next.js's default error boundary → they never reach Sentry
+//   (internal catch, not window.onerror). This error.tsx catches and reports them —
+//   same UI as global-error, without <html><body> since it renders inside the layout.
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 
@@ -29,13 +29,13 @@ export default function RouteError({
         minHeight: '50vh',
       }}
     >
-      <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>وقع خطأ غير متوقع</h1>
+      <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>An unexpected error occurred</h1>
       <p style={{ color: '#666', marginBottom: '1.25rem' }}>
-        عفواً، شي حاجة خسرات من عندنا. عاود المحاولة عافاك.
+        Sorry, something went wrong on our end. Please try again.
       </p>
       {error?.digest ? (
         <p style={{ color: '#999', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
-          رمز الخطأ: {error.digest}
+          Error code: {error.digest}
         </p>
       ) : null}
       <button
@@ -50,7 +50,7 @@ export default function RouteError({
           fontSize: '0.95rem',
         }}
       >
-        عاود المحاولة
+        Try again
       </button>
     </div>
   );
