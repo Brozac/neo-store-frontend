@@ -16,7 +16,6 @@ import { useInfiniteFeed } from '@/lib/useInfiniteFeed';
 import { useSiteConfig } from '../components/SiteConfigProvider';
 import { isCategoryHidden } from '@/lib/siteConfig';
 import FilterSortDrawer, { type DrawerSection } from '../components/FilterSortDrawer';
-import { GridSkeleton } from '../components/Skeleton';
 import { COLOR_FACETS, COLOR_SWATCHES } from '@/lib/filterSort';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'discount' | 'newest';
@@ -614,8 +613,9 @@ function HomeContent() {
             </div>
           )}
           {loading ? (
-            // F#104: grid skeleton بنفس columns ديال الفيد — بلا CLS (كان spinner كيحيد الكل)
-            <GridSkeleton count={10} />
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 border-3 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : gridProducts.length > 0 ? (
             <div
               className="columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4"
@@ -659,8 +659,9 @@ function HomeContent() {
           {/* 🎯 Sentinel — Temu-style infinite feed (بدل زر Load More) */}
           <div ref={feed.sentinelRef} className="h-10" />
           {feed.loadingMore && (
-            // F#104: الصف الجاي كيجي بسكيلت — spinner القديم كان بلون خارج العقد #5F8271
-            <GridSkeleton count={4} />
+            <div className="flex justify-center py-6">
+              <div className="w-6 h-6 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin mx-auto" />
+            </div>
           )}
           {isBrowsing && feed.done && !loading && products.length > 0 && (
             <p className="text-center text-xs text-gray-400 py-8">
@@ -688,10 +689,8 @@ function HomeContent() {
 export default function Home() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-temu-offwhite">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <GridSkeleton count={10} />
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-temu-offwhite">
+        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <HomeContent />

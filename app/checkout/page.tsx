@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { getStoredUtm } from '../components/UtmTracker';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { CheckoutSkeleton } from '../components/Skeleton'; // 🦴 F#104 — سكيلت الفورم بدل spinner
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -52,8 +51,8 @@ export default function CheckoutPage() {
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-temu-offwhite">
-        <CheckoutSkeleton />
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

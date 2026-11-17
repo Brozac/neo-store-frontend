@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useCart, getCartItemKey } from '../context/CartContext';
 import PaymentModal from '../components/PaymentModal';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { CartSkeleton } from '../components/Skeleton'; // 🦴 F#104 — سكيلت بدل spinner (zero CLS)
 
 export default function CartPage() {
   const router = useRouter();
@@ -71,8 +70,8 @@ export default function CartPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-temu-offwhite">
-        <CartSkeleton />
+      <div className="min-h-screen bg-temu-offwhite flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

@@ -103,7 +103,7 @@ export default function StoreSettingsPage() {
 
         {loading ? (
           <div className="bg-white rounded-2xl border border-temu-gray-border-light p-12 flex flex-col items-center gap-3">
-            <div className="w-7 h-7 border-2 border-temu-orange border-t-transparent rounded-full animate-spin"></div> {/* F#104: #5F8271 → fog-600 (توحيد العقد) */}
+            <div className="w-7 h-7 border-2 border-[#5F8271] border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xs font-bold text-gray-500">Loading store settings…</p>
           </div>
         ) : loadError ? (

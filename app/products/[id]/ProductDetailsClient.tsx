@@ -12,7 +12,6 @@ import BuyButton from '../../components/BuyButton';
 import DeliveryEstimator from '../../components/DeliveryEstimator';
 import { IMG } from '../../../lib/imageOptimizer';
 import { getColorHex } from '@/lib/colorHex'; // 🎨 F#101 — أسماء CJ → hex حقيقي
-import { ReviewRowSkeleton } from '../../components/Skeleton'; // 🦴 F#104 — سكيلت المراجعات وقت الـ fetch
 import { GlobeShippingIcon, ReturnsIcon, LockIcon } from '@/components/icons/LaclarcIcons';
 import GlassIcon from '@/components/ui/GlassIcon';
 import './pd.css'; // 📱 Task 17 — SERENE product mockup (mobile) — كلاسات pd-* معزولة بالكامل
@@ -526,8 +525,6 @@ export default function ProductDetailsClient({
   const initialDedup = useMemo(() => dedupeReviews(initialReviews), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [reviews, setReviews] = useState<Review[]>(initialDedup.list);
   const [dupesRemoved, setDupesRemoved] = useState(initialDedup.removed);
-  // 🦴 F#104: سكيلت غير إلا SSR ما جاب والو — الـ fetch الحي كيبدا (بلا صف فارغ)
-  const [reviewsLoading, setReviewsLoading] = useState(initialDedup.list.length === 0);
   // ⭐ [cj-reviews v2] — فلتر النجوم + Load more + الإجمالي الحقيقي (meta.total من CJ)
   const [starFilter, setStarFilter] = useState(0); // 0 = الكل · 1..5 فلتر نجمي
   const [visibleReviews, setVisibleReviews] = useState(REVIEWS_PAGE);
@@ -566,7 +563,6 @@ export default function ProductDetailsClient({
     if (Array.isArray(data)) {
       clean(data as Review[]);
       setReviewsMeta(null);
-      setReviewsLoading(false); // 🦴 F#104
       return;
     }
     if (data && typeof data === 'object' && Array.isArray((data as { reviews?: unknown }).reviews)) {
@@ -576,13 +572,11 @@ export default function ProductDetailsClient({
       setReviewsMeta(m
         ? { total: Number(m.total) || loaded, loaded: Number(m.loaded) || loaded, hasMore: Boolean(m.hasMore) }
         : null);
-      setReviewsLoading(false); // 🦴 F#104
       return;
     }
     setReviews([]); // 🛡️ error shape غير-array كان يكسر الصفحة كاملة (نفس حماية v1)
     setDupesRemoved(0);
     setReviewsMeta(null);
-    setReviewsLoading(false); // 🦴 F#104 — error كيوقف السكيلت باش empty state يبان
   };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [showStickyBar, setShowStickyBar] = useState(false);
@@ -780,7 +774,7 @@ export default function ProductDetailsClient({
     fetch(`${API_BASE_URL}/api/reviews/${product.id}?v2=1`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { applyReviewsPayload(data); }) // 🛡️ [cj-reviews v2] شكلين مقبولين — array قديم ولا {reviews, meta}
-      .catch((err) => { if (err?.name !== 'AbortError') { console.warn('reviews: fetch failed', err); setReviewsLoading(false); } });
+      .catch((err) => { if (err?.name !== 'AbortError') console.warn('reviews: fetch failed', err); });
 
     return () => {
       controller.abort();
@@ -1862,10 +1856,7 @@ export default function ProductDetailsClient({
           )}
 
           <div className="md:grid md:grid-cols-2 md:gap-4 mb-8">
-            {reviewsLoading && reviews.length === 0
-              ? // 🦴 F#104: صفوف سكيلت فنفس الgrid الحقيقي — حتى الـ fetch يرجع بلا صف فارغ
-                Array.from({ length: 4 }, (_, i) => <ReviewRowSkeleton key={i} />)
-              : shownReviews.map((rev) => (
+            {shownReviews.map((rev) => (
               <div key={rev.id} className="min-w-0">
                 {/* 📱 mockup rev — أفاتار دائري fog + نجوم ذهبية + نص 11.5 */}
                 <div className="pd-rev md:hidden">

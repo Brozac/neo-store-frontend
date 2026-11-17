@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../components/ProductCard';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { GridSkeleton } from '../components/Skeleton'; // 🦴 F#104 — grid skeleton بدل spinner
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -63,11 +62,9 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-temu-offwhite">
-        {/* F#104: نفس شكل النتيجة (grid كارتات) — spinner القديم كان بارز فالوسط */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <GridSkeleton count={8} />
-        </div>
+      <div className="min-h-screen bg-temu-offwhite flex flex-col justify-center items-center gap-3">
+        <div className="w-8 h-8 border-4 border-[#5B7EA6] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-bold text-gray-400">Loading saved items...</p>
       </div>
     );
   }

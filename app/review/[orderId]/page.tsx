@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import GlassIcon from '@/components/ui/GlassIcon';
-import { FormCardSkeleton } from '../../components/Skeleton'; // 🦴 F#104 — سكيلت الفورم بدل spinner
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -63,8 +62,8 @@ export default function ReviewPage() {
   };
 
   if (loading) return (
-    <main className="min-h-screen bg-temu-offwhite">
-      <FormCardSkeleton />
+    <main className="min-h-screen bg-temu-offwhite flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-temu-orange border-t-transparent rounded-full animate-spin" />
     </main>
   );
 
