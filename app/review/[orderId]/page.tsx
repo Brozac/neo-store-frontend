@@ -33,12 +33,23 @@ export default function ReviewPage() {
 
   const handleImageUpload = async (files: FileList) => {
     setUploading(true);
+    setError('');
     const formData = new FormData();
     Array.from(files).forEach(f => formData.append('images', f));
     try {
-      const res = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.urls) setImages(prev => [...prev, ...data.urls]);
+      // F#105-P3 — flow الدعوة: الزبون ما عندوش JWT هنا → نبعثو توكن الدعوة
+      // (x-review-token + x-review-order) — الباك يتحقق منهم ضد orders (completed + ما زال ما تتسعملش).
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        headers: { 'x-review-token': token, 'x-review-order': String(orderId || '') },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.urls) && data.urls.length) {
+        setImages(prev => [...prev, ...data.urls]);
+      } else {
+        setError(data.error || 'Image upload failed.');
+      }
     } catch { setError('Image upload failed.'); }
     finally { setUploading(false); }
   };
