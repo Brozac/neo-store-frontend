@@ -41,6 +41,9 @@ export default function AdminLoginPage() {
       try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON error page */ }
 
       if (res.ok) {
+        // 🩹 F-H2: علامة UI للmiddleware (غير حساسة — الخادم هو الحارس الحقيقي).
+        //   4h = نفس عمر admin_token الخادمي تقريباً.
+        document.cookie = 'admin_hint=1; path=/; SameSite=Lax; max-age=14400';
         router.push('/admin');
       } else {
         setError(data.message || data.error || 'Invalid administrative credentials');

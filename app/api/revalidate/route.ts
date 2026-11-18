@@ -12,8 +12,9 @@ import { NextResponse } from 'next/server';
 //   POST https://laclarc.com/api/revalidate
 //     header:  x-revalidate-secret: <REVALIDATE_SECRET>
 //     body:    { "tags": ["product-96454", "products-index"], "paths": ["/categories"] }
-//   ولا GET بقيم query (ساهل للـ curl):
-//     GET  /api/revalidate?secret=<...>&tags=product-96454,products-index&path=/categories
+//
+// 🩹 SECURITY-FIX (audit 2026-11-18 F-M1): GET بالسر في query string أُلغي — السر
+//   كيتسرب لسجلات Access/بوابيات/History. البديل: POST + الهيدر (timing-safe أدناه).
 //
 // الوسوم المتاحة فالكود:
 //   product-<id>     → صفحة منتج واحد بالضبط
@@ -32,9 +33,8 @@ function secretOk(provided: string | null): boolean {
 }
 
 async function handle(req: Request) {
-  const url = new URL(req.url);
-  const provided =
-    req.headers.get('x-revalidate-secret') || url.searchParams.get('secret');
+  // 🩹 SECURITY-FIX (F-M1): السر من الهيدر فقط — صفر secrets في query strings
+  const provided = req.headers.get('x-revalidate-secret');
 
   if (!secretOk(provided)) {
     return NextResponse.json(
@@ -58,14 +58,8 @@ async function handle(req: Request) {
     }
   }
 
-  const qTags = (url.searchParams.get('tags') || url.searchParams.get('tag') || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const qPaths = (url.searchParams.get('paths') || url.searchParams.get('path') || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const qTags: string[] = [];
+  const qPaths: string[] = [];
 
   const tags = [...new Set([...bodyTags, ...qTags])].slice(0, 50);
   const paths = [...new Set([...bodyPaths, ...qPaths])].slice(0, 50);
@@ -75,7 +69,7 @@ async function handle(req: Request) {
       {
         ok: false,
         error:
-          'حط tag ولا path: ?tags=product-96454,products-index&path=/categories',
+          'حط tag ولا path: { "tags": ["product-96454"], "paths": ["/categories"] }',
       },
       { status: 400 }
     );

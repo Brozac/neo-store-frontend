@@ -33,13 +33,17 @@ export default function CheckoutPage() {
       const url = await createCheckoutSession(
         items,
         {
-          token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
+          // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — بلا توكن من localStorage
           wheelDiscount: wheelDiscount || 0,
           utm: utmData,
         }
       );
 
       if (!url) throw new Error('No checkout URL returned from payment server.');
+      // 🩹 SECURITY-FIX (L1): تحقق وجهة redirect قبل التنقل (دفاع بعمق)
+      if (!/^https:\/\/(checkout\.stripe\.com|hooks\.stripe\.com|([\w-]+\.)?laclarc\.com)/i.test(url)) {
+        throw new Error('Invalid payment redirect URL.');
+      }
       window.location.href = url;
       // 🔒 no finally — success keeps button locked until redirect
     } catch (err: any) {

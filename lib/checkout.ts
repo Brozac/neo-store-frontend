@@ -28,11 +28,12 @@ export async function createCheckoutSession(
   opts: CreateCheckoutOpts = {}
 ): Promise<string> {
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  if (opts.token) headers['Authorization'] = `Bearer ${opts.token}`;
+  if (opts.token) headers['Authorization'] = `Bearer ${opts.token}`; // fallback قديم — الكوكي هو الأساس
 
   const res = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
     method: 'POST',
     headers,
+    credentials: 'include', // 🩹 SECURITY-FIX (F-H1): كوكي الجلسة httpOnly
     body: JSON.stringify({
       items,
       origin: window.location.origin,

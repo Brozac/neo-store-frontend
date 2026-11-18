@@ -31,11 +31,15 @@ const NO_CONTENT = new Set([204, 205]);
 
 export async function backendFetch<T>(
   path: string,
-  init: { method?: string; body?: unknown } = {}
+  init: { method?: string; body?: unknown; auth?: boolean } = {}
 ): Promise<T> {
   // 🆕 Next 16 — cookies() async
-  const cookieStore = await cookies();
-  const adminToken = cookieStore.get('admin_token')?.value;
+  // 🩹 SECURITY-FIX (audit 2026-11-18 F-M2): كوكي الأدمن كان يُلحق بكل النداءات
+  //   حتى العامة (validate-coupon / exchange) — تراكم صلاحيات غير لازم.
+  //   توّا: يُلحق فقط عند auth: true (المسارات الإدارية صراحةً).
+  const adminToken = init.auth
+    ? (await cookies()).get('admin_token')?.value
+    : undefined;
 
   const res = await fetch(`${BACKEND_URL}${path}`, {
     method: init.method || 'GET',

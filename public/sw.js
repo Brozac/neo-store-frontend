@@ -18,7 +18,7 @@ const PRECACHE_ASSETS = [
 
 // ✨ مسارات الدفع والجلسات الحساسة — لا تُخزن في الكاش أبداً
 // (تحتوي session_id + لا معنى لعرضها في وضع Offline)
-const NEVER_CACHE_ROUTES = ['/success', '/cancel', '/checkout'];
+const NEVER_CACHE_ROUTES = ['/success', '/cancel', '/checkout', '/orders', '/profile']; // 🩹 L4: صفحات المستخدم بلا كاش HTML
 
 // ✨ سقف الكاش الديناميكي — مع حماية الأصول الأساسية (Precache) من الحذف
 // بحيث لا يختفي الـ Offline Fallback ('/') تحت الضغط أبداً

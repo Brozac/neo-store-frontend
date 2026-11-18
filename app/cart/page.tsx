@@ -37,7 +37,8 @@ export default function CartPage() {
     if (!couponCode) return;
     setCouponMessage('');
     try {
-      const res = await fetch('https://neo-store-backend.onrender.com/api/validate-coupon', {
+      // 🩹 SECURITY-FIX (F-M6): URL مكتوب صلب كيتجاهل NEXT_PUBLIC_API_URL — توحيد المصدر
+      const res = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com')}/api/validate-coupon`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: couponCode, cartTotal: cartTotal })

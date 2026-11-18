@@ -29,18 +29,16 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
+    // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — بلا توكن من localStorage
+    if (typeof window !== 'undefined' && !localStorage.getItem('user_data')) {
       setLoadingUser(false);
       return;
     }
 
-    fetch(`${API_BASE_URL}/api/user/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    fetch(`${API_BASE_URL}/api/user/profile`, { credentials: 'include' })
       .then(res => {
         if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('token');
+          localStorage.removeItem('user_data');
           return null;
         }
         return res.ok ? res.json() : null;
@@ -62,9 +60,6 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
       return;
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) return;
-
     setUploadingPhotos(true);
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
@@ -74,7 +69,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
     try {
       const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         body: formData,
       });
       const data = await res.json();
@@ -98,9 +93,10 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    if (!token) {
+    // 🩹 F-H1: مؤشر الدخول المحلي = user_data؛ المصادقة عبر كوكي الجلسة
+    const signedIn = typeof window !== 'undefined' && !!localStorage.getItem('user_data');
+
+    if (!signedIn) {
       setMessage('❌ Please sign in to submit your product review.');
       return;
     }
@@ -118,8 +114,8 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         body: JSON.stringify({ 
           product_id: productId, 
           rating, 

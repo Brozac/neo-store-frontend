@@ -75,8 +75,12 @@ export default function SpinWheel() {
       });
       const claimData = await claimRes.json();
       if (claimData.wheelToken) sessionStorage.setItem('wheel_token', claimData.wheelToken);
-    } catch (e) { /* claim فاشل = خصم بلا token — السيرفر كيرفضو بأمان */ }
-    applyWheelDiscount(selectedSegment.value);
+      // 🩹 SECURITY-FIX (F-M4): النسبة الحقيقية من السيرفر (راندوم مرجّح سيرفر-سايد) —
+      //   النتيجة المحلية للعجلة مجرد أنيميشن؛ الخصم الفعلي = قيمة الخادم.
+      applyWheelDiscount(Number(claimData.pct) || 0);
+      return;
+    } catch (e) { /* claim فاشل = بلا خصم — السيرفر هو مصدر الحقيقة */ }
+    applyWheelDiscount(0);
       }
     }, 4000);
   };

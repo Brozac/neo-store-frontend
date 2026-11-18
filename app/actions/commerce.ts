@@ -132,7 +132,8 @@ export async function getSystemEventsAction(
       ? `?limit=${Math.min(limit, 200)}&type=${encodeURIComponent(type)}`
       : `?limit=${Math.min(limit, 200)}`;
     const data = await backendFetch<{ events: Record<string, unknown>[] }>(
-      `/api/admin/system-events${qs}`
+      `/api/admin/system-events${qs}`,
+      { auth: true } // 🩹 F-M2: كوكي الأدمن فقط للمسارات الإدارية
     );
     if (!Array.isArray(data.events)) {
       console.warn('[Action:systemEvents] unauthorized or error response');

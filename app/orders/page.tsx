@@ -43,10 +43,8 @@ export default function OrdersPage() {
   useEffect(() => {
     if (itemsFetchedRef.current || orders.length === 0) return;
     itemsFetchedRef.current = true;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
     Promise.all(orders.slice(0, 8).map(o =>
-      fetch(`${API_BASE_URL}/api/orders/${o.id}/items`, { headers })
+      fetch(`${API_BASE_URL}/api/orders/${o.id}/items`, { credentials: 'include' }) // 🩹 F-H1: كوكي الجلسة
         .then(r => r.ok ? r.json() : [])
         .catch(() => [])
         .then(items => [String(o.id), Array.isArray(items) ? items : []] as const)
@@ -56,16 +54,14 @@ export default function OrdersPage() {
   }, [orders, API_BASE_URL]);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
+    // 🩹 SECURITY-FIX (F-H1): مؤشر الدخول المحلي = user_data؛ الجلسة عبر كوكي httpOnly
+    if (typeof window === 'undefined' || !localStorage.getItem('user_data')) {
       router.push('/auth');
       return;
     }
 
     // 🩹 M#29 — الحصول على إيميل المستخدم لتمريره في زر Track
-    fetch(`${API_BASE_URL}/api/user/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    fetch(`${API_BASE_URL}/api/user/profile`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(profile => {
         if (profile?.email) setUserEmail(profile.email);
@@ -88,12 +84,12 @@ export default function OrdersPage() {
         }
 
         const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         });
 
         if (!ordersRes.ok) {
           if (ordersRes.status === 401 || ordersRes.status === 403) {
-            localStorage.removeItem('token');
+            localStorage.removeItem('user_data');
             router.push('/auth');
             return;
           }
@@ -179,11 +175,7 @@ export default function OrdersPage() {
     setOrderItems([]);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: HeadersInit = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/items`, { headers });
+      const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/items`, { credentials: 'include' }); // 🩹 F-H1
 
       if (!res.ok) {
         throw new Error('Failed to load details');

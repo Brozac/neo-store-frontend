@@ -56,9 +56,13 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
         const data = await res.json();
         if (!cancelled && Array.isArray(data.enabled)) {
           setEnabledGateways(data.enabled);
+        } else if (!cancelled) {
+          setEnabledGateways([]); // 🩹 SECURITY-FIX (L7): fail-closed — رد غير متوقع = بلا بوابات
         }
       } catch {
-        // fail-open
+        // 🩹 SECURITY-FIX (L7): كان fail-open (كل البوابات عند فشل الجلب)
+        //   → الواجهة تعرض طرق دفع لا تعمل. توّا fail-closed: بلا بوابات.
+        if (!cancelled) setEnabledGateways([]);
       } finally {
         if (!cancelled) setGatewaysLoaded(true);
       }
@@ -85,9 +89,8 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
     setError('');
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — بلا توكن من localStorage
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const utmData = getStoredUtm(); // ✨ جلب مصدر الإعلان
 
@@ -95,9 +98,10 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       const res = await fetch(`${API_BASE_URL}${route}`, {
         method: 'POST',
         headers,
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة (اختياري للخادم — يعرّف المستخدم)
         body: JSON.stringify({
           items: cartItems,
-          totalAmount: effectiveTotal,
+          totalAmount: effectiveTotal, // استرشادي — الخادم يعيد الحساب (authoritativeDZD/prepareSecureItems)
           origin: window.location.origin,
           couponCode: couponCode || null,
           utm: utmData // ✨ تمرير كائن UTM للبوابة
@@ -106,6 +110,11 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       const data = await res.json();
 
       if (data.url) {
+        // 🩹 SECURITY-FIX (L1): تحقق وجهة redirect قبل التنقل (دفاع بعمق — sink مغذى من رد الخادم)
+        if (!/^https:\/\/(checkout\.stripe\.com|hooks\.stripe\.com|([\w-]+\.)?laclarc\.com)/i.test(String(data.url))) {
+          setError('Invalid payment redirect URL.');
+          return;
+        }
         // 🩹 M#52 — احفظ order_number للعرض في صفحة الشكر
         if (data.orderNumber) sessionStorage.setItem('last_order_number', data.orderNumber);
         window.location.href = data.url;
@@ -153,13 +162,9 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       formData.append('customerEmail', customerEmail.trim());
       formData.append('customerAddress', JSON.stringify(shippingData));
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const headers: HeadersInit = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
       const res = await fetch(`${API_BASE_URL}/api/payment/manual`, {
         method: 'POST',
-        headers,
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة (اختياري — يربط الطلب بالحساب)
         body: formData
       });
 

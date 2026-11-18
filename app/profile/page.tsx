@@ -45,22 +45,21 @@ export default function ProfilePage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
+    // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — ما عادش نقرا التوكن من localStorage.
+    //   user_data (اسم/إيميل عرض) فقط مؤشر الدخول المحلي؛ التحقق الحقيقي من الخادم.
+    const hasLocalSession = typeof window !== 'undefined' && !!localStorage.getItem('user_data');
+    if (!hasLocalSession) {
       setLoading(false);
       return;
     }
 
     fetch(`${API_BASE_URL}/api/user/profile`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+      credentials: 'include', // كوكي الجلسة httpOnly
     })
       .then((res) => {
         if (!res.ok) {
           if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem('token');
+            localStorage.removeItem('user_data');
           }
           return null;
         }
@@ -80,8 +79,12 @@ export default function ProfilePage() {
       });
   }, [API_BASE_URL]);
 
-  const handleLogout = () => {
-    localStorage.clear();           // 🩹 كحل كل شيء (token + cart + wheel)
+  const handleLogout = async () => {
+    // 🩹 SECURITY-FIX (F-H1/L3): تنظيف مستهدف — كان localStorage.clear() يمسح
+    //   favorites وutm (فقدان بيانات غير جلسية). نحذف مفاتيح الجلسة فقط
+    //   + ننادي /api/logout باش الخادم يمسح كوكي الجلسة httpOnly.
+    try { await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' }); } catch { /* silent */ }
+    ['user_data', 'my_orders_cache', 'temp_user_profile'].forEach((k) => localStorage.removeItem(k));
     sessionStorage.clear();         // 🩹 كحل my_orders_cache
     setUser(null);
     router.push('/auth');
@@ -89,11 +92,11 @@ export default function ProfilePage() {
 
   // 🔐 F#73 — تحميل قائمة البصمات + مزامنة password managers عند التحميل (دليل management §93)
   const loadPasskeys = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) return;
+    // 🩹 F-H1: المصادقة عبر كوكي الجلسة — بلا توكن من localStorage
+    if (typeof window !== 'undefined' && !localStorage.getItem('user_data')) return;
     setPkLoading(true);
     try {
-      const info = await listPasskeys(token);
+      const info = await listPasskeys(undefined);
       setPkList(info.credentials);
       syncAcceptedCredentials(info.rpId, info.userId, info.credentials); // Signal API — console.warn فقط
     } catch {
@@ -111,11 +114,11 @@ export default function ProfilePage() {
 
   // 🔐 F#73 — flow الإدارة: بلا authenticatorAttachment → security keys مسموحة (دليل management §78)
   const handleAddPasskey = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token || pkBusy) return;
+    if (pkBusy) return;
+    if (typeof window !== 'undefined' && !localStorage.getItem('user_data')) return;
     setPkBusy(true);
     try {
-      const result = await passkeyRegister({ token, promotion: false });
+      const result = await passkeyRegister({ promotion: false }); // 🩹 F-H1: كوكي الجلسة
       if (result.ok) {
         await loadPasskeys();
       } else if (result.message) {
@@ -129,13 +132,12 @@ export default function ProfilePage() {
   };
 
   const handleDeletePasskey = async (cred: PasskeyCredInfo) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token || pkBusy) return;
+    if (pkBusy) return;
     const okGo = await uiConfirm(`Delete "${cred.name}"? Devices relying on it will no longer be able to sign in with it.`);
     if (!okGo) return;
     setPkBusy(true);
     try {
-      await deletePasskey(token, cred.id);
+      await deletePasskey(undefined, cred.id); // 🩹 F-H1: كوكي الجلسة
       await loadPasskeys(); // كيعاود يطلق signalAllAcceptedCredentials بالمتبقي (دليل management §95)
     } catch (err) {
       await uiAlert((err as Error)?.message || 'Delete failed.');
@@ -146,15 +148,14 @@ export default function ProfilePage() {
 
   // إعادة التسمية = label فالسيرفر فقط — بلا signalCurrentUserDetails (دليل management §72)
   const handleRenamePasskey = async (cred: PasskeyCredInfo) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const newName = renameValue.trim();
-    if (!token || !newName) {
+    if (!newName) {
       setRenamingId(null);
       return;
     }
     setPkBusy(true);
     try {
-      await renamePasskey(token, cred.id, newName);
+      await renamePasskey(undefined, cred.id, newName); // 🩹 F-H1: كوكي الجلسة
       setRenamingId(null);
       await loadPasskeys();
     } catch (err) {
@@ -173,9 +174,6 @@ export default function ProfilePage() {
       return;
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) return;
-
     setUploadingImage(true);
     setUploadError('');
     const formData = new FormData();
@@ -184,9 +182,7 @@ export default function ProfilePage() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         body: formData,
       });
       const data = await safeJson(res);
@@ -198,8 +194,8 @@ export default function ProfilePage() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
           },
+          credentials: 'include', // 🩹 F-H1
           body: JSON.stringify({ name: user.name, profilePicture: newImageUrl })
         });
 
@@ -228,15 +224,14 @@ export default function ProfilePage() {
 
     setUpdating(true);
     setEditError('');
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         body: JSON.stringify({
           name: editName.trim(),
           profilePicture: user?.profile_picture
@@ -276,15 +271,15 @@ export default function ProfilePage() {
   };
 
   const getUserOrders = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
+    // 🩹 F-H1: مؤشر الدخول المحلي = user_data (التوكن ما عادش يتخزن)
+    if (typeof window === 'undefined' || !localStorage.getItem('user_data')) {
       router.push('/auth');
       return;
     }
     // 🩹 M#29 — جلب الطلبات مع status_label
     try {
       const res = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include', // 🩹 F-H1: كوكي الجلسة
       });
       const data = await safeJson(res);
       // ✨ حفظ الطلبات في sessionStorage لنستعملها في صفحة /orders مع status_label
@@ -325,10 +320,11 @@ export default function ProfilePage() {
 
           <div className="relative p-1 rounded-full bg-linear-to-tr from-[#5B7EA6] to-[#7FA1C4] mb-4 shadow-md">
             <div className="p-1 bg-white rounded-full">
-              {user?.profile_picture ? (
+              {user?.profile_picture && /^https:\/\//i.test(user.profile_picture) && /^(https:\/\/([\w-]+\.)?(laclarc\.com|cloudinary\.com|r2\.dev|pub-[\w-]+\.r2\.dev)\/)/i.test(user.profile_picture) ? (
                 <img
                   src={user.profile_picture}
                   alt={user.name || 'User Avatar'}
+                  referrerPolicy="no-referrer"
                   className="w-24 h-24 rounded-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';

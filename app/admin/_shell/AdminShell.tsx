@@ -169,7 +169,11 @@ export default function AdminShell({
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    try { await adminApi.post('/admin/logout'); } finally { router.push('/admin/login'); }
+    // 🩹 F-H2: مسح علامة الmiddleware مع الكوكي الخادمي
+    try { await adminApi.post('/admin/logout'); } finally {
+      document.cookie = 'admin_hint=; path=/; SameSite=Lax; max-age=0';
+      router.push('/admin/login');
+    }
   };
 
   const SidebarContent = (

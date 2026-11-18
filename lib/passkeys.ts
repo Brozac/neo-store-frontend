@@ -46,7 +46,8 @@ export type PasskeyLoginResult =
   | { ok: false; reason: 'cancelled' | 'error'; message?: string };
 
 export interface PasskeyRegisterOpts {
-  token: string;
+  /** 🩹 F-H1: اختياري توّا — الجلسة عبر كوكي httpOnly؛ التوكن fallback للتوافق القديم */
+  token?: string;
   /** flow الترقية بعد password → platform authenticator (دليل registration §6) */
   promotion?: boolean;
   /** conditional create صامت بعد login ناجح (دليل conditional-create) */
@@ -210,6 +211,7 @@ export function startConditionalLogin(
       const res = await fetch(`${API_BASE_URL}/api/auth/passkey/login/options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 🩹 F-H1
         body: JSON.stringify({}),
       });
       if (!res.ok) return;
@@ -237,6 +239,7 @@ export function startConditionalLogin(
         const res = await fetch(`${API_BASE_URL}/api/auth/passkey/login/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // 🩹 F-H1: الجلسة عبر الكوكي httpOnly
           body: JSON.stringify(encoded),
         });
         if (!res.ok && res.status === 404) {
@@ -277,6 +280,7 @@ export async function passkeyLogin(): Promise<PasskeyLoginResult> {
     const res = await fetch(`${API_BASE_URL}/api/auth/passkey/login/options`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 🩹 F-H1
       body: JSON.stringify({}),
     });
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -308,6 +312,7 @@ export async function passkeyLogin(): Promise<PasskeyLoginResult> {
     const res = await fetch(`${API_BASE_URL}/api/auth/passkey/login/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 🩹 F-H1: الجلسة عبر الكوكي httpOnly
       body: JSON.stringify(encoded),
     });
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -352,9 +357,12 @@ export async function passkeyRegister(opts: PasskeyRegisterOpts): Promise<{ ok: 
     // تنظيف الpipeline قبل الcreate — إلزامي حتى للconditional create (دليل conditional-create §1)
     abortAutofill();
 
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (opts.token) authHeaders['Authorization'] = `Bearer ${opts.token}`; // fallback قديم — الكوكي هو الأساس
     const res = await fetch(`${API_BASE_URL}/api/auth/passkey/register/options`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${opts.token}` },
+      headers: authHeaders,
+      credentials: 'include', // 🩹 F-H1: المصادقة عبر كوكي الجلسة httpOnly
       body: JSON.stringify({ promotion: opts.promotion === true, conditional: opts.conditional === true }),
     });
     const optionsJSON = (await res.json().catch(() => null)) as Record<string, unknown> | null;
@@ -390,7 +398,8 @@ export async function passkeyRegister(opts: PasskeyRegisterOpts): Promise<{ ok: 
     try {
       const verifyRes = await fetch(`${API_BASE_URL}/api/auth/passkey/register/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${opts.token}` },
+        headers: authHeaders,
+        credentials: 'include', // 🩹 F-H1
         body: JSON.stringify(encoded),
       });
       if (!verifyRes.ok) {
@@ -412,18 +421,23 @@ export async function passkeyRegister(opts: PasskeyRegisterOpts): Promise<{ ok: 
 }
 
 // ─── الإدارة — دليل passkey-management (CRUD فوق endpoints السيرفر) ───────
-export async function listPasskeys(token: string): Promise<PasskeyListResult> {
+export async function listPasskeys(token?: string): Promise<PasskeyListResult> {
   const res = await fetch(`${API_BASE_URL}/api/auth/passkey/credentials`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'include', // 🩹 F-H1: المصادقة عبر كوكي الجلسة httpOnly
   });
   if (!res.ok) throw new Error('Could not load your passkeys.');
   return res.json();
 }
 
-export async function renamePasskey(token: string, id: string, name: string): Promise<void> {
+export async function renamePasskey(token: string | undefined, id: string, name: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/api/auth/passkey/credentials/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: 'include', // 🩹 F-H1
     body: JSON.stringify({ name }),
   });
   if (!res.ok) {
@@ -432,10 +446,11 @@ export async function renamePasskey(token: string, id: string, name: string): Pr
   }
 }
 
-export async function deletePasskey(token: string, id: string): Promise<void> {
+export async function deletePasskey(token: string | undefined, id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/api/auth/passkey/credentials/${encodeURIComponent(id)}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'include', // 🩹 F-H1
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;

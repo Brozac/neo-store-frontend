@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   // 1) الجلسة الإدارية — نفس نمط app/api/site-config PUT
   try {
-    await backendFetch('/api/admin/settings');
+    await backendFetch('/api/admin/settings', { auth: true }); // 🩹 F-M2
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 401 || status === 403) {

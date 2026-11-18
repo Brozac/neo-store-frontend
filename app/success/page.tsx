@@ -215,6 +215,10 @@ function SuccessContent() {
           quantity: 1,
         }]
       );
+      // 🩹 SECURITY-FIX (L1): تحقق وجهة redirect قبل التنقل (دفاع بعمق)
+      if (!/^https:\/\/(checkout\.stripe\.com|hooks\.stripe\.com|([\w-]+\.)?laclarc\.com)/i.test(String(url))) {
+        throw new Error('Invalid payment redirect URL.');
+      }
       window.location.href = url;
     } catch (err) {
       uiAlert('Could not initiate add-on checkout. Your main order is still safe.');

@@ -71,7 +71,7 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   // ─── 1. التحقق من الجلسة: نفس كوكي الأدمن كيتفحص عند الباك الحي ───
   try {
-    await backendFetch('/api/admin/settings');
+    await backendFetch('/api/admin/settings', { auth: true }); // 🩹 F-M2
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 401 || status === 403) {

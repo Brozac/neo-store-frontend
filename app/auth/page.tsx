@@ -10,7 +10,13 @@ import { passkeyLogin, startConditionalLogin, pkSupported, passkeyRegister, Pass
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/profile';
+  // 🩹 SECURITY-FIX (audit 2026-11-18 F-M5): تصفية الـ redirect — كان open-redirect
+  //   (?redirect=https://evil.com أو //evil.com يخرج من الموقع بعد الدخول).
+  //   يُقبل فقط مسار داخلي نسبي آمن، وإلا /profile.
+  const rawRedirect = searchParams.get('redirect') || '/profile';
+  const redirectPath = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') && !rawRedirect.includes('://')
+    ? rawRedirect
+    : '/profile';
   
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -43,6 +49,7 @@ function AuthContent() {
       const res = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 🩹 F-H1: الجلسة في كوكي httpOnly — ما كتتخزنش في localStorage
         body: JSON.stringify({ 
           email: formData.email.trim().toLowerCase(), 
           password: formData.password 
@@ -57,7 +64,9 @@ function AuthContent() {
       }
       
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        // 🩹 SECURITY-FIX (F-H1): التوكن عمرو ما يتخزن في localStorage — الجلسة كاملة
+        //   عبر كوكي httpOnly session_token (الخادم يضبطو في استجابة /api/login).
+        //   user_data (اسم/إيميل عرض فقط) يبقى للتزيين الفوري.
         if (data.user) {
           localStorage.setItem('user_data', JSON.stringify(data.user));
         }
@@ -99,7 +108,7 @@ function AuthContent() {
 
   // 🔐 F#73 — تخزين ناجح + توجيه (مشترك بين الconditional UI والدخول بالزر)
   const completePasskeyLogin = (data: { token: string; user?: PasskeyUserData | Record<string, unknown> }) => {
-    localStorage.setItem('token', data.token);
+    // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly (الخادم يضبطو) — بلا تخزين توكن
     if (data.user) {
       localStorage.setItem('user_data', JSON.stringify(data.user));
     }
