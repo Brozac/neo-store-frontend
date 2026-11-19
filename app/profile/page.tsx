@@ -42,7 +42,6 @@ export default function ProfilePage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   useEffect(() => {
     // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — ما عادش نقرا التوكن من localStorage.
@@ -53,7 +52,7 @@ export default function ProfilePage() {
       return;
     }
 
-    fetch(`${API_BASE_URL}/api/user/profile`, {
+    fetch(`/api/user/profile`, {
       credentials: 'include', // كوكي الجلسة httpOnly
     })
       .then((res) => {
@@ -77,13 +76,13 @@ export default function ProfilePage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [API_BASE_URL]);
+  }, []);
 
   const handleLogout = async () => {
     // 🩹 SECURITY-FIX (F-H1/L3): تنظيف مستهدف — كان localStorage.clear() يمسح
     //   favorites وutm (فقدان بيانات غير جلسية). نحذف مفاتيح الجلسة فقط
     //   + ننادي /api/logout باش الخادم يمسح كوكي الجلسة httpOnly.
-    try { await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' }); } catch { /* silent */ }
+    try { await fetch(`/api/logout`, { method: 'POST', credentials: 'include' }); } catch { /* silent */ }
     ['user_data', 'my_orders_cache', 'temp_user_profile'].forEach((k) => localStorage.removeItem(k));
     sessionStorage.clear();         // 🩹 كحل my_orders_cache
     setUser(null);
@@ -180,7 +179,7 @@ export default function ProfilePage() {
     formData.append('images', file);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/upload`, {
+      const res = await fetch(`/api/upload`, {
         method: 'POST',
         credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         body: formData,
@@ -190,7 +189,7 @@ export default function ProfilePage() {
       if (res.ok && data.urls && data.urls.length > 0) {
         const newImageUrl = data.urls[0];
 
-        const updateRes = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        const updateRes = await fetch(`/api/user/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -226,7 +225,7 @@ export default function ProfilePage() {
     setEditError('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
+      const res = await fetch(`/api/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +277,7 @@ export default function ProfilePage() {
     }
     // 🩹 M#29 — جلب الطلبات مع status_label
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
+      const res = await fetch('/api/orders/my-orders', {
         credentials: 'include', // 🩹 F-H1: كوكي الجلسة
       });
       const data = await safeJson(res);

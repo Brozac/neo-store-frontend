@@ -137,7 +137,7 @@ function SuccessContent() {
       try {
         const endpoint = method === 'crypto' 
           ? `${API_BASE_URL}/api/payment/crypto/verify` 
-          : `${API_BASE_URL}/api/payment/verify-session`;
+          : '/api/payment/verify-session'; // Phase B: نسبي — Worker كيتحقق مع Stripe نيشان
 
         const payload = method === 'crypto' 
           ? { order_id: orderIdParam } 

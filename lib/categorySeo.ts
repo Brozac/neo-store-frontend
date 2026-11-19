@@ -22,6 +22,12 @@ export const fetchCategorySeo = cache(
     // سلاغ واحد فقط — الأخير فالمسار (nested paths كيدخلو هنا)
     const last = (slugPath || '').split('/').filter(Boolean).pop() || '';
     if (!last || !/^[a-z0-9-]+$/.test(last)) return null;
+    // 🆕 F106 — DB أولاً (undefined → المسار القديم للـ API). found:false = جواب نهائي.
+    const dbResult = await (await import('./db-reads')).dbCategorySeo(last);
+    if (dbResult !== undefined) {
+      const data = dbResult as unknown as CategorySeo;
+      return data?.found ? data : null;
+    }
     try {
       // ✨ Tenet #4 — بلا hardcoded URLs
       const base =

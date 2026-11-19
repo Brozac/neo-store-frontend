@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+// 🆕 F106 — minimal count عبر Hyperdrive قبل مسار الـ API
+import { dbProductsMinimal } from '@/lib/db-reads';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
@@ -12,16 +14,22 @@ export const revalidate = 86400;
 
 export async function GET() {
   let productChunks = 1;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=1`, {
-      next: { revalidate: 86400 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      productChunks = Math.max(1, Math.ceil((data.total || 0) / (data.chunkSize || CHUNK)));
+  // 🆕 F106 — DB أولاً (undefined → المسار القديم للـ API)
+  const fromDb = await dbProductsMinimal(1);
+  if (fromDb) {
+    productChunks = Math.max(1, Math.ceil(fromDb.total / (fromDb.chunkSize || CHUNK)));
+  } else {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=1`, {
+        next: { revalidate: 86400 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        productChunks = Math.max(1, Math.ceil((data.total || 0) / (data.chunkSize || CHUNK)));
+      }
+    } catch {
+      // fallback — شطوة وحدة على الأقل
     }
-  } catch {
-    // fallback — شطوة وحدة على الأقل
   }
 
   const urls = [

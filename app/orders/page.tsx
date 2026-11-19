@@ -33,7 +33,6 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
   // 🎨 REPLICA_V4 — مصغرات منتجات كل طلب (oc-items تاع المعاينة)
   // جلب خفيف best-effort لأول 8 طلبات بالتوازي — يفشل بصمت (البطاقة بلا مصغرات)
@@ -44,14 +43,14 @@ export default function OrdersPage() {
     if (itemsFetchedRef.current || orders.length === 0) return;
     itemsFetchedRef.current = true;
     Promise.all(orders.slice(0, 8).map(o =>
-      fetch(`${API_BASE_URL}/api/orders/${o.id}/items`, { credentials: 'include' }) // 🩹 F-H1: كوكي الجلسة
+      fetch(`/api/orders/${o.id}/items`, { credentials: 'include' }) // 🩹 F-H1: كوكي الجلسة
         .then(r => r.ok ? r.json() : [])
         .catch(() => [])
         .then(items => [String(o.id), Array.isArray(items) ? items : []] as const)
     )).then(entries => {
       setItemsMap(Object.fromEntries(entries));
     });
-  }, [orders, API_BASE_URL]);
+  }, [orders]);
 
   useEffect(() => {
     // 🩹 SECURITY-FIX (F-H1): مؤشر الدخول المحلي = user_data؛ الجلسة عبر كوكي httpOnly
@@ -61,7 +60,7 @@ export default function OrdersPage() {
     }
 
     // 🩹 M#29 — الحصول على إيميل المستخدم لتمريره في زر Track
-    fetch(`${API_BASE_URL}/api/user/profile`, { credentials: 'include' })
+    fetch(`/api/user/profile`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(profile => {
         if (profile?.email) setUserEmail(profile.email);
@@ -83,7 +82,7 @@ export default function OrdersPage() {
           } catch { /* cache تالف — نتجاهله */ }
         }
 
-        const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
+        const ordersRes = await fetch('/api/orders/my-orders', {
           credentials: 'include', // 🩹 F-H1: كوكي الجلسة
         });
 
@@ -111,7 +110,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [router, API_BASE_URL]);
+  }, [router]);
 
   // 🩹 M#29 — عرض status_label إن وجد (من الباكند) وإلا الحالة الخام
   const getStatusLabel = (order: Order): string => {
@@ -175,7 +174,7 @@ export default function OrdersPage() {
     setOrderItems([]);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}/items`, { credentials: 'include' }); // 🩹 F-H1
+      const res = await fetch(`/api/orders/${order.id}/items`, { credentials: 'include' }); // 🩹 F-H1
 
       if (!res.ok) {
         throw new Error('Failed to load details');

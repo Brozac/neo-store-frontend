@@ -68,7 +68,7 @@ export default function SpinWheel() {
       if (selectedSegment.value > 0) {
         // 🩹 WHEEL_V1 — claim token موقّع من السيرفر (النسبة العارية ما تتصادقش)
     try {
-      const claimRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'}/api/wheel/claim`, {
+      const claimRes = await fetch('/api/wheel/claim', { // Phase B: نسبي — Worker مباشرة
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pct: selectedSegment.value })

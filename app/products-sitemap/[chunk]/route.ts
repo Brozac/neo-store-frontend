@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { isCategoryHidden } from '@/lib/siteConfig';
 import { getServerVisibility } from '@/lib/visibilityServer';
+// 🆕 F106 — minimal chunk عبر Hyperdrive قبل مسار الـ API
+import { dbProductsMinimal } from '@/lib/db-reads';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
@@ -19,11 +21,18 @@ export async function GET(
   const chunkId = Math.max(0, parseInt(chunk, 10) || 0);
 
   try {
-    const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=${chunkId + 1}`, {
-      next: { revalidate: 86400 },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    // 🆕 F106 — DB أولاً (undefined → المسار القديم للـ API)
+    let data: { products?: Record<string, unknown>[] } | null = null;
+    const fromDb = await dbProductsMinimal(chunkId + 1);
+    if (fromDb) {
+      data = { products: fromDb.products };
+    } else {
+      const res = await fetch(`${BACKEND_URL}/api/products?minimal=1&page=${chunkId + 1}`, {
+        next: { revalidate: 86400 },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+    }
     let products = Array.isArray(data?.products) ? data.products : [];
 
     // ═══ v28 [total-vanish] — منتجات الأقسام المخفية ما كيتفهرسوش ═══

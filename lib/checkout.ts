@@ -1,7 +1,5 @@
 'use client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
-
 export interface CheckoutItem {
   id: string | number;
   title: string;
@@ -30,10 +28,12 @@ export async function createCheckoutSession(
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (opts.token) headers['Authorization'] = `Bearer ${opts.token}`; // fallback قديم — الكوكي هو الأساس
 
-  const res = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
+  // Phase B: مسار نسبي — الـ Worker كيخدمو مباشرة (proxy → Render · fallback أصلي)
+  const res = await fetch('/api/create-checkout-session', {
     method: 'POST',
     headers,
     credentials: 'include', // 🩹 SECURITY-FIX (F-H1): كوكي الجلسة httpOnly
+    signal: AbortSignal.timeout(30000),
     body: JSON.stringify({
       items,
       origin: window.location.origin,

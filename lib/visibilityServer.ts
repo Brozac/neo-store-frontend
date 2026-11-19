@@ -18,6 +18,8 @@ import {
   DEFAULT_CONFIG,
   type SiteVisibilityConfig,
 } from './siteConfig';
+// 🆕 F106 — قراءة store_settings عبر Hyperdrive قبل مسار الـ API
+import { dbSettings } from './db-reads';
 
 const BACKEND_URL = (
   process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'
@@ -26,6 +28,11 @@ const BACKEND_URL = (
 export const VISIBILITY_TAG = 'visibility';
 
 export async function getServerVisibility(): Promise<SiteVisibilityConfig> {
+  // 🆕 F106 — DB أولاً (store_settings عبر Hyperdrive — undefined → المسار القديم للـ API)
+  const db = await dbSettings();
+  if (db !== undefined) {
+    return configFromBackendLists(db.hidden_routes, db.hidden_sections, db.show_reels);
+  }
   try {
     const res = await fetch(`${BACKEND_URL}/api/settings`, {
       next: { revalidate: 86400, tags: [VISIBILITY_TAG] },

@@ -1,5 +1,9 @@
 import { notFound } from 'next/navigation';
 import ProductDetailsClient from './ProductDetailsClient';
+// 🆕 F106 HYPERDRIVE-RO — القراءات السيرفرية من Supabase نيشان (render واقف = الكاتالوگ حي)
+// العقد: dbProduct → undefined (ما كاينش DB) / null (404) / الصف.
+// أي فشل DB كيرجع أوتوماتيكياً لمسار الـ API الباك تحت — سلوك اليوم محفوظ بالكامل.
+import { dbProduct, dbRelated, dbProductsLimit } from '@/lib/db-reads';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
 
@@ -50,6 +54,13 @@ function httpsify(u: unknown): string {
 // ⚡ pre-generate أول 100 منتج وقت الـ build — الباقي on-demand
 // ℹ️ الترتيب من السيرفر (غير موثق كـ "أحدث") — تحسين مستقبلي: ?minimal=1 (chunk خفيف ids فقط)
 export async function generateStaticParams() {
+  // 🆕 F106 — DB أولاً (نفس السقف 50 ديال الباك)، fallback للـ API كما هو
+  const fromDb = await dbProductsLimit(100);
+  if (fromDb) {
+    return fromDb
+      .slice(0, 100)
+      .map((p) => ({ id: String(p.id) }));
+  }
   try {
     const res = await fetch(`${API_URL}/api/products?limit=100`, {
       next: { revalidate: 86400 },
@@ -96,6 +107,12 @@ class ProductUnavailableError extends Error {
 const PRODUCT_FETCH_TIMEOUT_MS = 6000;
 
 async function fetchProductOnce(id: string) {
+  // 🆕 F106 — DB أولاً (undefined = ما كاينش DB → المسار القديم للـ API)
+  const pid = parseInt(id, 10);
+  if (Number.isInteger(pid) && pid > 0) {
+    const fromDb = await dbProduct(pid);
+    if (fromDb !== undefined) return fromDb; // null (404 صادقة) ولا الصف
+  }
   const res = await fetch(`${API_URL}/api/products/${id}`, {
     next: { revalidate: 86400, tags: [`product-${id}`] },
     signal: AbortSignal.timeout(PRODUCT_FETCH_TIMEOUT_MS),
@@ -125,6 +142,12 @@ async function getProduct(id: string) {
 }
 
 async function getRelatedProducts(id: string) {
+  // 🆕 F106 — DB أولاً (undefined → المسار القديم للـ API)
+  const pid = parseInt(id, 10);
+  if (Number.isInteger(pid) && pid > 0) {
+    const fromDb = await dbRelated(pid);
+    if (fromDb !== undefined) return fromDb;
+  }
   try {
     const res = await fetch(`${API_URL}/api/products/${id}/related`, {
       next: { revalidate: 86400, tags: ['products-index'] },

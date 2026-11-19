@@ -61,6 +61,27 @@
 			"database_id": "ef5d0d6a-9e23-473a-89b5-3923516fe0a6",
 		},
 	],
+	// ─── 🆕 F106 HYPERDRIVE-RO — قراءة الكاتالوغ من Supabase نيشان ───
+	// الدور laclarc_ro = SELECT فقط على products/store_settings/categories
+	// (بوليسيات RLS ro_select_*) — الكتابة مستحيلة على مستوى الداتابيز.
+	//
+	// 🔑 قبل أول deploy بالـ binding: اصنع config ودخّل الـ id هنا:
+	//    Dashboard: Workers & Pages → Hyperdrive → Connect database
+	//      → الاسم: laclarc-ro + الـ connection string (شوف README-F106)
+	//    ولا CLI: npx wrangler hyperdrive create laclarc-ro \
+	//      --connection-string="postgresql://laclarc_ro.<ref>:<pw>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+	//
+	// ⚠️ إلا الـ config ما كاينش/الـ id غالط → deploy كيفشل؛ القراءات
+	//    كيرجعو للـ API الباك أوتوماتيكياً (سلوك F106 الـ fallback).
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "5ccf5cf2f4d84f0e9bf72eb540b97918",
+			// للـ dev المحلي (wrangler dev) — نفس دور laclarc_ro بلا Hyperdrive.
+			// ⚠️ ماتسحوش للريبو العام — بدل بالقيمة الحقيقية محلياً فقط.
+			"localConnectionString": "postgresql://laclarc_ro.<PROJECT_REF>:<RO_PASSWORD>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres",
+		},
+	],
 	// ─── طابور إعادة التوليد (DO) — ضروري للـ revalidate الزمني 86400 ───
 	"durable_objects": {
 		"bindings": [
