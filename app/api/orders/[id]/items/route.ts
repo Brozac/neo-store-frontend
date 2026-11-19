@@ -64,7 +64,9 @@ export async function GET(
       [id],
     );
     return NextResponse.json(items);
-  } catch {
+  } catch (e) {
+    // 🛡️ بلا صمت — درس 2026-11-19
+    console.warn('[pb-orders] fallback failed:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

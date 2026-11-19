@@ -1,0 +1,6 @@
+{
+  "name": "laclarc-pbdiag",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-12",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"]
+}

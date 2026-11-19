@@ -21,7 +21,8 @@ export default function SearchBar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  // 🔧 F107 — /api/search نسبية (Worker: proxy → db-ro)
+  const API_BASE_URL = '';
 
   // 🩹 F#27-resp: خانة البحث كتعمر بالكلمة من الـ URL (?search=) — المالك كان كيجي للنتائج
   // والخانة خاوية (ما كيشوفش واش بحث عليه) — mount effect بـ window.location (بلا useSearchParams

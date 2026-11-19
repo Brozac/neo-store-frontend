@@ -69,7 +69,8 @@ export default function CategoryClient({ h1Text }: { h1Text?: string | null }) {
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   // ✨ Tenet #4 — بلا hardcoded URLs
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  // 🔧 F107 — مسارات نسبية: listing من الـ Worker (proxy → db-ro fallback)
+  const API_BASE_URL = '';
 
   // ═══ F#57-Phase2 — حالة الفلترة فوق الكاتب (resetKey تاع الـ hook كيقراها) ═══
   const [applied, setApplied] = useState<FilterState>(DEFAULT_FILTERS);

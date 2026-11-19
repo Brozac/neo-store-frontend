@@ -12,7 +12,8 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [touchedProductId, setTouchedProductId] = useState<string | null>(null);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  // 🔧 F107 — by-ids نسبية (Worker: proxy → db-ro)
+  const API_BASE_URL = '';
 
   const fetchFavorites = useCallback(async () => {
     try {

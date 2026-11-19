@@ -198,7 +198,8 @@ export async function pbApplyCouponToTotal(
       clamped,
       coupon,
     };
-  } catch {
+  } catch (e) {
+    console.warn('[pb-coupon] apply failed (fail-closed):', e instanceof Error ? e.message : e);
     return fail; // ✅ Fail-closed
   }
 }

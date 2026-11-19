@@ -104,7 +104,8 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const categoryQuery = searchParams.get('category') || '';
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  // 🔧 F107 — مسارات نسبية: الكاتالوگ كيتخدم من الـ Worker نفسو (proxy → db-ro)
+  const API_URL = '';
 
   const [dealsProducts, setDealsProducts] = useState<any[]>([]);
   const [categoryStructure, setCategoryStructure] = useState<any[]>([{ name: 'All', slug: 'all' }]);

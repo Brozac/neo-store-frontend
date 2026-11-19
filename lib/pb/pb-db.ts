@@ -34,8 +34,18 @@ export async function getRwSql(): Promise<RwSql | null> {
       connect_timeout: 15,
       idle_timeout: 5,
     }) as unknown as RwSql;
-    // الإغلاق بعد نهاية الطلب — postgres.js كيصبر على الاستعلامات الجارية
-    waitUntil(sql.end({ timeout: 5 }).catch(() => {}));
+    // 🔧 إصلاح مثبت بالـ diag الحي (2026-11-19 — laclarc-pbdiag):
+    // end() الفوري داخل waitUntil كان كيبدا يسد الـ pool قبل أول query →
+    // كل العمليات RW كتفشل فورياً بـ `write CONNECTION_ENDED` (0ms).
+    // الحل المثبت حياً: الإغلاق مؤجَّل 8s (الطلب يسالى قبل) + idle_timeout backstop.
+    waitUntil(
+      new Promise<void>((resolve) => {
+        setTimeout(() => {
+          void sql.end({ timeout: 3 }).catch(() => {});
+          resolve();
+        }, 8000);
+      }),
+    );
     return sql;
   } catch (e) {
     console.warn('[pb-db] rw init failed:',

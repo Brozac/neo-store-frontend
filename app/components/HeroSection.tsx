@@ -91,7 +91,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     }
   }, []);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'; // <GlassIcon ch="✨" size="xs" /> Tenet #4 + fallback
+  // 🔧 F107 — مسارات نسبية (Worker: proxy → db-ro) · <GlassIcon ch="✨" size="xs" /> Tenet #4 + fallback
+  const API_URL = '';
 
   useEffect(() => {
     const controller = new AbortController();

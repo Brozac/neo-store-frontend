@@ -43,7 +43,9 @@ export async function GET(request: Request) {
     );
     const withLabels = rows.map((order) => ({ ...order, status_label: pbGetStatusLabel(order.status) }));
     return NextResponse.json(withLabels);
-  } catch {
+  } catch (e) {
+    // 🛡️ بلا صمت — درس 2026-11-19
+    console.warn('[pb-orders] fallback failed:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

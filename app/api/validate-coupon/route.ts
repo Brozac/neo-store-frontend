@@ -43,7 +43,9 @@ export async function POST(request: Request) {
       newTotal: total.toFixed(2),
       message: `Coupon applied! You saved $${discount.toFixed(2)}`,
     });
-  } catch {
+  } catch (e) {
+    // 🛡️ بلا صمت — درس 2026-11-19
+    console.warn('[pb-coupon] fallback failed:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

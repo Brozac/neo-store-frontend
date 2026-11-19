@@ -342,3 +342,354 @@ export async function dbProductsMinimal(
     return undefined;
   }
 }
+
+// ═════════════════════════════════════════════════════════════════════
+// 🆕 F107 CATALOG-LIVE (2026-11-19) — مرايا listing كاملة باش الرئيسية/
+// الفئات/البحث/المفضلة يخدمو بلا Render. كل مرآة = نفس SQL حرفياً من
+// server.js (المصدر: neo-store-backend-FIXED.zip — نفس قواعد الحرفية).
+// ═════════════════════════════════════════════════════════════════════
+
+// escapeLikeSafe — server.js:6
+function escapeLikeSafe(s: string): string {
+  return String(s).replace(/[\\%_]/g, '\\$&');
+}
+// CATALOG_SORTS — server.js:2900
+const CATALOG_SORTS: Record<string, string> = {
+  'price-asc': 'price ASC, id DESC',
+  'price-desc': 'price DESC, id ASC',
+  newest: 'created_at DESC, id DESC',
+};
+// SIZE_RX_SQL — server.js:2617
+const SIZE_RX_SQL = '^(?:xxs|xs|s|m|l|xl|xxl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|\\d{1,4})$';
+// parsePriceParam — server.js:2905
+function parsePriceParam(v: string | null): number | null {
+  const n = parseFloat(String(v ?? ''));
+  return Number.isFinite(n) && n >= 0 && n <= 1000000 ? Math.round(n * 100) / 100 : null;
+}
+// parseNamesParam — server.js:2917 (F#59 — نفس المنقّي حرفياً)
+function parseNamesParam(v: string | null, isSize: boolean): string[] {
+  const raw = String(v ?? '');
+  if (!raw.trim()) return [];
+  const seen = new Set<string>();
+  for (const part of raw.split(',')) {
+    const c = part.trim().slice(0, 40);
+    if (!c) continue;
+    if (isSize ? !SW_SIZE_ONLY_RX.test(c) : SW_SIZE_ONLY_RX.test(c)) continue;
+    seen.add(c);
+    if (seen.size >= 8) break;
+  }
+  return [...seen];
+}
+// namesOrFrag — server.js:2944 (المسار القديم فقط — fastReady=false دايماً فالـ Worker)
+function namesOrFrag(
+  names: string[],
+  params: unknown[],
+  cfg: { extractSql: string; vocabGuard?: string },
+): string {
+  const ors = names.map((name) => {
+    params.push(escapeLikeSafe(name));
+    return `EXISTS (
+      SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(variants) = 'array' THEN variants ELSE '[]'::jsonb END) cv(val)
+      WHERE ${cfg.extractSql} ILIKE $${params.length}${cfg.vocabGuard || ''}
+    )`;
+  });
+  return ors.length === 1 ? ors[0] : `(${ors.join(' OR ')})`;
+}
+// buildCatalogFilters — server.js:2959 (F#57-Phase2 + F#58/59 — نفس الفلاتر حرفياً)
+function buildCatalogFilters(q: URLSearchParams, params: unknown[]): string[] {
+  const frags: string[] = [];
+  const minP = parsePriceParam(q.get('minPrice'));
+  const maxP = parsePriceParam(q.get('maxPrice'));
+  if (minP !== null || maxP !== null) frags.push('price > 0'); // FIX-ZERO
+  if (minP !== null) { params.push(minP); frags.push(`price >= $${params.length}`); }
+  if (maxP !== null) { params.push(maxP); frags.push(`price <= $${params.length}`); }
+  const colours = parseNamesParam(q.get('colour'), false);
+  if (colours.length) {
+    frags.push(namesOrFrag(colours, params, {
+      extractSql: "regexp_replace(cv.val->>'variantKey', '-[^-]+$', '')",
+    }));
+  }
+  const sizes = parseNamesParam(q.get('size'), true);
+  if (sizes.length) {
+    frags.push(namesOrFrag(sizes, params, {
+      extractSql: "regexp_replace(cv.val->>'variantKey', '^.*-', '')",
+      vocabGuard: ` AND regexp_replace(cv.val->>'variantKey', '^.*-', '') ~* '${SIZE_RX_SQL}'`,
+    }));
+  }
+  return frags;
+}
+// sortSqlFor — server.js:2989 (whitelist — بلا حقن)
+function sortSqlFor(q: URLSearchParams): string | null {
+  return CATALOG_SORTS[String(q.get('sort') || '').trim().toLowerCase()] || null;
+}
+
+const CATALOG_PER = 24; // server.js:3021
+
+/**
+ * مرآة GET /api/products?page=N — page mode (F#57 + mosaic md5).
+ * category prefix ILIKE مع فلاتر price/colour/size/sort — نفس SQL حرفياً.
+ */
+export async function dbCatalogPage(
+  q: URLSearchParams,
+): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const page = Math.max(1, parseInt(q.get('page') || '1', 10) || 1);
+    const cat = (q.get('category') || '').trim();
+    const cols = `id, title, price, original_price, image_url, category, video_url${SW_SQL}`;
+    // 🆕 category mode — فئات كبار بلا سقف (BL-CAT-SCROLL)
+    if (cat && cat !== 'All') {
+      const params: unknown[] = [`${escapeLikeSafe(cat)}%`];
+      const whereExtra = buildCatalogFilters(q, params);
+      const sortSql = sortSqlFor(q);
+      const rows = await sql.unsafe(
+        `SELECT ${cols}
+         FROM products WHERE stock_status = true AND category ILIKE $1
+         ${whereExtra.length ? 'AND ' + whereExtra.join(' AND ') : ''}
+         ${sortSql ? 'ORDER BY ' + sortSql : 'ORDER BY sort_order ASC, id DESC'}
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, CATALOG_PER, (page - 1) * CATALOG_PER],
+      );
+      return withSwatches(rows);
+    }
+    // 🆕 Temu-mosaic — homepage feed متنوع (deterministic md5 shuffle + tiebreaker)
+    const mosaicParams: unknown[] = [];
+    const mosaicWhere = buildCatalogFilters(q, mosaicParams);
+    const mosaicSort = sortSqlFor(q);
+    const rows = await sql.unsafe(
+      `SELECT ${cols}
+       FROM products WHERE stock_status = true
+       ${mosaicWhere.length ? 'AND ' + mosaicWhere.join(' AND ') : ''}
+       ORDER BY ${mosaicSort || 'md5(category || id::text), id DESC'}
+       LIMIT $${mosaicParams.length + 1} OFFSET $${mosaicParams.length + 2}`,
+      [...mosaicParams, CATALOG_PER, (page - 1) * CATALOG_PER],
+    );
+    return withSwatches(rows);
+  } catch (e) {
+    console.warn('[db-ro] dbCatalogPage failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/**
+ * مرآة GET /api/products?count=1 — عدّاد الفئة الصادق (نفس فلاتر page-mode).
+ */
+export async function dbCatalogCount(
+  q: URLSearchParams,
+): Promise<{ count: number } | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const cat = (q.get('category') || '').trim();
+    const countParams: unknown[] = [];
+    const countWhere = buildCatalogFilters(q, countParams);
+    let sqlText: string;
+    let cParams: unknown[];
+    if (cat && cat !== 'All') {
+      cParams = [`${escapeLikeSafe(cat)}%`, ...countParams]; // FIX-LIKE
+      sqlText = `SELECT COUNT(*)::int AS n FROM products WHERE stock_status = true AND category ILIKE $1${countWhere.length ? ' AND ' + countWhere.join(' AND ') : ''}`;
+    } else {
+      cParams = countParams;
+      sqlText = `SELECT COUNT(*)::int AS n FROM products WHERE stock_status = true${countWhere.length ? ' AND ' + countWhere.join(' AND ') : ''}`;
+    }
+    const rows = await sql.unsafe(sqlText, cParams);
+    return { count: Number(rows[0]?.n ?? 0) };
+  } catch (e) {
+    console.warn('[db-ro] dbCatalogCount failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/**
+ * مرآة GET /api/products?search=... [&category=...] — بحث/تصنيف صارم
+ * (server.js:3113 — exact OR prefix '/%' للفئة، ILIKE %q% للبحث، سقف 200).
+ */
+export async function dbCatalogSearch(
+  q: URLSearchParams,
+): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const search = q.get('search') || '';
+    const category = q.get('category') || 'All';
+    let query = `SELECT id, title, price, original_price, image_url, category, video_url${SW_SQL} FROM products WHERE stock_status = true`;
+    const params: unknown[] = [];
+    if (search) {
+      params.push(`%${escapeLikeSafe(search)}%`); // FIX-LIKE
+      query += ` AND title ILIKE $${params.length}`;
+    }
+    if (category !== 'All') {
+      params.push(escapeLikeSafe(category)); // FIX-LIKE (exact ما يتأثرش)
+      query += ` AND (category = $${params.length} OR category LIKE $${params.length} || '/%')`;
+    }
+    query += ` ORDER BY sort_order ASC, id DESC LIMIT 200`;
+    const rows = await sql.unsafe(query, params);
+    return withSwatches(rows);
+  } catch (e) {
+    console.warn('[db-ro] dbCatalogSearch failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/** مرآة GET /api/products (bare — بلا limit) — سقف FULL_CAP=5000 (server.js:3100). */
+export async function dbCatalogFull(): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const rows = await sql.unsafe(
+      `SELECT id, title, price, original_price, image_url, category, video_url, created_at
+       FROM products WHERE stock_status = true ORDER BY sort_order ASC, id DESC LIMIT 5000`,
+    );
+    return rows; // بلا سواتشات عمداً — نفس الباك (الفرع الكامل)
+  } catch (e) {
+    console.warn('[db-ro] dbCatalogFull failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/** مرآة GET /api/products/deals — is_sourced=true سقف 10 (server.js:3170). */
+export async function dbDeals(): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const rows = await sql.unsafe(
+      'SELECT id, title, price, original_price, image_url FROM products WHERE stock_status = true AND is_sourced = true ORDER BY id DESC LIMIT 10',
+    );
+    return rows;
+  } catch (e) {
+    console.warn('[db-ro] dbDeals failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/**
+ * مرآة GET /api/products/by-ids — المفضلة (server.js:3146).
+ * 🩹 array param مع prepare:false كيمشي بـ Simple protocol → inline literals
+ *    (ints منقّيين فقط — نفس حرس FIX-IDS-BOUND — بلا injection ممكنة).
+ */
+export async function dbProductsByIds(
+  idsParam: string,
+): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const ids = String(idsParam || '')
+      .split(',')
+      .map((s) => parseInt(s, 10))
+      .filter((n) => Number.isInteger(n) && n > 0 && n <= 2147483647)
+      .slice(0, 100);
+    if (ids.length === 0) return [];
+    const rows = await sql.unsafe(
+      `SELECT id, title, price, original_price, image_url, category, video_url${SW_SQL}
+       FROM products
+       WHERE stock_status = true AND id IN (${ids.join(',')})
+       ORDER BY sort_order ASC, id DESC
+       LIMIT 100`,
+    );
+    return withSwatches(rows);
+  } catch (e) {
+    console.warn('[db-ro] dbProductsByIds failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/**
+ * مرآة GET /api/categories — شجرة الفئات + صورة ممثلة ذكية (LATERAL)
+ * (categoryService.getCategoryTree:137 + التخصيب server.js:1593-1640).
+ */
+export async function dbCategoriesTree(): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const rows = await sql.unsafe(
+      'SELECT id, level, name, slug, parent_id, cj_category_id FROM categories ORDER BY level ASC, name ASC',
+    );
+    const byId = new Map<string, Record<string, unknown>>();
+    for (const row of rows) {
+      byId.set(String(row.id), {
+        id: row.id, name: row.name, slug: row.slug,
+        cjCategoryId: row.cj_category_id, children: [],
+      });
+    }
+    const roots: Record<string, unknown>[] = [];
+    for (const row of rows) {
+      const node = byId.get(String(row.id));
+      if (!node) continue;
+      if (row.parent_id && byId.has(String(row.parent_id))) {
+        (byId.get(String(row.parent_id))!.children as unknown[]).push(node);
+      } else if (!row.parent_id) {
+        roots.push(node);
+      }
+    }
+    // 🆕 Temu-style rail: صورة ممثلة لكل فئة — نفس LATERAL حرفياً
+    try {
+      const imgs = await sql.unsafe(`
+        SELECT c.slug, img.image_url
+        FROM categories c
+        LEFT JOIN LATERAL (
+          SELECT p.image_url
+          FROM products p
+          WHERE p.stock_status = true
+            AND p.image_url IS NOT NULL AND p.image_url <> ''
+            AND (p.category = c.slug OR p.category LIKE c.slug || '-%' OR p.category LIKE c.slug || '/%')
+          ORDER BY
+            p.sort_order DESC NULLS LAST,
+            p.is_sourced DESC,
+            (p.video_url IS NOT NULL AND p.video_url <> '') DESC,
+            COALESCE(array_length(p.images, 1), 0) DESC,
+            p.id DESC
+          LIMIT 1
+        ) img ON true`);
+      const imgMap = new Map<string, string | null>();
+      for (const r of imgs) imgMap.set(String(r.slug), (r.image_url as string) ?? null);
+      const attach = (nodes: Record<string, unknown>[]) => {
+        for (const n of nodes || []) {
+          if (!n?.slug) continue;
+          n.image_url = imgMap.get(String(n.slug)) || null;
+          const children = n.children as Record<string, unknown>[] | undefined;
+          if (Array.isArray(children) && children.length) {
+            attach(children);
+            if (!n.image_url) n.image_url = children.find((c) => c.image_url)?.image_url || null;
+          }
+        }
+      };
+      attach(roots);
+    } catch (e) {
+      console.warn('[db-ro] categories image enrichment failed:',
+        e instanceof Error ? e.message : e); // بلا صمت — الشجرة كترجع بلا صور
+    }
+    return roots;
+  } catch (e) {
+    console.warn('[db-ro] dbCategoriesTree failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
+/** مرآة GET /api/search?q= — سقف 5 (server.js:2534 — نفس الـ escape [%_] حرفياً). */
+export async function dbSearch(
+  q: string,
+): Promise<Record<string, unknown>[] | undefined> {
+  const sql = await getRoSql();
+  if (!sql) return undefined;
+  try {
+    const safe = String(q || '').replace(/[%_]/g, '\\$&'); // نفس hygiene الباك
+    if (safe.length < 1) return [];
+    const rows = await sql.unsafe(
+      `SELECT id, title, price, image_url FROM products WHERE stock_status = true AND title ILIKE $1 ORDER BY id DESC LIMIT 5`,
+      [`%${safe}%`],
+    );
+    return rows;
+  } catch (e) {
+    console.warn('[db-ro] dbSearch failed — API fallback:',
+      e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}

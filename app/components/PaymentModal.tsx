@@ -39,7 +39,9 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
   const [enabledGateways, setEnabledGateways] = useState<string[]>(ALL_GATEWAYS);
   const [gatewaysLoaded, setGatewaysLoaded] = useState(false);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  // 🔧 F107 — نسبية: gateways + create-checkout-session من الـ Worker.
+  // crypto/manual كيمشيو عبر /api/payment/[method] (proxy → 501 واضح إلا Render واقف)
+  const API_BASE_URL = '';
 
   const EXCHANGE_RATE = Number(process.env.NEXT_PUBLIC_USD_TO_DZD_RATE) || 255;
   const effectiveTotal = finalTotal > 0 ? finalTotal : totalAmount;
