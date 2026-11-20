@@ -4,6 +4,7 @@ import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 import { Marcellus } from 'next/font/google';
 import { getServerVisibility } from '@/lib/visibilityServer';
+import GlobalImgFallback from './components/GlobalImgFallback';
 
 // ✨ SERENE V2 — خط البراند Marcellus (mockup .brandname/.brandtag)
 // next/font = self-hosted في البناء — بلا FOUT وبلا طلب خارجي وقت التشغيل
@@ -106,6 +107,10 @@ export default async function RootLayout({
         <Providers initialCfg={visibility}>
           {children}
         </Providers>
+
+        {/* 🩹 F108 — الحارس الكلي ديال الصور: كيبدل أي صورة CJ ميتة بـ placeholder
+            + كيبلّغ /api/img-report — fail-safe، كيrender null */}
+        <GlobalImgFallback />
 
         {/* Meta Pixel — ⚡ Phase 3: lazyOnload — التتبع لا يزاحم تفاعل الزبون الأول (INP) */}
         {/* ✓ Task 13: الـ ID منقّى بأرقام فقط [^\d] — ما فيهاش XSS */}
