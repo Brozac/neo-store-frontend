@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { isCategoryHidden } from '@/lib/siteConfig';
 import { getServerVisibility } from '@/lib/visibilityServer';
+// 🩹 F109 — شجرة الفئات من Hyperdrive RO (نفس مصدر /api/categories fallback)
+import { dbCategoriesTree } from '@/lib/db-reads';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
 
 // ISR-BUDGET — ISR يومي صريح: الـ route ماعندوش داعي يخدم كل طلبية
 export const revalidate = 86400;
@@ -32,17 +33,14 @@ function collectFullPaths(nodes: CategoryNode[], prefix = '', out: string[] = []
 export async function GET() {
   const now = new Date().toISOString();
   let paths: string[] = [];
+  // ═══ F109-SITEMAP-LIVE — DB أولاً (2026-11-20) ═══
+  // كان fetch من ${BACKEND_URL}/api/categories — و api.laclarc.com راه CNAME
+  // لـ neo-store-backend.onrender.com (Render معلق billing → 503 Service
+  // Suspended) → res.ok=false كل مرة → urlset خاوي كيتكاشا ويتعمر خاوي
+  // فكل revalidation. dbCategoriesTree = نفس SQL حرفياً ولا undefined فاشل.
   try {
-    const res = await fetch(`${BACKEND_URL}/api/categories`, { next: { revalidate: 86400 } });
-    if (res.ok) {
-      const data = await res.json();
-      const tree: CategoryNode[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.children)
-          ? data.children
-          : [];
-      paths = collectFullPaths(tree);
-    }
+    const tree = await dbCategoriesTree();
+    if (tree) paths = collectFullPaths(tree as CategoryNode[]);
   } catch {
     // fail → urlset خاوي (الفهرس يبقى صالح)
   }
