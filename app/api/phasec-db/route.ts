@@ -217,6 +217,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, r: rows[0]?.r ?? { ok: false } });
       }
 
+      // ─── Phase E-2: سياق CAPI/الدفع (SELECT مضيق — rw عنده SELECT على orders) ───
+      // PII للـ Purchase (conversionService) + stripe_session_id للبوابة المالية API-level.
+      // بلا أسرار — القيم تُستهلك فالـ Rust worker برك.
+      case 'capi_context': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000) {
+          return NextResponse.json({ ok: true, r: null });
+        }
+        const rows = await sql.unsafe(
+          `SELECT total_amount, customer_email, customer_phone, customer_name, customer_city,
+                  utm_source, utm_campaign, click_id, stripe_session_id, payment_method
+             FROM orders WHERE id = $1 LIMIT 1`,
+          [orderId],
+        );
+        return NextResponse.json({ ok: true, r: rows[0] ?? null });
+      }
+
       // ─── سجل الأحداث ───
       case 'system_events': {
         const limit = Number(params.limit);

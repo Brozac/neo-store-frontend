@@ -171,10 +171,17 @@ function SuccessContent() {
               sessionStorage.setItem(dedupKey, new Date().toISOString());
             // 🩹 Mission #13: second-shot — إعادة إرسال CAPI بالبصمات الكاملة
             // (آمن: نفس event_id → Meta dedup → لا مضاعفة، فقط تحسين المطابقة)
-            fetch(`${API_BASE_URL}/api/payment/second-shot`, {
+            // 🆕 Phase E-2: endpoint الحي على rpc worker (كان Render الميت) + بصمات _fbp/_fbc
+            const RPC_BASE_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.laclarc.com';
+            const { fbp: shotFbp, fbc: shotFbc } = collectMetaFingerprints();
+            fetch(`${RPC_BASE_URL}/api/payment/second-shot`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderId }),
+              body: JSON.stringify({
+                orderId: data.orderId,
+                ...(shotFbp ? { _fbp: shotFbp } : {}),
+                ...(shotFbc ? { _fbc: shotFbc } : {}),
+              }),
             }).catch(() => {});
             }
           }
