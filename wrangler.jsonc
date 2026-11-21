@@ -39,7 +39,10 @@
                 "binding": "ASSETS",
         },
         // ─── مرجع داخلي إجباري (يجب أن يطابق "name" فوق) ───
-        "services": [
+        "ai": {
+        "binding": "AI",
+    },
+    "services": [
                 {
                         "binding": "WORKER_SELF_REFERENCE",
                         "service": "laclarc",

@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server';
 import { getRwSql } from '@/lib/pb/pb-db';
 import { pbSecret } from '@/lib/pb/pb-user';
+import { getPbRuntime } from '@/lib/pb/pb-env';
 import { pbRateLimit, pbClientIp } from '@/lib/pb/pb-limiter';
 
 export const dynamic = 'force-dynamic';
@@ -172,6 +173,33 @@ export async function POST(request: Request) {
     // النموذج الفاشل → النموذج التالي · الكل فاشل → الرد الودي بنفس اللغة
     console.warn(`[pb-chat] ${model} failed:`, e instanceof Error ? e.message : e);
   }
+  }
+
+  // 🆕 Phase F — طبقة Workers AI: Gemini محجوب جغرافياً من الـ colos تاع EEA
+  //   (الجمهور تاعنا كيمشي عبر فرنسا) — Workers AI خدّام على الحافة بلا egress.
+  try {
+    const { env } = await getPbRuntime();
+    const ai = env.AI as
+      | { run: (m: string, input: unknown) => Promise<{ response?: string }> }
+      | undefined;
+    if (ai) {
+      const msgs = [
+        { role: 'system', content: ON_SITE_AI_PROMPT + orderContext },
+        ...history.slice(-4).map((h) => ({
+          role: h.sender === 'user' ? 'user' : 'assistant',
+          content: String(h.text || ''),
+        })),
+        { role: 'user', content: message },
+      ];
+      const res = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+        messages: msgs,
+        max_tokens: 300,
+      });
+      const reply = (res.response || '').trim();
+      if (reply) return NextResponse.json({ reply });
+    }
+  } catch (e) {
+    console.warn('[pb-chat] workers-ai failed:', e instanceof Error ? e.message : e);
   }
   return NextResponse.json({ reply: FALLBACK_REPLIES[lang].error });
 }
