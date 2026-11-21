@@ -15,7 +15,7 @@ export default function CjProductPage() {
   const [added, setAdded] = useState(false);
   const [mainImg, setMainImg] = useState('');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — /api/cj-live/product محلية
 
   // 🌍 Geo Flow — علم البلد من كود ISO-2 (الاستجابة فيها geo أصلاً)
   const flagOf = (cc?: string) =>

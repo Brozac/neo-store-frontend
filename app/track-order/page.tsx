@@ -108,7 +108,7 @@ function TrackOrderContent() {
   const [liveEvents, setLiveEvents] = useState<Record<number, TrackingEvent[]>>({});
   const [eventsLoading, setEventsLoading] = useState<number | null>(null);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — track + track-info محليين
 
   const executeTrack = useCallback(async (targetId: string, targetEmail: string) => {
     const email = targetEmail.trim().toLowerCase();

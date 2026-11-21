@@ -42,7 +42,7 @@ export default function CategoriesClient() {
     const base =
       process.env.NEXT_PUBLIC_API_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'https://neo-store-backend.onrender.com';
+      ''; // Phase F — /api/categories محلية
     fetch(`${base}/api/categories`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {

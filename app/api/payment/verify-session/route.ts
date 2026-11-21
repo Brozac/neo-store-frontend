@@ -12,6 +12,7 @@ import { getRwSql } from '@/lib/pb/pb-db';
 import { getPbRuntime, pbVar } from '@/lib/pb/pb-env';
 import { stripeRetrieveCheckoutSession } from '@/lib/pb/pb-stripe';
 import { pbNormalizeEmail } from '@/lib/pb/pb-secure-checkout';
+import { pbFulfillRegularOrder } from '@/lib/pb/pb-fulfill';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,6 +109,13 @@ export async function POST(request: Request) {
     if (!fullOrder) {
       // metadata يشير لطلب ماشي موجود (session قديم/test) — رد نظيف
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    // 🆕 Phase F — إغلاق الدائرة: الحجز العادي للطلبات على rpc (Reconcile E10)
+    //   كيتطلق فقط عند الـ flip الفعلي (pending → paid) — rpc هو المرسل الوحيد
+    //   لإيميل التأكيد + cron sweep كيغطي أي فوات.
+    if (updateRes.length > 0) {
+      void pbFulfillRegularOrder(orderId);
     }
 
     const itemsRes = await sql.unsafe(

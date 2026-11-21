@@ -15,7 +15,7 @@ export default function SessionBridge() {
         const session = await res.json();
         if (session?.laclarcToken) {
           // تحويل التوكن الصالح إلى كوكي httpOnly على نطاق الـ API (الخادم يضبطه)
-          const API = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+          const API = ''; // Phase F — /api/auth/cookie-session محلية
           await fetch(`${API}/api/auth/cookie-session`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${session.laclarcToken}` },

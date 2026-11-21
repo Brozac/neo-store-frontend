@@ -227,7 +227,7 @@ export function isCategoryHidden(productCategory: unknown, hidden: string[] | un
 // هاد الدالة كتحول القوائمين لكونفيگ F#93 القياسي — طبقة التنفيذ (Provider,
 // BranchGate, Navbar, Footer, HomeClient…) ما كتبدل والو.
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com').replace(/\/+$/, '');
+const BACKEND_URL = ''; // Phase F — /api/settings محلية
 
 function normRoute(raw: unknown): string {
   if (typeof raw !== 'string') return '';

@@ -23,7 +23,7 @@ export default function MultiStepRegister() {
   const [togglePassword, setTogglePassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — /api/register محلية
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

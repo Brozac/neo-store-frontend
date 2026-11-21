@@ -2,7 +2,12 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
+// 🩹 Phase F — سوء التوجيه الحي (أكتشاف 2026-11-22): NEXT_PUBLIC_API_URL (var تاع
+//   الـ worker = https://api.laclarc.com) كان كيربح الـ fallback → نداءات exchange/admin
+//   كيضربو في نفس الـ worker (404 ذاتي). الآن: rpc صريح دايماً — validate-coupon
+//   النسبي باقي محلي (الفحص فالمسارات أدناه).
+const BACKEND_URL =
+  process.env.RPC_INTERNAL_URL || 'https://rpc.laclarc.com';
 
 /**
  * استدعاء Backend من السيرفر — server-to-server
@@ -29,6 +34,10 @@ export class BackendError extends Error {
 
 const NO_CONTENT = new Set([204, 205]);
 
+// 🩹 Phase F — المسارات اللي عندها JIT route محلية على laclarc.com نفسها (ماكاينش فالـ rpc):
+//   validate-coupon = route محلية (Phase B). الباقي (exchange/admin) على rpc.
+const SELF_PATHS = new Set(['/api/validate-coupon']);
+
 export async function backendFetch<T>(
   path: string,
   init: { method?: string; body?: unknown; auth?: boolean } = {}
@@ -41,7 +50,8 @@ export async function backendFetch<T>(
     ? (await cookies()).get('admin_token')?.value
     : undefined;
 
-  const res = await fetch(`${BACKEND_URL}${path}`, {
+  const base = SELF_PATHS.has(path) ? '' : BACKEND_URL;
+  const res = await fetch(`${base}${path}`, {
     method: init.method || 'GET',
     headers: {
       'Content-Type': 'application/json',

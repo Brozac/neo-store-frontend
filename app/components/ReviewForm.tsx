@@ -26,7 +26,7 @@ export default function ReviewForm({ productId, onReviewAdded }: ReviewFormProps
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — profile/upload/reviews-add محليين
 
   useEffect(() => {
     // 🩹 SECURITY-FIX (F-H1): الجلسة عبر كوكي httpOnly — بلا توكن من localStorage

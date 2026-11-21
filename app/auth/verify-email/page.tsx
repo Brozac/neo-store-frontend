@@ -27,7 +27,7 @@ function VerifyEmailContent() {
     let cancelled = false;
     (async () => {
       try {
-        const API = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+        const API = ''; // Phase F — /api/verify-email محلية
         const res = await fetch(`${API}/api/verify-email?token=${encodeURIComponent(token)}`);
         if (cancelled) return;
         if (res.ok) {

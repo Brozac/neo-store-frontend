@@ -136,7 +136,7 @@ function SuccessContent() {
     const verify = async () => {
       try {
         const endpoint = method === 'crypto' 
-          ? `${API_BASE_URL}/api/payment/crypto/verify` 
+          ? '/api/payment/crypto/verify' // Phase F — JIT محلي
           : '/api/payment/verify-session'; // Phase B: نسبي — Worker كيتحقق مع Stripe نيشان
 
         const payload = method === 'crypto' 

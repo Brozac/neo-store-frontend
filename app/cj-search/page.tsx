@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import GlassIcon from '@/components/ui/GlassIcon';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const API_BASE_URL = ''; // Phase F — /api/cj-live/search محلية
 
 function SearchContent() {
   const searchParams = useSearchParams();

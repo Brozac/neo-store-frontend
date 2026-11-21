@@ -95,6 +95,57 @@ export async function pbSignWheelJwt(
   return `${header}.${payload}.${b64urlEncodeBytes(new Uint8Array(sig))}`;
 }
 
+export interface PbUserJwtClaims {
+  id: number | string;
+  /** login/social توكنات ({id,name} ولا {id,email}) · verify/reset بلا name */
+  name?: string;
+  email?: string;
+  /** typed tokens — 'verify' / 'reset' (🩹 FIX#3 من الباك: verify-token ما يصلحش reset-token) */
+  type?: 'verify' | 'reset';
+  /** claims زايدة (passkey/profile…) */
+  extra?: Record<string, unknown>;
+}
+
+/**
+ * توقيع user JWT (HS256) — نفس شكل `jwt.sign(payload, JWT_SECRET, { expiresIn })`
+ * تاع الباك القديم: header {alg:'HS256',typ:'JWT'} · iat+exp · التحقق بـ pbVerifyJwt
+ * + نفس السر (JWT_SECRET عبر getPbJwtSecret) — متوافق مع jsonwebtoken تاع الباك.
+ *
+ * استدعاءان مقبولان (merge ديال نسختين):
+ *   pbSignUserJwt(claims, secret, ttlSeconds?)   ← السر مرّر صراحة (نمط pbSignWheelJwt)
+ *   pbSignUserJwt(claims, ttlSeconds?)           ← السر كيتجبد من env (getPbJwtSecret)
+ * ttl default 7d (604800s) بحال login/social · 1d للـ verify · 15m للـ reset.
+ */
+export async function pbSignUserJwt(
+  claims: PbUserJwtClaims,
+  secretOrTtl?: string | number,
+  maybeTtl?: number,
+): Promise<string> {
+  let secret: string;
+  let ttlSeconds: number;
+  if (typeof secretOrTtl === 'string' && secretOrTtl) {
+    secret = secretOrTtl;
+    ttlSeconds = maybeTtl ?? 7 * 24 * 60 * 60;
+  } else {
+    const resolved = await getPbJwtSecret();
+    if (!resolved) throw new Error('JWT secret unavailable');
+    secret = resolved;
+    ttlSeconds = typeof secretOrTtl === 'number' ? secretOrTtl : 7 * 24 * 60 * 60;
+  }
+  const iat = Math.floor(Date.now() / 1000);
+  const { extra, ...rest } = claims;
+  const payload = { ...rest, ...(extra ?? {}), iat, exp: iat + ttlSeconds };
+  const header = b64urlEncodeString(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body = b64urlEncodeString(JSON.stringify(payload));
+  const key = await hmacKey(secret, ['sign']);
+  const sig = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(`${header}.${body}`),
+  );
+  return `${header}.${body}.${b64urlEncodeBytes(new Uint8Array(sig))}`;
+}
+
 /** سر JWT — من env (secret RW_DATABASE_URL style) ولا process.env */
 export async function getPbJwtSecret(): Promise<string | undefined> {
   const { env } = await getPbRuntime();

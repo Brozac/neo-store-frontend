@@ -27,7 +27,7 @@ import { Check, Plane, Truck, Zap } from 'lucide-react';
 // 💰 النقاط: MISS ≈ 20pt (كاش البريدج 10د/منتج×بلد → HIT = 0pt) · /geo = 0pt.
 // ════════════════════════════════════════════════════════════════
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const API_BASE_URL = ''; // Phase F — products/:id + cj-live محليين
 
 // أي props مقبولين — المكوّن ما يكسرش الـ build مهما كان شكل المستدعي
 type EstimatorProps = { cjPid?: string | number | null; [key: string]: unknown };

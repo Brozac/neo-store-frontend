@@ -16,7 +16,7 @@ const handler = NextAuth({
         // 🔐 F#74 C2 — كنصيفطتو account.id_token (Google ID token) باش الباكند يتحقق من الهوية
         //   (RS256 ضد JWKS) قبل ما يصدر laclarcToken — الإيميل الخام كان ATO مفتوح.
         //   v5 beta: account.id_token متاح server-side هنا (NextAuth يتحقق منو ضد Google أصلاً).
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'}/api/auth/social`, {
+        const res = await fetch('/api/auth/social', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken: account?.id_token, email: user.email, name: user.name, provider: 'google' }),

@@ -75,7 +75,7 @@ interface P {
   category: string;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const API = ''; // Phase F — نفس الأصل (JIT routes محلية)
 const PER_PAGE = 24;
 
 // ═══ F#57 — فاسيت الفئة (all-products برك): جذور الشجرة من /api/categories/hub

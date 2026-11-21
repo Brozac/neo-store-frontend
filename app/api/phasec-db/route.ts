@@ -13,6 +13,8 @@
 //    system_events/store_settings/orders + استدعاء الدوال المضيقة.
 import { NextResponse } from 'next/server';
 import { getRwSql } from '@/lib/pb/pb-db';
+import { sendEmail } from '@/lib/emails';
+import { orderConfirmation, orderSubject, reviewInvite, type OrderEmailItem } from '@/lib/email-templates';
 
 export const dynamic = 'force-dynamic';
 
@@ -274,6 +276,130 @@ export async function POST(req: Request) {
           [key, value],
         );
         return NextResponse.json({ ok: true, data: rows[0] ?? null });
+      }
+
+      // ─── Phase F: الحجز العادي (E10 Reconcile) ───
+      case 'regular_cj_context': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000) {
+          return NextResponse.json({ ok: true, ctx: { code: 'bad_order' } });
+        }
+        const rows = await sql.unsafe('SELECT phasef_regular_cj_context($1) AS r', [orderId]);
+        return NextResponse.json({ ok: true, ctx: rows[0]?.r ?? { code: 'order_not_found' } });
+      }
+      case 'regular_booked': {
+        const orderId = Number(params.orderId);
+        const number = String(params.number ?? '');
+        const extra = (params.extra as Record<string, unknown>) ?? {};
+        if (!Number.isInteger(orderId) || orderId <= 0) return bad(400, 'Bad orderId');
+        const rows = await sql.unsafe('SELECT phasef_regular_booked($1,$2,$3::jsonb) AS r', [
+          orderId,
+          number.slice(0, 64),
+          JSON.stringify(extra),
+        ]);
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? null });
+      }
+      case 'regular_defer': {
+        const orderId = Number(params.orderId);
+        const reason = String(params.reason ?? 'unknown').slice(0, 64);
+        const details = (params.details as Record<string, unknown>) ?? {};
+        if (!Number.isInteger(orderId) || orderId <= 0) return bad(400, 'Bad orderId');
+        const rows = await sql.unsafe('SELECT phasef_regular_defer($1,$2,$3::jsonb) AS r', [
+          orderId,
+          reason,
+          JSON.stringify(details),
+        ]);
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? null });
+      }
+      case 'reconcile_pick': {
+        const rows = await sql.unsafe('SELECT phasef_reconcile_pick($1) AS r', [5]);
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? [] });
+      }
+      case 'review_invite_pick': {
+        const rows = await sql.unsafe('SELECT phasef_review_invite_pick() AS r');
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? [] });
+      }
+      case 'review_invite_mark': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0) return bad(400, 'Bad orderId');
+        await sql.unsafe('SELECT phasef_review_invite_mark($1) AS r', [orderId]);
+        return NextResponse.json({ ok: true });
+      }
+
+      // ─── Phase F: الإيميلات من الـ cron (قوالب SERENE عبر الجسر) ───
+      case 'email_confirm': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0) return bad(400, 'Bad orderId');
+        const oRows = await sql.unsafe(
+          `SELECT id, order_number, total_amount, customer_email, customer_name
+             FROM orders WHERE id = $1 LIMIT 1`,
+          [orderId],
+        );
+        const o = oRows[0] as
+          | { id: number; order_number: string | null; total_amount: string | number;
+              customer_email: string | null; customer_name: string | null }
+          | undefined;
+        if (!o) return NextResponse.json({ ok: true, sent: false, reason: 'order_missing' });
+        const email = String(o.customer_email ?? '');
+        if (!email || email.includes('@laclarc.com')) {
+          return NextResponse.json({ ok: true, sent: false, reason: 'email_guard' });
+        }
+        const iRows = await sql.unsafe(
+          `SELECT oi.quantity, oi.price_at_purchase, p.title, p.image_url
+             FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id
+            WHERE oi.order_id = $1 ORDER BY oi.id`,
+          [orderId],
+        );
+        await sendEmail({
+          to: email,
+          subject: orderSubject(o.order_number, o.id),
+          html: orderConfirmation({
+            orderId: o.id,
+            orderNumber: o.order_number ?? undefined,
+            total: String(o.total_amount),
+            items: iRows as unknown as OrderEmailItem[],
+            customerName: o.customer_name ?? undefined,
+          }),
+        });
+        return NextResponse.json({ ok: true, sent: true });
+      }
+      case 'email_review_invite': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0) return bad(400, 'Bad orderId');
+        const oRows = await sql.unsafe(
+          `SELECT id, order_number, customer_name, customer_email, review_token
+             FROM orders WHERE id = $1 LIMIT 1`,
+          [orderId],
+        );
+        const o = oRows[0] as
+          | { id: number; order_number: string | null; customer_name: string | null;
+              customer_email: string | null; review_token: string | null }
+          | undefined;
+        if (!o || !o.review_token || !o.customer_email) {
+          return NextResponse.json({ ok: true, sent: false, reason: 'missing' });
+        }
+        if (o.customer_email.includes('@laclarc.com')) {
+          return NextResponse.json({ ok: true, sent: false, reason: 'email_guard' });
+        }
+        const iRows = await sql.unsafe(
+          `SELECT p.title, p.image_url FROM order_items oi
+             LEFT JOIN products p ON p.id = oi.product_id
+            WHERE oi.order_id = $1 ORDER BY oi.id LIMIT 1`,
+          [orderId],
+        );
+        const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://laclarc.com';
+        await sendEmail({
+          to: o.customer_email,
+          subject: 'How was your order? Get 5% off your next one ⭐',
+          html: reviewInvite({
+            customerName: o.customer_name ?? undefined,
+            orderId: o.id,
+            orderNumber: o.order_number ?? undefined,
+            reviewUrl: `${site}/review/${o.id}?t=${o.review_token}`,
+            product: { image_url: ((iRows[0] as { image_url?: string | null } | undefined)?.image_url ?? undefined) },
+          }),
+        });
+        return NextResponse.json({ ok: true, sent: true });
       }
 
       default:

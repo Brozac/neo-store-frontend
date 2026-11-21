@@ -30,7 +30,7 @@ function AuthContent() {
   const [pkReady, setPkReady] = useState(false);
   const [pkBusy, setPkBusy] = useState(false);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — /api/login + /api/forgot-password محليين
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

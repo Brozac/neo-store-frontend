@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import GlassIcon from '@/components/ui/GlassIcon';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const API_BASE_URL = ''; // Phase F — review verify/invite/upload محليين
 
 export default function ReviewPage() {
   const { orderId } = useParams() as { orderId: string };

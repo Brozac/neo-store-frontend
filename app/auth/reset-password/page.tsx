@@ -15,7 +15,7 @@ function ResetPasswordContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = ''; // Phase F — /api/reset-password محلية
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
