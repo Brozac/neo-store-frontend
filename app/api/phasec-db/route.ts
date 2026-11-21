@@ -128,9 +128,28 @@ export async function POST(req: Request) {
         if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000 || !cjNumber) {
           return bad(400, 'bad params');
         }
+        const extra = params.extra && typeof params.extra === 'object' ? params.extra : null;
         await sql.unsafe(
-          'SELECT public.phasec_exchange_booked($1, $2, $3, $4) AS r',
-          [orderId, cjNumber, chosenId, chosenTitle],
+          'SELECT public.phasec_exchange_booked($1, $2, $3, $4, $5) AS r',
+          [orderId, cjNumber, chosenId, chosenTitle, extra],
+        );
+        return NextResponse.json({ ok: true });
+      }
+
+      // ─── Phase D: رقم CJ محروق (CJ_NUMBER_BURNED — نفس شكل الأصلي) ───
+      case 'burn': {
+        const orderId = Number(params.orderId);
+        const base = String(params.base ?? '').slice(0, 64);
+        const bump = Number(params.bump);
+        const number = String(params.number ?? '').slice(0, 64);
+        const reason = String(params.reason ?? 'unknown').slice(0, 128);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000
+            || !base || !Number.isInteger(bump) || bump < 1) {
+          return bad(400, 'bad params');
+        }
+        await sql.unsafe(
+          'SELECT public.phasec_exchange_burn($1, $2, $3, $4, $5) AS r',
+          [orderId, base, bump, number, reason],
         );
         return NextResponse.json({ ok: true });
       }
