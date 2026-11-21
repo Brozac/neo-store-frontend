@@ -22,7 +22,7 @@ import {
 import { dbSettings } from './db-reads';
 
 const BACKEND_URL = (
-  process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com'
+  process.env.NEXT_PUBLIC_API_URL || 'https://api.laclarc.com'
 ).replace(/\/+$/, '');
 
 export const VISIBILITY_TAG = 'visibility';

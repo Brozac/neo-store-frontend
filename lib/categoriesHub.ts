@@ -43,7 +43,7 @@ interface RawNode {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_BACKEND_URL ||
-  'https://neo-store-backend.onrender.com';
+  'https://api.laclarc.com';
 
 async function getJSON(path: string): Promise<unknown> {
   try {

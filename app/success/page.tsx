@@ -105,7 +105,7 @@ function SuccessContent() {
   const [isUpsellProcessing, setIsUpsellProcessing] = useState(false);
 
   const { clearCart } = useCart();
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.laclarc.com';
 
   // منتج الـ Upsell المقترح (عرض تكميلي لا يقاوم)
   const UPSELL_PRODUCT = {

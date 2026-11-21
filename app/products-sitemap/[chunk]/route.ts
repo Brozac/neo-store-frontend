@@ -5,7 +5,7 @@ import { getServerVisibility } from '@/lib/visibilityServer';
 import { dbProductsMinimal } from '@/lib/db-reads';
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://laclarc.com';
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://neo-store-backend.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.laclarc.com';
 const CHUNK = 20000;
 
 // ISR-BUDGET — كان force-dynamic: كل زحفة ديال Googlebot = function invocation +

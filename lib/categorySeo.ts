@@ -31,7 +31,7 @@ export const fetchCategorySeo = cache(
     try {
       // ✨ Tenet #4 — بلا hardcoded URLs
       const base =
-        process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+        process.env.NEXT_PUBLIC_API_URL || 'https://api.laclarc.com';
       const res = await fetch(
         `${base}/api/categories/seo?slug=${encodeURIComponent(last)}`,
         {

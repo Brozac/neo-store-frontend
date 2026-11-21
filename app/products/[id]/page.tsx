@@ -5,7 +5,7 @@ import ProductDetailsClient from './ProductDetailsClient';
 // أي فشل DB كيرجع أوتوماتيكياً لمسار الـ API الباك تحت — سلوك اليوم محفوظ بالكامل.
 import { dbProduct, dbRelated, dbProductsLimit } from '@/lib/db-reads';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.laclarc.com';
 
 // ═══ ⚡ PHASE 2 — ISR Beast (High-Performance UI Runtime) ═══
 // v3.0 ISR-BUDGET — ساعة revalidate = 235K ISR writes/شهر (200K ديال Hobby) →

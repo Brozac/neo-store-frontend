@@ -17,14 +17,13 @@ const HOP_BY_HOP = new Set([
 ]);
 
 export function pbBackendBase(): string {
-  // 🩹 F110 api-unloop: PB_BACKEND_URL (runtime var) يتقدم — ولا كا default
-  // على Render origin نيشان. ممنوع الـ default على api.laclarc.com حيت الـ
-  // worker route api.laclarc.com/* كيخلي الـ proxy يطلب نفسو = حلقة لا نهائية.
-  return (
-    process.env.PB_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://neo-store-backend.onrender.com'
-  );
+  // 🩹 Phase G closure (2026-11-22): Render معلّق دائماً [user,billing] — قرار
+  // المالك BACKEND CLOSED نهائياً. الـ proxy معطّل افتراضياً ('' = null فوري
+  // → كل route كيمشي نيشان للـ fallback المحلي الحي — صفر hops ميتة).
+  // القدرة باقية: PB_BACKEND_URL صريح غير فارغ = إعادة تشغيل proxy لمستقبل.
+  // ممنوع default على NEXT_PUBLIC_API_URL/api.laclarc.com — worker route
+  // api.laclarc.com/* كيخلي الـ proxy يطلب نفسو = حلقة لا نهائية.
+  return process.env.PB_BACKEND_URL || '';
 }
 
 function filterHeaders(req: Request): Headers {
@@ -48,7 +47,9 @@ export async function pbProxy(
 ): Promise<Response | null> {
   // 🩹 F110 loop-guard: طلب داج من الـ proxy بوحدو → ماتعاودش تبروكسيه
   // (حتى إلا تبدل الـ backend host لشي host مغطي بنفس الـ worker route)
+  // 🩹 Phase G: بلا backend مضبوط = معطل نيشان (صفر hops ميتة)
   if (request.headers.get('x-pb-proxy')) return null;
+  if (!pbBackendBase()) return null;
   try {
     const url = pbBackendBase() + backendPath;
     const method = request.method.toUpperCase();

@@ -108,7 +108,7 @@
                 "NEXT_PUBLIC_API_URL": "https://api.laclarc.com",
                 // 🩹 F110 api-unloop: الـ backend الحقيقي للـ proxy — runtime override
                 // (ماشي NEXT_PUBLIC باش ما يتخبش فالبيلد) — default آمن ضد الحلقة
-                "PB_BACKEND_URL": "https://neo-store-backend.onrender.com",
+                "PB_BACKEND_URL": "",
                 // NextAuth خلف بروكسي (Workers) — بلا هادا Google login كيفشل
                 "AUTH_TRUST_HOST": "true",
         },

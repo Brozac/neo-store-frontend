@@ -605,7 +605,7 @@ export default function ProductDetailsClient({
 
   const defaultImage = '/icon-512.png';
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.laclarc.com';
 
   const scrollThumbnails = (direction: 'left' | 'right') => {
     if (thumbnailsRef.current) {
