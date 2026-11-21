@@ -129,8 +129,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: FALLBACK_REPLIES[lang].noAI });
   }
 
+  // 🩹 Phase F — سلسلة نماذج: gemini-1.5-flash تقاعد (404 حي 2026-11-22).
+  //   env أولاً ثم النماذج الحيّة بالترتيب — fallback الودي عند فشل الكل.
+  const models = [
+    process.env.GEMINI_MODEL,
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+  ].filter((m): m is string => typeof m === 'string' && m.length > 0);
+
+  for (const model of models) {
   try {
-    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     const contents = history
       .slice(-4)
       .map((h) => ({
@@ -157,11 +165,13 @@ export async function POST(request: Request) {
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     };
     const reply =
-      j.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join(' ').trim() ||
-      FALLBACK_REPLIES[lang].error;
-    return NextResponse.json({ reply });
+      j.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join(' ').trim() || '';
+    if (reply) return NextResponse.json({ reply });
+    throw new Error('gemini empty reply');
   } catch (e) {
-    console.warn('[pb-chat] failed:', e instanceof Error ? e.message : e);
-    return NextResponse.json({ reply: FALLBACK_REPLIES[lang].error });
+    // النموذج الفاشل → النموذج التالي · الكل فاشل → الرد الودي بنفس اللغة
+    console.warn(`[pb-chat] ${model} failed:`, e instanceof Error ? e.message : e);
   }
+  }
+  return NextResponse.json({ reply: FALLBACK_REPLIES[lang].error });
 }
