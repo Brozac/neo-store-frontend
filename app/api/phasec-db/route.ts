@@ -154,6 +154,69 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
 
+      // ─── Phase E: لقاء طلب للويبهوك (id من STORE-n / cj_id / tracking) ───
+      case 'webhook_find_order': {
+        const orderId = params.orderId == null ? null : Number(params.orderId);
+        const cjId = String(params.cjId ?? '').slice(0, 64);
+        const track = String(params.track ?? '').slice(0, 64);
+        if (orderId !== null && (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000)) {
+          return NextResponse.json({ ok: true, r: { code: 'not_found' } });
+        }
+        const rows = await sql.unsafe(
+          'SELECT public.phasec_webhook_find_order($1, $2, $3) AS r',
+          [orderId, cjId, track],
+        );
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? { code: 'not_found' } });
+      }
+
+      // ─── Phase E: آلة حالات forward-only (SECURITY DEFINER) ───
+      case 'webhook_mutate': {
+        const orderId = Number(params.orderId);
+        const action = String(params.action ?? '').slice(0, 32);
+        const track = String(params.track ?? '').slice(0, 64);
+        const cjId = String(params.cjId ?? '').slice(0, 64);
+        const status = String(params.status ?? '').slice(0, 32);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000) {
+          return bad(400, 'bad orderId');
+        }
+        const rows = await sql.unsafe(
+          'SELECT public.phasec_webhook_order_mutate($1, $2, $3, $4, $5) AS r',
+          [orderId, action, track, cjId, status],
+        );
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? { ok: false } });
+      }
+
+      // ─── Phase E: أرشفة حدث ويبهوك (أنواع [A-Z0-9_] فقط + تعقيم مفاتيح الأسرار فالـ SQL) ───
+      case 'webhook_event': {
+        const type = String(params.type ?? '').slice(0, 64);
+        const orderId = params.orderId == null ? null : Number(params.orderId);
+        const details = params.details && typeof params.details === 'object' ? params.details : {};
+        const severity = String(params.severity ?? 'info').slice(0, 16);
+        if (!/^[A-Z0-9_]{1,64}$/.test(type)) {
+          return bad(400, 'bad event type');
+        }
+        if (orderId !== null && (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000)) {
+          return bad(400, 'bad orderId');
+        }
+        await sql.unsafe(
+          'SELECT public.phasec_webhook_event($1, $2, $3, $4) AS r',
+          [type, orderId, details, severity],
+        );
+        return NextResponse.json({ ok: true });
+      }
+
+      // ─── Phase E: نبض الويبهوك (دوك CJ 3.3 — صف واحد id=1) ───
+      case 'webhook_heartbeat': {
+        const type = String(params.type ?? '').slice(0, 40);
+        await sql.unsafe('SELECT public.phasec_webhook_heartbeat($1) AS r', [type]);
+        return NextResponse.json({ ok: true });
+      }
+
+      case 'webhook_heartbeat_get': {
+        const rows = await sql.unsafe('SELECT public.phasec_webhook_heartbeat_get() AS r');
+        return NextResponse.json({ ok: true, r: rows[0]?.r ?? { ok: false } });
+      }
+
       // ─── سجل الأحداث ───
       case 'system_events': {
         const limit = Number(params.limit);
