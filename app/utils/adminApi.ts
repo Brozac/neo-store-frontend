@@ -1,7 +1,7 @@
 // utils/adminApi.ts - Laclarc Enterprise Axios Client
 import axios from 'axios';
 
-const backendBase = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const backendBase = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
 const baseURL = `${backendBase.replace(/\/+$/, '')}/api`;
 
 const adminApi = axios.create({

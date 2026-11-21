@@ -2,7 +2,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
 
 /**
  * استدعاء Backend من السيرفر — server-to-server

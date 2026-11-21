@@ -16,7 +16,7 @@
 //   • try/catch منفصلين: WebAuthn exceptions ضد فشل السيرفر
 // ============================================================
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
 
 export interface PasskeyCredInfo {
   id: string;

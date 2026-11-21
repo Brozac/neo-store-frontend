@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverWaking, setServerWaking] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neo-store-backend.onrender.com';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
