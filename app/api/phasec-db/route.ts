@@ -89,17 +89,48 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, data: rows[0] ?? { r: { code: 'internal' } } });
       }
 
-      // ─── الخلفية المؤجلة: تسجيل تأجيل الحجز ───
+      // ─── الخلفية المؤجلة: تسجيل تأجيل الحجز (Phase D v2: سبب حقيقي) ───
       case 'exchange_defer': {
         const orderId = Number(params.orderId);
         const chosenId = String(params.chosenId ?? '').slice(0, 256);
         const chosenTitle = String(params.chosenTitle ?? '').slice(0, 500);
+        const reason = String(params.reason ?? 'booking_deferred_phasec').slice(0, 128);
+        const detail = params.detail && typeof params.detail === 'object' ? params.detail : null;
         if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000) {
           return bad(400, 'bad orderId');
         }
         await sql.unsafe(
-          'SELECT public.phasec_exchange_defer($1, $2, $3) AS r',
-          [orderId, chosenId, chosenTitle],
+          'SELECT public.phasec_exchange_defer($1, $2, $3, $4, $5) AS r',
+          [orderId, chosenId, chosenTitle, reason, detail],
+        );
+        return NextResponse.json({ ok: true });
+      }
+
+      // ─── Phase D: سياق حجز CJ (قراءة مضيقة عبر دالة SECURITY DEFINER) ───
+      case 'cj_context': {
+        const orderId = Number(params.orderId);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000) {
+          return NextResponse.json({ ok: true, ctx: { code: 'bad_order' } });
+        }
+        const rows = await sql.unsafe(
+          'SELECT public.phasec_exchange_cj_context($1) AS ctx',
+          [orderId],
+        );
+        return NextResponse.json({ ok: true, ctx: rows[0]?.ctx ?? { code: 'bad_order' } });
+      }
+
+      // ─── Phase D: نجاح الحجز (cj_order_number + EXCHANGE_SUCCESS) ───
+      case 'booked': {
+        const orderId = Number(params.orderId);
+        const cjNumber = String(params.cjNumber ?? '').trim().slice(0, 64);
+        const chosenId = String(params.chosenId ?? '').slice(0, 256);
+        const chosenTitle = String(params.chosenTitle ?? '').slice(0, 500);
+        if (!Number.isInteger(orderId) || orderId <= 0 || orderId > 2_000_000_000 || !cjNumber) {
+          return bad(400, 'bad params');
+        }
+        await sql.unsafe(
+          'SELECT public.phasec_exchange_booked($1, $2, $3, $4) AS r',
+          [orderId, cjNumber, chosenId, chosenTitle],
         );
         return NextResponse.json({ ok: true });
       }
