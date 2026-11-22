@@ -64,15 +64,18 @@ export async function withEdgeCache(
     if (
       res.status === 200 &&
       smax &&
-      !/(no-store|private)/i.test(cc)
+      !/(no-store|private)/i.test(cc) &&
+      !res.headers.has('Set-Cookie')
     ) {
-      // workerd Cache API كيتجاهل s-maxage وحدو — نسخة التخزين تحصل على
-      // max-age مكافئ باش TTL يتطبق فعلاً (الرد للعميل يبقى كما هو)
+      // workerd Cache API كيتجاهل s-maxage وحدو + ما يدعمش Vary تاع Next
+      // (rsc/next-router-*) → التخزين كان صامت. نسخة التخزين: max-age مكافئ،
+      // بلا Vary، بلا Set-Cookie — والرد للعميل يبقى كما هو
       const ttl = parseInt(smax[1], 10);
       const body = await res.clone().text(); // جسم مقيد — بلا streams فالكاش
       const putHeaders = new Headers(res.headers);
       putHeaders.set('Cache-Control', `public, max-age=${ttl}`);
-      try { putHeaders.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
+      putHeaders.delete('Vary');
+      putHeaders.delete('Set-Cookie');
       const putRes = new Response(body, { status: 200, headers: putHeaders });
       await cache.put(cacheKey, putRes);
       try { res.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
