@@ -83,6 +83,10 @@ export async function withEdgeCache(
       const putRes = new Response(body, { status: 200, headers: putHeaders });
       await cache.put(cacheKey, putRes);
       try { res.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
+    } else if (res.status === 200) {
+      // 🔒 بلا s-maxage = محتوى ديناميكي (search · count · by-ids) — منع صريح:
+      // workers zone cache كيكاشي الردود اللي بلا Cache-Control بنفسو!
+      try { res.headers.set('Cache-Control', 'no-store'); } catch { /* cosmetic */ }
     }
   } catch (e) {
     console.warn('[edge-cache] put failed:', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
