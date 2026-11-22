@@ -60,14 +60,21 @@ export async function withEdgeCache(
   const res = await handler();
   try {
     const cc = res.headers.get('Cache-Control') ?? '';
+    const smax = cc.match(/s-maxage\s*=\s*(\d+)/i);
     if (
       res.status === 200 &&
-      /s-maxage\s*=/i.test(cc) &&
+      smax &&
       !/(no-store|private)/i.test(cc)
     ) {
-      const toPut = res.clone();
-      try { toPut.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
-      await cache.put(cacheKey, toPut);
+      // workerd Cache API كيتجاهل s-maxage وحدو — نسخة التخزين تحصل على
+      // max-age مكافئ باش TTL يتطبق فعلاً (الرد للعميل يبقى كما هو)
+      const ttl = parseInt(smax[1], 10);
+      const body = await res.clone().text(); // جسم مقيد — بلا streams فالكاش
+      const putHeaders = new Headers(res.headers);
+      putHeaders.set('Cache-Control', `public, max-age=${ttl}`);
+      try { putHeaders.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
+      const putRes = new Response(body, { status: 200, headers: putHeaders });
+      await cache.put(cacheKey, putRes);
       try { res.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
     }
   } catch (e) {
