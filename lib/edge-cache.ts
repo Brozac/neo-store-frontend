@@ -67,9 +67,13 @@ export async function withEdgeCache(
       !/(no-store|private)/i.test(cc) &&
       !res.headers.has('Set-Cookie')
     ) {
-      // workerd Cache API كيتجاهل s-maxage وحدو + ما يدعمش Vary تاع Next
-      // (rsc/next-router-*) → التخزين كان صامت. نسخة التخزين: max-age مكافئ،
-      // بلا Vary، بلا Set-Cookie — والرد للعميل يبقى كما هو
+      // 🔑 المفتاح: Vary تاع Next (rsc/next-router-*) كيمنع التكاش فمكانين —
+      // zone cache (cache.enabled) و Cache API. لروتات JSON تاع الكاطالوگ
+      // الـ RSC ما يعنيش والو → الحذف سليم دلالياً. من بعد، zone cache
+      // كيكاشي الرد بوحدو (s-maxage حاضر) وكيخدم قبل الـ Worker عند HIT.
+      res.headers.delete('Vary');
+      // workerd Cache API كيتجاهل s-maxage وحدو — نسخة التخزين تحصل على
+      // max-age مكافئ (طبقة ثانية واطية تحت الـ zone cache)
       const ttl = parseInt(smax[1], 10);
       const body = await res.clone().text(); // جسم مقيد — بلا streams فالكاش
       const putHeaders = new Headers(res.headers);
