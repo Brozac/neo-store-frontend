@@ -10,14 +10,14 @@ const MAX_HTML = 3 * 1024 * 1024; // 3MB — لا ننزل الشي كلو
 
 function metaTag(html: string, prop: string): string {
   const re = new RegExp(
-    `<meta[^>]+(?:property|name)=["']${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*content=["']([^"']+["']`,
+    `<meta[^>]+(?:property|name)=["']${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*content=["']([^"']+)["']`,
     'i',
   );
   const m = html.match(re);
   if (m) return m[1];
   // بعض الصفحات content قبل property
   const re2 = new RegExp(
-    `<meta[^>]+content=["']([^"']+["'][^>]*(?:property|name)=["']${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
+    `<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
     'i',
   );
   return html.match(re2)?.[1] ?? '';
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     const title = (metaTag(html, 'og:title') || metaTag(html, 'twitter:title') || '').slice(0, 300);
     const description = (metaTag(html, 'og:description') || metaTag(html, 'description') || '').slice(0, 5000);
     const mainImage = (metaTag(html, 'og:image') || metaTag(html, 'twitter:image') || '').slice(0, 1000);
-    const gallery = [...html.matchAll(/<meta[^>]+(?:property|name)=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+["']/gi)]
+    const gallery = [...html.matchAll(/<meta[^>]+(?:property|name)=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/gi)]
       .map((m) => m[1])
       .filter((u, i, arr) => arr.indexOf(u) === i)
       .slice(0, 10);
