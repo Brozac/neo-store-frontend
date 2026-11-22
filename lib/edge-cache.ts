@@ -11,17 +11,22 @@
 // ─── Phase H v2 — نسخة الكاش (purge فوري عبر KV) ───
 // مفاتيح Cache API كتضاف ليها ?__cv=<edgecache:catalog_version من KV>.
 // bump التسجيل من /api/edge-cache-purge = مفاتيح جديدة فوراً → الطبقة
-// الديال Worker كتفقى عند أول طلب بعد التعديل (≤5s micro-cache + انتشار
-// KV ≤60s عالمياً). الطبقة اللي قدام (zone cache، cf-cache-status) كتبقى
-// كما هي — الـ purge تاعها بالـ URLs الدقيقة عبر CF API من روت الـ purge.
+// الديال Worker كتفقى عند أول طلب بعد التعديل.
+// v2.1 — الطبقتين مفصولات: zone cache (القدامية، cf-cache-status) تحمل
+// s-maxage=15s soft — كل تعمير تاعها كيدوز من بوابة النسخة (مقاوم للـ
+// resurrection: الرد القديم ما يمكنش يعمر الـ zone بعد انتشار KV).
+// الطبقة ديال Worker كتخزن بـ max-age=TTL الأصلي (60-3600s) = حماية DB.
 // fail-open: KV ما جابش = نسخة '' = مفاتيح بلا __cv = نفس سلوك H.1.
 export const EDGE_CACHE_HEADER = 'x-edge-cache';
 
 // نسخة الكاش — KV نفسو تاع ISR (NEXT_INC_CACHE_KV) بمفتاح مسمّى خاص.
 const VERSION_KV_KEY = 'edgecache:catalog_version';
 const VERSION_MICROCACHE_MS = 5_000;
-// micro-cache فالـ isolate — قراءة KV وحدة كل 5s لكل isolate (كوتا KV: 100k قراءة/يوم)
+// قراءة KV وحدة كل 5s لكل isolate (كوتا KV: 100k قراءة/يوم)
 let versionCache: { v: string; at: number } = { v: '', at: 0 };
+// v2.1 — TTL "soft" تاع zone cache (الطبقة القدامية): النسخة كتجدد عبر الـ Worker
+// كل 15s — بعد التعديل الطبقة القدامية كتفقى ف≤15s+انتشار KV بدل 2-10 دقائق.
+const ZONE_SOFT_TTL_S = 15;
 
 async function getCatalogVersion(): Promise<string> {
   const now = Date.now();
@@ -108,9 +113,7 @@ export async function withEdgeCache(
       // الـ RSC ما يعنيش والو → الحذف سليم دلالياً. من بعد، zone cache
       // كيكاشي الرد بوحدو (s-maxage حاضر) وكيخدم قبل الـ Worker عند HIT.
       res.headers.delete('Vary');
-      // workerd Cache API كيتجاهل s-maxage وحدو — نسخة التخزين تحصل على
-      // max-age مكافئ (طبقة ثانية واطية تحت الـ zone cache)
-      const ttl = parseInt(smax[1], 10);
+      const ttl = parseInt(smax[1], 10); // TTL الحقيقي — للطبقة ديال Worker
       const body = await res.clone().text(); // جسم مقيد — بلا streams فالكاش
       const putHeaders = new Headers(res.headers);
       putHeaders.set('Cache-Control', `public, max-age=${ttl}`);
@@ -119,6 +122,18 @@ export async function withEdgeCache(
       const putRes = new Response(body, { status: 200, headers: putHeaders });
       await cache.put(cacheKey, putRes);
       try { res.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
+      // 🔑 v2.1 — الطبقات مفصولة:
+      //   zone cache (قدام) ← s-maxage=15s "soft" فقط — كل 15s الـ zone كتنقضي
+      //   وكتعاود تعمّر عبر الـ Worker → كل تعمير كيدوز من بوابة __cv (نسخة KV)
+      //   = مقاوم للـ "resurrection" (الرد القديم ما يمكنش يعمر الـ zone من بعد
+      //   ما النسخة الجديدة توصل للـ PoP). الأثر على الكوتا: عند HIT الـ Worker
+      //   ما كيتنفذش بزال — الاستدعاءات الزايدة = تعمير وحدة كل 15s لكل PoP.
+      //   الطبقة ديال Worker (تحت) ← max-age=ttl الأصلي (60-3600s) — كيحمي الـ DB.
+      //   النتيجة بعد التعديل: فوري فمنطقة الأدمن، ≤~75s عالمياً (انتشار KV
+      //   ≤60s + window الـ zone) بدل 2-10 دقائق.
+      try {
+        res.headers.set('Cache-Control', `public, s-maxage=${ZONE_SOFT_TTL_S}`);
+      } catch { /* cosmetic */ }
     } else if (res.status === 200) {
       // 🔒 بلا s-maxage = محتوى ديناميكي (search · count · by-ids) — منع صريح:
       // workers zone cache كيكاشي الردود اللي بلا Cache-Control بنفسو!
