@@ -7,7 +7,40 @@
 // - fail-open: أي خطأ فالكاش = الرد يرجع عادي بلا كاش — الطبقة ما تقدرش تكسر شي
 // - ما كتلمسش auth/checkout/admin/payment — قراءات الكاطالوگ العامة فقط
 // والـ HIT كيبان فالهيدر x-edge-cache باش القياس يكون بالعين.
+//
+// ─── Phase H v2 — نسخة الكاش (purge فوري عبر KV) ───
+// مفاتيح Cache API كتضاف ليها ?__cv=<edgecache:catalog_version من KV>.
+// bump التسجيل من /api/edge-cache-purge = مفاتيح جديدة فوراً → الطبقة
+// الديال Worker كتفقى عند أول طلب بعد التعديل (≤5s micro-cache + انتشار
+// KV ≤60s عالمياً). الطبقة اللي قدام (zone cache، cf-cache-status) كتبقى
+// كما هي — الـ purge تاعها بالـ URLs الدقيقة عبر CF API من روت الـ purge.
+// fail-open: KV ما جابش = نسخة '' = مفاتيح بلا __cv = نفس سلوك H.1.
 export const EDGE_CACHE_HEADER = 'x-edge-cache';
+
+// نسخة الكاش — KV نفسو تاع ISR (NEXT_INC_CACHE_KV) بمفتاح مسمّى خاص.
+const VERSION_KV_KEY = 'edgecache:catalog_version';
+const VERSION_MICROCACHE_MS = 5_000;
+// micro-cache فالـ isolate — قراءة KV وحدة كل 5s لكل isolate (كوتا KV: 100k قراءة/يوم)
+let versionCache: { v: string; at: number } = { v: '', at: 0 };
+
+async function getCatalogVersion(): Promise<string> {
+  const now = Date.now();
+  if (now - versionCache.at < VERSION_MICROCACHE_MS) return versionCache.v;
+  try {
+    const mod = await import('@opennextjs/cloudflare');
+    const ctx = await mod.getCloudflareContext({ async: true });
+    const env = ctx?.env as Record<string, unknown> | undefined;
+    const kv = env?.NEXT_INC_CACHE_KV as
+      | { get?: (key: string) => Promise<string | null> }
+      | undefined;
+    const v = kv && typeof kv.get === 'function' ? await kv.get(VERSION_KV_KEY) : null;
+    versionCache = { v: typeof v === 'string' ? v.slice(0, 64) : '', at: now };
+  } catch {
+    // بلا context (build محلي / wrangler dev بلا binding) — fail-open
+    versionCache = { v: '', at: now };
+  }
+  return versionCache.v;
+}
 
 type CacheStoreLike = {
   match(key: Request): Promise<Response | undefined>;
@@ -39,6 +72,9 @@ export async function withEdgeCache(
   try {
     const url = new URL(req.url);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return handler();
+    // v2 — المفتاح كيشمل نسخة الكاش: bump الـ KV = مفاتيح جديدة فوراً
+    const ver = await getCatalogVersion();
+    if (ver) url.searchParams.set('__cv', ver);
     cacheKey = new Request(url.toString(), { method: 'GET' });
   } catch {
     return handler();
