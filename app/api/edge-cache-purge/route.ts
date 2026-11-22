@@ -34,9 +34,10 @@ const VERSION_KV_KEY = 'edgecache:catalog_version';
 interface PurgeBody {
   path?: string;      // مسار rpc اللي تدار فيه التعديل (/admin/update-product/123)
   productId?: number; // اختياري — إلا التعديل فbody ماشي فURL (sync-single-product)
+  files?: string[];   // 🩹 Phase I incident — URLs صريحة للاستجابة للحوادث (origin-locked)
 }
 
-// ─── auth: جلسة أدمن ولا مفتاح الجسر ─────────────────────────────
+// ─── auth: جلسة أدمن ولا مفتاح الجسر ─────────────────────────
 async function authorized(req: Request): Promise<boolean> {
   const bridge = (process.env.PHASEC_BRIDGE_KEY || '').trim();
   if (bridge && (req.headers.get('x-phasec-key') || '') === bridge) return true;
@@ -48,13 +49,13 @@ async function authorized(req: Request): Promise<boolean> {
   }
 }
 
-// ─── استخراج معرف المنتج من المسار ───────────────────────────────
+// ─── استخراج معرف المنتج من المسار ───────────────────────
 function productIdFromPath(path: string): number | null {
   const m = path.match(/\/admin\/(?:update-product|delete-product|toggle-deal|videos)\/(\d{1,10})$/);
   return m ? Number(m[1]) : null;
 }
 
-// ─── bump نسخة الكاش فالـ KV ─────────────────────────────────────
+// ─── bump نسخة الكاش فالـ KV ─────────────────────────────────
 async function bumpVersion(): Promise<string | null> {
   try {
     const mod = await import('@opennextjs/cloudflare');
@@ -121,7 +122,17 @@ export async function POST(req: Request) {
     for (const origin of ORIGINS) files.push(`${origin}/api/categories`);
   }
 
-  const purged = await purgeZoneFiles(files);
+  // 🩹 Phase I incident — purge صريح بـ URLs مطلوبة (لا origins أخرى · حد 30 · dedup)
+  if (Array.isArray(body.files)) {
+    for (const f of body.files) {
+      if (typeof f === 'string' && f.length <= 400 &&
+          /^https:\/\/(www\.)?laclarc\.com\//.test(f)) {
+        files.push(f);
+      }
+    }
+  }
+  const uniqueFiles = [...new Set(files)].slice(0, 30);
+  const purged = await purgeZoneFiles(uniqueFiles);
 
   // ─── (c) revalidateTag للـ HTML (ISR) — نفس نمط visibility-revalidate ───
   const tags: string[] = [];
@@ -137,7 +148,7 @@ export async function POST(req: Request) {
     ok: true,
     version,
     purged,
-    files,
+    files: uniqueFiles,
     tags,
   });
 }

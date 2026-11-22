@@ -16,6 +16,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // 🩹 Phase I incident (2026-11-23): الـ zone cache خزّن ردود admin GET المعتمدة
+  //   (بلا Cache-Control) وخدمها لأي زائر بلا كوكي (cf-cache-status: HIT بمعطيات
+  //   طلبات حقيقية!) — درس H.5 على مستوى API كامل: no-store صريح على كل /api/*
+  //   ماعدا الكاطلوج المتكاشي عمداً (categories · products list/[id]/related —
+  //   الملفات ديالهم عندها withEdgeCache + s-maxage ديالهم).
+  if (pathname.startsWith('/api/')) {
+    const cacheable =
+      pathname === '/api/categories' ||
+      pathname === '/api/products' ||
+      pathname.startsWith('/api/products/');
+    if (!cacheable) {
+      const res = NextResponse.next();
+      res.headers.set('Cache-Control', 'no-store');
+      return res;
+    }
+  }
+
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     const isLoginPage = pathname === '/admin/login';
     const hasHint = req.cookies.get('admin_hint')?.value === '1';
@@ -32,5 +49,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/api/:path*'],
 };
