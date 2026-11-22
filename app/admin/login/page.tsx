@@ -12,25 +12,25 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverWaking, setServerWaking] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
-
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setServerWaking(false);
 
+    // ✨ Phase I — same-origin: /api/admin/login (Next) كيproxy rpc وكيضبط
+    // جوج كوكيز (admin_token + admin_token_next) — نفس السلوك حرفياً
     // تنبيه المستخدم إذا كان السيرفر على Render يستغرق وقتاً للاستيقاظ (Cold Start)
     const wakeTimer = setTimeout(() => {
       setServerWaking(true);
     }, 4000);
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/login`, {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
-        credentials: 'include', // ضروري لاستقبال كوكي admin_token
+        credentials: 'include', // ضروري لاستقبال كوكيز الجلسة
       });
 
       clearTimeout(wakeTimer);

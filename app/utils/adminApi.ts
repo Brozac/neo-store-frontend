@@ -1,18 +1,41 @@
-// utils/adminApi.ts - Laclarc Enterprise Axios Client
+// utils/adminApi.ts — Phase I: جدول توجيه (routing table)
+// ═══════════════════════════════════════════════════════════════════════
+// الافتراضي: same-origin (/api/... على laclarc.com) — الجار Next + دوال phasei_*
+// RPC_PREFIXES: الباقية على rpc.laclarc.com (Express) — اللي مازال ما انتقلش:
+//   · /admin/settings (GET + PUT subkeys — كوكيز rpc)
+//   · /admin/system-events (SELECT system_events)
+//   · /admin/webhook (register/subscribe — مفاتيح CJ عند rpc)
+// كوكي الجلسة: admin_token (rpc) + admin_token_next (Next) — جوج كوكيز وضوح
+// الفصل، كلاهما Domain=.laclarc.com — كيتصيفطو أوتوماتيكياً مع withCredentials.
+// ═══════════════════════════════════════════════════════════════════════
 import axios from 'axios';
 
-const backendBase = process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com';
-const baseURL = `${backendBase.replace(/\/+$/, '')}/api`;
+const rpcBase = (process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com').replace(/\/+$/, '');
+
+const RPC_PREFIXES = ['/admin/settings', '/admin/system-events', '/admin/webhook'];
+
+function resolveUrl(url: string): string {
+  if (RPC_PREFIXES.some((p) => url === p || url.startsWith(`${p}?`) || url.startsWith(`${p}/`))) {
+    return `${rpcBase}/api${url}`;
+  }
+  return `/api${url}`;
+}
 
 const adminApi = axios.create({
-  baseURL,
   timeout: 60000,
-  withCredentials: true, // ضروري لإرسال واستقبال كوكيز admin_token
+  withCredentials: true, // ضروري لإرسال واستقبال كوكيز الجلسة (admin_token + admin_token_next)
+});
+
+// توجيه كل طلب — before: config.url كان relative، بعد: كامل
+adminApi.interceptors.request.use((config) => {
+  if (typeof config.url === 'string' && config.url.startsWith('/')) {
+    config.url = resolveUrl(config.url);
+  }
+  return config;
 });
 
 // ✨ Phase H v2 — بعد كل تعديل ناجح على الكاطالوگ → purge فوري للكاش الحافي.
 // fire-and-forget: الpurge best-effort — الـ TTL (60-600s) هو شبكة الأمان.
-// الهدف: التغييرات (ثمن/اسم/مخزون/إخفاء) تبان فوراً بدل انتظار الـ TTL.
 const CATALOG_MUTATION_RE =
   /\/admin\/(update-product|delete-product|toggle-deal|videos|add-product|sync-single-product|update-category|sync-categories|backfill-categories|auto-categorize|scrape-product|merge)\b/;
 

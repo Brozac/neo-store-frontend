@@ -1,8 +1,10 @@
 // POST /api/upload — Phase F (مرآة الأصلي): Cloudinary unsigned→signed upload
 // authenticateToken إجباري · images[] حد 10 · jpg/png/jpeg/webp · 5MB · folder neo_store_uploads
 // الرد: {urls:[secure_url]} — نفس العقد (ReviewForm/review invite كيستعملوها)
+// 🆕 Phase I: الجلسة الإدارية (admin_token_next) كتقبل أيضاً — اللوحة كترفع صور المنتجات
 import { NextResponse } from 'next/server';
 import { pbRequireUser, pbSecret } from '@/lib/pb/pb-user';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +22,8 @@ async function sha1Hex(input: string): Promise<string> {
 export async function POST(request: Request) {
   try {
     const user = await pbRequireUser(request);
-    if (!user) {
+    const admin = user ? null : await requireAdmin(request);
+    if (!user && !admin) {
       return NextResponse.json(
         { error: 'Access Denied: No token provided' },
         { status: 401 },
