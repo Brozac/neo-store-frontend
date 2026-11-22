@@ -8,6 +8,7 @@ import {
   dbCatalogPage, dbCatalogCount, dbCatalogSearch, dbCatalogFull,
   dbProductsMinimal, dbProductsLimit,
 } from '@/lib/db-reads';
+import { withEdgeCache } from '@/lib/edge-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,9 @@ async function withRetry<T>(fn: () => Promise<T | undefined>): Promise<T | undef
 }
 
 export async function GET(request: Request) {
+  // Phase H — الكاش على حافة CF: الرد اللي فيه s-maxage أصلاً = يتكاشا بيه نفسو،
+  // والردود بلا s-maxage (search · count · أخطاء) كيبقاو ديناميكيين كما كانوا
+  return withEdgeCache(request, async () => {
   const url = new URL(request.url);
   // 1) proxy — Render حي = نفس السلوك حرفياً (query كيمرر كامل)
   const proxied = await pbProxy(request, '/api/products' + url.search);
@@ -83,4 +87,5 @@ export async function GET(request: Request) {
     console.warn('[pb-products] fallback failed:', e instanceof Error ? e.message : e);
     return json({ error: 'Internal Server Error' }, 'no-store', 500);
   }
+  });
 }
