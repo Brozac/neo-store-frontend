@@ -14,6 +14,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  // 🛡️ SEC-AUDIT 2026-11-23 (N1): orders.id = integer فالـ DB — أي id غير رقمي
+  // → 404 فوراً بنفس رد "not found" (من قبل كان 500 من cast فاشل فالـ fallback،
+  // وهاد التحقق كيمنع حتى إرسال زبال لـ rpc proxy) — بلا enumeration oracle
+  if (!/^\d+$/.test(id)) {
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
   // 1) proxy (نفس path بالضبط)
   const proxied = await pbProxy(request, `/api/orders/${encodeURIComponent(id)}/items${new URL(request.url).search}`);
   if (proxied) return proxied;
