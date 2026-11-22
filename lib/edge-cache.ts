@@ -52,7 +52,9 @@ export async function withEdgeCache(
       try { out.headers.set(EDGE_CACHE_HEADER, 'HIT'); } catch { /* cosmetic */ }
       return out;
     }
-  } catch { /* fail-open */ }
+  } catch (e) {
+    console.warn('[edge-cache] match failed:', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+  }
 
   // 2) MISS — تنفيذ فعلي + تخزين شرطي (200 + s-maxage + بلا no-store/private)
   const res = await handler();
@@ -68,6 +70,8 @@ export async function withEdgeCache(
       await cache.put(cacheKey, toPut);
       try { res.headers.set(EDGE_CACHE_HEADER, 'MISS'); } catch { /* cosmetic */ }
     }
-  } catch { /* fail-open — الرد الأصلي يرجع حتى إلا فشل التخزين */ }
+  } catch (e) {
+    console.warn('[edge-cache] put failed:', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+  }
   return res;
 }
