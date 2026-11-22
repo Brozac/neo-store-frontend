@@ -16,7 +16,10 @@ export const dynamic = 'force-dynamic';
 const AUTH_LIMIT = { max: 10, windowMs: 15 * 60 * 1000 };
 
 function rpcBase(): string {
-  return (process.env.NEXT_PUBLIC_API_URL || 'https://rpc.laclarc.com').replace(/\/+$/, '');
+  // 🩹 Phase I hotfix — ADR loop-guard (حادثة Phase F موثقة فـ backend-server.ts):
+  // NEXT_PUBLIC_API_URL = https://api.laclarc.com = نفس الـ worker → fetch لراسو
+  // = حلقة → limiter داخلي → 429/502. rpc صريح دايماً من السيرفر.
+  return (process.env.RPC_INTERNAL_URL || 'https://rpc.laclarc.com').replace(/\/+$/, '');
 }
 
 function cookieAttrs(maxAge: number): string {
