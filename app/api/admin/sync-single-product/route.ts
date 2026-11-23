@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { adminGuard } from '@/lib/admin-auth';
 import { withDb, callFn } from '@/lib/admin-db';
 import { cjFetch, calculateSellingPrice, sanitizeDescription } from '@/lib/cf-cj';
+import { slimVariantsForStorage } from '@/lib/variants-slim';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
       sizes,
       category: 'other',
       cj_category_id: String(p.categoryId ?? '').slice(0, 64),
-      variants: Array.isArray(p.variants) ? p.variants.slice(0, 100) : [],
+      variants: slimVariantsForStorage(p.variants), // 🔴 phase-abc — تنحيف وقت الكتابة (بلا inventories)
       has_video: Boolean(p.productVideo),
       video_url: p.productVideo ? String(p.productVideo).slice(0, 600) : null,
       weight_grams: Math.round(Number(p.productWeight) || 0),

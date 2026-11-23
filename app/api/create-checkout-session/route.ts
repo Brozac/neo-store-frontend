@@ -20,6 +20,7 @@ import {
   pbCsrfOk,
 } from '@/lib/pb/pb-secure-checkout';
 import { pbRateLimit, pbClientIp, PB_LIMITS, PB_LIMIT_MESSAGES } from '@/lib/pb/pb-limiter';
+import { writeAnalyticsEvent } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -210,6 +211,8 @@ export async function POST(request: Request) {
     }
 
     await sql.unsafe('UPDATE orders SET stripe_session_id = $1 WHERE id = $2', [session.json.id, orderId]);
+    // 🆕 phase-abc — analytics (checkout_start → STORE_ANALYTICS، بلا DB) — صمت عند الفشل
+    void writeAnalyticsEvent('checkout_start', { productId: orderId });
     return NextResponse.json({ url: session.json.url });
   } catch (e) {
     // 🧹 فشل Stripe → pending كيتلغى ذرياً (لا يتيم فالـ Reconcile)

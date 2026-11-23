@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { sendAnalyticsBeacon } from '@/lib/beacon';
 
 export interface StoredUtm {
   utm_source?: string;
@@ -68,6 +69,12 @@ function UtmCaptureLogic() {
         if (!stored.click_id || sameSourceRepeat || stored.captured_at === undefined) {
           localStorage.setItem('laclarc_utm', payload); // التاريخي — محروس من التلوث
         }
+
+        // 🆕 phase-abc — analytics beacon (utm_visit → STORE_ANALYTICS، بلا DB)
+        sendAnalyticsBeacon('utm_visit', {
+          utm: utmData.utm_source || '',
+          path: typeof window.location !== 'undefined' ? window.location.pathname : '',
+        });
       } catch (e) {}
     }
   }, [searchParams]);

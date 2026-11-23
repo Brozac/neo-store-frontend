@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { sendAnalyticsBeacon } from '@/lib/beacon';
 
 export type Product = {
   id: number | string;
@@ -169,6 +170,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
     } catch (e) {
       // فشل بثّ الحدث ما يوقفش الإضافة للسلة أبداً
+    }
+
+    // 🆕 phase-abc — analytics beacon (add_to_cart → STORE_ANALYTICS، بلا DB)
+    const pidNum = Number(product?.id);
+    if (Number.isFinite(pidNum) && pidNum > 0) {
+      sendAnalyticsBeacon('add_to_cart', { productId: Math.floor(pidNum) });
     }
   }, []);
 

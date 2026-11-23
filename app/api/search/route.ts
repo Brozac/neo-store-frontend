@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { pbProxy } from '@/lib/pb/pb-proxy';
 import { dbSearch } from '@/lib/db-reads';
+import { writeAnalyticsEvent } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,12 @@ export async function GET(request: Request) {
   const proxied = await pbProxy(request, '/api/search' + url.search);
   if (proxied) return proxied;
   try {
-    const rows = await withRetry(() => dbSearch(url.searchParams.get('q') || ''));
+    const qRaw = url.searchParams.get('q') || '';
+    const rows = await withRetry(() => dbSearch(qRaw));
+    // 🆕 phase-abc — analytics (search → STORE_ANALYTICS، بلا DB) — صمت عند الفشل
+    if (rows !== undefined && qRaw.trim()) {
+      void writeAnalyticsEvent('search', { query: qRaw.trim() });
+    }
     if (rows !== undefined) return NextResponse.json(rows);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   } catch (e) {
