@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import ProductDetailsClient from './ProductDetailsClient';
+import ProductViewBeacon from './ProductViewBeacon';
 // 🆕 F106 HYPERDRIVE-RO — القراءات السيرفرية من Supabase نيشان (render واقف = الكاتالوگ حي)
 // العقد: dbProduct → undefined (ما كاينش DB) / null (404) / الصف.
 // أي فشل DB كيرجع أوتوماتيكياً لمسار الـ API الباك تحت — سلوك اليوم محفوظ بالكامل.
@@ -300,6 +301,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         initialReviews={initialReviews}
         relatedProducts={relatedProducts}
       />
+      <ProductViewBeacon productId={product.id} />
     </>
   );
 }
