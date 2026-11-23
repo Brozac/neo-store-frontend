@@ -1,6 +1,5 @@
 // lib/pb/pb-env.ts — Phase B: access to Cloudflare runtime (env + waitUntil)
 // نفس النمط المثبت في lib/db-ro.ts (F106) — getCloudflareContext({async:true})
-import 'server-only';
 
 export interface PbRuntime {
   env: Record<string, unknown>;
