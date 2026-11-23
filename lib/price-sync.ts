@@ -10,7 +10,6 @@
 //   · purge: bump نسخة edge-cache مرة واحدة إذا كاين تغيير + zone purge
 //     للـ URLs المتأثرة (≤25 — سقف CF API هو 30)
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { cjFetch, calculateSellingPrice } from './cf-cj';
 import { openRwSql, logSystemEvent } from './cron-db';
 

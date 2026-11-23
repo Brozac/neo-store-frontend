@@ -15,7 +15,6 @@
 //   · feeds/merchant-feed.xml (DZD كما هو) + feeds/merchant-feed-usd.xml
 //     (تحويل حي عبر سعر الصرف من lib/fx).
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { openRoSql, type CronSql } from './cron-db';
 import { getUsdPerDzdRate } from './fx';
 import type { KvLike } from './kv-store';
