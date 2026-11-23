@@ -13,6 +13,7 @@
 //   · axios → global fetch مع إعادة بناء سلوك axios (response.data · error.response.data).
 // ══════════════════════════════════════════════════════════════════════
 import 'server-only';
+import { readCjTokenKv, isCjTokenUsable, writeCjTokenKv, CJ_TOKEN_MARGIN_MS } from './cj-token-kv';
 
 const CJ_API = 'https://developers.cjdropshipping.com/api2.0/v1';
 
@@ -77,7 +78,7 @@ async function postAuth(path: string, body: Record<string, unknown>): Promise<Cj
   }
 }
 
-/** استخراج التوكن + تخزينه (نفس منطق الباك حرفياً — expiry − 10 دقائق، وإلا 12h) */
+/** استخراج التوكن + تخزينه (نفس منطق الباك — expiry − 15 دقيقة هامش [phase-abc كان 10]، وإلا 12h) */
 function tokenFromEnvelope(env: CjEnvelope | null): string | null {
   const data = asRec(env?.data);
   const token = typeof data.accessToken === 'string' && data.accessToken ? data.accessToken : null;
@@ -87,8 +88,8 @@ function tokenFromEnvelope(env: CjEnvelope | null): string | null {
   cachedRefreshToken = typeof refresh === 'string' && refresh ? refresh : null;
   const expiryDateStr = typeof data.accessTokenExpiryDate === 'string' ? data.accessTokenExpiryDate : null;
   tokenExpiry = expiryDateStr
-    ? new Date(expiryDateStr).getTime() - 10 * 60 * 1000
-    : Date.now() + 12 * 60 * 60 * 1000;
+    ? new Date(expiryDateStr).getTime() - CJ_TOKEN_MARGIN_MS
+    : Date.now() + 12 * 60 * 60 * 1000 - CJ_TOKEN_MARGIN_MS;
   return token;
 }
 
@@ -106,12 +107,28 @@ export async function getCjAccessToken(forceRefresh = false): Promise<string> {
     const apiKey = process.env.CJ_API_KEY;
     if (!apiKey) throw new Error('CJ_API_KEY is missing in environment variables');
 
+    // 🆕 phase-abc — KV أولاً (قبل أي نداء auth): التوكن مشترك بين isolates —
+    //    الوافد الجديد كيخدم بالتوكن المخزن بلا auth إضافي (خطر daily limit مقفول)
+    if (!forceRefresh) {
+      const kvEntry = await readCjTokenKv();
+      if (isCjTokenUsable(kvEntry)) {
+        cachedToken = kvEntry!.token;
+        cachedRefreshToken = kvEntry!.refreshToken ?? null;
+        tokenExpiry = kvEntry!.expiryMs - CJ_TOKEN_MARGIN_MS;
+        return kvEntry!.token;
+      }
+    }
+
     if (cachedRefreshToken && !forceRefresh) {
       try {
         const refreshed = tokenFromEnvelope(
           await postAuth('/authentication/refreshAccessToken', { refreshToken: cachedRefreshToken }),
         );
-        if (refreshed) return refreshed;
+        if (refreshed) {
+          // 🆕 كتابة KV — fire-safe (فشل KV = السلوك الذاكري كما هو)
+          await writeCjTokenKv(refreshed, cachedRefreshToken, tokenExpiry + CJ_TOKEN_MARGIN_MS).catch(() => {});
+          return refreshed;
+        }
       } catch {
         cachedRefreshToken = null; // نفس الباك — refresh فاشل → getAccessToken
       }
@@ -119,7 +136,11 @@ export async function getCjAccessToken(forceRefresh = false): Promise<string> {
 
     const env = await postAuth('/authentication/getAccessToken', { apiKey });
     const token = tokenFromEnvelope(env);
-    if (token) return token;
+    if (token) {
+      // 🆕 كتابة KV — نفس الالتزام (12h حي → انتهاء مطلق = expiry + هامش)
+      await writeCjTokenKv(token, cachedRefreshToken, tokenExpiry + CJ_TOKEN_MARGIN_MS).catch(() => {});
+      return token;
+    }
     throw new Error(`CJ Authentication failed: ${String(env?.message || '') || 'Unknown error'}`);
   })();
 
@@ -590,7 +611,7 @@ export function sanitizeDescription(html: unknown): string {
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<(iframe|object|embed|form|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
-    .replace(/<(iframe|object|embed|form|svg)\b[^>]*\/?>/gi, '')
+    .replace(/<(iframe|object|embed|form|svg)\b[^>]*\/>?/gi, '')
     .replace(/(^|[\s\/"'`])on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '$1')
     .replace(/javascript:/gi, '');
 }
