@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1.1 — KV edition)
+// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1.2 — phase-abc edition)
 // ═══════════════════════════════════════════════════════════════
 // الوثيقة الأم: MIGRATION-CF.md (في جذر الريبو) — اقراها قبل ما تخدم هنا.
 //
@@ -9,18 +9,27 @@
 //    2) d1_databases[0].database_id → صنعته بـ: npx wrangler d1 create laclarc-tag-cache
 //       (الأمر كيخرج لك UUID — الصقه في الأسفل)
 //
-// 📦 واش كيمثل كل binding (كلها في حدود المجاني):
-//    NEXT_INC_CACHE_KV        → كاش ISR (الصفحات المولّدة) — KV مجاني 1GB/100K قراءة+1K كتابة يومياً، بلا كارت
+// 📦 واش كيمثل كل binding:
+//    NEXT_INC_CACHE_KV        → نسخة edge-cache (edgecache:catalog_version) — ISR واقف ف94
 //    NEXT_TAG_CACHE_D1        → كاش الوسوم (revalidateTag) — D1 مجاني 5GB
 //    NEXT_CACHE_DO_QUEUE      → طابور إعادة التوليد (revalidate 86400) — DO مجاني
 //    ASSETS                   → الملفات الثابتة (/_next/static, sw.js, icons)
 //    WORKER_SELF_REFERENCE    → مرجع داخلي كيطلبو OpenNext — ما تلمسوش
+//    HYPERDRIVE               → قراءة الكاتالوگ RO (laclarc_ro) — F106
+//    MEDIA_BUCKET             → 🆕 phase-abc — R2 laclarc-media: merchant feeds + ملتيميديا مستقبلاً
+//                               (الباکت موجود حياً ومؤكد بـ r2_probe — ما كيحتاجش شي إنشاء)
+//    STORE_ANALYTICS          → 🆕 phase-abc — Analytics Engine (dataset laclarc_events كيتولد
+//                               أوتوماتيكياً عند أول writeDataPoint) — Workers Paid مفعّل حياً
+//                               (تأكيد حي: subscriptions/Workers Paid + Analytics Engine API)
 // ═══════════════════════════════════════════════════════════════
 {
         "$schema": "node_modules/wrangler/config-schema.json",
         // اسم الـ Worker — الرابط التجريبي: https://laclarc.<subdomain>.workers.dev
         "name": "laclarc",
-        "main": ".open-next/worker.js",
+        // 🔴 phase-abc — الـ entry الجديد: غلاف fetch (نفس OpenNext حرفياً) + scheduled
+        //    للـ crons الثلاثة — شوف custom-worker.ts. .open-next/worker.js كيبقى كيتولد
+        //    كالعادة (cf-build.mjs → opennextjs-cloudflare build → wrangler كيجمع الغلاف).
+        "main": "custom-worker.ts",
         "compatibility_date": "2026-11-12",
 // ─── ⭐ Workers Cache: CF كيفحص الكاش قبل ما يجري الـ Worker ───
 // صفحات ISR (s-maxage=86400) كتخدم من الحافة — HIT = صفر تنفيذ Worker
@@ -75,7 +84,7 @@
         //    Dashboard: Workers & Pages → Hyperdrive → Connect database
         //      → الاسم: laclarc-ro + الـ connection string (شوف README-F106)
         //    ولا CLI: npx wrangler hyperdrive create laclarc-ro \
-        //      --connection-string="postgresql://laclarc_ro.<ref>:<pw>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+        //      --connection-string="postgresql://laclarc_ro.<PROJECT_REF>:<RO_PASSWORD>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
         //
         // ⚠️ إلا الـ config ما كاينش/الـ id غالط → deploy كيفشل؛ القراءات
         //    كيرجعو للـ API الباك أوتوماتيكياً (سلوك F106 الـ fallback).
@@ -86,6 +95,24 @@
                         // للـ dev المحلي (wrangler dev) — نفس دور laclarc_ro بلا Hyperdrive.
                         // ⚠️ ماتسحوش للريبو العام — بدل بالقيمة الحقيقية محلياً فقط.
                         "localConnectionString": "postgresql://laclarc_ro.<PROJECT_REF>:<RO_PASSWORD>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres",
+                },
+        ],
+        // ─── 🆕 phase-abc — MEDIA_BUCKET: R2 laclarc-media (موجود حياً — 2 objects مؤكدين) ───
+        // الـ feeds كترفع كل يوم 3:00 UTC → feeds/merchant-feed.xml + feeds/merchant-feed-usd.xml
+        // والقراءة العامة عبر route /feeds/[file] (ما كيحتاجش r2.dev public access).
+        "r2_buckets": [
+                {
+                        "binding": "MEDIA_BUCKET",
+                        "bucket_name": "laclarc-media",
+                },
+        ],
+        // ─── 🆕 phase-abc — Analytics Engine (البند 9) — Workers Paid مفعّل حياً ───
+        // dataset كيتولد أوتوماتيكياً عند أول writeDataPoint — fail-open: أي فشل
+        // ما كيكسرش أي مسار (شوف lib/analytics.ts).
+        "analytics_engine_datasets": [
+                {
+                        "binding": "STORE_ANALYTICS",
+                        "dataset": "laclarc_events",
                 },
         ],
         // ─── طابور إعادة التوليد (DO) — ضروري للـ revalidate الزمني 86400 ───
@@ -119,6 +146,11 @@
         "images": {
                 "binding": "IMAGES",
         },
-        // ─── الكرونات: الفرونت ماعندو حتى cron (كلها فالباك على Render) ───
-        // إلا زدت cron فالمستقبل: "triggers": { "crons": ["0 3 * * *"] }
+        // ─── 🆕 phase-abc — الكرونات الثلاثة (البند 8) — كلها فالـ worker بوحدو ───
+        //   0 3 * * *   → بناء الـ feeds يومياً (merchant-feed.xml + -usd.xml → R2)
+        //   0 */6 * * * → runDailyPriceSync(25) — تزامن الأسعار/الستوك مع CJ (دورة عادلة)
+        //   0 * * * *   → sweeper — إلغاء الطلبات الميتة (Stripe/Crypto/Paysera >2h · BaridiMob >48h)
+        "triggers": {
+                "crons": ["0 3 * * *", "0 */6 * * *", "0 * * * *"],
+        },
 }
