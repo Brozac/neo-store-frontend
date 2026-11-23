@@ -1,4 +1,4 @@
-// lib/db-reads.ts — F106 HYPERDRIVE-RO — قراءات الكاتالوغ بنفس أشكال الـ API الباك
+// lib/db-reads.ts — F106 HYPERDRIVE-RO — قراءات الكاتالوگ بنفس أشكال الـ API الباك
 // ═══════════════════════════════════════════════════════════════════════
 // كل دالة هنا مرآة حرفية لـ handler معين في server.js (الباك على Render):
 //   dbProduct          ← GET /api/products/:id          (fetchProductProjected + parse images)
@@ -17,6 +17,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 import 'server-only';
 import { getRoSql, type RoSql } from './db-ro';
+import { PDP_VARIANTS_STRIP_SQL } from './variants-slim';
 
 // ═══ ثوابت منسوخة حرفياً من server.js (مصدر واحد للحقيقة) ═══
 
@@ -122,8 +123,16 @@ export async function dbProduct(
   if (!sql) return undefined;
   try {
     const cols = await pdpColumns(sql);
+    // 🔴 phase-abc (البند 4) — strip inventories من PDP variants: كل variant = payload
+    //    خام CJ بـ 23 مفتاح — inventories ما كيقراه حتى واحد من DB (audit 2026-11-23:
+    //    cj-live كيخدم من CJ API مباشرة سطور 313/490). متوسط الصف ~10.4KB → ~1.1KB.
+    //    نفس المجموعة الآمنة: variantKey/variantImage/vid/variantNameEn/variantSellPrice
+    //    تبقى سليمة (شيكاوت + swatches + فاسيتات) — بدون أي تغيير في الشكل.
+    const selectList = cols
+      .map((c) => (c === 'variants' ? PDP_VARIANTS_STRIP_SQL : c))
+      .join(', ');
     const rows = await sql.unsafe(
-      `SELECT ${cols.join(', ')} FROM products WHERE id = $1`,
+      `SELECT ${selectList} FROM products WHERE id = $1`,
       [pid],
     );
     if (rows.length === 0) return null;
