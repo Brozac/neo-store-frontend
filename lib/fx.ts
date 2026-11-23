@@ -8,7 +8,6 @@
 //   3) آخر قيمة مخزّنة فالـ KV حتى إلا قديمة (الـ feed كيبقى كيتولد)
 // كتخدم fail-open: أي فشل = null والمنادي (الـ feed USD) كيتخطّى بهدوء.
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { kvGetJson, kvPutJson, type KvLike } from './kv-store';
 
 const FX_KV_KEY = 'fx:usd-dzd';

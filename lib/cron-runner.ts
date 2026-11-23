@@ -6,7 +6,6 @@
 //   "0 * * * *"    → sweepPendingOrders
 // كل مهمة fail-isolated: فشلها ما كيوقعش الأخرة، والفشل كيتسجل بالتفصيل.
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { buildAllFeeds } from './merchant-feed-r2';
 import { runDailyPriceSync } from './price-sync';
 import { sweepPendingOrders } from './sweeper';

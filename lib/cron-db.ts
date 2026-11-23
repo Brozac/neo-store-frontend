@@ -10,7 +10,6 @@
 //    لأن الـ cron كيجري كل الاستعلامات بالتتابع قبل ما يسد (ما كاينش سباق
 //    waitUntil/طلب). ما تستعملش هاد العملاء فـ routes fetch — استعمل getRwSql.
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 
 export interface CronSql {
   unsafe(query: string, params?: unknown[]): Promise<Record<string, unknown>[]>;

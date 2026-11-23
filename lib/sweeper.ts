@@ -11,7 +11,6 @@
 ///   · idempotent بالكامل (إعادة التشغيل = صفر فروق)
 ///   · الكونس نظام_events كيتسجل (فسح + كشف)
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { openRwSql, logSystemEvent } from './cron-db';
 
 export interface SweepResult {

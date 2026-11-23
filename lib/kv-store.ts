@@ -6,7 +6,6 @@
 //     بـ بادئة واضحة ما كتتعارضش (cj:* · fx:* · feeds:*)
 //   · fail-open دائماً: أي فشل KV = null والمنادي كيرجع للسلوك الذاكري
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { getPbRuntime } from '@/lib/pb/pb-env';
 
 export interface KvLike {

@@ -9,7 +9,6 @@
 //   ولا → التدفق الحي (refresh/getAccessToken) → كتابة KV (fire-safe)
 // الهامش: 15 دقيقة (كان 10) — قبل انتهاء التوكن الفعلي.
 // ═══════════════════════════════════════════════════════════════════════
-import 'server-only';
 import { kvGetJson, kvPutJson } from './kv-store';
 
 const CJ_TOKEN_KV_KEY = 'cj:token:v2';
