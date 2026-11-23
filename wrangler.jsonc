@@ -31,6 +31,10 @@
         //    كالعادة (cf-build.mjs → opennextjs-cloudflare build → wrangler كيجمع الغلاف).
         "main": "custom-worker.ts",
         "compatibility_date": "2026-11-12",
+        // 🛡️ server-only بدون شرط react-server عند wrangler كيحلّه للمدخل اللي كيطرش (throw فـ module scope)
+        //    → CI deploy كيترفض بـ code 10021 (درس من build 23:31).
+        //    الـ alias كيحوّله لـ shim خاوي — مكافئ حرفياً للـ react-server resolution، وكيسدّ الباب على أي ملف جاي.
+        "alias": { "server-only": "./shims/server-only-empty.ts" },
 // ─── ⭐ Workers Cache: CF كيفحص الكاش قبل ما يجري الـ Worker ───
 // صفحات ISR (s-maxage=86400) كتخدم من الحافة — HIT = صفر تنفيذ Worker
 "cache": {
