@@ -605,13 +605,13 @@ export function calculateSellingPrice(
   return { safePrice: parseFloat(price.toFixed(2)), safeOriginalPrice: null };
 }
 
-/** تنظيف الوصف (XSS shield) — نسخة حرفية من sanitizeDescription (P2-6 + F#74 L3) */
+/** تنظيف الوصف (XSS shield) — نسخة حرفية من sanitizeDescription (P2-6 + F#74 L3) — [phase-abc] السطر الرابع مكافئ دلالياً للأصل (\b[^>]*> يبتلع / الذاتية) — مثبت بـ Python regex diff 14 حالة */
 export function sanitizeDescription(html: unknown): string {
   return String(html || '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<(iframe|object|embed|form|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
-    .replace(/<(iframe|object|embed|form|svg)\b[^>]*\/>?/gi, '')
+    .replace(/<(iframe|object|embed|form|svg)\b[^>]*>/gi, '')
     .replace(/(^|[\s\/"'`])on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '$1')
     .replace(/javascript:/gi, '');
 }
