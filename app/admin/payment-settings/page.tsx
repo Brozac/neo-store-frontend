@@ -27,7 +27,7 @@ export default function PaymentSettingsPage() {
       const res = await adminApi.get('/admin/payment-gateways');
       setGateways(res.data);
     } catch {
-      setError('Failed to load payment methods.');
+      setError('فشل تحميل طرق الدفع.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function PaymentSettingsPage() {
     try {
       await adminApi.patch(`/admin/payment-gateways/${key}`, { enabled: !currentEnabled });
     } catch {
-      setError(`Failed to update ${key}.`);
+      setError(`فشل تحديث ${key}.`);
       setGateways(prev => prev.map(g => g.gateway_key === key ? { ...g, enabled: currentEnabled } : g));
     } finally {
       setTogglingKey(null);
@@ -50,27 +50,27 @@ export default function PaymentSettingsPage() {
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500">Loading...</div>;
+    return <div className="p-6 text-sm text-gray-500">جاري التحميل...</div>;
   }
 
   return (
     <AdminShell
       title="Payment Gateways — بوابات الدفع"
-      subtitle="Checkout methods on/off — applies instantly to all storefront visitors"
+      subtitle="تشغيل/إيقاف طرق الدفع عند Checkout — كتطبق مباشرة على جميع الزوار"
     >
       <div className="max-w-2xl mx-auto">
 
         <div className="bg-white p-6 rounded-2xl border border-temu-gray-border-light shadow-sm">
-          <h1 className="text-xl font-black text-temu-black mb-1">Payment Methods</h1>
+          <h1 className="text-xl font-black text-temu-black mb-1">طرق الدفع</h1>
           <p className="text-xs text-gray-500 mb-4">
-            Enable or disable the gateways visible at checkout — no code changes required.
+            فعّل أو عطّل بوابات الدفع الظاهرة في صفحة الدفع (checkout) — بدون أي تعديل في الكود.
           </p>
 
           {/* 🆕 v1.1 — in-flight awareness (flag is UI-only — backend verify independent) */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-5">
             <p className="text-[10px] text-amber-700 font-bold">
-              ⚠️ Note: Disabling a gateway only hides it at checkout. Payments already in progress
-              (verification pending) continue processing normally.
+              ⚠️ ملاحظة: تعطيل أي بوابة دفع يخفيها فقط في صفحة الدفع (checkout).
+              المدفوعات الجارية بالفعل (في انتظار التحقق) كتكمّل المعالجة بشكل عادي.
             </p>
           </div>
 
@@ -86,7 +86,7 @@ export default function PaymentSettingsPage() {
                 <button
                   onClick={() => handleToggle(g.gateway_key, g.enabled)}
                   disabled={togglingKey === g.gateway_key}
-                  aria-label={`Toggle ${g.display_name}`}
+                  aria-label={`تشغيل/إيقاف ${g.display_name}`}
                   className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${g.enabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${g.enabled ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -97,7 +97,7 @@ export default function PaymentSettingsPage() {
 
           {/* 🆕 v1.1 — audit note */}
           <p className="text-[10px] text-gray-400 mt-5 text-center">
-            Changes apply instantly to all storefront visitors.
+            التغييرات كتطبق مباشرة على جميع الزوار.
           </p>
         </div>
       </div>
