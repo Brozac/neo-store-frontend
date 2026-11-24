@@ -10,6 +10,8 @@
 // ═══════════════════════════════════════════════════════════════════════
 import { NextResponse } from 'next/server';
 import { writeAnalyticsEvent, isAnalyticsType } from '@/lib/analytics';
+import { getPbRuntime } from '@/lib/pb/pb-env';
+import { refreshPriceOnVisit } from '@/lib/price-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,5 +50,19 @@ export async function POST(request: Request) {
     path: typeof body.path === 'string' ? body.path : undefined,
     utm: typeof body.utm === 'string' ? body.utm : undefined,
   });
+
+  // 🚀 PERF goal-4 — SWR ديال الثمن عند الزيارة: product_view = تحديث CJ محتمل
+  //    fire-and-forget (عينة 10% + قاطع دائرة + guard updated_at) — 204 كيرجع دغيا.
+  if (body.type === 'product_view' && productId) {
+    try {
+      const rt = await getPbRuntime();
+      rt.waitUntil(refreshPriceOnVisit(
+        productId,
+        rt.env as unknown as Parameters<typeof refreshPriceOnVisit>[1],
+      ));
+    } catch {
+      // بلا runtime context (محلي/build) — تخطى بصمت
+    }
+  }
   return res;
 }

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       const tree = await withRetry(() => dbCategoriesTree());
       if (tree !== undefined) {
         return NextResponse.json(tree, {
-          headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+          headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' },
         });
       }
       return NextResponse.json({ error: 'Server error' }, { status: 500 });

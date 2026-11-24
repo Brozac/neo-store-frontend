@@ -13,7 +13,7 @@
 import { cjFetch, calculateSellingPrice } from './cf-cj';
 import { openRwSql, logSystemEvent } from './cron-db';
 
-const BATCH = 25;
+const BATCH = 200;
 
 export interface PriceSyncResult {
   ok: boolean;
@@ -132,6 +132,56 @@ export async function syncOneProductFromCj(
   return upd.length > 0;
 }
 
+// ═══ 🚀 PERF goal-4 (2026-11-24): SWR ديال الثمن عند الزيارة ═══
+// PDP/beacon كيشعل تحديث CJ للمنتج المزار فقط — عينة 10% + guard updated_at > 6h
+// + قاطع دائرة (3 إخفاقات = off 10 دقايق) + dedupe لكل isolate. بلا version bump
+// (باش ما نهدموش كاش الحافة العالمي) — غير zone purge للـ URL ديال المنتج المحدّث.
+let _breaker = { fails: 0, openUntil: 0 };
+const _recent = new Map<number, number>();
+
+export async function refreshPriceOnVisit(
+  pid: number,
+  env: CfCronEnv,
+): Promise<void> {
+  const now = Date.now();
+  if (now < _breaker.openUntil) return;
+  if (Math.random() >= 0.10) return; // عينة 10% — حماية CJ rate-limit
+  if (now - (_recent.get(pid) ?? 0) < 10 * 60_000) return; // مرة/10د لكل isolate
+  _recent.set(pid, now);
+  if (_recent.size > 500) {
+    for (const [k, t] of _recent) { if (now - t > 10 * 60_000) _recent.delete(k); }
+    if (_recent.size > 500) _recent.clear();
+  }
+  const sql = await openRwSql(env);
+  if (!sql) return;
+  try {
+    // guard: غير المنتجات القديمة تحديثاً (سطر مفهرس واحد) — كيمنع burn ديال CJ
+    const rows = await sql.unsafe(
+      `SELECT id, cj_product_id, stock_status FROM products
+       WHERE id = $1 AND cj_product_id IS NOT NULL AND cj_product_id <> ''
+         AND updated_at < now() - interval '6 hours'`,
+      [pid],
+    );
+    if (rows.length === 0) return;
+    const row = rows[0];
+    const changed = await syncOneProductFromCj(
+      sql, Number(row.id), String(row.cj_product_id), Boolean(row.stock_status),
+    );
+    if (changed) await purgeZoneFiles([Number(row.id)]);
+    _breaker.fails = 0;
+  } catch (e) {
+    _breaker.fails += 1;
+    if (_breaker.fails >= 3) {
+      _breaker.openUntil = Date.now() + 10 * 60_000;
+      _breaker.fails = 0;
+      console.warn('[price-sync] visit-refresh circuit OPEN 10min:',
+        e instanceof Error ? e.message : String(e));
+    }
+  } finally {
+    try { await sql.end({ timeout: 3 }); } catch { /* backstop */ }
+  }
+}
+
 export async function runDailyPriceSync(env: CfCronEnv, batchSize = BATCH): Promise<PriceSyncResult> {
   const t0 = Date.now();
   const base: PriceSyncResult = { ok: false, checked: 0, updated: 0, cachePurged: false, ms: 0 };
@@ -179,6 +229,15 @@ export async function runDailyPriceSync(env: CfCronEnv, batchSize = BATCH): Prom
       cachePurged = await bumpVersionFromEnv(env);
       const zoned = await purgeZoneFiles(changedIds);
       cachePurged = cachePurged || zoned;
+    }
+
+    // 🚀 PERF 2026-11-24: عمّر category_images_mv (بديل الـ LATERAL 32s/نداء) — best-effort
+    //    بلا ما يطيح السينك إلا فشل (fail-open، نفس عقد الـ purge).
+    try {
+      await sql.unsafe('SELECT refresh_category_images()');
+    } catch (mvErr) {
+      console.warn('[price-sync] category_images_mv refresh failed (fail-open):',
+        mvErr instanceof Error ? mvErr.message : String(mvErr));
     }
 
     await logSystemEvent(

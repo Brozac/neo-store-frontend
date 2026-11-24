@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     // pagination mode — server.js:3019 (page presence قبل count — نفس الترتيب)
     if (q.get('page')) {
       const rows = await withRetry(() => dbCatalogPage(q));
-      if (rows !== undefined) return json(rows, 'public, s-maxage=60, stale-while-revalidate=300');
+      if (rows !== undefined) return json(rows, 'public, s-maxage=1800, stale-while-revalidate=86400');
       return json({ error: 'Internal Server Error' }, 'no-store', 500);
     }
 
@@ -71,11 +71,11 @@ export async function GET(request: Request) {
       const limitParam = parseInt(q.get('limit') || '', 10);
       if (Number.isFinite(limitParam) && limitParam > 0) {
         const rows = await withRetry(() => dbProductsLimit(Math.min(limitParam, 50))); // F#55 AntiClone
-        if (rows !== undefined) return json(rows, 'public, s-maxage=600, stale-while-revalidate=3600');
+        if (rows !== undefined) return json(rows, 'public, s-maxage=1800, stale-while-revalidate=86400');
         return json({ error: 'Internal Server Error' }, 'no-store', 500);
       }
       const rows = await withRetry(() => dbCatalogFull());
-      if (rows !== undefined) return json(rows, 'public, s-maxage=600, stale-while-revalidate=3600');
+      if (rows !== undefined) return json(rows, 'public, s-maxage=1800, stale-while-revalidate=86400');
       return json({ error: 'Internal Server Error' }, 'no-store', 500);
     }
 

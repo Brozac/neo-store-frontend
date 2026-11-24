@@ -7,7 +7,9 @@ import { withEdgeCache } from '@/lib/edge-cache';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  // Phase H — تفاصيل المنتج للجمهور: نفس البيانات للجميع · TTL 120s (الثمن يتجدد ≤2د)
+  // 🚀 PERF 2026-11-24 — TTL 24h + SWR 7d: الـ 304k نداء WHERE id=$1 كانو بلا كاش فعّال.
+  //  الطزاجة عبر bump ديال edgecache:catalog_version (price-sync/admin/webhook) +
+  //  zone purge للـ URLs المحدثة — ماشي عبر TTL قصير كيعاود يضرب الـ DB كل دقيقتين.
   return withEdgeCache(request, async () => {
     try {
       const { id } = await params;
@@ -18,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const p = await dbProduct(pid);
       if (!p) return NextResponse.json({ error: 'Not found' }, { status: 404 });
       return NextResponse.json(p, {
-        headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600' },
+        headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' },
       });
     } catch (e) {
       console.warn('[pb-product] failed:', e instanceof Error ? e.message : e);

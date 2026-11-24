@@ -56,7 +56,12 @@ export async function getRoSql(): Promise<RoSql | null> {
     const { default: postgres } = await import('postgres');
     cachedSql = postgres(cs, {
       max: 5,
-      idle_timeout: 30,
+      // 🚀 PERF 2026-11-24: ~20k اتصال جديد فالنافذة = type-info 16.5k × 374 صف
+      //    (pg_stat_statements). idle_timeout 30s كيقتل الاتصال بين الطلبات —
+      //    300s + max_lifetime 3600 = إعادة استخدام داخل الـ isolate أقل connect+type-info.
+      //    fetch_types يبقى true (عقد text[]: images/colors/sizes — موثق تحت).
+      idle_timeout: 300,
+      max_lifetime: 3600,
       connect_timeout: 8,
       // poolers + Workers: بلا server-side prepared statements
       prepare: false,

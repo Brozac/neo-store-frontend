@@ -2,7 +2,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 // custom-worker.scheduled → runScheduledTask(controller.cron, env):
 //   "0 3 * * *"    → buildAllFeeds   (merchant feeds → R2)
-//   "0 */6 * * *"  → runDailyPriceSync(25)
+//   "0 */6 * * *"  → runDailyPriceSync(200)
 //   "0 * * * *"    → sweepPendingOrders
 // كل مهمة fail-isolated: فشلها ما كيوقعش الأخرة، والفشل كيتسجل بالتفصيل.
 // ═══════════════════════════════════════════════════════════════════════
@@ -26,7 +26,7 @@ export async function runScheduledTask(cron: string, env: CfCronEnv): Promise<vo
         break;
       }
       case CRON_PRICE_SYNC: {
-        const r = await runDailyPriceSync(env, 25);
+        const r = await runDailyPriceSync(env, 200);
         console.log(
           `[cron:price-sync] checked=${r.checked} updated=${r.updated} purged=${r.cachePurged ? 'yes' : 'no'} ms=${r.ms} ${r.error ? 'error=' + r.error : ''}`,
         );

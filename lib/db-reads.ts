@@ -162,17 +162,28 @@ export async function dbRelated(
   if (!sql) return undefined;
   try {
     const FIELDS = 'id, title, price, image_url, category';
-    const prod = await sql.unsafe('SELECT category FROM products WHERE id = $1', [pid]);
-    if (prod.length === 0) return [];
-    const category = prod[0].category;
-    const baseCategory = category ? String(category).split('-')[0] : '';
-
-    let rows = await sql.unsafe(
-      `SELECT ${FIELDS} FROM products
-       WHERE id != $1 AND category = $2 AND stock_status = true
-       ORDER BY id DESC LIMIT 8`,
-      [pid, category],
+    // 🚀 PERF 2026-11-24: category كتندمج فالاستعلام الواحد (CTE) — كان SELECT category
+    //    منفصل 83k نداء (pg_stat_statements). المسار النادر (بلا siblings) كيخدم
+    //    بالـ lookup القديم باش نفرقو «المنتج غايب» على «ما عندوش siblings».
+    const stage1 = await sql.unsafe(
+      `WITH b AS (SELECT category FROM products WHERE id = $1)
+       SELECT p.id, p.title, p.price, p.image_url, p.category, b.category AS __cat
+       FROM products p CROSS JOIN b
+       WHERE p.id != $1 AND p.category = b.category AND p.stock_status = true
+       ORDER BY p.id DESC LIMIT 8`,
+      [pid],
     );
+    let rows: Record<string, unknown>[] = stage1;
+    let category: unknown;
+    if (rows.length > 0) {
+      category = rows[0].__cat;
+      rows = rows.map(({ __cat, ...r }) => r);
+    } else {
+      const prod = await sql.unsafe('SELECT category FROM products WHERE id = $1', [pid]);
+      if (prod.length === 0) return [];
+      category = prod[0].category;
+    }
+    const baseCategory = category ? String(category).split('-')[0] : '';
     if (rows.length < 8 && baseCategory) {
       const existingIds = rows.map((r) => Number(r.id));
       existingIds.push(pid);
@@ -334,7 +345,8 @@ export async function dbProductsMinimal(
     const [rows, totalRows] = await Promise.all([
       sql.unsafe(
         `SELECT id, created_at FROM products WHERE stock_status = true
-         ORDER BY id DESC LIMIT ${MINIMAL_CHUNK} OFFSET ${(p - 1) * MINIMAL_CHUNK}`,
+         ORDER BY sales_count DESC NULLS LAST, id DESC
+         LIMIT ${MINIMAL_CHUNK} OFFSET ${(p - 1) * MINIMAL_CHUNK}`,
       ),
       sql.unsafe('SELECT COUNT(*)::int AS total FROM products WHERE stock_status = true'),
     ]);
@@ -637,25 +649,11 @@ export async function dbCategoriesTree(): Promise<Record<string, unknown>[] | un
         roots.push(node);
       }
     }
-    // 🆕 Temu-style rail: صورة ممثلة لكل فئة — نفس LATERAL حرفياً
+    // 🚀 PERF 2026-11-24 — الـ LATERAL كان 191 نداء × 32s = 6,140s (TOAST ديال images فالترتيب)
+    //    → matview category_images_mv (672 صف، كيعمّرها الكرون كل 6 ساعات عبر
+    //    refresh_category_images()) — القراءة هنا = ms. نفس الشكل (slug, image_url).
     try {
-      const imgs = await sql.unsafe(`
-        SELECT c.slug, img.image_url
-        FROM categories c
-        LEFT JOIN LATERAL (
-          SELECT p.image_url
-          FROM products p
-          WHERE p.stock_status = true
-            AND p.image_url IS NOT NULL AND p.image_url <> ''
-            AND (p.category = c.slug OR p.category LIKE c.slug || '-%' OR p.category LIKE c.slug || '/%')
-          ORDER BY
-            p.sort_order DESC NULLS LAST,
-            p.is_sourced DESC,
-            (p.video_url IS NOT NULL AND p.video_url <> '') DESC,
-            COALESCE(array_length(p.images, 1), 0) DESC,
-            p.id DESC
-          LIMIT 1
-        ) img ON true`);
+      const imgs = await sql.unsafe('SELECT slug, image_url FROM category_images_mv');
       const imgMap = new Map<string, string | null>();
       for (const r of imgs) imgMap.set(String(r.slug), (r.image_url as string) ?? null);
       const attach = (nodes: Record<string, unknown>[]) => {
