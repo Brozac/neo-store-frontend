@@ -136,7 +136,7 @@ export async function syncOneProductFromCj(
 // PDP/beacon كيشعل تحديث CJ للمنتج المزار فقط — عينة 10% + guard updated_at > 6h
 // + قاطع دائرة (3 إخفاقات = off 10 دقايق) + dedupe لكل isolate. بلا version bump
 // (باش ما نهدموش كاش الحافة العالمي) — غير zone purge للـ URL ديال المنتج المحدّث.
-let _breaker = { fails: 0, openUntil: 0 };
+const _breaker = { fails: 0, openUntil: 0 };
 const _recent = new Map<number, number>();
 
 export async function refreshPriceOnVisit(
