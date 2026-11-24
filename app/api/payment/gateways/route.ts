@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 let gwCache: { keys: string[]; expiry: number } | null = null;
 
 export async function GET(request: Request) {
-  // 1) proxy — Render حي = نفس السلوك حرفياً
+  // 1) proxy — Render حي = نفس السلوك حرفياً (BACKEND CLOSED — Phase G: معطل افتراضياً)
   const proxied = await pbProxy(request, '/api/payment/gateways');
   if (proxied) return proxied;
 
@@ -24,11 +24,13 @@ export async function GET(request: Request) {
     const rows = await sql.unsafe(
       'SELECT gateway_key, enabled FROM payment_gateways ORDER BY id ASC',
     );
-    // 🔧 fallback فقط: نفلتررو للبوابات اللي الـ Worker كيقدر يخدمها فعلاً
-    // (stripe عبر create-checkout-session + verify-session JIT). crypto/manual
-    // مازالو على Render — نقترحوهم ونا Render واقف = طريق مسدود للزائر.
-    // proxy (Render حي) كيرجع الحقيقة الكاملة كما هي — ما كاين حتى تغيير.
-    const WORKER_SERVED = new Set(['stripe']);
+    // 🔧 ops-fix (2026-11-24): البوابات اللي الـ Worker كيخدمها نيشان كاملة —
+    //   stripe    → /api/create-checkout-session + /api/payment/verify-session (JIT)
+    //   crypto    → /api/payment/crypto (فاتورة NowPayments أصلية + callback + verify)
+    //   baridimob → /api/payment/manual (إيصال BaridiMob/CCP → R2 receipts + manual_orders)
+    // كان قديماً Set(['stripe']) فقط — crypto كان مخفي وmanual كان 501 من الcatch-all
+    // رغم أن الroutes الأصلية موجودة — سبب: "الـ gateways الظاهرة فاللوحة لا تظهر فcheckout".
+    const WORKER_SERVED = new Set(['stripe', 'crypto', 'baridimob']);
     const keys = rows
       .filter((r) => r.enabled)
       .map((r) => String(r.gateway_key))
