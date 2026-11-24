@@ -35,6 +35,10 @@
         //    → CI deploy كيترفض بـ code 10021 (درس من build 23:31).
         //    الـ alias كيحوّله لـ shim خاوي — مكافئ حرفياً للـ react-server resolution، وكيسدّ الباب على أي ملف جاي.
         "alias": { "server-only": "./shims/server-only-empty.ts" },
+        // 📡 مراقبة الإنتاج — Workers Logs: cron errors وfetch logs كيتشافو مباشرة (من 01:00 UTC tick)
+        "observability": {
+                "enabled": true,
+        },
 // ─── ⭐ Workers Cache: CF كيفحص الكاش قبل ما يجري الـ Worker ───
 // صفحات ISR (s-maxage=86400) كتخدم من الحافة — HIT = صفر تنفيذ Worker
 "cache": {
