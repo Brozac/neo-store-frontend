@@ -44,6 +44,11 @@
 "cache": {
   "enabled": true,
 },
+        // ⏱️ ops-fix (2026-11-24) — سقف CPU للـ Worker:
+        //    الافتراضي 30s قتَل feeds cron فـ 03:00 UTC (exceededCpu بعد 3m25s wall
+        //    على 54,367 منتج → R2 multipart ما اكتملش → feed 404).
+        //    الخطة المدفوعة (Workers Paid) تسمح حتى 5min — رفعناه لـ 300000ms.
+        "limits": { "cpu_ms": 300000 },
         "compatibility_flags": [
                 // Node.js APIs داخل الـ Worker (Buffer, crypto — كيستعملهم /api/revalidate وNextAuth)
                 "nodejs_compat",
