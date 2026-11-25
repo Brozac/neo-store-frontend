@@ -4,24 +4,20 @@
 //   (api/laclarc/rpc/usd) — قناة Google Shopping واقفة. السبب المعماري:
 //   select(*) ≈ 10.4KB/row = 565MB/fetch مقابل projection مينيمال + XML فـ SQL.
 //
-// 🩹 ops-fix (2026-11-25) — درس exceededWallTime من tick 03:00 UTC (54,235 منتج):
-//   · 2026-11-24 03:00 → تقتل بـ exceededCpu (سقف CPU الافتراضي 30s) — fix:
-//     limits.cpu_ms=300000 (كوميت 4e06de1c).
-//   · 2026-11-25 03:00 → البناء بدا 03:00:05 ([feed] FX logged) وتقتل 03:15:04
-//     بـ outcome=exceededWallTime — سقف wall-time ديال scheduled handler ثابت
-//     15 دقيقة فـ Cloudflare (ما كيتبدلش بالـ config). القياس المباشر على نفس
-//     الـ pooler: 5.4s/صفحة × 11 صفحات ≈ 60s DB — الاختناق كان فمسار
-//     Hyperdrive مع transfers ديال ~10.8MB/صفحة.
-//   الإصلاحات فهاد الملف:
-//   · القراءة عبر openRwSql (المسار المباشر المثبت فنفس كونتكس cron — sweeper
-//     كيسالي فـ 1-2s كل ساعة) + fallback لـ openRoSql/Hyperdrive إلا نقص السرّ.
-//   · pass وحدة على الصفحات: DZD كيتولد فـ SQL، وUSD كيتحوّل من نفس الـ chunk
-//     فالـ worker (regex على سطر <g:price> فقط — الأوصاف مفرّغة من '<' فـ SQL)
-//     → نص egress ديال Supabase (~120MB بدل ~240MB كل يوم) ونص وقت DB.
-//   · progress log لكل صفحة — لا صمت 15 دقيقة مرة أخرى.
-//   · FEEDS_DONE / FEEDS_ERROR فـ system_events — شاهد DB مثل SWEEPER_DONE.
-//   · ميزانية wall (11 min) + abort ديال multipart عند الفشل — الـ feeds
-//     القديمة كتبقى سليمة (لا أجزاء يتيمة — درس r2_multipart_cleanup).
+// 🚨 ops-fix (2026-11-25) — الجذر الحقيقي توصلنا بيه بعد forensics:
+//   1) 🐛 KEYSET OVERLAP BUG (القاتل الأساسي): الـ loop كان كياخذ MAX(id) تاع الصفحة
+//      كـ continuation key مع فلتر id < MAX → كل صفحة جديدة كتعاود 4999 من 5000 صف
+//      (99.98% overlap) → 54,235 صفحة بدل 11 → ساعات ديال القراءة → القتل المضمون
+//      فـ 15 دقيقة (exceededWallTime — السقف الصلب ديال scheduled handler، ما كيتconfigاش).
+//      دليل: Workers Logs 03:00:05 [feed] FX logged → 03:15:04 exceededWallTime،
+//      والقياس الحي: advance=1 id/صفحة (97928→97927→97926) بدل ~5000.
+//      الإصلاح: continuation = MIN(id) تاع الصفحة → advance كامل ~5000/صفحة → 11 صفحات.
+//   2) exceededCpu (2026-11-24 03:00) — سقف CPU الافتراضي 30s — fix: limits.cpu_ms=300000.
+//   3) تحصين: القراءة عبر openRwSql (المسار المباشر المثبت فنفس كونتكس cron — sweeper
+//      1-2s كل ساعة) + fallback openRoSql/Hyperdrive؛ pass وحدة على الصفحات (USD كيتحوّل
+//      من نفس الـ chunk فالـ worker — نص egress ديال Supabase ~120MB بدل ~240MB يومياً)؛
+//      progress log لكل صفحة؛ FEEDS_DONE/FEEDS_ERROR فـ system_events؛ ميزانية wall 11min
+//      + abort ديال multipart عند الفشل — الـ feeds القديمة كتبقى سليمة.
 // ═══════════════════════════════════════════════════════════════════════
 import { openRoSql, openRwSql, logSystemEvent, type CronSql } from './cron-db';
 import { getUsdPerDzdRate } from './fx';
@@ -59,6 +55,9 @@ function sqlEsc(colExpr: string): string {
 }
 
 // ─── الصفحة الواحدة — كل توليد XML (DZD) في Postgres؛ USD كيتحوّل فالـ worker ───
+// 🐛 FIX: continuation key هو MIN(id) تاع الصفحة (next_id) — ماشي MAX!
+//   ORDER BY id DESC LIMIT 5000 → آخر صف فالصفحة هو الأصغر → id < MIN كيعطي
+//   الصفحة الجاية بلا أي overlap (advance ≈ 5000 id/صفحة → 11 صفحات لـ 54k منتج).
 function pageSql(): string {
   const sql = `
     WITH page AS (
@@ -72,7 +71,7 @@ function pageSql(): string {
       ORDER BY id DESC
       LIMIT ${PAGE}
     )
-    SELECT COALESCE(MAX(id), 0) AS last_id, COUNT(*)::int AS n,
+    SELECT COALESCE(MIN(id), 0) AS next_id, COUNT(*)::int AS n,
       COALESCE(string_agg(
         '<item>' ||
         '<g:id>' || id || '</g:id>' ||
@@ -278,9 +277,10 @@ export async function buildAllFeeds(env: CfCronEnv): Promise<FeedsResult> {
       console.log(
         `[feed] page ${pages} rows=${Number(row.n)} q_ms=${qMs} dzd_bytes=${stDzd.bytes} usd_bytes=${stUsd ? stUsd.bytes : 0} elapsed_ms=${Date.now() - t0}`,
       );
-      const maxId = Number(row.last_id);
-      if (!Number.isFinite(maxId) || maxId <= 0 || Number(row.n) < PAGE) break;
-      lastId = maxId;
+      // 🐛 FIX: continuation = MIN(id) تاع الصفحة (next_id) — id < MIN كيضمن صفر overlap
+      const nextId = Number(row.next_id);
+      if (!Number.isFinite(nextId) || nextId <= 0 || Number(row.n) < PAGE) break;
+      lastId = nextId;
     }
 
     await pushChunk(mpDzd, stDzd, FOOTER);
