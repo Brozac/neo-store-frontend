@@ -258,7 +258,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
                 // 🖼️ أول طلعة (قبل ما توصل الداتا): فرامات باللوگو — نفس الستايل، بلا نص
                 [1, 2, 3].map((n) => (
                   <span key={n} className="hero-img is-logo" data-hero={n} aria-hidden="true">
-                    <img src="/icon-192.png" alt="" />
+                    <img src="/error-bag.png" alt="" />
                   </span>
                 ))
               )}
