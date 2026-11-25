@@ -1,21 +1,29 @@
 // lib/cj-token-kv.ts — phase-abc: طبقة KV فوق توكن CJ (البند 5 — خطر daily limit)
 // ═══════════════════════════════════════════════════════════════════════
 // المشكل الحي: التوكن in-memory per-isolate — كل isolate جديد كيصيفط auth
-//   جديد لـ CJ. CJ عندها حدود يومية على /authentication — ملفوف isolates
+//   جديد لـ CJ. CJ عندها حدود على /authentication (QPS=1) — ملفوف isolates
 //   كثيرة (كل PoP · كل restart) = استهلاك لا لازوم.
 // الحل: التوكن كيتشارك عبر KV (STORE_KV/NEXT_INC_CACHE_KV):
 //   memory hit → استعمل (نفس السلوك اليوم)
 //   memory miss → KV read → سليم؟ استعمل + عمّر الذاكرة
 //   ولا → التدفق الحي (refresh/getAccessToken) → كتابة KV (fire-safe)
 // الهامش: 15 دقيقة (كان 10) — قبل انتهاء التوكن الفعلي.
+// 🆕 2026-11 audit (وثائق CJ الرسمية auth.html): التوكن الحي 180 يوم (ماشي 12h
+//   اللي كانت مفروضة من الباك القديم) · auth endpoints عليها QPS=1 · نفس الحساب
+//   داخل 24h كيرجع نفس التوكن (server-side cache) — بعدها توكن جديد كيتولد.
+//   الـ TTL القديم 13h كان كيخلي الـ entry يتبخر كل 13 ساعة → auth بلا داعي
+//   → كل 24h+ توكن جديد. دابا: TTL 179 يوم = توكن واحد مشترك طول حياته.
 // ═══════════════════════════════════════════════════════════════════════
 import { kvGetJson, kvPutJson } from './kv-store';
 
 const CJ_TOKEN_KV_KEY = 'cj:token:v2';
 /** هامش الأمان قبل الـ expiry — 15 دقيقة (كان 10 — البند 5 كيطلبه) */
 export const CJ_TOKEN_MARGIN_MS = 15 * 60 * 1000;
-/** TTL الحد الأقصى للكتابة — التوكن الحي 12h → نخزن 13h باش يبقى حتى مع تأخير */
-const CJ_TOKEN_KV_TTL_S = 13 * 60 * 60;
+/** TTL الكتابة — التوكن الحي 180 يوم (وثائق 2026-11) → نخزنو 179 يوم.
+ *  القديم كان 13h (فرضية 12h ورثناها من الباك) — KV كان يتبخر وauth يتعاود.
+ *  الانتهاء الفعلي محفوظ فـ expiryMs + isCjTokenUsable كيتحقق بلهامش 15د،
+ *  و cjFetch عندو auth-retry على 401/1600001 — حتى إلا انتهى بدري، كيتصلح بوحدو. */
+const CJ_TOKEN_KV_TTL_S = 179 * 24 * 60 * 60;
 
 export interface CjTokenKvEntry {
   token: string;
