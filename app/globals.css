@@ -167,7 +167,7 @@
   --color-violet-heaven-950: #2a2636;
 }
 
-/* ==========================================
+/* ========================================== 
    ✨ إعدادات اللمس والتفاعل العامة (Touch UX)
    ========================================== */
 @layer base {
@@ -217,7 +217,7 @@
   }
 }
 
-/* ==========================================
+/* ========================================== 
    ✨ تأثيرات بطاقات المنتجات (Interactive Pop-out)
    ========================================== */
 .product-card-animated {
@@ -234,7 +234,7 @@
   border-color: #5B7EA6 !important;
 }
 
-/* ==========================================
+/* ========================================== 
    ✨ تصميم Accordion المتداخل للمنتجات الرائجة
    ========================================== */
 .t-accordion-container {
@@ -321,7 +321,7 @@
   margin-top: 0.2rem;
 }
 
-/* ==========================================
+/* ========================================== 
    ✨ شريط التقييمات المتزلق (Reviews Carousel)
    ========================================== */
 .reviews-carousel {
@@ -347,7 +347,7 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
-/* ==========================================
+/* ========================================== 
    ✨ تأثير الحدود الكهربائية المسرعة عتادياً (Lightning Deals)
    ========================================== */
 :root {
@@ -529,294 +529,74 @@
   box-shadow: 0 2px 8px rgba(127,161,196, 0.3);
 }
 
-/* ==========================================
-   ✨ Hero Cards — Collage
+/* ========================================== 
+   🎴 Hero Polaroid — 3 بطاقات صور (v3 · طلب المالك 2026-11-25)
+   الأساس: CSS المالك حرفي (100px/78px) — هنا مكتوب ×2.4 (المقاسات الكبيرة
+   اللي صادق عليها فالـ preview) + بطاقة ثالثة بنفس النسب (78×0.78≈61 ×2.4≈146).
+   الديسكتوب فقط: الهيرو كامل مخبي <640px فـ HomeClient (hidden sm:block).
+   🔄 كل زيارة كيتبدلو المنتجات (ROTATE-V2 فـ HeroSection.tsx).
    ========================================== */
-.hero-cards-container {
+.hero {
+  /* ⚠️ المتغيرات ما كانش معرّفين فالمشروع — قيم من نفس عائلة الظلال تاع الموقع */
+  --card: #ffffff;
+  --shadow-pop: 0 12px 28px rgba(46, 64, 87, 0.22);
   position: relative;
-  width: 512px;
-  max-width: 100%;
-  aspect-ratio: 512 / 505;
-  overflow: hidden;
-  border-radius: 16px;
-  background: white;
+  width: 276px;   /* أعرض بطاقة 240 + دورانها + هامش الظل */
+  height: 500px;  /* آخر بطاقة كتسالي على ~485 + الدوران */
 }
 
-.hero-card {
+/* 📎 CSS المالك — القواعد الأصلية بلا تبدیل، القيم ×2.4:
+   (100→240 · 78→187 · left 2→5 · top 82→197 · left 24→58) */
+.hero-img {
   position: absolute;
-  transition: all 0.5s ease;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1;
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 22px;
+  object-fit: cover;
+  border: 4px solid var(--card);
+  box-shadow: var(--shadow-pop);
+  transition: transform .5s cubic-bezier(.2,0,0,1);
+  display: block;
+  background: #ffffff;
   cursor: pointer;
-  background-color: #DCE9F4; /* 🆕 Image Beast — خلفية ناعمة تحت صور الشفافية */
-  touch-action: manipulation;
 }
+.hero-img[data-hero="1"] { width: 240px; height: 240px; top: 0;     left: 5px;  transform: rotate(-5deg); }
+.hero-img[data-hero="2"] { width: 187px; height: 187px; top: 197px; left: 58px; transform: rotate(6deg); }
+/* 📎 زيادة: البطاقة الثالثة — كتكمل الكاسكاد بنفس النسب */
+.hero-img[data-hero="3"] { width: 146px; height: 146px; top: 330px; left: 0;    transform: rotate(-7deg); }
 
-/* البطاقة الكبيرة فوق */
-.hero-card.pos-top {
-  top: 0; left: 0;
-  width: 100%;
-  height: 59.5%;
-}
+.hero:hover .hero-img[data-hero="1"] { transform: rotate(-2deg) translateY(-3px) scale(1.04); }
+.hero:hover .hero-img[data-hero="2"] { transform: rotate(9deg) translateY(-2px) scale(1.04); }
+.hero:hover .hero-img[data-hero="3"] { transform: rotate(-4deg) translateY(-3px) scale(1.04); }
 
-/* البطاقة الصغيرة تحت على اليسار */
-.hero-card.pos-bottom-left {
-  top: 60.4%; left: 0; bottom: 0;
-  width: 39%;
-}
-
-/* البطاقة تحت على اليمين */
-.hero-card.pos-bottom-right {
-  right: 0; bottom: 0;
-  width: 59.6%;
-  height: 55.5%;
-}
-
-/* ✨ التوسّع عند التحويم */
-.hero-card.pos-top:hover,
-.hero-card.pos-bottom-left:hover,
-.hero-card.pos-top:active,
-.hero-card.pos-bottom-left:active {
-  height: 100% !important;
-  width: 100% !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: auto !important;
-  bottom: auto !important;
-  z-index: 10;
-  border-radius: 16px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-}
-
-.hero-card.pos-bottom-right:hover,
-.hero-card.pos-bottom-right:active {
-  height: 100% !important;
-  width: 100% !important;
-  top: auto !important;
-  left: auto !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 10;
-  border-radius: 16px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* المحتوى: العنوان دائماً ظاهر، الوصف على hover */
-.hero-card-content {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 1.5rem;
-  background: linear-gradient(to top, rgba(46,64,87, 0.82), transparent); /* 🩹 REPLICA_V3 — ink تاع Serene بدل الأسود الصافي */
-  transition: all 0.3s ease;
-  text-align: left;
-}
-
-.hero-card:hover .hero-card-content { padding-bottom: 2.5rem; }
-
-.hero-card-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: white;
-  line-height: 1.2;
-}
-
-.hero-card-price {
-  font-size: 0.95rem;
-  font-weight: 900;
-  color: #A8C3DC;
-}
-
-.hero-card-description {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.4;
-  opacity: 0;
-  max-height: 0;
-  transition: all 0.3s ease;
-}
-
-.hero-card:hover .hero-card-description {
-  opacity: 1;
-  max-height: 100px;
-}
-
-/* ── F#71-c · MWG animate-to-intrinsic-sizes: أنيميشن أصلي للحجم الجوهري حتى 100% ديال المحتوى (Chrome/Edge 129+)؛ المتصفحات الأخرى كتبقى على max-height hack لفوق ── */
-@supports (interpolate-size: allow-keywords) {
-  :root { interpolate-size: allow-keywords; }
-  .hero-card-description {
-    max-height: none;
-    height: 0;
-    overflow: hidden;
-    transition: height 0.3s ease, opacity 0.3s ease;
-  }
-  .hero-card:hover .hero-card-description {
-    max-height: none;
-    height: auto;
-  }
-}
-
-/* حالات احتياطية: منتج واحد أو اثنان */
-.hero-cards-container.count-1 .hero-card { height: 100% !important; }
-.hero-cards-container.count-2 .pos-bottom-left { width: 100%; }
-
-/* ═══ Image Beast — Hero cards: صورة حقيقية بدل CSS background ═══ */
-.hero-card-img {
+/* الصورة داخل الفورمة — الراديوس الداخلي = 22 − 4 (الحد) */
+.hero-img > img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 0;
-  transition: transform 0.5s ease;
+  border-radius: 18px;
+  display: block;
+}
+/* 🖼️ fallback اللوگو (أول طلعة قبل الداتا): contain بلا قص */
+.hero-img.is-logo > img { object-fit: contain; padding: 18%; }
+
+/* 🛡️ MWG — prefers-reduced-motion: الدوران الثابت (تصميم) كيبقى،
+   غير حركة الـ hover كتوقف */
+@media (prefers-reduced-motion: reduce) {
+  .hero-img { transition: none; }
+  .hero:hover .hero-img[data-hero="1"] { transform: rotate(-5deg); }
+  .hero:hover .hero-img[data-hero="2"] { transform: rotate(6deg); }
+  .hero:hover .hero-img[data-hero="3"] { transform: rotate(-7deg); }
 }
 
-.hero-card:hover .hero-card-img {
-  transform: scale(1.03);
+/* ── F#71-c · MWG animate-to-intrinsic-sizes: أنيميشن أصلي للحجم الجوهري حتى 100% ديال المحتوى (Chrome/Edge 129+)؛ المتصفحات الأخرى كتبقى على max-height hack لفوق ──
+   ⚠️ v3 hero-polaroid: قواعد .hero-card-description تاعت الكولاج القديم تحيدو —
+   الـ :root بقى حيت pd.css (أكورديونات صفحة المنتج F#99) كيعتمد عليه */
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
 }
 
-.hero-card .hero-card-content {
-  position: absolute;
-  z-index: 2;
-}
-
-/* ==========================================
-   ✨ حالة النشطة (Tap-to-Expand للموبايل)
-   ========================================== */
-.hero-card.is-active {
-  height: 100% !important;
-  width: 100% !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: auto !important;
-  bottom: auto !important;
-  z-index: 10;
-  border-radius: 16px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-}
-
-.hero-card.is-active .hero-card-content { padding-bottom: 2.5rem; }
-
-.hero-card.is-active .hero-card-description {
-  opacity: 1;
-  max-height: 100px;
-}
-
-/* ✨ على اللمس: علامة "+" كتبين أن البطاقة قابلة للتوسع */
-@media (hover: none) {
-  .hero-card::before {
-    content: '＋';
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 26px;
-    height: 26px;
-    background: rgba(255, 255, 255, 0.92);
-    color: #2E4057;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 15px;
-    z-index: 3;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.3s ease;
-  }
-  .hero-card.is-active::before { opacity: 0; }
-}
-
-/* ✨ نوقفو الأنيميشن الطاير فالموبايل باش الضغط يبقى دقيق */
-@media (hover: none) and (max-width: 1023px) {
-  .hero-cards-container.float-anim-slow {
-    transform: none !important;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   🐺 MOBILE — Hero Cards Unified Responsive (Round #10)
-   كل قواعد hero الموبايل في بلوك واحد — لا ازدواج
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
-  /* ── التخطيط: شبكة متساوية ── */
-  .hero-cards-container {
-    aspect-ratio: 1 / 1.15;
-  }
-
-  .hero-card.pos-top {
-    top: 0; left: 0;
-    width: 100%;
-    height: 58%;
-  }
-
-  .hero-card.pos-bottom-left {
-    top: 59%; left: 0;
-    width: 49%; height: 40%;
-  }
-
-  .hero-card.pos-bottom-right {
-    top: 59%; right: 0;
-    width: 49%; height: 40%;
-  }
-
-  /* ── المحتوى: صغير + تدرج أقوى للقراءة ── */
-  .hero-card-content {
-    padding: 0.6rem 0.75rem;
-    padding-bottom: 1.5rem;
-    background: linear-gradient(
-      to top,
-      rgba(46,64,87, 0.92) 20%,
-      rgba(46,64,87, 0.45) 55%,
-      transparent
-    );
-  }
-
-  .hero-card:hover .hero-card-content,
-  .hero-card.is-active .hero-card-content {
-    padding-bottom: 1.5rem;
-  }
-
-  /* ── العناوين ── */
-  .hero-card-title {
-    font-size: 0.8rem;
-    line-height: 1.25;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .hero-card.pos-bottom-left .hero-card-title,
-  .hero-card.pos-bottom-right .hero-card-title {
-    font-size: 0.7rem;
-  }
-
-  /* ── السعر ── */
-  .hero-card-price {
-    font-size: 0.75rem;
-    margin-top: 2px;
-  }
-
-  .hero-card.pos-bottom-left .hero-card-price,
-  .hero-card.pos-bottom-right .hero-card-price {
-    font-size: 0.65rem;
-  }
-
-  /* ── الوصف ── */
-  .hero-card-description {
-    font-size: 0.7rem;
-  }
-}
-
-/* ==========================================
+/* ========================================== 
    ✨ أنيميشن الشات
    ========================================== */
 @keyframes chat-pop {
@@ -903,24 +683,6 @@ img {
    ✨ REPLICA_V3 — تفاصيل النسخة الطبق الأصل (Serene)
    hero tags · timeline pulse · success ring
    ══════════════════════════════════════════════════════════ */
-
-/* شارة صغيرة أعلى يسار بطاقات الـ hero (TRENDING / CURATED / FEATURED) */
-.hero-card-tag {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.92);
-  color: #5B7EA6;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  padding: 4px 9px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(46,64,87, 0.18);
-  pointer-events: none;
-}
 
 /* نبضة النقطة الحالية في timeline التتبع — حلقة بنفسجية كتتوسع
    (كتشمل الـ ring-4 الثابت باش ما يكونش قفزة بصرية) */
