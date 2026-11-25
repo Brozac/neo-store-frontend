@@ -18,6 +18,9 @@
 //      من نفس الـ chunk فالـ worker — نص egress ديال Supabase ~120MB بدل ~240MB يومياً)؛
 //      progress log لكل صفحة؛ FEEDS_DONE/FEEDS_ERROR فـ system_events؛ ميزانية wall 11min
 //      + abort ديال multipart عند الفشل — الـ feeds القديمة كتبقى سليمة.
+//   4) 🛡️ تحصين إضافي (2026-11-25 مساءً — مراجعة draft pagination): MAX_PAGES=30
+//      (egress guard على عدد الصفحات) + إنذار صلب nextId >= lastId (صرامة تقدم
+//      المؤشر) — حواجز ثانية فوق wall budget، الحارس الأساسي.
 // ═══════════════════════════════════════════════════════════════════════
 import { openRoSql, openRwSql, logSystemEvent, type CronSql } from './cron-db';
 import { getUsdPerDzdRate } from './fx';
@@ -31,6 +34,10 @@ const FEED_USD_KEY = 'feeds/merchant-feed-usd.xml';
 // درس exceededWallTime: السقف الصلب ديال scheduled handler هو 15:00 — من بعد
 // 11 دقيقة كنوقفو وننصحّحو (abort) باش الـ feeds القديمة تبقى هي لي خدّامة.
 const WALL_BUDGET_MS = 11 * 60 * 1000;
+// 🛡️ egress guard إضافي (belt-and-braces): سقف الصفحات — 30 × 5000 = 150k منتج
+//    (≈ 3× الكتالوج الحالي 54k). الحارس الأساسي هو wall budget (كيشمل حتى بطء DB)؛
+//    هادا كيوقف أي انحلال مستقبلي فالـ pagination بخطأ واضح فـ FEEDS_ERROR.
+const MAX_PAGES = 30;
 
 export interface FeedResult {
   ok: boolean;
@@ -259,6 +266,9 @@ export async function buildAllFeeds(env: CfCronEnv): Promise<FeedsResult> {
       if (Date.now() - t0 > WALL_BUDGET_MS) {
         throw new Error(`wall_budget_exceeded_at_page_${pages}`);
       }
+      if (pages >= MAX_PAGES) {
+        throw new Error(`feed pagination exceeded ${MAX_PAGES} pages — aborting (egress guard)`);
+      }
       const tq = Date.now();
       const rows = await sql.unsafe(pageQuery, [lastId]);
       const qMs = Date.now() - tq;
@@ -280,6 +290,11 @@ export async function buildAllFeeds(env: CfCronEnv): Promise<FeedsResult> {
       // 🐛 FIX: continuation = MIN(id) تاع الصفحة (next_id) — id < MIN كيضمن صفر overlap
       const nextId = Number(row.next_id);
       if (!Number.isFinite(nextId) || nextId <= 0 || Number(row.n) < PAGE) break;
+      // 🛡️ المؤشر خاصو ينقص صرامة (MIN ديال الصفحة < المؤشر ديالها — مضمون فـ SQL؛
+      //    هادا إنذار صلب إلا تخرق الفرضية مستقبلاً — بدل حلقة صامتة)
+      if (nextId >= lastId) {
+        throw new Error(`feed keyset not advancing (nextId=${nextId} >= lastId=${lastId}) — aborting`);
+      }
       lastId = nextId;
     }
 
