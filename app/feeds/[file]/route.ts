@@ -43,11 +43,19 @@ export async function GET(
         { status: 404 },
       );
     }
-    const body = await obj.arrayBuffer();
-    return new NextResponse(body, {
+    // 🩹 streaming-fix (2026-11-25): obj.body (ReadableStream) مباشرة — arrayBuffer()
+    // كان كيفري الـ feed كامل (~117MB) فذاكرة الـ Worker (سقف ~128MB) → OOM/1102
+    // ملي Googlebot كيجي يجبد الـ feed. الـ streaming كيدوز بالبايتات بلا
+    // buffering — الذاكرة O(1) مهما كبر الـ feed، و TTFB كيطير (أول chunk دغيا).
+    return new NextResponse(obj.body, {
       status: 200,
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
+        // الحجم الدقيق من R2 — Googlebot كيتعامل معاه أحسن من chunked،
+        // وكيخلي الـ zone cache يخدم بلا تخمين (size اختياري فالنوع → حارس).
+        ...(typeof obj.size === 'number'
+          ? { 'Content-Length': String(obj.size) }
+          : {}),
         'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=86400',
         ...(obj.customMetadata?.generated_at
           ? { 'X-Feed-Generated-At': obj.customMetadata.generated_at }
