@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -8,27 +8,37 @@ import { IMG } from '@/lib/imageOptimizer';
 import GlassIcon from '@/components/ui/GlassIcon';
 
 // ══════════════════════════════════════════════════════════════════
-// HeroSection v2.1 — مراجعة عميقة (Task 7)
+// HeroSection v3 — Polaroid Stack (طلب المالك 2026-11-25)
+//
+// 🎴 بطاقات عرض المنتجات فقط هي اللي تبدلت — كلشي آخر فالهيرو بقا كما هو:
+//    الكولاج القديم (3 بطاقات بنص/سعر/توسّع عند المرّة) → ستاك polaroid
+//    صور صافية بـ3 بطاقات. المقاسات الكبيرة = CSS المالك الأصلي (100px/78px)
+//    ×2.4 + بطاقة ثالثة بنفس النسب (موثق فـ globals.css).
+//    الكليك على البطاقة كيدي نيشان للمنتج — التوسّع تحيد (كان خاص الكولاج
+//    اللي كان فيه نص يقرا).
+//
+// 🔄 ROTATE-V2 — توافق مع ROTATE-V1 ديال الهوم (HomeClient):
+//    «المنتجات كل مرة يدخل زبون ويخرج كيتبدلو» — بلا sessionStorage ولا
+//    قيم محفوظة: كل زيارة = صفحة عشوائية (1..50) + seed خلط عشوائي.
+//    🛡️ SSR-safe: القيم العشوائية كتحسب داخل الـ effect بعد الـ hydration
+//    (shuffleSeed يبقى null حتى التركيب باش أول رندر كلاينت يطابق السيرفر
+//    بلا mismatch — نفس الحيلة الموثقة ديال v2).
 //
 // 🛡️ FIX-RACE (gsap): السكريبتات async — ما عندهمش ترتيب تنفيذ مضمون.
 //    ScrollTrigger يقدر ينفذ قبل gsap → initGSAP كان يخرج بصمت = صفر
 //    أنيميشن للأبد (نفس عائلة "الموت الصامت"). دابا: poll ≤5s لـ gsap
 //    + ScrollTrigger اختياري بتعلّق متأخر ≤10s + حرس عالمي ضد التكرار.
-// 🛡️ FIX-EDGE: Math.ceil(random*50) يقدر يعطي 0 → page=0 → floor+1.
+// 🛡️ FIX-EDGE: floor+1 = مدى 1..50 مضمون (ceil كان يعطي 0 عند random()===0).
 // 🛡️ FIX-SILENT: !res.ok ما بقاش صامت — console.warn بالـ status.
 // 🛡️ FIX-GUARD: Array.isArray على كل فرع من فروع استخراج الـ list.
-// 🧹 تم حذف 4 spans خاويين (كانو كيرندرو والو) — الإيموجي ⚡ بقا.
+//
+// 📱 الظهور: الهيرو كامل مخبي <640px (HomeClient: hidden sm:block — قرار
+//    المالك 2026-11-06) — هاد المكون كيتشاف غير تابلت/كمبيوتر، وما تبدل والو.
 //
 // ⚠️ M#45 — ادعاءات تجارية بلا سند موثق (قرار المالك، ما تبدلتش):
 //    "Insured Worldwide Shipping" · "real-time live tracking" ·
 //    "ships FREE worldwide" · "100% Buyer Protection"
 //    → توثيق أو تخفيف، نفس ملف القرار ديال wrapper الفئة.
-//
-// 📐 Backlog معماري (موثق، ما نفذش): lib/sessionSeed.ts موحد —
-//    getCatalogSeed() + mulberry32 + shufflePage (Tenet #31 للعشوائية).
-//    ملاحظة: الهيرو كيستعمل seed خام، الكتالوغ كيمزج بـ pageNum*7919 —
-//    الجوج deterministic وجلسة-مستقرة، ولكن "نفس الترتيب فينما بانو"
-//    حرفيًا غير محقق بين السطوح (المجموعات مختلفة أصلاً).
 // ══════════════════════════════════════════════════════════════════
 
 interface HeroSectionProps {
@@ -39,25 +49,13 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
   const [liveTime, setLiveTime] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const [activeCard, setActiveCard] = useState<number | null>(null);
+  // ✨ v3 (ROTATE-V2) — seed جديد في كل زيارة. init بـ null + effect ماشي
+  //    lazy-init: مقصود — أول رندر كلاينت يطابق SSR (بلا hydration mismatch)
   const [shuffleSeed, setShuffleSeed] = useState<number | null>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
 
-  // ✨ v2: صفحة الـ hero — session-scoped (نفس الجلسة = نفس البطاقات · جلسة جديدة = mix جديد)
-  // 🛡️ FIX-EDGE: floor+1 = مدى 1..50 مضمون (ceil كان يعطي 0 عند random()===0)
-  // ملاحظة هشاشة: لا تعرض heroPage في JSX — القيمة تختلف SSR(1) عن العميل بعد hydration
-  const [heroPage] = useState<number>(() => {
-    if (typeof window === 'undefined') return 1; // SSR-safe (Tenet #2)
-    try {
-      const saved = sessionStorage.getItem('hero_page');
-      if (saved) return Number(saved) || 1;
-      const p = Math.floor(Math.random() * 50) + 1;
-      sessionStorage.setItem('hero_page', String(p));
-      return p;
-    } catch {
-      return 1; // sessionStorage محظور — ثابت
-    }
-  });
+  useEffect(() => {
+    setShuffleSeed(Math.floor(Math.random() * 1_000_000));
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -74,32 +72,17 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     return () => clearInterval(timer);
   }, []);
 
-  // ✨ Seed مشترك مع الكتالوغ — نفس الجلسة = ترتيب deterministic فينما بانو المنتجات
-  // (init بـ effect ماشي lazy-init: مقصود — التغيير بعد hydration باش ما يوقعش mismatch)
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem('catalog_seed');
-      if (saved) {
-        setShuffleSeed(Number(saved));
-      } else {
-        const seed = Math.floor(Math.random() * 1_000_000);
-        sessionStorage.setItem('catalog_seed', String(seed));
-        setShuffleSeed(seed);
-      }
-    } catch {
-      setShuffleSeed(1); // sessionStorage محظور — seed ثابت (بلا دوّار)
-    }
-  }, []);
-
   // 🔧 F107 — مسارات نسبية (Worker: proxy → db-ro) · <GlassIcon ch="✨" size="xs" /> Tenet #4 + fallback
   const API_URL = '';
 
+  // 🔄 ROTATE-V2 — الصفحة عشوائية داخل الـ effect (بلا state ولا sessionStorage):
+  //    كل زيارة كتجيب 12 منتج من صفحة مختلفة من الكتالوج → الخلط كياخد 3.
   useEffect(() => {
     const controller = new AbortController();
     const fetchProducts = async () => {
       try {
-        // ✨ v2: mosaic page من الجلسة — 12 منتج من فئات متنوعة · ثابت داخل الجلسة
-        const res = await fetch(`${API_URL}/api/products?page=${heroPage}&limit=12`, { signal: controller.signal });
+        const page = Math.floor(Math.random() * 50) + 1; // 🛡️ FIX-EDGE: 1..50 مضمون
+        const res = await fetch(`${API_URL}/api/products?page=${page}&limit=12`, { signal: controller.signal });
         if (!res.ok) {
           // 🛡️ FIX-SILENT: الفشل كيتسجل — "catch بلا صمت" (فلسفة المشروع)
           console.warn('HeroSection: HTTP', res.status, '— fallback to trending');
@@ -119,25 +102,9 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     };
     fetchProducts();
     return () => controller.abort();
-  }, [heroPage, API_URL]);
+  }, [API_URL]);
 
-  // ✨ كيسدّ البطاقة الموسعة ملي كنضغطو خارجها
-  useEffect(() => {
-    if (activeCard === null) return;
-    const handleOutside = (e: Event) => {
-      if (cardsRef.current && !cardsRef.current.contains(e.target as Node)) {
-        setActiveCard(null);
-      }
-    };
-    document.addEventListener('click', handleOutside);
-    document.addEventListener('touchstart', handleOutside);
-    return () => {
-      document.removeEventListener('click', handleOutside);
-      document.removeEventListener('touchstart', handleOutside);
-    };
-  }, [activeCard]);
-
-  // 🛡️ FIX-RACE (gsap) — النسخة المكففة:
+  // 🛡️ FIX-RACE (gsap) — النسخة المكففة (بقيت كما هي من v2.1):
   //   1) حرس عالمي: StrictMode/remount = init واحد فقط (كانو جوج tweens لانهائيين كيتحاربو)
   //   2) gsap حرج: poll ≤5s — السيناريو "ScrollTrigger وصل قبل gsap" ما عاد كيقتل الأنيميشن
   //   3) ScrollTrigger اختياري: إلا ما وصلش مع الأولى، تعلّق متأخر ≤10s وكيزيد غير الـ scroll-fade
@@ -194,7 +161,8 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
     tryInit();
   };
 
-  // ✨ Seeded Fisher-Yates (mulberry32 — نفس PRNG ديال الكتالوغ) — ترتيب حتمي لنفس الـ seed
+  // ✨ Seeded Fisher-Yates (mulberry32 — نفس PRNG ديال الكتالوغ) — ترتيب حتمي لنفس الـ seed.
+  //    v3: seed عشوائي كل زيارة (ROTATE-V2) → 3 بطاقات جديد كل مرة يدخل الزبون.
   const rotated = useMemo(() => {
     const pool = products.length > 0 ? products : (trendingProducts || []);
     if (shuffleSeed === null || pool.length <= 3) return pool.slice(0, 3);
@@ -216,37 +184,7 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
 
   const cards = rotated.length > 0 ? rotated : [];
 
-  const positions = ['pos-top', 'pos-bottom-left', 'pos-bottom-right'];
-  const countClass = cards.length === 1 ? 'count-1' : cards.length === 2 ? 'count-2' : '';
-
   const getImage = (p: any) => IMG.card(p?.image_url || p?.image || p?.thumbnail || '/icon-192.png');
-  const formatPrice = (p: any) => {
-    const val = Number(p?.price);
-    return isNaN(val) ? p?.price : `$${val.toFixed(2)}`;
-  };
-
-  // ✨ REPLICA_V3 — شارات صادقة على بطاقات الـ hero (من نفس مصدر الترند بلا ادعاءات)
-  const HERO_TAGS = ['Trending', 'Curated', 'Featured'];
-  const heroTag = (i: number) => HERO_TAGS[i] || '';
-
-  // ✨ أول ضغطة = توسيع | ضغطة ثانية = دخول للمنتج
-  const handleCardTap = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
-    if (activeCard !== index) {
-      e.preventDefault();
-      setActiveCard(index);
-    } else {
-      setActiveCard(null);
-    }
-  };
-
-  // ✨ v2: وصف صادق من DB (category حقيقي) — بلا "limited stock" مزيف
-  const getHonestDescription = (p: any) => {
-    if (p?.category) {
-      const leaf = String(p.category).split('/').pop()?.replace(/-/g, ' ');
-      if (leaf) return `${leaf} — ships FREE worldwide`;
-    }
-    return 'Curated quality — free worldwide shipping';
-  };
 
   return (
     <div className="w-full font-sans text-[#2E4057] overflow-hidden bg-[#F4F8FB] rounded-none md:rounded-3xl mb-0 md:mb-8 border-b md:border border-gray-200/80 shadow-xl">
@@ -295,65 +233,36 @@ export default function HeroSection({ trendingProducts }: HeroSectionProps = {})
         {/* المحتوى الرئيسي */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-1 gap-8 mt-4 md:mt-0 lg:flex-row lg:justify-between">
 
-          {/* بطاقات المنتجات — Collage مع دوّار الجلسة */}
+          {/* بطاقات المنتجات — 🎴 Polaroid stack (v3): صور صافية بلا نص · 3 بطاقات
+              بالمقاسات الكبيرة (CSS المالك ×2.4) · كل زيارة كيتبدلو (ROTATE-V2).
+              الكليك كيدي نيشان للمنتج — التوسّع تحيد (كان خاص الكولاج اللي فيه نص) */}
           <div className="gsap-parallax-img relative w-full lg:w-1/2 flex items-center justify-center pointer-events-auto order-1 lg:order-2 py-2 lg:py-0">
-            <div
-              ref={cardsRef}
-              className={`hero-cards-container float-anim-slow ${countClass}`}
-            >
+            <nav className="hero float-anim-slow" aria-label="Featured products">
               {cards.length > 0 ? (
                 cards.map((product: any, index: number) => (
                   <Link
                     key={product?.id ?? index}
                     href={`/products/${product.id}`}
-                    className={`hero-card ${positions[index]} ${activeCard === index ? 'is-active' : ''}`}
-                    onClick={(e) => handleCardTap(e, index)}
-                    aria-expanded={activeCard === index}
+                    className="hero-img"
+                    data-hero={index + 1}
                   >
                     <img
                       src={index === 0 ? IMG.detail(getImage(product)) : IMG.card(getImage(product))}
-                      alt=""
+                      alt={product?.title || 'Laclarc product'}
                       fetchPriority={index === 0 ? 'high' : undefined}
                       decoding="async"
-                      className="hero-card-img"
-                      aria-hidden="true"
                     />
-                    {/* ✨ REPLICA_V3 — شارة بيضاء أعلى البطاقة */}
-                    {heroTag(index) && (
-                      <span className="hero-card-tag">{heroTag(index)}</span>
-                    )}
-                    <div className="hero-card-content">
-                      <div className="hero-card-title">
-                        {product?.title || 'Laclarc Premium'}
-                      </div>
-                      {product?.price && (
-                        <div className="hero-card-price">{formatPrice(product)}</div>
-                      )}
-                      <div className="hero-card-description">
-                        {getHonestDescription(product)}
-                      </div>
-                    </div>
                   </Link>
                 ))
               ) : (
-                <div
-                  className="hero-card pos-top"
-                  style={{
-                    backgroundImage: 'url(/icon-192.png)',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundColor: 'white'
-                  }}
-                >
-                  <div className="hero-card-content">
-                    <div className="hero-card-title">Laclarc Premium Collection</div>
-                    <div className="hero-card-description">
-                      Trending deals across all departments.
-                    </div>
-                  </div>
-                </div>
+                // 🖼️ أول طلعة (قبل ما توصل الداتا): فرامات باللوگو — نفس الستايل، بلا نص
+                [1, 2, 3].map((n) => (
+                  <span key={n} className="hero-img is-logo" data-hero={n} aria-hidden="true">
+                    <img src="/icon-192.png" alt="" />
+                  </span>
+                ))
               )}
-            </div>
+            </nav>
           </div>
 
           {/* النصوص والأزرار */}
