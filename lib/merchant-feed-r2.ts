@@ -21,13 +21,28 @@
 //   4) 🛡️ تحصين إضافي (2026-11-25 مساءً — مراجعة draft pagination): MAX_PAGES=30
 //      (egress guard على عدد الصفحات) + إنذار صلب nextId >= lastId (صرامة تقدم
 //      المؤشر) — حواجز ثانية فوق wall budget، الحارس الأساسي.
+//   5) 🐛 UNIFORM PART SIZE (2026-11-26 03:00 UTC — أول cron كامل بالكود المصحح
+//      530d96c+945a935): الـ SQL/Pagination خدم مزيان (11 صفحة، 54,235 item لكل
+//      عملة، 86s) ولكنه طاح فـ completeMultipartUpload: "All non-trailing parts
+//      must have the same length. (10048)" — R2 أص severe من S3: كل الأجزاء إلا
+//      الأخيرة خاصها نفس الطول بالضبط، والـ buffer القديم كان كيصب كامل كيفما فات
+//      8MiB (يعني part = 8MiB + بقايا الـ chunk الأخير ~10.9MB) → أطوال متغيرة
+//      → الرفض + abort. الإصلاح: drainUploadBuffer/emitPart — القص حرفي من قدام
+//      الـ FIFO: كل part غير الأخير = بالضبط PART_TARGET_BYTES، الأخير حر (<8MiB).
+//      نفس توقيعات pushChunk/flushTail ومواقع الاستدعاء، نفس ميزانية الذاكرة،
+//      abort/complete unchanged. Byte-test حي: كل الأجزاء غير الأخيرة =
+//      8388608 بالضبط + SHA-256 تاع إعادة التجميع مطابق للستريم الأصلي + حالات
+//      حدية (exact-8MiB، tiny، micro-chunks).
 // ═══════════════════════════════════════════════════════════════════════
 import { openRoSql, openRwSql, logSystemEvent, type CronSql } from './cron-db';
 import { getUsdPerDzdRate } from './fx';
 import type { KvLike } from './kv-store';
 
 const PAGE = 5000;
-const PART_TARGET_BYTES = 8 * 1024 * 1024; // ≥ 5MiB إجباري uploadPart — نستهدف 8MiB
+// ≥ 5MiB إجباري uploadPart — نستهدف 8MiB؛ وهادا الحجم بالضبط لكل part غير الأخير
+// (R2 uniform part size — درس 2026-11-26: (10048) All non-trailing parts must have
+// the same length)
+const PART_TARGET_BYTES = 8 * 1024 * 1024;
 const SITE = 'https://laclarc.com';
 const FEED_DZD_KEY = 'feeds/merchant-feed.xml';
 const FEED_USD_KEY = 'feeds/merchant-feed-usd.xml';
@@ -139,6 +154,52 @@ function newUploadState(): UploadState {
   return { parts: [], bufParts: [], bufBytes: 0, partNo: 1, bytes: 0 };
 }
 
+// 🐛 FIX (2026-11-26): R2 كيفرض UNIFORM PART SIZE على كل الأجزاء إلا الأخيرة
+//   ((10048) "All non-trailing parts must have the same length"). القص هنا
+//   حرفي من قدام الـ FIFO: كل part غير الأخير كيخرج بالضبط PART_TARGET_BYTES،
+//   والأخير فقط يمكن يكون أصغر. القديم كان كيصب الـ buffer كامل كيفما فات
+//   8MiB → أطوال متغيرة → complete() مرفوض بعد 86s و54,235 item (شاهد
+//   FEEDS_ERROR 2026-11-26 03:01:33Z).
+async function emitPart(
+  mp: R2MultipartUploadLike,
+  st: UploadState,
+  len: number,
+): Promise<void> {
+  const joined = new Uint8Array(len);
+  let filled = 0;
+  while (filled < len) {
+    const head = st.bufParts[0];
+    const take = Math.min(head.length, len - filled);
+    joined.set(head.subarray(0, take), filled);
+    filled += take;
+    if (take === head.length) st.bufParts.shift();
+    else st.bufParts[0] = head.subarray(take);
+  }
+  st.bufBytes -= filled;
+  const part = await mp.uploadPart(st.partNo, joined);
+  st.parts.push({ partNumber: part.partNumber, etag: part.etag });
+  st.partNo++;
+}
+
+// كيصرف الأجزاء الكاملة (بالضبط 8MiB) كلما توفرت؛ فـ final كيصرف حتى البقايا
+// (<8MiB — الأخير المسموح وحده). بلا final: البقايا كتبقى فالـ buffer للchunk
+// الجاي — نفس عقد الـ callers القديم بالحرف.
+async function drainUploadBuffer(
+  mp: R2MultipartUploadLike,
+  st: UploadState,
+  final: boolean,
+): Promise<void> {
+  for (;;) {
+    if (st.bufBytes >= PART_TARGET_BYTES) {
+      await emitPart(mp, st, PART_TARGET_BYTES);
+    } else if (final && st.bufBytes > 0) {
+      await emitPart(mp, st, st.bufBytes);
+    } else {
+      break;
+    }
+  }
+}
+
 async function pushChunk(
   mp: R2MultipartUploadLike,
   st: UploadState,
@@ -148,35 +209,11 @@ async function pushChunk(
   st.bufParts.push(b);
   st.bufBytes += b.byteLength;
   st.bytes += b.byteLength;
-  if (st.bufBytes >= PART_TARGET_BYTES) {
-    const joined = new Uint8Array(st.bufBytes);
-    let off = 0;
-    for (const x of st.bufParts) {
-      joined.set(x, off);
-      off += x.byteLength;
-    }
-    st.bufParts = [];
-    st.bufBytes = 0;
-    const part = await mp.uploadPart(st.partNo, joined);
-    st.parts.push({ partNumber: part.partNumber, etag: part.etag });
-    st.partNo++;
-  }
+  await drainUploadBuffer(mp, st, false);
 }
 
 async function flushTail(mp: R2MultipartUploadLike, st: UploadState): Promise<void> {
-  if (st.bufBytes > 0) {
-    const joined = new Uint8Array(st.bufBytes);
-    let off = 0;
-    for (const x of st.bufParts) {
-      joined.set(x, off);
-      off += x.byteLength;
-    }
-    st.bufParts = [];
-    st.bufBytes = 0;
-    const part = await mp.uploadPart(st.partNo, joined);
-    st.parts.push({ partNumber: part.partNumber, etag: part.etag });
-    st.partNo++;
-  }
+  await drainUploadBuffer(mp, st, true);
 }
 
 async function abortQuietly(mp: R2MultipartUploadLike | null): Promise<void> {
