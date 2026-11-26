@@ -2,6 +2,9 @@
 // HMAC-SHA512 على الجسم المرتّب + x-nowpayments-sig · finished/confirmed → pending→paid ذرياً
 // Address Guard (Pending/N/A) → manual + CRYPTO_NO_ADDRESS critical
 // نجاح → fulfill على rpc (fire-and-forget) + إيميل تأكيد
+// 🩹 NP-F1: trim ديال السر قبل HMAC (الرسمي: PHP trim($this->ipn_secret) · SDK كيدير secret.trim())
+// 🩹 NP-F2: payment_id كيجي رقم فالـ IPN الرسمي (مثال التوثيق: "payment_id":123456789) — نقبلو الاثنين
+// 🩹 NP-C3: بوابة price_amount (توصية الرسمي على الـ re-deposits: check the amount in IPN)
 import { NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { getRwSql } from '@/lib/pb/pb-db';
@@ -38,7 +41,8 @@ export async function POST(request: Request) {
     }
     const body = (await request.json()) as Record<string, unknown>;
     const sorted = JSON.stringify(sortObject(body));
-    const expectedSig = createHmac('sha512', ipnSecret).update(sorted).digest('hex');
+    // 🩹 NP-F1: trim ديال السر قبل HMAC — نفس الرسمي (PHP: trim($this->ipn_secret) · SDK: secret.trim())
+    const expectedSig = createHmac('sha512', String(ipnSecret).trim()).update(sorted).digest('hex');
     const a = Buffer.from(expectedSig);
     const b = Buffer.from(String(receivedSig));
     if (a.length !== b.length || !timingSafeEqual(a, b)) {
@@ -57,10 +61,26 @@ export async function POST(request: Request) {
     const sql = await getRwSql();
     if (!sql) return new NextResponse('Error', { status: 500 });
 
+    // 🩹 NP-C3: بوابة المبلغ — فاتورتنا price_amount = total الأوردر (USD)؛ دفعة بمبلغ مختلف
+    //    (re-deposit/خلط) كتتجاهل fail-safe والـ sweeper كيكفل الباقي. فشل القراءة ما كيحبسش —
+    //    phasef_crypto_ipn_paid فيها القفل الذري والتعليم pending→paid.
+    try {
+      const amtRows = await sql.unsafe('SELECT total_amount FROM orders WHERE id = $1', [orderId]);
+      const totalAmt = Number((amtRows[0]?.total_amount as unknown) ?? NaN);
+      const claimed = Number(body.price_amount);
+      if (Number.isFinite(totalAmt) && Number.isFinite(claimed) && Math.abs(claimed - totalAmt) > 0.01) {
+        console.warn('[pb-crypto-ipn] price_amount mismatch — ignored:', orderId, claimed, totalAmt);
+        return new NextResponse('OK', { status: 200 });
+      }
+    } catch {
+      /* فشل قراءة total — كمّل، الحماية الذرية باقة */
+    }
+
     const paidRows = await sql.unsafe('SELECT phasef_crypto_ipn_paid($1,$2,$3) AS r', [
       orderId,
       typeof body.customer_email === 'string' ? body.customer_email : '',
-      typeof body.payment_id === 'string' ? body.payment_id : '',
+      // 🩹 NP-F2: payment_id كيجي رقم فالـ IPN الرسمي — نقبلو رقم ولا نص (كان كيتسجل خاوي)
+      body.payment_id == null ? '' : String(body.payment_id),
     ]);
     const ord = paidRows[0]?.r as
       | {
@@ -83,7 +103,8 @@ export async function POST(request: Request) {
         orderId,
         {
           amount: ord.total_amount,
-          paymentRef: typeof body.payment_id === 'string' ? body.payment_id : null,
+          // 🩹 NP-F2: payment_id رقمي كيتحوّل لنص
+          paymentRef: body.payment_id == null ? null : String(body.payment_id),
         },
       ]);
       return new NextResponse('OK', { status: 200 });

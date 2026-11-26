@@ -1,6 +1,9 @@
 // POST /api/payment/crypto/verify — Phase F (مرآة الأصلي): JIT NowPayments Verifier
 // سبقنا IPN → رد فوري كامل · استجواب NowPayments → finished/confirmed → pending→paid ذرياً
 // → fulfill على rpc (fire-and-forget) — نفس عقد الرد {success,verified,orderId,amount,...}
+// 🩹 NP-C1: الاستجواب بـ invoiceId (فلتر رسمي مدعوم فـ GET /v1/payment/) — order_id كفلتر ما كيدعمهش
+//    الـ API (validators.js ديال SDK الرسمي: limit/page/sortBy/orderBy/dateFrom/dateTo/invoiceId فقط)
+// 🩹 NP-C2: قبل تعليم paid كنتحققو finished/confirmed + order_id مطابق + price_amount مطابق للـ total
 import { NextResponse } from 'next/server';
 import { getRwSql } from '@/lib/pb/pb-db';
 import { pbSecret } from '@/lib/pb/pb-user';
@@ -52,22 +55,37 @@ export async function POST(request: Request) {
       return respond(ctx.status, true);
     }
 
-    // استجواب مباشر لـ NowPayments
-    if (!npKey) {
-      return respond(ctx.status, false);
+    // 🩹 NP-C1: receipt_url كيحمل NP invoice id (كيتسجل عند إنشاء الفاتورة — phasef_crypto_set_receipt)
+    let invoiceId = '';
+    try {
+      const rcRows = await sql.unsafe('SELECT receipt_url FROM orders WHERE id = $1', [orderId]);
+      const raw = (rcRows[0]?.receipt_url as unknown) ?? null;
+      invoiceId = raw == null ? '' : String(raw).trim();
+    } catch {
+      invoiceId = '';
+    }
+
+    // استجواب مباشر لـ NowPayments — بـ invoiceId فقط (فلتر مدعوم رسمياً)
+    if (!npKey || !invoiceId) {
+      return respond(ctx.status, false); // بلا invoice id ما كنقدروش نلقاو دفعتنا بأمان — IPN هو المرجع
     }
     const npRes = await fetch(
-      `https://api.nowpayments.io/v1/payment/?order_id=${orderId}&limit=1`,
+      `https://api.nowpayments.io/v1/payment/?invoiceId=${encodeURIComponent(invoiceId)}&limit=5`,
       { headers: { 'x-api-key': npKey }, signal: AbortSignal.timeout(20000) },
     );
     const np = (await npRes.json().catch(() => null)) as {
-      data?: Array<{ payment_status?: string }>;
+      data?: Array<{ payment_status?: string; order_id?: unknown; price_amount?: unknown }>;
     } | null;
-    const paymentData = np?.data?.[0];
-    // 🩹 SECURITY-FIX (B-M1): 'sending' ما تعدّش مدفوع — المؤكد فقط
-    const isPaid =
-      paymentData &&
-      (paymentData.payment_status === 'finished' || paymentData.payment_status === 'confirmed');
+    const payments = Array.isArray(np?.data) ? (np?.data ?? []) : [];
+    // 🩹 NP-C2 + SECURITY-FIX (B-M1): دفعتنا = من فاتورتنا (invoiceId) + finished/confirmed فقط ('sending'
+    //    ما تعدّش مدفوع) + order_id مطابق (ولا null) + المبلغ مطابق — بلا الشروط كاملين ما كنعلّموش paid
+    const paymentData = payments.find((p) => {
+      if (p.payment_status !== 'finished' && p.payment_status !== 'confirmed') return false;
+      if (p.order_id != null && String(p.order_id) !== String(orderId)) return false;
+      const pa = Number(p.price_amount);
+      return Number.isFinite(pa) && Math.abs(pa - verifiedAmount) <= 0.01;
+    });
+    const isPaid = Boolean(paymentData);
 
     if (isPaid) {
       // قفل ذري: pending → paid — واحد برك يربح (JIT ولا IPN)

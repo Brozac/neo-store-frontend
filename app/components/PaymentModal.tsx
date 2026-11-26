@@ -112,8 +112,11 @@ export default function PaymentModal({ isOpen, onClose, cartItems, totalAmount, 
       const data = await res.json();
 
       if (data.url) {
-        // 🩹 SECURITY-FIX (L1): تحقق وجهة redirect قبل التنقل (دفاع بعمق — sink مغذى من رد الخادم)
-        if (!/^https:\/\/(checkout\.stripe\.com|hooks\.stripe\.com|([\w-]+\.)?laclarc\.com)/i.test(String(data.url))) {
+        // 🩹 SECURITY-FIX (L1 + NP-A1): تحقق وجهة redirect قبل التنقل (دفاع بعمق — sink مغذى من رد الخادم)
+        //    NP-A1: زدنا nowpayments.io — invoice_url ديال NowPayments الرسمية https://nowpayments.io/payment/?iid=...
+        //    (البوابة الكريبتو كانت مريقلة فالسيرفر ولكن الزبون كيتصد "Invalid payment redirect URL.")
+        //    + anchor بعد الدومين باش laclarc.com.evil.com ما تدوزش (القديم كان كيجيز أي prefix)
+        if (!/^https:\/\/(checkout\.stripe\.com|hooks\.stripe\.com|([\w-]+\.)?laclarc\.com|([\w-]+\.)?nowpayments\.io)(\/|$|\?|#)/i.test(String(data.url))) {
           setError('Invalid payment redirect URL.');
           return;
         }
