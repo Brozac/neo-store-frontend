@@ -19,7 +19,10 @@ import { cjFetch } from './cf-cj';
 import { openRwSql, logSystemEvent } from './cron-db';
 
 const CAP = 20; // طلبات/دورة
-const READ_GAP_MS = 300; // مهلة بين استدعاءات getOrderDetail (QPS قراءة)
+// QPS getOrderDetail = 1/ثانية (تحقق حي: 429 حتى بـ gaps 300ms تحت حمولة التجديد)
+// → مهلة 1.1s + يعاود على 429 بـ backoff (نفس منطق التجديد).
+const READ_GAP_MS = 1100;
+const QPS_RETRIES = 2;
 const SKIP_STATUSES = ['pending', 'cancelled', 'canceled', 'trash', 'refunded'];
 
 function sleep(ms: number): Promise<void> {
@@ -81,11 +84,22 @@ export async function reconcileCjOrders(env: CfCronEnv): Promise<ReconcileResult
       if (base.checked > 1) await sleep(READ_GAP_MS);
 
       try {
-        const res = await cjFetch('/shopping/order/getOrderDetail', {
-          query: { orderId: code },
-          timeoutMs: 15000,
-        });
-        const envData = res.data;
+        let envData: { code?: number; message?: string; data?: unknown } | null = null;
+        for (let attempt = 0; attempt <= QPS_RETRIES; attempt++) {
+          if (attempt > 0) await sleep(2000 * attempt);
+          const res = await cjFetch('/shopping/order/getOrderDetail', {
+            query: { orderId: code },
+            timeoutMs: 15000,
+          });
+          envData = res.data;
+          if (envData && envData.code === 200 && envData.data) break;
+          const msg = String(envData?.message || '');
+          const isQps =
+            envData?.code === 429 ||
+            msg.includes('429') ||
+            msg.toLowerCase().includes('too many');
+          if (!isQps || attempt === QPS_RETRIES) break;
+        }
         if (!envData || envData.code !== 200 || !envData.data) {
           base.failures += 1;
           base.lastError = String(envData?.message || `order ${code} bad envelope`);
