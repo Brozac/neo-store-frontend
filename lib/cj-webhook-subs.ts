@@ -22,6 +22,15 @@ const CJ_SHOP_ID_FALLBACK = '2607302219413525200';
 const LIST_PAGE_SIZE = 200; // سقف الوثيقة 200
 const LIST_MAX_PAGES = 10;
 const SUBSCRIBE_BATCH = 100; // سقف الوثيقة 100 منتج/نداء
+// QPS الكتابة عند CJ = 1/ثانية (تحقق حي: envelope code 429 "Too Many Requests")
+// → مهلة إجبارية بين الدفعات + الـ 429 يعاود بـ backoff بدل ما يتعدّ فشل نهائي.
+const SUBSCRIBE_GAP_MS = 1200;
+const LIST_GAP_MS = 400;
+const QPS_RETRIES = 2;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export interface SubsRenewResult {
   ok: boolean;
@@ -43,6 +52,7 @@ async function collectSubscribedIds(): Promise<string[]> {
   const ids: string[] = [];
   let total = -1;
   for (let page = 1; page <= LIST_MAX_PAGES; page++) {
+    if (page > 1) await sleep(LIST_GAP_MS);
     const res = await cjFetch('/webhook/product/subscribe/list', {
       query: { shopId: cjShopId(), pageNum: page, pageSize: LIST_PAGE_SIZE },
       timeoutMs: 20000,
@@ -94,24 +104,50 @@ export async function renewCjWebhookSubscriptions(
     for (let i = 0; i < ids.length; i += SUBSCRIBE_BATCH) {
       const batch = ids.slice(i, i + SUBSCRIBE_BATCH);
       base.batches += 1;
-      try {
-        const res = await cjFetch('/webhook/product/subscribe', {
-          method: 'POST',
-          body: { productIds: batch, subscribeAll: false },
-          timeoutMs: 30000,
-        });
-        const envData = res.data;
-        if (envData?.code === 200) {
-          const d = (envData.data ?? {}) as { successProductIds?: string[]; failProductIds?: string[] };
-          base.renewed += Array.isArray(d.successProductIds) ? d.successProductIds.length : 0;
-          base.failed += Array.isArray(d.failProductIds) ? d.failProductIds.length : 0;
-        } else {
+      if (base.batches > 1) await sleep(SUBSCRIBE_GAP_MS);
+
+      let done = false;
+      for (let attempt = 0; attempt <= QPS_RETRIES && !done; attempt++) {
+        if (attempt > 0) await sleep(2000 * attempt);
+        try {
+          const res = await cjFetch('/webhook/product/subscribe', {
+            method: 'POST',
+            body: { productIds: batch, subscribeAll: false },
+            timeoutMs: 30000,
+          });
+          const envData = res.data;
+          if (envData?.code === 200) {
+            const d = (envData.data ?? {}) as { successProductIds?: string[]; failProductIds?: string[] };
+            base.renewed += Array.isArray(d.successProductIds) ? d.successProductIds.length : 0;
+            base.failed += Array.isArray(d.failProductIds) ? d.failProductIds.length : 0;
+            done = true;
+          } else if (
+            envData?.code === 429 ||
+            String(envData?.message || '').includes('429') ||
+            String(envData?.message || '').toLowerCase().includes('too many')
+          ) {
+            continue; // QPS — يعاود بـ backoff
+          } else {
+            base.failed += batch.length;
+            base.error = String(envData?.message || `batch ${base.batches} bad envelope`);
+            done = true;
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (
+            (msg.includes('429') || msg.toLowerCase().includes('too many')) &&
+            attempt < QPS_RETRIES
+          ) {
+            continue; // QPS — يعاود بـ backoff
+          }
           base.failed += batch.length;
-          base.error = String(envData?.message || `batch ${base.batches} bad envelope`);
+          base.error = msg;
+          done = true;
         }
-      } catch (e) {
+      }
+      if (!done) {
         base.failed += batch.length;
-        base.error = e instanceof Error ? e.message : String(e);
+        base.error = `batch ${base.batches}: 429 retries exhausted`;
       }
     }
 

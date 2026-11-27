@@ -19,7 +19,12 @@ import { cjFetch } from './cf-cj';
 import { openRwSql, logSystemEvent } from './cron-db';
 
 const CAP = 20; // طلبات/دورة
+const READ_GAP_MS = 300; // مهلة بين استدعاءات getOrderDetail (QPS قراءة)
 const SKIP_STATUSES = ['pending', 'cancelled', 'canceled', 'trash', 'refunded'];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export interface ReconcileResult {
   ok: boolean;
@@ -29,6 +34,7 @@ export interface ReconcileResult {
   failures: number;
   ms: number;
   error?: string;
+  lastError?: string; // آخر رسالة فشل (للّوج)
 }
 
 interface CjOrderDetail {
@@ -72,6 +78,7 @@ export async function reconcileCjOrders(env: CfCronEnv): Promise<ReconcileResult
       const code = String(row.cj_order_number ?? '').trim();
       if (!code || !Number.isFinite(id)) continue;
       base.checked += 1;
+      if (base.checked > 1) await sleep(READ_GAP_MS);
 
       try {
         const res = await cjFetch('/shopping/order/getOrderDetail', {
@@ -81,6 +88,7 @@ export async function reconcileCjOrders(env: CfCronEnv): Promise<ReconcileResult
         const envData = res.data;
         if (!envData || envData.code !== 200 || !envData.data) {
           base.failures += 1;
+          base.lastError = String(envData?.message || `order ${code} bad envelope`);
           continue;
         }
         const o = (envData.data ?? {}) as CjOrderDetail;
@@ -135,8 +143,9 @@ export async function reconcileCjOrders(env: CfCronEnv): Promise<ReconcileResult
           // ولا جديد — نبض التحقق برك (pacing/dedupe عبر العمود المخصص)
           await sql.unsafe(`UPDATE orders SET track_heal_checked_at = now() WHERE id = $1`, [id]);
         }
-      } catch {
+      } catch (e) {
         base.failures += 1; // فشل طلب ما يوقفش البقية
+        base.lastError = e instanceof Error ? e.message : String(e);
       }
     }
 
@@ -151,6 +160,7 @@ export async function reconcileCjOrders(env: CfCronEnv): Promise<ReconcileResult
         completed: base.completed,
         failures: base.failures,
         ms: base.ms,
+        lastError: base.lastError || undefined,
       },
       base.failures > 0 ? 'warning' : 'info',
     );
