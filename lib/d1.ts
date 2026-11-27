@@ -1,15 +1,16 @@
-// lib/d1.ts — 100% D1 — عميل الكاتالوگ على الحافة (binding DB → laclarc-catalog)
-// ═══════════════════════════════════════════════════════════════════
-// الجسر الوحيد بين الـ Worker و D1. الكتابات الحية (d1-realtime-sync) و
-// قراءات phase-2 كتدوز من هنا. fail-open: بلا binding → null → المنادي
-// كيرجع للمسار البديل (نفس عقد db-ro.ts).
+﻿// lib/d1.ts â€” 100% D1 â€” ط¹ظ…ظٹظ„ ط§ظ„ظƒط§طھط§ظ„ظˆع¯ ط¹ظ„ظ‰ ط§ظ„ط­ط§ظپط© (binding DB â†’ laclarc-catalog)
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ط§ظ„ط¬ط³ط± ط§ظ„ظˆط­ظٹط¯ ط¨ظٹظ† ط§ظ„ظ€ Worker ظˆ D1. ط§ظ„ظƒطھط§ط¨ط§طھ ط§ظ„ط­ظٹط© (d1-realtime-sync) ظˆ
+// ظ‚ط±ط§ط،ط§طھ phase-2 ظƒطھط¯ظˆط² ظ…ظ† ظ‡ظ†ط§. fail-open: ط¨ظ„ط§ binding â†’ null â†’ ط§ظ„ظ…ظ†ط§ط¯ظٹ
+// ظƒظٹط±ط¬ط¹ ظ„ظ„ظ…ط³ط§ط± ط§ظ„ط¨ط¯ظٹظ„ (ظ†ظپط³ ط¹ظ‚ط¯ db-ro.ts).
 //
-// التفعيل: scripts/laclarc-d1-windows.ps1 → wrangler.jsonc ← binding "DB"
-// ═══════════════════════════════════════════════════════════════════
+// ط§ظ„طھظپط¹ظٹظ„: scripts/laclarc-d1-windows.ps1 â†’ wrangler.jsonc â†گ binding "DB"
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 import 'server-only';
 
-// ─── أنواع هيكلية دنيا (بلا اعتماد على workers-types) ───
+// â”€â”€â”€ ط£ظ†ظˆط§ط¹ ظ‡ظٹظƒظ„ظٹط© ط¯ظ†ظٹط§ (ط¨ظ„ط§ ط§ط¹طھظ…ط§ط¯ ط¹ظ„ظ‰ workers-types) â”€â”€â”€
 export interface D1PreparedStatementLike {
+  first<T = Record<string, unknown>>(colName?: string): Promise<T | null>;
   bind(...values: unknown[]): {
     run(): Promise<unknown>;
     first<T = unknown>(): Promise<T | null>;
@@ -23,9 +24,9 @@ export interface D1DatabaseLike {
 let cachedD1: D1DatabaseLike | null | undefined;
 
 /**
- * env.DB — laclarc-catalog. null = ما مربوطش بعد (جري laclarc-d1-windows.ps1
- * باش تفعّل الـ binding فwrangler.jsonc وتعمل push).
- * النتيجة كتخزن مرة وحدة لكل isolate (نفس نمط getRoSql).
+ * env.DB â€” laclarc-catalog. null = ظ…ط§ ظ…ط±ط¨ظˆط·ط´ ط¨ط¹ط¯ (ط¬ط±ظٹ laclarc-d1-windows.ps1
+ * ط¨ط§ط´ طھظپط¹ظ‘ظ„ ط§ظ„ظ€ binding ظپwrangler.jsonc ظˆطھط¹ظ…ظ„ push).
+ * ط§ظ„ظ†طھظٹط¬ط© ظƒطھط®ط²ظ† ظ…ط±ط© ظˆط­ط¯ط© ظ„ظƒظ„ isolate (ظ†ظپط³ ظ†ظ…ط· getRoSql).
  */
 export async function getD1(): Promise<D1DatabaseLike | null> {
   if (cachedD1 !== undefined) return cachedD1;
@@ -36,13 +37,13 @@ export async function getD1(): Promise<D1DatabaseLike | null> {
     const db = env?.DB as D1DatabaseLike | undefined;
     cachedD1 = db && typeof db.prepare === 'function' ? db : null;
   } catch {
-    cachedD1 = null; // بلا context (build محلي / wrangler dev بلا binding) — fail-open
+    cachedD1 = null; // ط¨ظ„ط§ context (build ظ…ط­ظ„ظٹ / wrangler dev ط¨ظ„ط§ binding) â€” fail-open
   }
   return cachedD1;
 }
 
-// ─── الأعمدة المسموحة (whitelist) — كل شيء آخر فالـ payload كيتخطى ───
-// نفس أعمدة migrations/d1_schema.sql — مصدر واحد للحقيقة.
+// â”€â”€â”€ ط§ظ„ط£ط¹ظ…ط¯ط© ط§ظ„ظ…ط³ظ…ظˆط­ط© (whitelist) â€” ظƒظ„ ط´ظٹط، ط¢ط®ط± ظپط§ظ„ظ€ payload ظƒظٹطھط®ط·ظ‰ â”€â”€â”€
+// ظ†ظپط³ ط£ط¹ظ…ط¯ط© migrations/d1_schema.sql â€” ظ…طµط¯ط± ظˆط§ط­ط¯ ظ„ظ„ط­ظ‚ظٹظ‚ط©.
 export const D1_PRODUCT_COLUMNS = [
   'id', 'title', 'description', 'price', 'original_price', 'image_url',
   'images', 'variants', 'colors', 'sizes', 'patterns', 'colour_names', 'size_names',
@@ -73,12 +74,12 @@ const asNumber = (v: unknown): number | null => {
 const asBool01 = (v: unknown): number => {
   if (v === true || v === 1 || v === '1' || v === 'true') return 1;
   if (v === false || v === 0 || v === '0' || v === 'false' || v === null || v === undefined) return 0;
-  return 1; // قيمة غريبة ماشي فارغة → نعتبروها موجودة (serving-safe)
+  return 1; // ظ‚ظٹظ…ط© ط؛ط±ظٹط¨ط© ظ…ط§ط´ظٹ ظپط§ط±ط؛ط© â†’ ظ†ط¹طھط¨ط±ظˆظ‡ط§ ظ…ظˆط¬ظˆط¯ط© (serving-safe)
 };
 
 /**
- * التحويل الآمن payload → صف D1 (defense-in-depth: حتى إلا الـ watcher خرّب
- * شي حاجة، هنا كيتنقّى كل شيء قبل ما يوصل لـ SQL).
+ * ط§ظ„طھط­ظˆظٹظ„ ط§ظ„ط¢ظ…ظ† payload â†’ طµظپ D1 (defense-in-depth: ط­طھظ‰ ط¥ظ„ط§ ط§ظ„ظ€ watcher ط®ط±ظ‘ط¨
+ * ط´ظٹ ط­ط§ط¬ط©طŒ ظ‡ظ†ط§ ظƒظٹطھظ†ظ‚ظ‘ظ‰ ظƒظ„ ط´ظٹط، ظ‚ط¨ظ„ ظ…ط§ ظٹظˆطµظ„ ظ„ظ€ SQL).
  */
 export function shapeProductRow(raw: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -115,7 +116,7 @@ ${D1_PRODUCT_COLUMNS
     .map((c) => `  ${c} = excluded.${c}`)
     .join(',\n')}`;
 
-/** upsert صف واحد — عقد INSERT/UPDATE ديال الـ watcher. كيرجع الـ id. */
+/** upsert طµظپ ظˆط§ط­ط¯ â€” ط¹ظ‚ط¯ INSERT/UPDATE ط¯ظٹط§ظ„ ط§ظ„ظ€ watcher. ظƒظٹط±ط¬ط¹ ط§ظ„ظ€ id. */
 export async function d1UpsertProduct(
   db: D1DatabaseLike,
   raw: Record<string, unknown>,
@@ -126,7 +127,7 @@ export async function d1UpsertProduct(
   return { id: row.id as number };
 }
 
-/** حذف — كيرجع true إلا كان الصف حي فعلاً. */
+/** ط­ط°ظپ â€” ظƒظٹط±ط¬ط¹ true ط¥ظ„ط§ ظƒط§ظ† ط§ظ„طµظپ ط­ظٹ ظپط¹ظ„ط§ظ‹. */
 export async function d1DeleteProduct(db: D1DatabaseLike, id: number): Promise<boolean> {
   const res = (await db
     .prepare('DELETE FROM products WHERE id = ?')
@@ -135,13 +136,13 @@ export async function d1DeleteProduct(db: D1DatabaseLike, id: number): Promise<b
   return (res?.meta?.changes ?? 0) > 0;
 }
 
-/** عدّاد الكاتالوگ — فحص الصحة بعد الـ push (المتوقع ≈ 54,367). */
+/** ط¹ط¯ظ‘ط§ط¯ ط§ظ„ظƒط§طھط§ظ„ظˆع¯ â€” ظپط­طµ ط§ظ„طµط­ط© ط¨ط¹ط¯ ط§ظ„ظ€ push (ط§ظ„ظ…طھظˆظ‚ط¹ â‰ˆ 54,367). */
 export async function d1ProductCount(db: D1DatabaseLike): Promise<number> {
   const r = await db.prepare('SELECT COUNT(*) AS n FROM products').first<{ n: number }>();
   return Number(r?.n ?? 0);
 }
 
-/** سجل الأحداث — نفس عقد system_events (كيتكتب غير الأخطاء باش نحافظو على الكوتا). */
+/** ط³ط¬ظ„ ط§ظ„ط£ط­ط¯ط§ط« â€” ظ†ظپط³ ط¹ظ‚ط¯ system_events (ظƒظٹطھظƒطھط¨ ط؛ظٹط± ط§ظ„ط£ط®ط·ط§ط، ط¨ط§ط´ ظ†ط­ط§ظپط¸ظˆ ط¹ظ„ظ‰ ط§ظ„ظƒظˆطھط§). */
 export async function d1LogEvent(
   db: D1DatabaseLike,
   eventType: string,
@@ -154,6 +155,7 @@ export async function d1LogEvent(
       .bind(String(eventType).slice(0, 120), JSON.stringify(details), severity)
       .run();
   } catch {
-    // fail-open — السجل ما يوقفش العملية
+    // fail-open â€” ط§ظ„ط³ط¬ظ„ ظ…ط§ ظٹظˆظ‚ظپط´ ط§ظ„ط¹ظ…ظ„ظٹط©
   }
 }
+
