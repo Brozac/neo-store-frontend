@@ -1,7 +1,7 @@
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 # Laclarc Frontend — .gitignore v2
 # المبدأ: لا build artifacts · لا backups · لا runtime state
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 
 # ─── Dependencies ───
 /node_modules
@@ -123,3 +123,10 @@ next-env.d.ts.bak
 .wrangler/
 .dev.vars
 cloudflare-env.d.ts
+
+# ─── 🆕 100% D1 — sync pipeline (MIGRATION-D1.md) ───
+# chunks المؤقتة ديال push-local-to-d1.mjs + backups المحلية (fallback بلا G:)
+.d1-push/
+backups/
+laclarc_db_*.dump
+d1-orders_*.json
