@@ -1,7 +1,9 @@
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1.2 — phase-abc edition)
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // الوثيقة الأم: MIGRATION-CF.md (في جذر الريبو) — اقراها قبل ما تخدم هنا.
+// 🆕 100% D1: الوثيقة الجديدة MIGRATION-D1.md — المرحلة 1 (sync pipeline):
+//    PostgreSQL المحلي = مصدر الحقيقة → D1 laclarc-catalog = الكاتالوگ فالحافة.
 //
 // 🔑 قبل أول deploy لازم تعمّر مكانين في هذا الملف:
 //    1) kv_namespaces[0].id → صنعته بـ: npx wrangler kv namespace create NEXT_INC_CACHE_KV
@@ -16,12 +18,18 @@
 //    ASSETS                   → الملفات الثابتة (/_next/static, sw.js, icons)
 //    WORKER_SELF_REFERENCE    → مرجع داخلي كيطلبو OpenNext — ما تلمسوش
 //    HYPERDRIVE               → قراءة الكاتالوگ RO (laclarc_ro) — F106
+//                               ⚠️ 100% D1 — كيتحيد فالمرحلة 2 (من بعد ما D1
+//                               يتحقق ≈54,367 والـ watcher مستقر — MIGRATION-D1.md)
 //    MEDIA_BUCKET             → 🆕 phase-abc — R2 laclarc-media: merchant feeds + ملتيميديا مستقبلاً
 //                               (الباکت موجود حياً ومؤكد بـ r2_probe — ما كيحتاجش شي إنشاء)
 //    STORE_ANALYTICS          → 🆕 phase-abc — Analytics Engine (dataset laclarc_events كيتولد
 //                               أوتوماتيكياً عند أول writeDataPoint) — Workers Paid مفعّل حياً
 //                               (تأكيد حي: subscriptions/Workers Paid + Analytics Engine API)
-// ═══════════════════════════════════════════════════════════════
+//    DB                       → 🆕 100% D1 — laclarc-catalog (كاتالوگ الحافة)
+//                               كتفعل من scripts/laclarc-d1-windows.ps1 (الخطوة 4/9)
+//    STORE_KV                 → 🆕 100% D1 — إعدادات المحل (phase-3)
+//                               كتفعل من نفس السكريبت
+// ═══════════════════════════════════════════════════════════════════
 {
         "$schema": "node_modules/wrangler/config-schema.json",
         // اسم الـ Worker — الرابط التجريبي: https://laclarc.<subdomain>.workers.dev
@@ -80,18 +88,33 @@
                         "id": "3f3af1a3ebdf42df80d0657ce53b58fc",
                         "remote": true,
                 },
+                // 🆕 100% D1 — STORE_KV (إعدادات المحل — phase-3). كتفعل أوتوماتيكياً من
+                //    scripts/laclarc-d1-windows.ps1 (الخطوة 4/9): npx wrangler kv namespace
+                //    create STORE_KV → الـ id كيتعمر هنا → push → deploy.
+                // ← STORE_KV-ACTIVATE:
+                // { "binding": "STORE_KV", "id": "STORE_KV_ID_HERE" },
         ],
         // ─── كاش الوسوم (D1) — ضروري حيت كتستعمل revalidateTag فالـ webhook ───
+        // 🆕 100% D1 — laclarc-catalog: الكاتالوگ الحية على الحافة. ما كتفعلش هنا
+        //    يدوياً — scripts/laclarc-d1-windows.ps1 كيصنع الداتابيز ويحط الـ id
+        //    وي uncomment الـ marker (حتى الـ deploy ما يتكسرش قبل التفعيل).
         "d1_databases": [
                 {
                         "binding": "NEXT_TAG_CACHE_D1",
                         "database_name": "laclarc-tag-cache",
                         "database_id": "ef5d0d6a-9e23-473a-89b5-3923516fe0a6",
                 },
+                // ← D1-CATALOG-ACTIVATE:
+                // { "binding": "DB", "database_name": "laclarc-catalog", "database_id": "D1_DATABASE_ID_HERE" },
         ],
         // ─── 🆕 F106 HYPERDRIVE-RO — قراءة الكاتالوگ من Supabase نيشان ───
         // الدور laclarc_ro = SELECT فقط على products/store_settings/categories
         // (بوليسيات RLS ro_select_*) — الكتابة مستحيلة على مستوى الداتابيز.
+        //
+        // ⚠️⚠️ 100% D1 — هادا القسم كامل كيمشي فالمرحلة 2 (MIGRATION-D1.md):
+        //    من بعد ما: (1) D1 يعمر بـ push-local-to-d1.mjs · (2) watcher حي ومستقر ·
+        //    (3) قراءات الكاتالوگ تقلبت على env.DB — حذف hyperdrive + db-ro/cron-db
+        //    التنظيف. الماكلة: أنا حيضها أنا — ما تلمسوش بيدك قبل الوقت.
         //
         // 🔑 قبل أول deploy بالـ binding: اصنع config ودخّل الـ id هنا:
         //    Dashboard: Workers & Pages → Hyperdrive → Connect database
