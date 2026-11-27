@@ -1,74 +1,74 @@
-// ═══════════════════════════════════════════════════════════════════
-// Laclarc on Cloudflare Workers — wrangler.jsonc (MIGRATION-CF v1.2 — phase-abc edition)
-// ═══════════════════════════════════════════════════════════════════
-// الوثيقة الأم: MIGRATION-CF.md (في جذر الريبو) — اقراها قبل ما تخدم هنا.
-// 🆕 100% D1: الوثيقة الجديدة MIGRATION-D1.md — المرحلة 1 (sync pipeline):
-//    PostgreSQL المحلي = مصدر الحقيقة → D1 laclarc-catalog = الكاتالوگ فالحافة.
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// Laclarc on Cloudflare Workers â€” wrangler.jsonc (MIGRATION-CF v1.2 â€” phase-abc edition)
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ط§ظ„ظˆط«ظٹظ‚ط© ط§ظ„ط£ظ…: MIGRATION-CF.md (ظپظٹ ط¬ط°ط± ط§ظ„ط±ظٹط¨ظˆ) â€” ط§ظ‚ط±ط§ظ‡ط§ ظ‚ط¨ظ„ ظ…ط§ طھط®ط¯ظ… ظ‡ظ†ط§.
+// ًں†• 100% D1: ط§ظ„ظˆط«ظٹظ‚ط© ط§ظ„ط¬ط¯ظٹط¯ط© MIGRATION-D1.md â€” ط§ظ„ظ…ط±ط­ظ„ط© 1 (sync pipeline):
+//    PostgreSQL ط§ظ„ظ…ط­ظ„ظٹ = ظ…طµط¯ط± ط§ظ„ط­ظ‚ظٹظ‚ط© â†’ D1 laclarc-catalog = ط§ظ„ظƒط§طھط§ظ„ظˆع¯ ظپط§ظ„ط­ط§ظپط©.
 //
-// 🔑 قبل أول deploy لازم تعمّر مكانين في هذا الملف:
-//    1) kv_namespaces[0].id → صنعته بـ: npx wrangler kv namespace create NEXT_INC_CACHE_KV
-//       (الأمر كيخرج لك id — الصقه في الأسفل)
-//    2) d1_databases[0].database_id → صنعته بـ: npx wrangler d1 create laclarc-tag-cache
-//       (الأمر كيخرج لك UUID — الصقه في الأسفل)
+// ًں”‘ ظ‚ط¨ظ„ ط£ظˆظ„ deploy ظ„ط§ط²ظ… طھط¹ظ…ظ‘ط± ظ…ظƒط§ظ†ظٹظ† ظپظٹ ظ‡ط°ط§ ط§ظ„ظ…ظ„ظپ:
+//    1) kv_namespaces[0].id â†’ طµظ†ط¹طھظ‡ ط¨ظ€: npx wrangler kv namespace create NEXT_INC_CACHE_KV
+//       (ط§ظ„ط£ظ…ط± ظƒظٹط®ط±ط¬ ظ„ظƒ id â€” ط§ظ„طµظ‚ظ‡ ظپظٹ ط§ظ„ط£ط³ظپظ„)
+//    2) d1_databases[0].database_id â†’ طµظ†ط¹طھظ‡ ط¨ظ€: npx wrangler d1 create laclarc-tag-cache
+//       (ط§ظ„ط£ظ…ط± ظƒظٹط®ط±ط¬ ظ„ظƒ UUID â€” ط§ظ„طµظ‚ظ‡ ظپظٹ ط§ظ„ط£ط³ظپظ„)
 //
-// 📦 واش كيمثل كل binding:
-//    NEXT_INC_CACHE_KV        → نسخة edge-cache (edgecache:catalog_version) — ISR واقف ف94
-//    NEXT_TAG_CACHE_D1        → كاش الوسوم (revalidateTag) — D1 مجاني 5GB
-//    NEXT_CACHE_DO_QUEUE      → طابور إعادة التوليد (revalidate 86400) — DO مجاني
-//    ASSETS                   → الملفات الثابتة (/_next/static, sw.js, icons)
-//    WORKER_SELF_REFERENCE    → مرجع داخلي كيطلبو OpenNext — ما تلمسوش
-//    HYPERDRIVE               → قراءة الكاتالوگ RO (laclarc_ro) — F106
-//                               ⚠️ 100% D1 — كيتحيد فالمرحلة 2 (من بعد ما D1
-//                               يتحقق ≈54,367 والـ watcher مستقر — MIGRATION-D1.md)
-//    MEDIA_BUCKET             → 🆕 phase-abc — R2 laclarc-media: merchant feeds + ملتيميديا مستقبلاً
-//                               (الباکت موجود حياً ومؤكد بـ r2_probe — ما كيحتاجش شي إنشاء)
-//    STORE_ANALYTICS          → 🆕 phase-abc — Analytics Engine (dataset laclarc_events كيتولد
-//                               أوتوماتيكياً عند أول writeDataPoint) — Workers Paid مفعّل حياً
-//                               (تأكيد حي: subscriptions/Workers Paid + Analytics Engine API)
-//    DB                       → 🆕 100% D1 — laclarc-catalog (كاتالوگ الحافة)
-//                               كتفعل من scripts/laclarc-d1-windows.ps1 (الخطوة 4/9)
-//    STORE_KV                 → 🆕 100% D1 — إعدادات المحل (phase-3)
-//                               كتفعل من نفس السكريبت
-// ═══════════════════════════════════════════════════════════════════
+// ًں“¦ ظˆط§ط´ ظƒظٹظ…ط«ظ„ ظƒظ„ binding:
+//    NEXT_INC_CACHE_KV        â†’ ظ†ط³ط®ط© edge-cache (edgecache:catalog_version) â€” ISR ظˆط§ظ‚ظپ ظپ94
+//    NEXT_TAG_CACHE_D1        â†’ ظƒط§ط´ ط§ظ„ظˆط³ظˆظ… (revalidateTag) â€” D1 ظ…ط¬ط§ظ†ظٹ 5GB
+//    NEXT_CACHE_DO_QUEUE      â†’ ط·ط§ط¨ظˆط± ط¥ط¹ط§ط¯ط© ط§ظ„طھظˆظ„ظٹط¯ (revalidate 86400) â€” DO ظ…ط¬ط§ظ†ظٹ
+//    ASSETS                   â†’ ط§ظ„ظ…ظ„ظپط§طھ ط§ظ„ط«ط§ط¨طھط© (/_next/static, sw.js, icons)
+//    WORKER_SELF_REFERENCE    â†’ ظ…ط±ط¬ط¹ ط¯ط§ط®ظ„ظٹ ظƒظٹط·ظ„ط¨ظˆ OpenNext â€” ظ…ط§ طھظ„ظ…ط³ظˆط´
+//    HYPERDRIVE               â†’ ظ‚ط±ط§ط،ط© ط§ظ„ظƒط§طھط§ظ„ظˆع¯ RO (laclarc_ro) â€” F106
+//                               âڑ ï¸ڈ 100% D1 â€” ظƒظٹطھط­ظٹط¯ ظپط§ظ„ظ…ط±ط­ظ„ط© 2 (ظ…ظ† ط¨ط¹ط¯ ظ…ط§ D1
+//                               ظٹطھط­ظ‚ظ‚ â‰ˆ54,367 ظˆط§ظ„ظ€ watcher ظ…ط³طھظ‚ط± â€” MIGRATION-D1.md)
+//    MEDIA_BUCKET             â†’ ًں†• phase-abc â€” R2 laclarc-media: merchant feeds + ظ…ظ„طھظٹظ…ظٹط¯ظٹط§ ظ…ط³طھظ‚ط¨ظ„ط§ظ‹
+//                               (ط§ظ„ط¨ط§ع©طھ ظ…ظˆط¬ظˆط¯ ط­ظٹط§ظ‹ ظˆظ…ط¤ظƒط¯ ط¨ظ€ r2_probe â€” ظ…ط§ ظƒظٹط­طھط§ط¬ط´ ط´ظٹ ط¥ظ†ط´ط§ط،)
+//    STORE_ANALYTICS          â†’ ًں†• phase-abc â€” Analytics Engine (dataset laclarc_events ظƒظٹطھظˆظ„ط¯
+//                               ط£ظˆطھظˆظ…ط§طھظٹظƒظٹط§ظ‹ ط¹ظ†ط¯ ط£ظˆظ„ writeDataPoint) â€” Workers Paid ظ…ظپط¹ظ‘ظ„ ط­ظٹط§ظ‹
+//                               (طھط£ظƒظٹط¯ ط­ظٹ: subscriptions/Workers Paid + Analytics Engine API)
+//    DB                       â†’ ًں†• 100% D1 â€” laclarc-catalog (ظƒط§طھط§ظ„ظˆع¯ ط§ظ„ط­ط§ظپط©)
+//                               ظƒطھظپط¹ظ„ ظ…ظ† scripts/laclarc-d1-windows.ps1 (ط§ظ„ط®ط·ظˆط© 4/9)
+//    STORE_KV                 â†’ ًں†• 100% D1 â€” ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ…ط­ظ„ (phase-3)
+//                               ظƒطھظپط¹ظ„ ظ…ظ† ظ†ظپط³ ط§ظ„ط³ظƒط±ظٹط¨طھ
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 {
         "$schema": "node_modules/wrangler/config-schema.json",
-        // اسم الـ Worker — الرابط التجريبي: https://laclarc.<subdomain>.workers.dev
+        // ط§ط³ظ… ط§ظ„ظ€ Worker â€” ط§ظ„ط±ط§ط¨ط· ط§ظ„طھط¬ط±ظٹط¨ظٹ: https://laclarc.<subdomain>.workers.dev
         "name": "laclarc",
-        // 🔴 phase-abc — الـ entry الجديد: غلاف fetch (نفس OpenNext حرفياً) + scheduled
-        //    للـ كرونات — شوف custom-worker.ts. .open-next/worker.js كيبقى كيتولد
-        //    كالعادة (cf-build.mjs → opennextjs-cloudflare build → wrangler كيجمع الغلاف).
+        // ًں”´ phase-abc â€” ط§ظ„ظ€ entry ط§ظ„ط¬ط¯ظٹط¯: ط؛ظ„ط§ظپ fetch (ظ†ظپط³ OpenNext ط­ط±ظپظٹط§ظ‹) + scheduled
+        //    ظ„ظ„ظ€ ظƒط±ظˆظ†ط§طھ â€” ط´ظˆظپ custom-worker.ts. .open-next/worker.js ظƒظٹط¨ظ‚ظ‰ ظƒظٹطھظˆظ„ط¯
+        //    ظƒط§ظ„ط¹ط§ط¯ط© (cf-build.mjs â†’ opennextjs-cloudflare build â†’ wrangler ظƒظٹط¬ظ…ط¹ ط§ظ„ط؛ظ„ط§ظپ).
         "main": "custom-worker.ts",
         "compatibility_date": "2026-11-12",
-        // 🛡️ server-only بدون شرط react-server عند wrangler كيحلّه للمدخل اللي كيطرش (throw فـ module scope)
-        //    → CI deploy كيترفض بـ code 10021 (درس من build 23:31).
-        //    الـ alias كيحوّله لـ shim خاوي — مكافئ حرفياً للـ react-server resolution، وكيسدّ الباب على أي ملف جاي.
+        // ًں›،ï¸ڈ server-only ط¨ط¯ظˆظ† ط´ط±ط· react-server ط¹ظ†ط¯ wrangler ظƒظٹط­ظ„ظ‘ظ‡ ظ„ظ„ظ…ط¯ط®ظ„ ط§ظ„ظ„ظٹ ظƒظٹط·ط±ط´ (throw ظپظ€ module scope)
+        //    â†’ CI deploy ظƒظٹطھط±ظپط¶ ط¨ظ€ code 10021 (ط¯ط±ط³ ظ…ظ† build 23:31).
+        //    ط§ظ„ظ€ alias ظƒظٹط­ظˆظ‘ظ„ظ‡ ظ„ظ€ shim ط®ط§ظˆظٹ â€” ظ…ظƒط§ظپط¦ ط­ط±ظپظٹط§ظ‹ ظ„ظ„ظ€ react-server resolutionطŒ ظˆظƒظٹط³ط¯ظ‘ ط§ظ„ط¨ط§ط¨ ط¹ظ„ظ‰ ط£ظٹ ظ…ظ„ظپ ط¬ط§ظٹ.
         "alias": { "server-only": "./shims/server-only-empty.ts" },
-        // 📡 مراقبة الإنتاج — Workers Logs: cron errors وfetch logs كيتشافو مباشرة (من 01:00 UTC tick)
+        // ًں“، ظ…ط±ط§ظ‚ط¨ط© ط§ظ„ط¥ظ†طھط§ط¬ â€” Workers Logs: cron errors ظˆfetch logs ظƒظٹطھط´ط§ظپظˆ ظ…ط¨ط§ط´ط±ط© (ظ…ظ† 01:00 UTC tick)
         "observability": {
                 "enabled": true,
         },
-// ─── ⭐ Workers Cache: CF كيفحص الكاش قبل ما يجري الـ Worker ───
-// صفحات ISR (s-maxage=86400) كتخدم من الحافة — HIT = صفر تنفيذ Worker
+// â”€â”€â”€ â­گ Workers Cache: CF ظƒظٹظپط­طµ ط§ظ„ظƒط§ط´ ظ‚ط¨ظ„ ظ…ط§ ظٹط¬ط±ظٹ ط§ظ„ظ€ Worker â”€â”€â”€
+// طµظپط­ط§طھ ISR (s-maxage=86400) ظƒطھط®ط¯ظ… ظ…ظ† ط§ظ„ط­ط§ظپط© â€” HIT = طµظپط± طھظ†ظپظٹط° Worker
 "cache": {
   "enabled": true,
 },
-        // ⏱️ ops-fix (2026-11-24) — سقف CPU للـ Worker:
-        //    الافتراضي 30s قتَل feeds cron فـ 03:00 UTC (exceededCpu بعد 3m25s wall
-        //    على 54,367 منتج → R2 multipart ما اكتملش → feed 404).
-        //    الخطة المدفوعة (Workers Paid) تسمح حتى 5min — رفعناه لـ 300000ms.
+        // âڈ±ï¸ڈ ops-fix (2026-11-24) â€” ط³ظ‚ظپ CPU ظ„ظ„ظ€ Worker:
+        //    ط§ظ„ط§ظپطھط±ط§ط¶ظٹ 30s ظ‚طھظژظ„ feeds cron ظپظ€ 03:00 UTC (exceededCpu ط¨ط¹ط¯ 3m25s wall
+        //    ط¹ظ„ظ‰ 54,367 ظ…ظ†طھط¬ â†’ R2 multipart ظ…ط§ ط§ظƒطھظ…ظ„ط´ â†’ feed 404).
+        //    ط§ظ„ط®ط·ط© ط§ظ„ظ…ط¯ظپظˆط¹ط© (Workers Paid) طھط³ظ…ط­ ط­طھظ‰ 5min â€” ط±ظپط¹ظ†ط§ظ‡ ظ„ظ€ 300000ms.
         "limits": { "cpu_ms": 300000 },
         "compatibility_flags": [
-                // Node.js APIs داخل الـ Worker (Buffer, crypto — كيستعملهم /api/revalidate وNextAuth)
+                // Node.js APIs ط¯ط§ط®ظ„ ط§ظ„ظ€ Worker (Buffer, crypto â€” ظƒظٹط³طھط¹ظ…ظ„ظ‡ظ… /api/revalidate ظˆNextAuth)
                 "nodejs_compat",
-                // fetch للدومينات العمومية فقط (الباك على Render) — موصى بها من OpenNext
+                // fetch ظ„ظ„ط¯ظˆظ…ظٹظ†ط§طھ ط§ظ„ط¹ظ…ظˆظ…ظٹط© ظپظ‚ط· (ط§ظ„ط¨ط§ظƒ ط¹ظ„ظ‰ Render) â€” ظ…ظˆطµظ‰ ط¨ظ‡ط§ ظ…ظ† OpenNext
                 "global_fetch_strictly_public",
         ],
-        // ─── الملفات الثابتة ───
+        // â”€â”€â”€ ط§ظ„ظ…ظ„ظپط§طھ ط§ظ„ط«ط§ط¨طھط© â”€â”€â”€
         "assets": {
                 "directory": ".open-next/assets",
                 "binding": "ASSETS",
         },
-        // ─── مرجع داخلي إجباري (يجب أن يطابق "name" فوق) ───
+        // â”€â”€â”€ ظ…ط±ط¬ط¹ ط¯ط§ط®ظ„ظٹ ط¥ط¬ط¨ط§ط±ظٹ (ظٹط¬ط¨ ط£ظ† ظٹط·ط§ط¨ظ‚ "name" ظپظˆظ‚) â”€â”€â”€
         "ai": {
         "binding": "AI",
     },
@@ -78,80 +78,80 @@
                         "service": "laclarc",
                 },
         ],
-        // ─── كاش ISR (KV) — F#94 KV-BUDGET-2: NS جديد فارغ — الـ ISR cache واقف تماماً
-        //     (incrementalCache:"dummy" فـ open-next.config.ts) فالـ binding قاعد بلا خدمة.
-        //     الـ NS القديم NEXT_INC_CACHE_KV (c56988e5...) فيه ~20GB كاش قديم بلا TTL —
-        //     المالك يحيدو من الداشبورد: Storage & Databases → KV → NEXT_INC_CACHE_KV → Delete ───
+        // â”€â”€â”€ ظƒط§ط´ ISR (KV) â€” F#94 KV-BUDGET-2: NS ط¬ط¯ظٹط¯ ظپط§ط±ط؛ â€” ط§ظ„ظ€ ISR cache ظˆط§ظ‚ظپ طھظ…ط§ظ…ط§ظ‹
+        //     (incrementalCache:"dummy" ظپظ€ open-next.config.ts) ظپط§ظ„ظ€ binding ظ‚ط§ط¹ط¯ ط¨ظ„ط§ ط®ط¯ظ…ط©.
+        //     ط§ظ„ظ€ NS ط§ظ„ظ‚ط¯ظٹظ… NEXT_INC_CACHE_KV (c56988e5...) ظپظٹظ‡ ~20GB ظƒط§ط´ ظ‚ط¯ظٹظ… ط¨ظ„ط§ TTL â€”
+        //     ط§ظ„ظ…ط§ظ„ظƒ ظٹط­ظٹط¯ظˆ ظ…ظ† ط§ظ„ط¯ط§ط´ط¨ظˆط±ط¯: Storage & Databases â†’ KV â†’ NEXT_INC_CACHE_KV â†’ Delete â”€â”€â”€
         "kv_namespaces": [
                 {
                         "binding": "NEXT_INC_CACHE_KV",
                         "id": "3f3af1a3ebdf42df80d0657ce53b58fc",
                         "remote": true,
                 },
-                // 🆕 100% D1 — STORE_KV (إعدادات المحل — phase-3). كتفعل أوتوماتيكياً من
-                //    scripts/laclarc-d1-windows.ps1 (الخطوة 4/9): npx wrangler kv namespace
-                //    create STORE_KV → الـ id كيتعمر هنا → push → deploy.
-                // ← STORE_KV-ACTIVATE:
-                // { "binding": "STORE_KV", "id": "STORE_KV_ID_HERE" },
+                // ًں†• 100% D1 â€” STORE_KV (ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ…ط­ظ„ â€” phase-3). ظƒطھظپط¹ظ„ ط£ظˆطھظˆظ…ط§طھظٹظƒظٹط§ظ‹ ظ…ظ†
+                //    scripts/laclarc-d1-windows.ps1 (ط§ظ„ط®ط·ظˆط© 4/9): npx wrangler kv namespace
+                //    create STORE_KV â†’ ط§ظ„ظ€ id ظƒظٹطھط¹ظ…ط± ظ‡ظ†ط§ â†’ push â†’ deploy.
+                // â†گ STORE_KV-ACTIVATE:
+                { "binding": "STORE_KV", "id": "b41b3de020bf46d38cf18991408de5d5" },
         ],
-        // ─── كاش الوسوم (D1) — ضروري حيت كتستعمل revalidateTag فالـ webhook ───
-        // 🆕 100% D1 — laclarc-catalog: الكاتالوگ الحية على الحافة. ما كتفعلش هنا
-        //    يدوياً — scripts/laclarc-d1-windows.ps1 كيصنع الداتابيز ويحط الـ id
-        //    وي uncomment الـ marker (حتى الـ deploy ما يتكسرش قبل التفعيل).
+        // â”€â”€â”€ ظƒط§ط´ ط§ظ„ظˆط³ظˆظ… (D1) â€” ط¶ط±ظˆط±ظٹ ط­ظٹطھ ظƒطھط³طھط¹ظ…ظ„ revalidateTag ظپط§ظ„ظ€ webhook â”€â”€â”€
+        // ًں†• 100% D1 â€” laclarc-catalog: ط§ظ„ظƒط§طھط§ظ„ظˆع¯ ط§ظ„ط­ظٹط© ط¹ظ„ظ‰ ط§ظ„ط­ط§ظپط©. ظ…ط§ ظƒطھظپط¹ظ„ط´ ظ‡ظ†ط§
+        //    ظٹط¯ظˆظٹط§ظ‹ â€” scripts/laclarc-d1-windows.ps1 ظƒظٹطµظ†ط¹ ط§ظ„ط¯ط§طھط§ط¨ظٹط² ظˆظٹط­ط· ط§ظ„ظ€ id
+        //    ظˆظٹ uncomment ط§ظ„ظ€ marker (ط­طھظ‰ ط§ظ„ظ€ deploy ظ…ط§ ظٹطھظƒط³ط±ط´ ظ‚ط¨ظ„ ط§ظ„طھظپط¹ظٹظ„).
         "d1_databases": [
                 {
                         "binding": "NEXT_TAG_CACHE_D1",
                         "database_name": "laclarc-tag-cache",
                         "database_id": "ef5d0d6a-9e23-473a-89b5-3923516fe0a6",
                 },
-                // ← D1-CATALOG-ACTIVATE:
-                // { "binding": "DB", "database_name": "laclarc-catalog", "database_id": "D1_DATABASE_ID_HERE" },
+                // â†گ D1-CATALOG-ACTIVATE:
+                { "binding": "DB", "database_name": "laclarc-catalog", "database_id": "7aae8ce7-176f-4200-9f63-5d4a24c83899" },
         ],
-        // ─── 🆕 F106 HYPERDRIVE-RO — قراءة الكاتالوگ من Supabase نيشان ───
-        // الدور laclarc_ro = SELECT فقط على products/store_settings/categories
-        // (بوليسيات RLS ro_select_*) — الكتابة مستحيلة على مستوى الداتابيز.
+        // â”€â”€â”€ ًں†• F106 HYPERDRIVE-RO â€” ظ‚ط±ط§ط،ط© ط§ظ„ظƒط§طھط§ظ„ظˆع¯ ظ…ظ† Supabase ظ†ظٹط´ط§ظ† â”€â”€â”€
+        // ط§ظ„ط¯ظˆط± laclarc_ro = SELECT ظپظ‚ط· ط¹ظ„ظ‰ products/store_settings/categories
+        // (ط¨ظˆظ„ظٹط³ظٹط§طھ RLS ro_select_*) â€” ط§ظ„ظƒطھط§ط¨ط© ظ…ط³طھط­ظٹظ„ط© ط¹ظ„ظ‰ ظ…ط³طھظˆظ‰ ط§ظ„ط¯ط§طھط§ط¨ظٹط².
         //
-        // ⚠️⚠️ 100% D1 — هادا القسم كامل كيمشي فالمرحلة 2 (MIGRATION-D1.md):
-        //    من بعد ما: (1) D1 يعمر بـ push-local-to-d1.mjs · (2) watcher حي ومستقر ·
-        //    (3) قراءات الكاتالوگ تقلبت على env.DB — حذف hyperdrive + db-ro/cron-db
-        //    التنظيف. الماكلة: أنا حيضها أنا — ما تلمسوش بيدك قبل الوقت.
+        // âڑ ï¸ڈâڑ ï¸ڈ 100% D1 â€” ظ‡ط§ط¯ط§ ط§ظ„ظ‚ط³ظ… ظƒط§ظ…ظ„ ظƒظٹظ…ط´ظٹ ظپط§ظ„ظ…ط±ط­ظ„ط© 2 (MIGRATION-D1.md):
+        //    ظ…ظ† ط¨ط¹ط¯ ظ…ط§: (1) D1 ظٹط¹ظ…ط± ط¨ظ€ push-local-to-d1.mjs آ· (2) watcher ط­ظٹ ظˆظ…ط³طھظ‚ط± آ·
+        //    (3) ظ‚ط±ط§ط،ط§طھ ط§ظ„ظƒط§طھط§ظ„ظˆع¯ طھظ‚ظ„ط¨طھ ط¹ظ„ظ‰ env.DB â€” ط­ط°ظپ hyperdrive + db-ro/cron-db
+        //    ط§ظ„طھظ†ط¸ظٹظپ. ط§ظ„ظ…ط§ظƒظ„ط©: ط£ظ†ط§ ط­ظٹط¶ظ‡ط§ ط£ظ†ط§ â€” ظ…ط§ طھظ„ظ…ط³ظˆط´ ط¨ظٹط¯ظƒ ظ‚ط¨ظ„ ط§ظ„ظˆظ‚طھ.
         //
-        // 🔑 قبل أول deploy بالـ binding: اصنع config ودخّل الـ id هنا:
-        //    Dashboard: Workers & Pages → Hyperdrive → Connect database
-        //      → الاسم: laclarc-ro + الـ connection string (شوف README-F106)
-        //    ولا CLI: npx wrangler hyperdrive create laclarc-ro \
+        // ًں”‘ ظ‚ط¨ظ„ ط£ظˆظ„ deploy ط¨ط§ظ„ظ€ binding: ط§طµظ†ط¹ config ظˆط¯ط®ظ‘ظ„ ط§ظ„ظ€ id ظ‡ظ†ط§:
+        //    Dashboard: Workers & Pages â†’ Hyperdrive â†’ Connect database
+        //      â†’ ط§ظ„ط§ط³ظ…: laclarc-ro + ط§ظ„ظ€ connection string (ط´ظˆظپ README-F106)
+        //    ظˆظ„ط§ CLI: npx wrangler hyperdrive create laclarc-ro \
         //      --connection-string="postgresql://laclarc_ro.<PROJECT_REF>:<RO_PASSWORD>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
         //
-        // ⚠️ إلا الـ config ما كاينش/الـ id غالط → deploy كيفشل؛ القراءات
-        //    كيرجعو للـ API الباك أوتوماتيكياً (سلوك F106 الـ fallback).
+        // âڑ ï¸ڈ ط¥ظ„ط§ ط§ظ„ظ€ config ظ…ط§ ظƒط§ظٹظ†ط´/ط§ظ„ظ€ id ط؛ط§ظ„ط· â†’ deploy ظƒظٹظپط´ظ„ط› ط§ظ„ظ‚ط±ط§ط،ط§طھ
+        //    ظƒظٹط±ط¬ط¹ظˆ ظ„ظ„ظ€ API ط§ظ„ط¨ط§ظƒ ط£ظˆطھظˆظ…ط§طھظٹظƒظٹط§ظ‹ (ط³ظ„ظˆظƒ F106 ط§ظ„ظ€ fallback).
         "hyperdrive": [
                 {
                         "binding": "HYPERDRIVE",
                         "id": "5ccf5cf2f4d84f0e9bf72eb540b97918",
-                        // للـ dev المحلي (wrangler dev) — نفس دور laclarc_ro بلا Hyperdrive.
-                        // ⚠️ ماتسحوش للريبو العام — بدل بالقيمة الحقيقية محلياً فقط.
+                        // ظ„ظ„ظ€ dev ط§ظ„ظ…ط­ظ„ظٹ (wrangler dev) â€” ظ†ظپط³ ط¯ظˆط± laclarc_ro ط¨ظ„ط§ Hyperdrive.
+                        // âڑ ï¸ڈ ظ…ط§طھط³ط­ظˆط´ ظ„ظ„ط±ظٹط¨ظˆ ط§ظ„ط¹ط§ظ… â€” ط¨ط¯ظ„ ط¨ط§ظ„ظ‚ظٹظ…ط© ط§ظ„ط­ظ‚ظٹظ‚ظٹط© ظ…ط­ظ„ظٹط§ظ‹ ظپظ‚ط·.
                         "localConnectionString": "postgresql://laclarc_ro.<PROJECT_REF>:<RO_PASSWORD>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres",
                 },
         ],
-        // ─── 🆕 phase-abc — MEDIA_BUCKET: R2 laclarc-media (موجود حياً — 2 objects مؤكدين) ───
-        // الـ feeds كترفع كل يوم 3:00 UTC → feeds/merchant-feed.xml + feeds/merchant-feed-usd.xml
-        // والقراءة العامة عبر route /feeds/[file] (ما كيحتاجش r2.dev public access).
+        // â”€â”€â”€ ًں†• phase-abc â€” MEDIA_BUCKET: R2 laclarc-media (ظ…ظˆط¬ظˆط¯ ط­ظٹط§ظ‹ â€” 2 objects ظ…ط¤ظƒط¯ظٹظ†) â”€â”€â”€
+        // ط§ظ„ظ€ feeds ظƒطھط±ظپط¹ ظƒظ„ ظٹظˆظ… 3:00 UTC â†’ feeds/merchant-feed.xml + feeds/merchant-feed-usd.xml
+        // ظˆط§ظ„ظ‚ط±ط§ط،ط© ط§ظ„ط¹ط§ظ…ط© ط¹ط¨ط± route /feeds/[file] (ظ…ط§ ظƒظٹط­طھط§ط¬ط´ r2.dev public access).
         "r2_buckets": [
                 {
                         "binding": "MEDIA_BUCKET",
                         "bucket_name": "laclarc-media",
                 },
         ],
-        // ─── 🆕 phase-abc — Analytics Engine (البند 9) — Workers Paid مفعّل حياً ───
-        // dataset كيتولد أوتوماتيكياً عند أول writeDataPoint — fail-open: أي فشل
-        // ما كيكسرش أي مسار (شوف lib/analytics.ts).
+        // â”€â”€â”€ ًں†• phase-abc â€” Analytics Engine (ط§ظ„ط¨ظ†ط¯ 9) â€” Workers Paid ظ…ظپط¹ظ‘ظ„ ط­ظٹط§ظ‹ â”€â”€â”€
+        // dataset ظƒظٹطھظˆظ„ط¯ ط£ظˆطھظˆظ…ط§طھظٹظƒظٹط§ظ‹ ط¹ظ†ط¯ ط£ظˆظ„ writeDataPoint â€” fail-open: ط£ظٹ ظپط´ظ„
+        // ظ…ط§ ظƒظٹظƒط³ط±ط´ ط£ظٹ ظ…ط³ط§ط± (ط´ظˆظپ lib/analytics.ts).
         "analytics_engine_datasets": [
                 {
                         "binding": "STORE_ANALYTICS",
                         "dataset": "laclarc_events",
                 },
         ],
-        // ─── طابور إعادة التوليد (DO) — ضروري للـ revalidate الزمني 86400 ───
+        // â”€â”€â”€ ط·ط§ط¨ظˆط± ط¥ط¹ط§ط¯ط© ط§ظ„طھظˆظ„ظٹط¯ (DO) â€” ط¶ط±ظˆط±ظٹ ظ„ظ„ظ€ revalidate ط§ظ„ط²ظ…ظ†ظٹ 86400 â”€â”€â”€
         "durable_objects": {
                 "bindings": [
                         {
@@ -168,24 +168,24 @@
                         ],
                 },
         ],
-        // ─── متغيرات البيئة (غير السرّات! السرّات بـ wrangler secret put) ───
+        // â”€â”€â”€ ظ…طھط؛ظٹط±ط§طھ ط§ظ„ط¨ظٹط¦ط© (ط؛ظٹط± ط§ظ„ط³ط±ظ‘ط§طھ! ط§ظ„ط³ط±ظ‘ط§طھ ط¨ظ€ wrangler secret put) â”€â”€â”€
         "vars": {
-                // الباك يبقى على Render كما هو — الفرونت كيهضر معاه HTTPS
+                // ط§ظ„ط¨ط§ظƒ ظٹط¨ظ‚ظ‰ ط¹ظ„ظ‰ Render ظƒظ…ط§ ظ‡ظˆ â€” ط§ظ„ظپط±ظˆظ†طھ ظƒظٹظ‡ط¶ط± ظ…ط¹ط§ظ‡ HTTPS
                 "NEXT_PUBLIC_API_URL": "https://api.laclarc.com",
-                // 🩹 F110 api-unloop: الـ backend الحقيقي للـ proxy — runtime override
-                // (ماشي NEXT_PUBLIC باش ما يتخبش فالبيلد) — default آمن ضد الحلقة
+                // ًں©¹ F110 api-unloop: ط§ظ„ظ€ backend ط§ظ„ط­ظ‚ظٹظ‚ظٹ ظ„ظ„ظ€ proxy â€” runtime override
+                // (ظ…ط§ط´ظٹ NEXT_PUBLIC ط¨ط§ط´ ظ…ط§ ظٹطھط®ط¨ط´ ظپط§ظ„ط¨ظٹظ„ط¯) â€” default ط¢ظ…ظ† ط¶ط¯ ط§ظ„ط­ظ„ظ‚ط©
                 "PB_BACKEND_URL": "",
-                // NextAuth خلف بروكسي (Workers) — بلا هادا Google login كيفشل
+                // NextAuth ط®ظ„ظپ ط¨ط±ظˆظƒط³ظٹ (Workers) â€” ط¨ظ„ط§ ظ‡ط§ط¯ط§ Google login ظƒظٹظپط´ظ„
                 "AUTH_TRUST_HOST": "true",
         },
-        // ─── 🆕 phase-abc — الكرونات (البند 8) — كلها فالـ worker بوحدو ───
-        //   0 3 * * *    → بناء الـ feeds يومياً (merchant-feed.xml + -usd.xml → R2)
-        //   0 */6 * * *  → runDailyPriceSync — تزامن الأسعار/الستوك مع CJ (دورة عادلة)
-        //   0 * * * *    → sweeper — إلغاء الطلبات الميتة (Stripe/Crypto/Paysera >2h · BaridiMob >48h)
-        //   ── 🆕 2026-11-27 (CJ webhooks — عقد المالك A+B+C+D) ──
-        //   30 4 * * *   → renewCjWebhookSubscriptions — تجديد اشتراكات ويبهوك CJ
-        //                  (الصلاحية 30 يوم — الاشتراكات القديمة ماتت من 2026-10-12)
-        //   20 */6 * * * → reconcileCjOrders — حزام أمان التتبع (طلبات CJ بلا tracking → getOrderDetail)
+        // â”€â”€â”€ ًں†• phase-abc â€” ط§ظ„ظƒط±ظˆظ†ط§طھ (ط§ظ„ط¨ظ†ط¯ 8) â€” ظƒظ„ظ‡ط§ ظپط§ظ„ظ€ worker ط¨ظˆط­ط¯ظˆ â”€â”€â”€
+        //   0 3 * * *    â†’ ط¨ظ†ط§ط، ط§ظ„ظ€ feeds ظٹظˆظ…ظٹط§ظ‹ (merchant-feed.xml + -usd.xml â†’ R2)
+        //   0 */6 * * *  â†’ runDailyPriceSync â€” طھط²ط§ظ…ظ† ط§ظ„ط£ط³ط¹ط§ط±/ط§ظ„ط³طھظˆظƒ ظ…ط¹ CJ (ط¯ظˆط±ط© ط¹ط§ط¯ظ„ط©)
+        //   0 * * * *    â†’ sweeper â€” ط¥ظ„ط؛ط§ط، ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…ظٹطھط© (Stripe/Crypto/Paysera >2h آ· BaridiMob >48h)
+        //   â”€â”€ ًں†• 2026-11-27 (CJ webhooks â€” ط¹ظ‚ط¯ ط§ظ„ظ…ط§ظ„ظƒ A+B+C+D) â”€â”€
+        //   30 4 * * *   â†’ renewCjWebhookSubscriptions â€” طھط¬ط¯ظٹط¯ ط§ط´طھط±ط§ظƒط§طھ ظˆظٹط¨ظ‡ظˆظƒ CJ
+        //                  (ط§ظ„طµظ„ط§ط­ظٹط© 30 ظٹظˆظ… â€” ط§ظ„ط§ط´طھط±ط§ظƒط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط© ظ…ط§طھطھ ظ…ظ† 2026-10-12)
+        //   20 */6 * * * â†’ reconcileCjOrders â€” ط­ط²ط§ظ… ط£ظ…ط§ظ† ط§ظ„طھطھط¨ط¹ (ط·ظ„ط¨ط§طھ CJ ط¨ظ„ط§ tracking â†’ getOrderDetail)
         "triggers": {
                 "crons": ["0 3 * * *", "0 */6 * * *", "0 * * * *", "30 4 * * *", "20 */6 * * *"],
         },
