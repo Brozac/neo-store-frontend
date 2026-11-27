@@ -1,6 +1,6 @@
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // Phase H — Edge Cache (Cache API) لقراءات الكاطالوگ العامة
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // العقد: الـ Cache-Control الموجود أصلاً فالروت هو مصدر الحقيقة الوحيد.
 // - Response فيه s-maxage → يتكاشا على حافة CF (caches.default) بنفس TTL
 // - بلا s-maxage (search · count · by-ids) → كيمر ديناميكي كما كان
@@ -17,6 +17,8 @@
 // resurrection: الرد القديم ما يمكنش يعمر الـ zone بعد انتشار KV).
 // الطبقة ديال Worker كتخزن بـ max-age=TTL الأصلي (60-3600s) = حماية DB.
 // fail-open: KV ما جابش = نسخة '' = مفاتيح بلا __cv = نفس سلوك H.1.
+import { revalidateTag } from 'next/cache';
+
 export const EDGE_CACHE_HEADER = 'x-edge-cache';
 
 // نسخة الكاش — KV نفسو تاع ISR (NEXT_INC_CACHE_KV) بمفتاح مسمّى خاص.
@@ -143,4 +145,103 @@ export async function withEdgeCache(
     console.warn('[edge-cache] put failed:', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
   }
   return res;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🆕 100% D1 — purgeEdgeCache — purge موحّد بعد كل كتابة كاتالوگ
+// ═══════════════════════════════════════════════════════════════════
+// المنادي: /api/admin/d1-realtime-sync (الكتابة الحية من PostgreSQL المحلي)
+// — وphase-2 من بعد. ثلاث طبقات، كل وحدة fail-open بوحدها:
+//   a) revalidateTag — دايماً (tag cache على D1 — رخيصة، بلا كوتا KV)
+//      → صفحة المنتج (ISR) كتعاود تتولد عند أول طلب.
+//   b) zone purge بالـ URLs الدقيقة (debounce 3s/isolate) — API المنتج +
+//      صفحة المنتج على الطبقة القدامية → freshness ~ثواني بعد التعديل.
+//   c) bump نسخة الكاش فالـ KV (debounce 25s/isolate) — كل مفاتيح
+//      القوائم/الرئيسية/الفئات كتبدل (نفس بوابة edge-cache-purge) —
+//      الـ debounce حماية لكوتا KV (1000 كتابة/يوم مجاناً) قدام bulk sync.
+// ═══════════════════════════════════════════════════════════════════
+// معرف غير سري (كيبان فكل نداء CF API) — zone laclarc.com
+const CF_ZONE_ID_PURGE = '234ef6b0c01d0cb85553852a4d0b79a3';
+const PURGE_ORIGINS = ['https://laclarc.com', 'https://www.laclarc.com'];
+const ZONE_PURGE_MIN_MS = 3_000;
+const KV_BUMP_MIN_MS = 25_000;
+let lastZonePurgeAt = 0;
+let lastKvBumpAt = 0;
+
+async function bumpCatalogVersion(): Promise<boolean> {
+  try {
+    const mod = await import('@opennextjs/cloudflare');
+    const ctx = await mod.getCloudflareContext({ async: true });
+    const env = ctx?.env as Record<string, unknown> | undefined;
+    const kv = env?.NEXT_INC_CACHE_KV as
+      | { put?: (key: string, value: string) => Promise<void> }
+      | undefined;
+    if (!kv || typeof kv.put !== 'function') return false;
+    await kv.put(VERSION_KV_KEY, `v${Date.now().toString(36)}`);
+    return true;
+  } catch {
+    return false; // fail-open — TTL هو شبكة الأمان
+  }
+}
+
+async function purgeZoneUrls(urls: string[]): Promise<number> {
+  const token = (process.env.EDGE_PURGE_API_TOKEN || '').trim();
+  const files = urls.slice(0, 30); // حد CF API: 30 URL/نداء
+  if (!token || files.length === 0) return 0;
+  try {
+    const r = await fetch(`https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID_PURGE}/purge_cache`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ files }),
+    });
+    const j = (await r.json().catch(() => null)) as { success?: boolean } | null;
+    return j?.success === true ? files.length : 0;
+  } catch {
+    return 0; // fail-open
+  }
+}
+
+/**
+ * purge بعد كتابة منتج/منتجات. كيرجع تقرير صغير للـ endpoint باش يتسجل.
+ * الإنتروبيا: id واحد كيغطي /api/products/{id} + /products/{id} على الأصول
+ * الاثنين + tags تاع ISR + نسخة القوائم (الرئيسية/الفئات/الصفحات).
+ */
+export async function purgeEdgeCache(
+  productIds: number[] = [],
+): Promise<{ tags: string[]; purged: number; bumped: boolean; ms: number }> {
+  const t0 = Date.now();
+  const ids = productIds
+    .filter((n) => Number.isInteger(n) && n > 0 && n <= 2147483647)
+    .slice(0, 7);
+
+  // (a) revalidateTag — دايماً (رخيصة — tag cache على D1)
+  const tags: string[] = [];
+  for (const id of ids) {
+    tags.push(`product-${id}`);
+    try { revalidateTag(`product-${id}`, 'max'); } catch { /* ISR اختياري */ }
+  }
+  try { revalidateTag('products-index', 'max'); } catch { /* ISR اختياري */ }
+
+  // (b) zone purge دقيقة — debounce 3s (القوائم الكبيرة كيتغطاها الـ KV bump)
+  let purged = 0;
+  const now = Date.now();
+  if (ids.length && now - lastZonePurgeAt >= ZONE_PURGE_MIN_MS) {
+    lastZonePurgeAt = now;
+    const files: string[] = [];
+    for (const id of ids) {
+      for (const o of PURGE_ORIGINS) {
+        files.push(`${o}/api/products/${id}`, `${o}/products/${id}`);
+      }
+    }
+    purged = await purgeZoneUrls([...new Set(files)].slice(0, 30));
+  }
+
+  // (c) bump نسخة الكاش — debounce 25s (حماية كوتا KV قدام bulk sync)
+  let bumped = false;
+  if (Date.now() - lastKvBumpAt >= KV_BUMP_MIN_MS) {
+    lastKvBumpAt = Date.now();
+    bumped = await bumpCatalogVersion();
+  }
+
+  return { tags, purged, bumped, ms: Date.now() - t0 };
 }
