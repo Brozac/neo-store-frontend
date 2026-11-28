@@ -21,7 +21,10 @@ export async function GET(request: Request) {
   try {
     const settings = await withRetry(() => dbSettings());
     if (settings !== undefined) return NextResponse.json(settings);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    // 🩹 phase-2 (2026-11-28): settings غير متوفرة (D1 بلا جدول بعد ولا Hyperdrive مات)
+    //    = defaults فارغة بدل 500 — الفرونت كيتعامل مع الغياب (عقد PUBLIC_SETTING_KEYS:
+    //    "المفاتيح الغائبة كيبقاو غائبين — الفرونت خدام على الحضور")
+    return NextResponse.json({}, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     console.warn('[pb-settings] fallback failed:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

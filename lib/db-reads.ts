@@ -18,6 +18,13 @@
 import 'server-only';
 import { getRoSql, type RoSql } from './db-ro';
 import { PDP_VARIANTS_STRIP_SQL } from './variants-slim';
+// 🆕 phase-2 (2026-11-28): D1 أول مصدر للكاتالوگ — Hyperdrive/Supabase ولى fallback.
+// كل دالة كتجرّب D1 الأول (d1-catalog) — undefined = تجاوز للمسار القديم (نفس العقد tri-state).
+import {
+  d1Product, d1Related, d1ProductsLimit, d1Settings, d1CategorySeo,
+  d1ProductsMinimal, d1CatalogPage, d1CatalogCount, d1CatalogSearch,
+  d1CatalogFull, d1Deals, d1ProductsByIds, d1CategoriesTree, d1Search,
+} from './d1-catalog';
 
 // ═══ ثوابت منسوخة حرفياً من server.js (مصدر واحد للحقيقة) ═══
 
@@ -119,6 +126,7 @@ function withSwatches(rows: Record<string, unknown>[]): Record<string, unknown>[
 export async function dbProduct(
   pid: number,
 ): Promise<Record<string, unknown> | null | undefined> {
+  { const _d1 = await d1Product(pid); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -158,6 +166,7 @@ export async function dbProduct(
 export async function dbRelated(
   pid: number,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1Related(pid); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -221,6 +230,7 @@ export async function dbRelated(
 export async function dbProductsLimit(
   limit: number,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1ProductsLimit(limit); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -243,6 +253,7 @@ export async function dbProductsLimit(
  * المفاتيح الغائبة كيبقاو غائبين (نفس سلوك الباك — الفرونت خدام على الحضور).
  */
 export async function dbSettings(): Promise<Record<string, unknown> | undefined> {
+  { const _d1 = await d1Settings(); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -281,6 +292,7 @@ export async function dbSettings(): Promise<Record<string, unknown> | undefined>
 export async function dbCategorySeo(
   slugPath: string,
 ): Promise<Record<string, unknown> | undefined> {
+  { const _d1 = await d1CategorySeo(slugPath); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   const raw = String(slugPath || '').toLowerCase().trim();
@@ -338,6 +350,7 @@ export async function dbProductsMinimal(
 ): Promise<
   { page: number; chunkSize: number; count: number; total: number; products: Record<string, unknown>[] } | undefined
 > {
+  { const _d1 = await d1ProductsMinimal(page); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -453,6 +466,7 @@ const CATALOG_PER = 24; // server.js:3021
 export async function dbCatalogPage(
   q: URLSearchParams,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1CatalogPage(q); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -500,6 +514,7 @@ export async function dbCatalogPage(
 export async function dbCatalogCount(
   q: URLSearchParams,
 ): Promise<{ count: number } | undefined> {
+  { const _d1 = await d1CatalogCount(q); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -531,6 +546,7 @@ export async function dbCatalogCount(
 export async function dbCatalogSearch(
   q: URLSearchParams,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1CatalogSearch(q); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -558,6 +574,7 @@ export async function dbCatalogSearch(
 
 /** مرآة GET /api/products (bare — بلا limit) — سقف FULL_CAP=5000 (server.js:3100). */
 export async function dbCatalogFull(): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1CatalogFull(); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -575,6 +592,7 @@ export async function dbCatalogFull(): Promise<Record<string, unknown>[] | undef
 
 /** مرآة GET /api/products/deals — is_sourced=true سقف 10 (server.js:3170). */
 export async function dbDeals(): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1Deals(); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -597,6 +615,7 @@ export async function dbDeals(): Promise<Record<string, unknown>[] | undefined> 
 export async function dbProductsByIds(
   idsParam: string,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1ProductsByIds(idsParam); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -626,6 +645,7 @@ export async function dbProductsByIds(
  * (categoryService.getCategoryTree:137 + التخصيب server.js:1593-1640).
  */
 export async function dbCategoriesTree(): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1CategoriesTree(); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {
@@ -684,6 +704,7 @@ export async function dbCategoriesTree(): Promise<Record<string, unknown>[] | un
 export async function dbSearch(
   q: string,
 ): Promise<Record<string, unknown>[] | undefined> {
+  { const _d1 = await d1Search(q); if (_d1 !== undefined) return _d1; }
   const sql = await getRoSql();
   if (!sql) return undefined;
   try {

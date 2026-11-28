@@ -43,7 +43,11 @@ CREATE TABLE IF NOT EXISTS products (
   seo_title             TEXT,
   seo_meta_description  TEXT,
   created_at            TEXT,
-  updated_at            TEXT
+  updated_at            TEXT,
+  -- 🆕 phase-2 (2026-11-28) — facets + swatch محسوبة وقت الكتابة/الـ backfill:
+  facet_colors          TEXT,   -- '|Khaki|Black|' — فلترة الألوان بلا json_each
+  facet_sizes           TEXT,   -- '|S|M|L|' — فلترة المقاسات
+  swatch_raw            TEXT    -- JSON [{c,i,v}] — أول صورة لكل لون
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_category  ON products(category);
@@ -89,3 +93,42 @@ CREATE TABLE IF NOT EXISTS d1_meta (
   v   TEXT
 );
 INSERT OR REPLACE INTO d1_meta (k, v) VALUES ('schema_version', '1');
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 🆕 phase-2 (2026-11-28) — جداول القراءة الكاملة (categories/settings/صور)
+-- ═══════════════════════════════════════════════════════════════════
+-- ⚠️ على داتابيز موجودة (قبل 2026-11-28) جري هاد الـ ALTERات مرة وحدة
+--    (منجريين بالفعل فالإنتاج عبر REST API):
+--      ALTER TABLE products ADD COLUMN facet_colors TEXT;
+--      ALTER TABLE products ADD COLUMN facet_sizes TEXT;
+--      ALTER TABLE products ADD COLUMN swatch_raw TEXT;
+--    ثم node scripts/push-categories-settings.mjs من الـ PC (الداتا).
+
+CREATE TABLE IF NOT EXISTS categories (
+  id                    INTEGER PRIMARY KEY,
+  level                 INTEGER,
+  name                  TEXT,
+  slug                  TEXT,
+  parent_id             INTEGER,
+  cj_category_id        TEXT,
+  seo_title             TEXT,
+  seo_h1                TEXT,
+  seo_meta_description  TEXT,
+  seo_content           TEXT,
+  seo_faqs              TEXT,
+  seo_content_version   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_categories_slug   ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);
+
+-- store_settings — نفس عقد GET /api/settings (key/value — phase-3 محلي)
+CREATE TABLE IF NOT EXISTS store_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
+
+-- صور الفئات الممثلة — مرآة category_images_mv (كيتعمرها push-categories-settings.mjs)
+CREATE TABLE IF NOT EXISTS category_images (
+  slug      TEXT PRIMARY KEY,
+  image_url TEXT
+);

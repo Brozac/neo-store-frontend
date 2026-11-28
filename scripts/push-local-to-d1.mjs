@@ -34,7 +34,7 @@ const TEXT_COLS = ['title', 'description', 'image_url', 'pattern', 'origin', 'co
 const NUM_COLS = ['price', 'original_price'];
 const INT_COLS = ['sort_order', 'sales_count'];
 const BOOL_COLS = ['stock_status', 'is_sourced'];
-const ALL_COLS = ['id', ...TEXT_COLS, ...NUM_COLS, ...INT_COLS, ...BOOL_COLS, ...JSON_COLS.filter((c) => c !== 'variants'), 'variants', 'created_at', 'updated_at'];
+const ALL_COLS = ['id', ...TEXT_COLS, ...NUM_COLS, ...INT_COLS, ...BOOL_COLS, ...JSON_COLS.filter((c) => c !== 'variants'), 'variants', 'created_at', 'updated_at', 'facet_colors', 'facet_sizes', 'swatch_raw'];
 
 function slimVariants(raw, max = 100) {
   let arr = raw;
@@ -81,6 +81,35 @@ function pgArrayToJson(v) {
   return v;
 }
 
+/** facets + swatch_raw — مرآة buildFacetsFromVariants (lib/catalog-shared) */
+function buildFacets(slimArr) {
+  const colours = []; const sizes = [];
+  const seenC = new Set(); const seenS = new Set();
+  const swatch = []; const seenSw = new Set();
+  for (const v of slimArr) {
+    if (!v || typeof v !== 'object') continue;
+    const vk = v.variantKey;
+    if (!vk || typeof vk !== 'string') continue;
+    const dash = vk.lastIndexOf('-');
+    const colour = (dash === -1 ? vk : vk.slice(0, dash)).replace(/\|/g, '');
+    const size = (dash === -1 ? '' : vk.slice(dash + 1)).replace(/\|/g, '');
+    if (colour && !seenC.has(colour.toLowerCase())) { seenC.add(colour.toLowerCase()); colours.push(colour); }
+    if (size && !seenS.has(size.toLowerCase())) { seenS.add(size.toLowerCase()); sizes.push(size); }
+    const img = v.variantImage;
+    if (img && typeof img === 'string' && colour && !seenSw.has(colour)) {
+      seenSw.add(colour);
+      const sw = { c: colour, i: img };
+      if (typeof v.vid === 'string') sw.v = v.vid;
+      swatch.push(sw);
+    }
+  }
+  return {
+    facetColors: colours.length ? '|' + colours.join('|') + '|' : '',
+    facetSizes: sizes.length ? '|' + sizes.join('|') + '|' : '',
+    swatchRaw: JSON.stringify(swatch),
+  };
+}
+
 function toD1Row(r) {
   const out = { id: Number(r.id) };
   for (const c of TEXT_COLS) out[c] = r[c] == null ? null : String(r[c]);
@@ -96,7 +125,16 @@ function toD1Row(r) {
     out[c] = (r[c] === true || r[c] === 1 || r[c] === '1' || r[c] === 'true') ? 1 : 0;
   }
   for (const c of JSON_COLS) {
-    if (c === 'variants') { out[c] = JSON.stringify(slimVariants(r[c])); continue; }
+    if (c === 'variants') {
+      const slimArr = slimVariants(r[c]);
+      out[c] = JSON.stringify(slimArr);
+      // 🆕 phase-2 — facets + swatch_raw (نفس دلالات lib/catalog-shared.buildFacetsFromVariants)
+      const f = buildFacets(slimArr);
+      out.facet_colors = f.facetColors;
+      out.facet_sizes = f.facetSizes;
+      out.swatch_raw = f.swatchRaw;
+      continue;
+    }
     const v = pgArrayToJson(r[c]);
     out[c] = v === null || v === undefined ? '[]' : (typeof v === 'string' ? v : JSON.stringify(v));
   }

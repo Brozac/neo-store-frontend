@@ -69,3 +69,20 @@ pm2 logs laclarc-d1-watcher --lines 30 --nostream
 - وقف الـ sync: `pm2 delete laclarc-d1-watcher` — الإنتاج يبقى كيف هو.
 - حيد triggers: شوف آخر مقطع ف`scripts/pg-triggers-d1-sync.sql`.
 - wrangler.jsonc: ارجع بالـ marker (`// { "binding": "DB" ...`) ولا git revert.
+
+
+---
+
+## ✅ phase-2 منجرة (2026-11-28) — القراءات على D1
+
+- `lib/d1-catalog.ts` (جديد): 14 قراءة كاملة من `env.DB` بنفس أشكال الباك —
+  `lib/db-reads.ts` كيجرّب D1 الأول، Hyperdrive/Supabase ولى fallback.
+- facets محسوبة مسبقاً (`facet_colors` · `facet_sizes` · `swatch_raw`) —
+  backfill كامل 54,367/54,367 عبر REST (backfill_facets.py) · الكتابة الجديدة
+  كتحسبهم فـ `shapeProductRow` (lib/d1.ts) — الفلاتر بلا json_each (7429-safe).
+- categories · store_settings · category_images: الجداول كاينين فالـ D1،
+  الداتا كتدخل بـ `node scripts/push-categories-settings.mjs` من الـ PC
+  (مرة وحدة، idempotent). قبل الدفع: /api/settings ترجع {} (defaults) و
+  /api/categories كيبقى بالسلوك القديم.
+- mosaic: md5 → hash رقمي deterministic (D1 ما فيهاش md5) — نفس الهدف (تنويع).
+- Hyperdrive مازال مربوط (fallback) — الحذف النهائي من بعد ما الكل يتحقق أخضر.

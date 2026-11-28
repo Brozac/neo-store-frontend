@@ -7,6 +7,7 @@
 // ط§ظ„طھظپط¹ظٹظ„: scripts/laclarc-d1-windows.ps1 â†’ wrangler.jsonc â†گ binding "DB"
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 import 'server-only';
+import { buildFacetsFromVariants } from './catalog-shared';
 
 // â”€â”€â”€ ط£ظ†ظˆط§ط¹ ظ‡ظٹظƒظ„ظٹط© ط¯ظ†ظٹط§ (ط¨ظ„ط§ ط§ط¹طھظ…ط§ط¯ ط¹ظ„ظ‰ workers-types) â”€â”€â”€
 export interface D1PreparedStatementLike {
@@ -50,6 +51,8 @@ export const D1_PRODUCT_COLUMNS = [
   'pattern', 'origin', 'composition', 'category', 'video_url', 'material',
   'stock_status', 'sort_order', 'sales_count', 'cj_product_id', 'is_sourced',
   'seo_title', 'seo_meta_description', 'created_at', 'updated_at',
+  // 🆕 phase-2 (2026-11-28) — facets + swatch محسوبة وقت الكتابة (فلترة سريعة بلا jsonb)
+  'facet_colors', 'facet_sizes', 'swatch_raw',
 ] as const;
 
 const JSON_ARRAY_COLS = new Set([
@@ -104,6 +107,12 @@ export function shapeProductRow(raw: Record<string, unknown>): Record<string, un
   if (id === null || !Number.isInteger(id) || id <= 0 || id > 2147483647) {
     throw new Error(`d1: invalid product id (${String(raw.id)})`);
   }
+  // 🆕 phase-2 (2026-11-28) — facets + swatch_raw كيتحسبو وقت الكتابة
+  // (نفس دلالات backfill_facets.py — facet_colors/facet_sizes/swatch_raw)
+  const facets = buildFacetsFromVariants(raw.variants);
+  out.facet_colors = facets.facetColors;
+  out.facet_sizes = facets.facetSizes;
+  out.swatch_raw = facets.swatchRaw;
   return out;
 }
 
